@@ -57,7 +57,7 @@ export function suggestFields(text: string, source: string): Record<string, Extr
   const result: Record<string, ExtractionCandidate> = {};
   const cpf = /(?:^|\D)(\d{3}[. ]?\d{3}[. ]?\d{3}[- ]?\d{2})(?!\d)/m.exec(text);
   if (cpf) result['person.cpf'] = { value: cpf[1]!, source, status: 'REVIEW_REQUIRED' };
-  const hull = /(?:HIN|CIN|N[ºo.]?\s*do\s*casco)\s*[:\-]?\s*([A-Z0-9-]{6,30})/i.exec(text);
+  const hull = /(?:HIN|CIN|N[ºo.]?\s*do\s*casco)\s*[:-]?\s*([A-Z0-9-]{6,30})/i.exec(text);
   if (hull) result['vessel.hullId'] = { value: hull[1]!, source, status: 'REVIEW_REQUIRED' };
   // Never infer a full name or address from arbitrary lines in untrusted OCR.
   return result;
