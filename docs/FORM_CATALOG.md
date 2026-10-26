@@ -1,8 +1,9 @@
 # Catálogo de formulários oficiais (independente de serviços)
 
 **Estado:** pesquisa normativa da Fase 01 concluída em 26/10/2026. Nenhum PDF
-oficial foi obtido, armazenado ou homologado no repositório; nenhuma
-`FormVersion` ou `FormMapping` foi criada. O serviço piloto permanece `DRAFT`.
+de formulário oficial foi obtido, armazenado ou homologado no repositório;
+nenhuma `FormVersion` ou `FormMapping` foi criada. O serviço piloto permanece
+`DRAFT`.
 
 O cadastro dos formulários é independente de transferência, renovação, inscrição
 ou qualquer outro serviço. Os IDs e nomes abaixo são candidatos de identidade
@@ -29,6 +30,21 @@ Aquáticas e Motonautas*, edição 2026.
   direto por ferramenta retornou HTTP 403 em 26/10/2026; a edição e a alteração
   foram conferidas no PDF oficial acima.
 
+**Normas adicionais fornecidas pelo usuário em 26/10/2026:** foram conferidas
+para descartar aplicação cruzada. Nenhuma delas substitui a NORMAM-212 no
+serviço de transferência de MA.
+
+| Norma | Título / escopo | Aplicabilidade ao piloto |
+| --- | --- | --- |
+| [NORMAM-101/DPC](https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-101.pdf), 2023 (Mod. 2 de 22/07/2026) | *Normas da Autoridade Marítima para Aquaviários*; trata de ingresso, cadastro, inscrição, certificação e carreira de aquaviários. PDF com 267 páginas; SHA-256 `74AF4D83C26A255B7C8EF9A12359F905AEF00488490D0347AD548CE0A24CD049`. | **Não aplicável** à transferência de propriedade de MA; não usar seus anexos. |
+| [NORMAM-211/DPC](https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf), 2026 | *Normas da Autoridade Marítima para Atividades de Esporte e Recreio*. A introdução exclui expressamente as embarcações do tipo moto aquática e motonauta e remete à NORMAM-212. PDF com 268 páginas; SHA-256 `71492859082A6786203619C859FCC99BC72C85128DC9FD27D32F93A92B09598C`. | **Não aplicável** à MA; não usar seus anexos de transferência. |
+| [NORMAM-212/DPC](https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-212.pdf), 2026 | *Normas da Autoridade Marítima para Motos Aquáticas e Motonautas*. PDF com 112 páginas; SHA-256 `A10CEDAB96556B9747AC43B5F3F8CB79637DB365071A1609F75181852C5A90A0`. | **Aplicável** ao piloto; base do item 2.4.1. |
+
+A verificação foi feita no texto oficial: a NORMAM-211/DPC 2026 declara, na
+introdução e no item 1.2, que ficam excetuadas as regras para moto aquática e
+motonauta, cujo regramento está na NORMAM-212/DPC. A NORMAM-101/DPC trata de
+aquaviários, não de propriedade de embarcação de esporte/recreio.
+
 **Serviço no gov.br:** *Solicitar inscrição, transferência de propriedade e/ou
 jurisdição, títulos e certidões de Embarcações*,
 <https://www.gov.br/pt-br/servicos/solicitar-inscricao-transferencia-de-propriedade-e-ou-jurisdicao-titulos-e-certidoes-de-embarcacoes>,
@@ -45,7 +61,8 @@ como regra nacional. A unidade escolhida deve ser confirmada antes do atendiment
 
 **Fora do escopo desta pesquisa:** inscrição inicial, renovação de TIE,
 transferência de jurisdição, aluguel de MA, habilitação de motonauta e
-formulários das NORMAM-201/202/211. A NORMAM-212 é a norma específica para MA.
+formulários das NORMAM-201/202, da NORMAM-211 (que exclui MA) e da NORMAM-101
+(aquaviários). A NORMAM-212 é a norma específica para MA.
 
 ## 2. Regras confirmadas para transferência de propriedade
 

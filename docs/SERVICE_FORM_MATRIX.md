@@ -5,7 +5,7 @@ backend relaciona os serviços às versões oficiais verificadas; os serviços n
 são donos dos PDFs e não criam cópias nem mapeamentos próprios.
 
 **Estado em 26/10/2026:** pesquisa documental da Fase 01 concluída para o piloto.
-Nenhum PDF foi obtido, nenhuma `FormVersion` foi verificada, nenhum
+Nenhum PDF de formulário foi obtido, nenhuma `FormVersion` foi verificada, nenhum
 `FormMapping` foi aprovado e nenhum `ServiceForm` foi criado. O serviço continua
 `DRAFT`.
 
@@ -21,6 +21,10 @@ Nenhum PDF foi obtido, nenhuma `FormVersion` foi verificada, nenhum
   Fonte: [PDF oficial](https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-212.pdf),
   acesso em 26/10/2026, 112 páginas, SHA-256
   `A10CEDAB96556B9747AC43B5F3F8CB79637DB365071A1609F75181852C5A90A0`.
+- **NORMAM-211/DPC 2026** foi conferida e **não se aplica**: sua introdução
+  exclui expressamente moto aquática e motonauta, remetendo à NORMAM-212.
+  **NORMAM-101/DPC** regula aquaviários e também não se aplica à transferência
+  de propriedade. Nenhum anexo dessas duas normas será usado no piloto.
 - A transferência é requerida pelo **novo adquirente**, via **BDMOTO (2-B)**,
   em até **60 dias** para MA inscrita em CP/DL/AG.
 - Pode ser requerida em **qualquer CP/DL/AG**; não há jurisdição obrigatória

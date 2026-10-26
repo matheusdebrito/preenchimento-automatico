@@ -142,7 +142,7 @@ O acompanhamento executável está em [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md)
 A fundação e os contratos do catálogo já existem, mas o serviço piloto continua `DRAFT`.
 
 1. **Fase 00 concluída em 26/10/2026:** fundação local, testes, builds e Docker Compose validados; evidências no `PROJECT_TRACKER.md`.
-2. **Fase 01 concluída em 26/10/2026:** NORMAM-212/DPC 2026 conferida; formulários 2-A, 2-B, 2-D, 2-E, 2-C e 1-C identificados e separados dos documentos de origem; catálogo e matriz atualizados. Nenhum PDF oficial foi baixado.
+2. **Fase 01 concluída em 26/10/2026:** NORMAM-212/DPC 2026 conferida; NORMAM-101/DPC e NORMAM-211/DPC conferidas e descartadas para MA (a 211 exclui expressamente moto aquática e motonauta); formulários 2-A, 2-B, 2-D, 2-E, 2-C e 1-C identificados e separados dos documentos de origem; catálogo e matriz atualizados. Nenhum PDF de formulário foi baixado.
 3. **Fase 02 (próxima):** portão humano para obter e verificar somente os PDFs oficiais ausentes, conforme o checklist P0/P1/P2 de `docs/FORM_CATALOG.md`.
 4. Completar API de catálogo, motor PDF por formulário, upload temporário e OCR seguro.
 5. Integrar a revisão humana, o download, a autenticação e os créditos de teste.
