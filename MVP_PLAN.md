@@ -189,3 +189,8 @@ Antes de mapear PDFs:
 ### Primeiro comando sugerido para o OpenCode
 
 > Leia `MVP_PLAN.md`, inspecione o repositório e proponha **somente a Etapa A — Fundação**, com versões justificadas, estrutura de pastas, Docker Compose e critérios de validação. Não implemente OCR, pagamentos ou novos serviços agora. Caso não seja um repositório vazio, adapte-se ao código existente e apresente o plano antes de modificar arquivos.
+
+
+## Plano de producao e expansao
+
+O planejamento operacional completo esta em `PROJECT_TRACKER.md`: fases 00-09 para MVP tecnico, 10-16 para preparacao comercial e infraestrutura segura, 17 para lancamento controlado e 18 para expansao. O MVP nao autoriza publicar, usar dados reais ou ativar pagamentos. Essas acoes exigem aprovacao explicita e homologacao, inclusive seguranca, LGPD, backups, observabilidade, desempenho e rollback. Planos empresariais e assinaturas ficam fora do escopo.
