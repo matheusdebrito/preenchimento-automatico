@@ -88,7 +88,10 @@ Antes de mapear PDFs:
 - `CreditLedger`: id, userId, tipo (`GRANT`, `PURCHASE`, `CONSUME`, `REFUND`, `ADJUSTMENT`), quantidade, referência idempotente, timestamp. `PURCHASE` só será usado com pagamentos reais.
 - `CreditPurchase` (fase comercial): userId, pacote, quantidade, valor, status, id externo do pagamento e chave de idempotência; não armazenar dados de cartão.
 - `GenerationRecord`: id técnico, userId, serviceId, status, referência de consumo, timestamp; **sem nome/CPF/dados da embarcação**.
-- `FormTemplate`: código, versão, serviço, hash do PDF, fonte, status de vigência.
+- `FormTemplate`: código e versão do modelo, hash do PDF, fonte oficial, situação de mapeamento/homologação; **não possui um único serviço proprietário**.
+- `ServiceForm`: relação muitos-para-muitos entre serviço e versão do formulário, com condições de aplicabilidade e ordem.
+- `FieldDefinition`: identificadores de campos semânticos independentes do OCR e da posição no PDF.
+- O catálogo inicial pode ser versionado em código; não criar tabelas Prisma para configuração estática antes de haver necessidade comprovada.
 
 **Não criar** tabelas permanentes de comprador, vendedor, documentos, OCR, nome da embarcação ou campos preenchidos. Evitar dados pessoais também em logs, filas, rastreamento de erros e backups. Lembrar que e-mail e dados de conta ainda são dados pessoais sob a LGPD.
 
@@ -144,8 +147,11 @@ Antes de mapear PDFs:
 - Criar projeto/containers, `.env.example`, scripts de typecheck/test/build, healthcheck e README.
 - **Validar:** subir containers, abrir frontend e obter `/health` da API.
 
-### Etapa B — Catálogo do único serviço
-- Registrar serviço-piloto, regras condicionais, arquivos oficiais e mapa dos campos versionados.
+### Etapa B — Catálogo reutilizável de serviços e formulários
+- Definir contratos independentes para serviços, modelos PDF, campos semânticos, requisitos documentais e relações muitos-para-muitos condicionais.
+- Manter serviço-piloto como rascunho até confirmar normas, jurisdição e PDFs oficiais. Registrar inventário em `docs/FORM_CATALOG.md` e matriz em `docs/SERVICE_FORM_MATRIX.md`.
+- Versionar modelo oficial e mapeamento separadamente, reaproveitando campos e motor de PDF entre serviços.
+- **Status:** contratos iniciais e documentos criados; conferência oficial e motor ainda pendentes.
 - **Validar:** seleção do serviço exibe checklist correto e arquivo PDF oficial corresponde à versão conferida.
 
 ### Etapa C — Upload temporário
