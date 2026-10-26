@@ -4,16 +4,17 @@ Os formulários são cadastrados e mapeados individualmente. **Só depois** o
 backend relaciona os serviços às versões oficiais verificadas; os serviços não
 são donos dos PDFs e não criam cópias nem mapeamentos próprios.
 
-**Estado em 26/10/2026:** pesquisa documental da Fase 01 concluída para o piloto.
-Nenhum PDF de formulário foi obtido, nenhuma `FormVersion` foi verificada, nenhum
-`FormMapping` foi aprovado e nenhum `ServiceForm` foi criado. O serviço continua
-`DRAFT`.
+**Estado em 26/10/2026:** pesquisa documental da Fase 01 concluída. Seis PDFs
+oficiais foram obtidos e verificados tecnicamente na Fase 02; as seis
+`FormVersion` estão registradas como `VERIFIED`/`STATIC`. Nenhum `FormMapping`
+foi aprovado e nenhum `ServiceForm` foi criado. O serviço continua `DRAFT` e o
+portão humano da Fase 02 ainda precisa ser confirmado.
 
 ## Serviço piloto
 
 | Serviço | ID | Formulários identificados | Versões ligadas | Condições | Situação |
 | --- | --- | --- | --- | --- | --- |
-| Transferência de propriedade de moto aquática | `transferencia-moto-aquatica` | 2-A e 2-B obrigatórios; 2-D condicional; 2-E opcional; 2-C e 1-C condicionais | Nenhuma | TIE, assinatura/reconhecimento, residência, representante e co-proprietário | `DRAFT` |
+| Transferência de propriedade de moto aquática | `transferencia-moto-aquatica` | 2-A e 2-B obrigatórios; 2-D condicional; 2-E opcional; 2-C e 1-C condicionais | Seis `v1` verificadas; nenhum `ServiceForm` | TIE, assinatura/reconhecimento, residência, representante e co-proprietário | `DRAFT` |
 
 ## Base normativa confirmada
 
@@ -47,17 +48,19 @@ Nenhum PDF de formulário foi obtido, nenhuma `FormVersion` foi verificada, nenh
 
 | Formulário | Anexo | ID lógico | Obrigação no piloto | `FormVersion` | `ServiceForm` |
 | --- | --- | --- | --- | --- | --- |
-| Requerimento para inscrição ou transferência de propriedade e/ou jurisdição de MA ou do seu proprietário | 2-A | `requerimento-ma` | Obrigatório | Nenhuma; PDF não obtido | Não criar antes da verificação |
-| Boletim de Dados de Moto Aquática (BDMOTO) | 2-B | `bdmoto` | Obrigatório, duas vias | Nenhuma; PDF não obtido | Não criar antes da verificação |
-| Autorização de Transferência de Propriedade | 2-D | `autorizacao-transferencia-ma` | Condicional: quando o TIE não trouxer autorização equivalente; assinatura/reconhecimento pelo usuário | Nenhuma; PDF não obtido | Não criar antes da verificação |
-| Comunicação de Transferência de Propriedade de MA | 2-E | `comunicacao-transferencia-ma` | Opcional (vendedor) | Nenhuma; PDF não obtido | Não criar antes da verificação |
-| Declaração de Perda, Roubo ou Extravio de TIE | 2-C | `declaracao-perda-tie-ma` | Condicional: TIE extraviado | Nenhuma; PDF não obtido | Não criar antes da verificação |
-| Declaração de Residência | 1-C | `declaracao-residencia-ma` | Condicional: alternativa ao comprovante | Nenhuma; PDF não obtido | Não criar antes da verificação |
+| Requerimento para inscrição ou transferência de propriedade e/ou jurisdição de MA ou do seu proprietário | 2-A | `requerimento-ma` | Obrigatório | `requerimento-ma-v1`, `VERIFIED`/`STATIC` | Nenhum; só após mapeamento aprovado |
+| Boletim de Dados de Moto Aquática (BDMOTO) | 2-B | `bdmoto` | Obrigatório, duas vias | `bdmoto-v1`, `VERIFIED`/`STATIC` | Nenhum; só após mapeamento aprovado |
+| Autorização de Transferência de Propriedade | 2-D | `autorizacao-transferencia-ma` | Condicional: quando o TIE não trouxer autorização equivalente; assinatura/reconhecimento pelo usuário | `autorizacao-transferencia-ma-v1`, `VERIFIED`/`STATIC` (extrato da NORMAM) | Nenhum; só após mapeamento aprovado |
+| Comunicação de Transferência de Propriedade de MA | 2-E | `comunicacao-transferencia-ma` | Opcional (vendedor) | `comunicacao-transferencia-ma-v1`, `VERIFIED`/`STATIC` (extrato da NORMAM) | Nenhum; só após mapeamento aprovado |
+| Declaração de Perda, Roubo ou Extravio de TIE | 2-C | `declaracao-perda-tie-ma` | Condicional: TIE extraviado | `declaracao-perda-tie-ma-v1`, `VERIFIED`/`STATIC` | Nenhum; só após mapeamento aprovado |
+| Declaração de Residência | 1-C | `declaracao-residencia-ma` | Condicional: alternativa ao comprovante | `declaracao-residencia-ma-v1`, `VERIFIED`/`STATIC` | Nenhum; só após mapeamento aprovado |
 
 O **anexo 3-D é da CHA de Motonauta**, não do TIE. A citação ao 3-D no 2.4.1(a)
 está registrada como divergência no catálogo; não usar o 3-D para transferência.
 Também não usar formulários antigos da NORMAM-34/DPC que tenham numeração
-diferente.
+diferente. O candidato standalone da CPRS para o 2-E foi descartado porque seu
+título interno é **ANEXO 2-F**; o 2-E usado foi extraído da NORMAM-212/DPC 2026,
+página 84.
 
 ## Perguntas condicionais previstas
 
@@ -108,16 +111,22 @@ condicional.
 
 ## Gate para a Fase 02
 
-A próxima fase é o **portão humano dos PDFs**. O catálogo lista os modelos
-P0/P1/P2 e os links oficiais; nenhum arquivo foi baixado. Depois que o usuário
-disponibilizar os PDFs, o agente deve:
+O **portão humano dos PDFs** está em andamento. Os seis arquivos oficiais já
+foram baixados e verificados; o serviço continua `DRAFT`. O agente deve:
 
-1. inspecionar bytes, assinatura `%PDF`, páginas, dimensões, metadados e tipo;
-2. registrar `FormVersion` com URL, data, SHA-256, revisão oficial e caminho;
+1. ~~inspecionar bytes, assinatura `%PDF`, páginas, dimensões, metadados e tipo~~
+   — concluído em 26/10/2026;
+2. ~~registrar `FormVersion` com URL, data, SHA-256, revisão oficial e caminho~~
+   — concluído no catálogo em código;
 3. manter `FormMapping` separado e só aprovar após renderização com dados
-   fictícios e revisão visual humana;
-4. criar `ServiceForm` apenas para versões verificadas e mapeamentos aprovados;
-5. manter o serviço `DRAFT` até todos os requisitos estarem completos.
+   fictícios e revisão visual humana — pendente para a Fase 04;
+4. criar `ServiceForm` apenas para versões verificadas e mapeamentos aprovados
+   — pendente;
+5. manter o serviço `DRAFT` até todos os requisitos estarem completos — mantido.
+
+**Pendência do portão:** confirmação humana de que os PDFs e as fontes estão
+corretos. Depois da confirmação, a Fase 02 pode ser encerrada; a Fase 03 só
+começa com autorização e a Fase 04 é a responsável pelo mapeamento visual.
 
 ## Evolução
 

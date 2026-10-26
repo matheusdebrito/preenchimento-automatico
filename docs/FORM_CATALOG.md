@@ -1,13 +1,14 @@
 # Catálogo de formulários oficiais (independente de serviços)
 
-**Estado:** pesquisa normativa da Fase 01 concluída em 26/10/2026. Nenhum PDF
-de formulário oficial foi obtido, armazenado ou homologado no repositório;
-nenhuma `FormVersion` ou `FormMapping` foi criada. O serviço piloto permanece
-`DRAFT`.
+**Estado:** pesquisa normativa da Fase 01 concluída em 26/10/2026. Na Fase 02,
+seis PDFs oficiais foram obtidos e verificados tecnicamente em 26/10/2026; as
+respectivas `FormVersion` foram registradas como `VERIFIED`/`STATIC` no catálogo
+em código. Nenhum `FormMapping` ou `ServiceForm` foi criado. O serviço piloto
+permanece `DRAFT`, e o portão humano da Fase 02 ainda precisa ser confirmado.
 
 O cadastro dos formulários é independente de transferência, renovação, inscrição
-ou qualquer outro serviço. Os IDs e nomes abaixo são candidatos de identidade
-lógica; não são prova de que o PDF correspondente já esteja disponível.
+ou qualquer outro serviço. Os IDs e nomes abaixo identificam a identidade lógica
+do documento; o PDF e a versão correspondente estão registrados na seção 3.1.
 
 ## 1. Escopo e fontes verificadas
 
@@ -97,16 +98,16 @@ Base: NORMAM-212/DPC 2026, item **2.4.1**, páginas 2-4 e 2-5.
 - O sistema não protocola o processo na Marinha. O usuário paga a GRU, entrega
   os documentos e acompanha o processo nos canais oficiais.
 
-## 3. Formulários candidatos
+## 3. Formulários identificados
 
-| Anexo | Nome oficial | ID lógico proposto | Uso no serviço | Obrigação | PDF no repositório |
+| Anexo | Nome oficial | ID lógico | Uso no serviço | Obrigação | PDF no repositório |
 | --- | --- | --- | --- | --- | --- |
-| 2-A | Requerimento para inscrição ou transferência de propriedade e/ou jurisdição de moto aquática ou do seu proprietário | `requerimento-ma` | Requerimento do adquirente | Obrigatório | Não obtido |
-| 2-B | Boletim de Dados de Moto Aquática (BDMOTO) | `bdmoto` | Dados da MA, do requerente e da venda; emitido em duas vias | Obrigatório | Não obtido |
-| 2-D | Autorização de Transferência de Propriedade | `autorizacao-transferencia-ma` | Autorização do proprietário/co-proprietário, com firmas reconhecidas | Condicional: exigido quando o TIE digital/antigo sem validade não trouxer autorização equivalente; assinatura/reconhecimento pelo usuário | Não obtido |
-| 2-E | Comunicação de Transferência de Propriedade de Moto Aquática | `comunicacao-transferencia-ma` | Comunicação do vendedor para reduzir risco de multa | Opcional | Não obtido |
-| 2-C | Declaração de Perda, Roubo ou Extravio de Título de Inscrição de Embarcação | `declaracao-perda-tie-ma` | Alternativa quando o TIE foi extraviado | Condicional | Não obtido |
-| 1-C | Declaração de Residência | `declaracao-residencia-ma` | Alternativa quando não há comprovante de residência | Condicional | Não obtido |
+| 2-A | Requerimento para inscrição ou transferência de propriedade e/ou jurisdição de moto aquática ou do seu proprietário | `requerimento-ma` | Requerimento do adquirente | Obrigatório | Sim, `v1` (`VERIFIED`, `STATIC`) |
+| 2-B | Boletim de Dados de Moto Aquática (BDMOTO) | `bdmoto` | Dados da MA, do requerente e da venda; emitido em duas vias | Obrigatório | Sim, `v1` (`VERIFIED`, `STATIC`) |
+| 2-D | Autorização de Transferência de Propriedade | `autorizacao-transferencia-ma` | Autorização do proprietário/co-proprietário, com firmas reconhecidas | Condicional: exigido quando o TIE digital/antigo sem validade não trouxer autorização equivalente; assinatura/reconhecimento pelo usuário | Sim, `v1` (`VERIFIED`, `STATIC`), extraído da NORMAM |
+| 2-E | Comunicação de Transferência de Propriedade de Moto Aquática | `comunicacao-transferencia-ma` | Comunicação do vendedor para reduzir risco de multa | Opcional | Sim, `v1` (`VERIFIED`, `STATIC`), extraído da NORMAM |
+| 2-C | Declaração de Perda, Roubo ou Extravio de Título de Inscrição de Embarcação | `declaracao-perda-tie-ma` | Alternativa quando o TIE foi extraviado | Condicional | Sim, `v1` (`VERIFIED`, `STATIC`) |
+| 1-C | Declaração de Residência | `declaracao-residencia-ma` | Alternativa quando não há comprovante de residência | Condicional | Sim, `v1` (`VERIFIED`, `STATIC`) |
 
 **IDs independentes de serviço:** `requerimento-ma` e `bdmoto` são formulários
 de uso mais amplo e não devem ser renomeados ou duplicados por serviço. Os demais
@@ -114,6 +115,40 @@ IDs representam a identidade do formulário, não uma pasta de serviço.
 
 **Excluído:** o **anexo 3-D** trata de extravio/furto/roubo/dano da **CHA de
 Motonauta**, não do TIE. Não usar o 3-D como declaração de perda do TIE.
+
+### 3.1 Arquivos verificados e versões registradas
+
+Verificação de 26/10/2026: todos os arquivos têm assinatura `%PDF`, não estão
+criptografados, não possuem campos AcroForm e foram classificados como `STATIC`.
+As páginas foram renderizadas para conferência visual. O PDF completo da
+NORMAM-212 permaneceu fora do repositório; somente os anexos abaixo foram
+versionados, em `backend/templates/<form-id>/v1/original.pdf`.
+
+| ID / versão | Anexo | Origem do arquivo | Páginas / bytes | SHA-256 | Caminho no repositório |
+| --- | --- | --- | --- | --- | --- |
+| `requerimento-ma-v1` | 2-A | PDF standalone 2026 da CPPE; comparado visualmente com a NORMAM, p. 75 | 1 / 25.510 | `0E0CE9A72BE328C722D0D8C6CCB5C028E1B0881119D8A8A743BC52AA88CBFB5E` | `backend/templates/requerimento-ma/v1/original.pdf` |
+| `bdmoto-v1` | 2-B | PDF standalone 2026 da CPPE; comparado visualmente com a NORMAM, p. 76-77 | 2 / 31.891 | `BBCC6E0FA261BE82C30FBD280697E83E750DA82B5CFB88647BA27748F0973318` | `backend/templates/bdmoto/v1/original.pdf` |
+| `autorizacao-transferencia-ma-v1` | 2-D | Extraído do PDF oficial da NORMAM-212/DPC 2026, p. 81-82 | 2 / 1.088.148 | `1E3855A0F6151481032E01823EE38985D69BAB68606A33C201ACEF0E1D2B8ED3` | `backend/templates/autorizacao-transferencia-ma/v1/original.pdf` |
+| `comunicacao-transferencia-ma-v1` | 2-E | Extraído do PDF oficial da NORMAM-212/DPC 2026, p. 84 | 1 / 1.086.868 | `3CE8A920F8E77A10105973B1B0CF74CD7A48A34B3F449496B2CC9D89E97B0419` | `backend/templates/comunicacao-transferencia-ma/v1/original.pdf` |
+| `declaracao-perda-tie-ma-v1` | 2-C | PDF standalone 2026 da DelGuaira; comparado visualmente com a NORMAM, p. 79 | 1 / 37.562 | `A0F2464E4743AA5C60813066C16524FE2B8FDA2E67F78A6FF6472120B9BCE3EB` | `backend/templates/declaracao-perda-tie-ma/v1/original.pdf` |
+| `declaracao-residencia-ma-v1` | 1-C | PDF standalone 2026 da CPPE; comparado visualmente com a NORMAM, p. 73 | 1 / 37.274 | `F75612D57F5D6C884D43107F17F0FB3F52B43B5A34BFAA351C6E717C26EA5782` | `backend/templates/declaracao-residencia-ma/v1/original.pdf` |
+
+**Observações de origem:**
+
+- Os quatro PDFs standalone acima são de março de 2026 e visualmente
+  correspondem aos anexos da NORMAM-212/DPC 2026. A extração de texto apresenta
+  pequenas diferenças de codificação de fonte, mas o conteúdo, os campos e o
+  layout conferem.
+- O 2-D foi extraído em duas páginas: a página 1 contém a autorização e as
+  assinaturas/reconhecimentos; a página 2 contém a nota oficial e a referência
+  ao anexo 2-E. O texto e as dimensões das páginas extraídas coincidem com as
+  páginas de origem.
+- O 2-E foi extraído de uma única página. O candidato standalone da CPRS foi
+  baixado e descartado: seu título interno é **ANEXO 2-F**, de numeração antiga,
+  e não corresponde ao 2-E da NORMAM-212/DPC 2026.
+- Nenhuma versão foi marcada como `APPROVED`; `FormVersion = VERIFIED` significa
+  apenas que o PDF e os metadados foram conferidos, não que o preenchimento
+  esteja homologado.
 
 ## 4. Documentos de origem do usuário
 
@@ -171,47 +206,49 @@ Registradas para não serem resolvidas por suposição:
    transferência; a página do gov.br lista “TRANSFERENCIA DE PROPRIEDADE” por
    R$ 36,00. Confirmar o código/valor na tabela vigente.
 5. Alguns sítios de CP/DL/AG ainda publicam formulários da antiga NORMAM-34/DPC
-   com outra numeração (por exemplo, 2-E como autorização e 2-F como
-   comunicação). **Não usar** arquivos antigos; conferir sempre contra a edição
-   2026 da NORMAM-212.
+   com outra numeração. O candidato standalone da CPRS para o 2-E foi conferido
+   e **descartado**: o título interno é **ANEXO 2-F** e a numeração não
+   corresponde à edição 2026. **Não usar** arquivos antigos; conferir sempre
+   contra a edição 2026 da NORMAM-212.
 6. O 2-D traz prazo de 15 dias para embarcações registradas e 60 dias para
    inscritas. A MA do piloto é inscrita em CP/DL/AG; aplicar 60 dias, sem
    inventar registro no Tribunal Marítimo.
 
 ## 7. Checklist de downloads para a Fase 02
 
-**Não baixar antecipadamente todos os modelos.** A Fase 02 é o portão humano:
-o usuário confirma os arquivos e o agente só então verifica bytes, páginas,
-hash, versão e campos. Nenhum PDF desta lista está no repositório.
+**Arquivos baixados e inspecionados em 26/10/2026**, com autorização do usuário.
+A Fase 02 permanece aberta até a confirmação humana do portão; os arquivos já
+estão nos caminhos definitivos e as `FormVersion` foram registradas no catálogo
+em código.
 
 Legenda: **P0** = necessário ao fluxo principal; **P1** = condicional/opcional;
 **P2** = alternativa de residência.
 
-| Prioridade | Formulário / ID | Anexo | Fonte oficial de referência | Destino sugerido | Condição |
+| Prioridade | Formulário / ID | Anexo | Fonte oficial de referência | Destino verificado | Condição |
 | --- | --- | --- | --- | --- | --- |
-| P0 | `requerimento-ma` | 2-A | [PDF 2026 da CPPE](<https://assets.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-212(REQUERIMENTO%20EMBARCA%C3%87%C3%83O).pdf>) | `backend/templates/requerimento-ma/v1/original.pdf` | Obrigatório |
-| P0 | `bdmoto` | 2-B | [PDF 2026 da CPPE](<https://assets.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-212(BDMOTO).pdf>) | `backend/templates/bdmoto/v1/original.pdf` | Obrigatório |
-| P0 | `autorizacao-transferencia-ma` | 2-D | NORMAM-212/DPC 2026, página 2-D-1 (PDF oficial acima); não foi localizado PDF standalone atual inequívoco | `backend/templates/autorizacao-transferencia-ma/v1/original.pdf` | P0 quando o TIE não trouxer autorização equivalente; PDF standalone a confirmar |
-| P1 | `comunicacao-transferencia-ma` | 2-E | NORMAM-212/DPC 2026, página 2-E-1; candidato oficial da CPRS: [PDF](https://assets.marinha.mil.br/cprs/sites/www.marinha.mil.br.cprs/files/COMUNICACAO%20DE%20TRANSFERENCIA%20DE%20PROPRIEDADE%20-%20NORMAM-212.pdf) | `backend/templates/comunicacao-transferencia-ma/v1/original.pdf` | Opcional (vendedor) |
-| P1 | `declaracao-perda-tie-ma` | 2-C | [PDF 2026 da DelGuaira](https://assets.marinha.mil.br/delguaira/sites/www.marinha.mil.br.delguaira/files/2026-03/Declara%C3%A7%C3%A3o%20de%20extarvio%20MA%20Anexo-2C.pdf) | `backend/templates/declaracao-perda-tie-ma/v1/original.pdf` | Condicional: TIE extraviado; confirmar divergência 3-D |
-| P2 | `declaracao-residencia-ma` | 1-C | [PDF 2026 da CPPE](<https://assets.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-212(DECLARA%C3%87%C3%83O%20DE%20RESIDENCIA).pdf>) | `backend/templates/declaracao-residencia-ma/v1/original.pdf` | Alternativa ao comprovante de residência |
+| P0 | `requerimento-ma` | 2-A | [PDF 2026 da CPPE](<https://assets.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-212(REQUERIMENTO%20EMBARCA%C3%87%C3%83O).pdf>) | `backend/templates/requerimento-ma/v1/original.pdf` | Obrigatório; `VERIFIED` |
+| P0 | `bdmoto` | 2-B | [PDF 2026 da CPPE](<https://assets.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-212(BDMOTO).pdf>) | `backend/templates/bdmoto/v1/original.pdf` | Obrigatório, duas vias; `VERIFIED` |
+| P0 | `autorizacao-transferencia-ma` | 2-D | NORMAM-212/DPC 2026, p. 81-82 (PDF oficial acima); extraído, pois não há standalone atual inequívoco | `backend/templates/autorizacao-transferencia-ma/v1/original.pdf` | P0 quando o TIE não trouxer autorização equivalente; `VERIFIED` |
+| P1 | `comunicacao-transferencia-ma` | 2-E | NORMAM-212/DPC 2026, p. 84; extraído. O candidato da CPRS é o antigo **2-F** e foi descartado | `backend/templates/comunicacao-transferencia-ma/v1/original.pdf` | Opcional (vendedor); `VERIFIED` |
+| P1 | `declaracao-perda-tie-ma` | 2-C | [PDF 2026 da DelGuaira](https://assets.marinha.mil.br/delguaira/sites/www.marinha.mil.br.delguaira/files/2026-03/Declara%C3%A7%C3%A3o%20de%20extarvio%20MA%20Anexo-2C.pdf) | `backend/templates/declaracao-perda-tie-ma/v1/original.pdf` | Condicional: TIE extraviado; confirmar divergência 3-D; `VERIFIED` |
+| P2 | `declaracao-residencia-ma` | 1-C | [PDF 2026 da CPPE](<https://assets.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-212(DECLARA%C3%87%C3%83O%20DE%20RESIDENCIA).pdf>) | `backend/templates/declaracao-residencia-ma/v1/original.pdf` | Alternativa ao comprovante de residência; `VERIFIED` |
 
 **Não solicitar:** anexo 3-D (CHA), formulários antigos da NORMAM-34/DPC, DPEM,
-vistoria/CSN e modelos de outros serviços. Se o usuário não tiver o PDF
-standalone do 2-D, a Fase 02 deve confirmar com a CP/DL/AG ou usar o PDF oficial
-completo da NORMAM-212 como fonte, **sem recortar, redesenhar ou substituir** o
-conteúdo oficial.
+vistoria/CSN e modelos de outros serviços. O 2-D e o 2-E são extratos de páginas
+inteiras do PDF oficial da NORMAM-212/DPC 2026; não foram redesenhados nem
+substituídos. O PDF completo da norma não foi versionado.
 
-## 8. O que ainda não foi criado
+## 8. O que já foi criado e o que ainda falta
 
-- Nenhuma `FormVersion`: sem PDF não há hash, páginas, tipo (`ACROFORM`,
-  `STATIC` ou `UNKNOWN`) nem status `VERIFIED`.
-- Nenhum `FormMapping`: sem PDF e sem renderização com dados sintéticos não há
-  coordenadas, campos AcroForm, relatório ou revisão visual.
-- Nenhum `ServiceForm`: o serviço não é associado a versões ainda; o catálogo
-  em código permanece conservador, com `forms`, `versions`, `mappings` e
-  `serviceForms` vazios.
-- Nenhuma alteração de status para `AVAILABLE`; o piloto continua `DRAFT`.
+- **Criado:** seis `FormDefinition` e seis `FormVersion` no catálogo em código,
+  todas com `status = VERIFIED`, `pdfKind = STATIC`, hash, fonte, data e caminho
+  verificado. Não há `FormMapping` nem `ServiceForm`.
+- **Falta:** aprovação de `FormMapping` na Fase 04, com coordenadas, relatório
+  por formulário/versão e renderização de todas as páginas com dados sintéticos.
+- **Falta:** associação `ServiceForm` e liberação do serviço; o piloto continua
+  `DRAFT` e não gera documento para usuário real.
+- **Fora de escopo desta fase:** assinatura, reconhecimento de firma, GRU,
+  protocolo na Marinha e qualquer promessa de aceitação oficial.
 
 ## 9. Critérios de aprovação (Fases 02 e 04)
 

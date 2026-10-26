@@ -46,6 +46,8 @@ Cada PDF oficial terá diretório independente em
 oficial imutável; `FormMapping`, o mapeamento técnico versionado;
 `ServiceForm`, a associação com um ou vários serviços.
 
-Nenhum PDF oficial foi cadastrado neste momento. A interface atual
-é uma demonstração e não faz upload, OCR nem gera arquivos reais.
-A liberação do serviço piloto depende de fontes oficiais e revisão humana.
+Seis PDFs oficiais do piloto foram cadastrados e verificados na Fase 02.
+Eles estão em `backend/templates/<form-id>/v1/original.pdf`; o 2-D e o 2-E
+são extratos de páginas da NORMAM-212/DPC 2026. A interface atual é uma
+demonstração e não faz upload, OCR nem gera arquivos reais. A liberação do
+serviço piloto depende do mapeamento aprovado e de revisão humana.

@@ -44,11 +44,14 @@ function sharedFormFixture(): CatalogDefinition {
 }
 
 describe('catálogo reutilizável de formulários', () => {
-  it('mantém o piloto em DRAFT, sem PDFs supostamente homologados', () => {
+  it('mantém o piloto em DRAFT e registra versões verificadas sem mapeamento', () => {
     expect(catalog.services[0]?.status).toBe('DRAFT');
-    expect(catalog.forms).toEqual([]);
-    expect(catalog.versions).toEqual([]);
+    expect(catalog.forms).toHaveLength(6);
+    expect(catalog.versions).toHaveLength(6);
+    expect(catalog.versions.every((version) => version.status === 'VERIFIED')).toBe(true);
+    expect(catalog.versions.every((version) => version.pdfKind === 'STATIC')).toBe(true);
     expect(catalog.mappings).toEqual([]);
+    expect(catalog.serviceForms).toEqual([]);
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
