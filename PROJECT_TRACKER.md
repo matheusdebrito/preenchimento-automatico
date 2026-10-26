@@ -38,8 +38,8 @@
 
 | Fase | Objetivo | Dependência | Situação |
 | --- | --- | --- | --- |
-| 00 | Revalidar fundação existente | — | [ ] |
-| 01 | Catalogar serviço e modelos exigidos | 00 | [ ] |
+| 00 | Revalidar fundação existente | — | [x] |
+| 01 | Catalogar serviço e modelos exigidos | 00 | [x] |
 | 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [ ] |
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [ ] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] |
@@ -58,24 +58,24 @@
 | 17 | Lançamento controlado e acompanhamento | 16 e autorização explícita | [ ] |
 | 18 | Expansão incremental de serviços | 17 e decisão por serviço | [ ] |
 
-> **Estado inicial conhecido em 26/10/2026:** frontend demonstrativo, API Fastify com healthcheck, Compose/PostgreSQL e contratos preliminares de catálogo foram adicionados ao repositório. Esses fatos **não significam** aprovação de build/testes nem homologação dos PDFs. A Fase 00 deverá verificar o estado local real antes de qualquer [x].
+> **Estado inicial conhecido em 26/10/2026:** frontend demonstrativo, API Fastify com healthcheck, Compose/PostgreSQL e contratos preliminares de catálogo foram adicionados ao repositório. Esses fatos **não significam** aprovação de build/testes nem homologação dos PDFs. A Fase 00 foi executada localmente e registrada abaixo em 26/10/2026; a Fase 01 também foi registrada na mesma data, com pesquisa normativa concluída e **sem PDFs oficiais obtidos**. O registro contém as evidências verificáveis.
 
 ## Fase 00 — Revalidar a fundação existente
 
-- [ ] Inspecionar frontend, backend, Compose, versões, lockfiles, testes, alterações locais e instruções vigentes.
-- [ ] Executar `typecheck`, `lint`, `test` e `build` em frontend e backend; documentar comandos e resultados.
-- [ ] Verificar funcionamento do frontend demonstrativo e `GET /health` em ambiente local, se disponível.
-- [ ] Revisar riscos imediatos e inconsistências antes de evoluir.
+- [x] Inspecionar frontend, backend, Compose, versões, lockfiles, testes, alterações locais e instruções vigentes.
+- [x] Executar `typecheck`, `lint`, `test` e `build` em frontend e backend; documentar comandos e resultados.
+- [x] Verificar funcionamento do frontend demonstrativo e `GET /health` em ambiente local, se disponível.
+- [x] Revisar riscos imediatos e inconsistências antes de evoluir.
 - **Aceite:** evidências registradas, erros introduzidos/identificados bloqueantes resolvidos; demonstração preservada.
 
 ## Fase 01 — Pesquisa documental e regras do serviço
 
-- [ ] Verificar a **NORMAM-212/DPC vigente** e as orientações da Capitania/jurisdição aplicável; registrar links, data, versão e particularidades.
-- [ ] Identificar exatamente os formulários aplicáveis à **transferência de propriedade de moto aquática**, distinguindo obrigatórios, condicionais e **documentos de origem do usuário** (não confundir com modelos em branco).
-- [ ] Atualizar `docs/FORM_CATALOG.md` e `docs/SERVICE_FORM_MATRIX.md` com evidências oficiais, perguntas condicionais e pendências.
-- [ ] Conferir `FormDefinition`, `FormVersion`, `FormMapping`, `FieldDefinition` e `ServiceForm`, mantendo cada formulário independente de serviços.
-- [ ] Para cada candidato, procurar um formulário/versão já cadastrado e reutilizá-lo; não criar cópias por categoria ou serviço.
-- [ ] Gerar **checklist de downloads pendentes**: nome oficial, código/anexo, finalidade, link oficial direto ou página de origem, formato e nome de arquivo sugerido.
+- [x] Verificar a **NORMAM-212/DPC vigente** e as orientações da Capitania/jurisdição aplicável; registrar links, data, versão e particularidades. A edição 2026 foi conferida no PDF oficial; o item 2.4.1 permite qualquer CP/DL/AG e não foi identificada exigência nacional específica de jurisdição. Particularidades operacionais locais só serão tratadas após a unidade ser escolhida.
+- [x] Identificar exatamente os formulários aplicáveis à **transferência de propriedade de moto aquática**, distinguindo obrigatórios, condicionais e **documentos de origem do usuário** (não confundir com modelos em branco). Ver `docs/FORM_CATALOG.md`.
+- [x] Atualizar `docs/FORM_CATALOG.md` e `docs/SERVICE_FORM_MATRIX.md` com evidências oficiais, perguntas condicionais e pendências.
+- [x] Conferir `FormDefinition`, `FormVersion`, `FormMapping`, `FieldDefinition` e `ServiceForm`, mantendo cada formulário independente de serviços. Os contratos atuais suportam o modelo; nenhuma versão ou vínculo foi criado sem PDF verificado.
+- [x] Para cada candidato, procurar um formulário/versão já cadastrado e reutilizá-lo; não criar cópias por categoria ou serviço. O catálogo em código permaneceu vazio; os IDs candidatos foram documentados sem criar `FormVersion`.
+- [x] Gerar **checklist de downloads pendentes**: nome oficial, código/anexo, finalidade, link oficial direto ou página de origem, formato e nome de arquivo sugerido. Ver seção 7 de `docs/FORM_CATALOG.md`.
 - **Aceite:** matriz sustentada por fontes verificáveis; nenhuma exigência sem referência; lista de PDFs pronta para apresentar ao usuário.
 
 ## Fase 02 — PORTÃO OBRIGATÓRIO: solicitar e validar os PDFs oficiais
@@ -245,6 +245,64 @@
 | --- | --- | --- | --- | --- |
 | 2026-10-26 | Inicialização | Plano criado; nenhuma fase certificada | Estado anterior conhecido apenas pelo histórico do repositório; verificar no ambiente OpenCode | — |
 | 2026-10-26 | Auditoria de arquitetura (fora das fases) | Contratos e documentação corrigidos; nenhuma fase integralmente certificada | Formulário/versão/mapeamento separados; testes sintéticos. GitHub Actions CI [40382726714](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40382726714): backend e frontend com `npm ci`, `npm audit --omit=dev --audit-level=high`, typecheck, lint, testes e build **aprovados**. Docker Compose, navegação manual e arquivos oficiais ainda não verificados nesta auditoria. | Commits de 26/10/2026; continuar Fase 00 localmente |
+| 2026-10-26 | 00 — Revalidar fundação | CONCLUÍDA | Inspeção de git/estrutura/versões; backend: `npm ci`, audit 0, typecheck, lint, 22 testes e build; frontend: `npm ci` (229 pacotes após encerrar Vite que travava um binário), audit 0, typecheck, lint, 20 testes e build; Compose build/up com API, PostgreSQL e frontend `healthy`; smoke HTTP, CORS, headers e isolamento; fluxo demonstrativo completo e Lighthouse 1.0. | Base `dcaad28`; sem bloqueio |
+| 2026-10-26 | 01 — Pesquisa documental | CONCLUÍDA (pesquisa; sem PDFs) | NORMAM-212/DPC 2026 conferida no PDF oficial (112 páginas; SHA-256 `A10CEDAB96556B9747AC43B5F3F8CB79637DB365071A1609F75181852C5A90A0`); item 2.4.1 e anexos 1-C, 2-A a 2-E lidos; página do gov.br conferida; formulários e documentos de origem separados; checklist P0/P1/P2 criado; nenhum PDF baixado para o repositório. | Commit local na branch `docs/fases-00-01`; não enviado. Fase 02 é o portão humano dos PDFs |
+
+### Relatório da Fase 00 — 26/10/2026
+
+**Status:** CONCLUÍDA.
+
+**Ambiente:** Windows; Node.js `24.21.0`; npm `11.19.0`; Docker `29.8.2`; Docker Compose `5.5.1`; branch `main`; base `dcaad28`; árvore limpa no início.
+
+**Alterações desta fase:** somente `PROJECT_TRACKER.md` e `README.md` (registro documental). Nenhuma alteração funcional, dependência ou configuração de runtime.
+
+**Validações reais:**
+- Backend: `npm ci` (188 pacotes), `npm audit --omit=dev --audit-level=high` (0 vulnerabilidades), `typecheck`, `lint`, `npm test` (3 arquivos, 22 testes) e `build` — todos aprovados.
+- Frontend: `npm ci` (229 pacotes; a primeira tentativa falhou porque um servidor Vite mantinha um binário aberto), `npm audit --omit=dev --audit-level=high` (0 vulnerabilidades), `typecheck`, `lint`, `npm test` (6 arquivos, 20 testes) e `build` — todos aprovados. Artefatos: JS 277,03 kB (88,21 kB gzip), CSS 31,33 kB (6,07 kB gzip).
+- Docker: `docker compose config` válido; `docker compose build` e `docker compose up -d --wait` concluídos; API, PostgreSQL e frontend `healthy`.
+- HTTP: `/health` 200 JSON; `/` e `/preencher/servico` 200; `/healthz` 200; `/robots.txt` 200; asset inexistente 404; rota desconhecida da API 404 JSON; CORS libera `http://127.0.0.1:8080` e bloqueia origem não autorizada; headers de segurança presentes.
+- Containers: API `user=node`, frontend `user=101`, ambos `read_only`, `cap_drop=ALL` e `no-new-privileges`; PostgreSQL sem porta publicada no host.
+- Navegação manual no frontend em `http://127.0.0.1:8080`: início → serviço → documentos (dados de exemplo) → leitura → conferência → download. A validação bloqueou CEP e número do motor ausentes, aceitou dados sintéticos após preenchimento e exibiu a prévia de download sem erros no console. Nenhum documento real foi enviado.
+- Lighthouse na home: acessibilidade 1,0; boas práticas 1,0; SEO 1,0.
+
+**Segurança e privacidade:** o fluxo permanece demonstrativo e local; nenhum arquivo, dado pessoal, OCR ou PDF foi enviado/persistido. O `.env` local está ignorado. Permanecem como riscos residuais: CSP `connect-src 'self'` exigirá proxy same-origin ou ajuste explícito quando a API for integrada; `/health` é apenas liveness; o CI não constrói imagens Docker; e a validação visual de 360/768/1440 px deve ser repetida na fase de QA/homologação.
+
+**Pendência para o usuário:** nenhuma para concluir a Fase 00.
+
+**Próxima fase elegível:** 01 — pesquisa documental e regras do serviço. Não iniciar sem autorização; a Fase 02 continua sendo o portão humano dos PDFs oficiais.
+
+### Relatório da Fase 01 — 26/10/2026
+
+**Status:** CONCLUÍDA (pesquisa documental; nenhum PDF oficial foi baixado para o repositório).
+
+**Fontes verificadas:**
+- NORMAM-212/DPC 2026, PDF oficial em `https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-212.pdf`; 112 páginas; 1.492.857 bytes; SHA-256 `A10CEDAB96556B9747AC43B5F3F8CB79637DB365071A1609F75181852C5A90A0`; acesso em 26/10/2026. O arquivo foi lido em diretório temporário do sistema e não entrou no repositório.
+- Folha de registro de modificações da edição 2026: modificação 6 pela Portaria DPC/DGN/MB nº 201, de 27/02/2026, com efeito em 04/03/2026.
+- Página do serviço no gov.br (`.../solicitar-inscricao-transferencia-de-propriedade-e-ou-jurisdicao-titulos-e-certidoes-de-embarcacoes`), última modificação em 15/12/2025; atendimento em CP/DL/AG; taxa de R$ 36,00 para transferência de propriedade de embarcação.
+- Anexos oficiais 2026 localizados em sítios de CP/DL/AG: 2-A, 2-B e 2-C, além do 1-C; o 2-D e o 2-E foram conferidos no PDF oficial da NORMAM-212. Links e destinos estão no checklist da Fase 02.
+
+**Regras confirmadas (NORMAM-212/DPC 2026, 2.4.1):**
+- Requerimento pelo novo adquirente, via BDMOTO (2-B), em até 60 dias para MA inscrita em CP/DL/AG.
+- 2-D com firmas do comprador e do vendedor reconhecidas por autenticidade; 2-E é comunicação opcional do vendedor.
+- Documentos do rol: TIE; autorização; BDMOTO; procuração/identificação do outorgado quando aplicável; comprovante de residência; identificação com foto e CPF/CNPJ; duas fotos (popa e través); comprovante da GRU.
+- O 2.4.1 não exige DPEM, vistoria, CSN ou nota fiscal autônoma. O BDMOTO pede dados da nota/venda, mas isso não amplia o rol.
+- O sistema só gera minuta do 2-D; não substitui assinatura, reconhecimento de firma, pagamento da GRU ou protocolo.
+- A transferência pode ser requerida em qualquer CP/DL/AG; não foi identificada jurisdição obrigatória. Exigências operacionais locais não foram generalizadas.
+- O piloto permanece `DRAFT`; nenhuma `FormVersion`, `FormMapping` ou `ServiceForm` foi criada.
+
+**Formulários identificados:** 2-A (`requerimento-ma`) e 2-B (`bdmoto`) obrigatórios; 2-D (`autorizacao-transferencia-ma`) condicional, exigido quando o TIE não trouxer autorização equivalente; 2-E (`comunicacao-transferencia-ma`) opcional; 2-C (`declaracao-perda-tie-ma`) condicional para TIE extraviado; 1-C (`declaracao-residencia-ma`) condicional como alternativa de comprovante. O 3-D foi excluído por tratar da CHA de Motonauta.
+
+**Divergências registradas:** 2.4.1(a) cita 3-D para perda do TIE, mas o modelo próprio é 2-C; 2.4.1 cita “anexo 2-S”, inexistente, quando o modelo é 2-E; a nota do 2-D cita “artigo 2.11”, mas a transferência está no 2.4.1; o 2.4.1(h) menciona GRU de inscrição, enquanto o gov.br lista transferência; alguns sítios ainda publicam formulários antigos da NORMAM-34/DPC com outra numeração. Todas as divergências estão em `docs/FORM_CATALOG.md` e devem ser confirmadas com a CP/DL/AG, sem suposição.
+
+**Alterações desta fase:** `docs/FORM_CATALOG.md`, `docs/SERVICE_FORM_MATRIX.md`, `PROJECT_TRACKER.md` e `README.md`; nenhuma alteração funcional, dependência, PDF ou dado real.
+
+**Validações reais:** PDF oficial baixado apenas para leitura e convertido em texto no diretório temporário; item 2.4.1 e anexos 1-C/2-A a 2-E conferidos no índice e no texto do PDF; verificação HEAD dos links oficiais: NORMAM, 2-A, 2-B, 2-C, 2-E e 1-C responderam `200 OK` com `Content-Type: application/pdf` (o link inicial do 1-C com `+` retornou 404 e foi corrigido para `%20`); `git diff --check` sem erros; `backend/templates` contém somente o `README.md`, sem PDF; `git status` mostra apenas alterações documentais. Não houve teste de código porque não houve alteração de código.
+
+**Segurança e privacidade:** nenhum documento pessoal, upload, OCR, PDF preenchido ou dado de cliente foi usado. O PDF público da norma ficou fora do repositório e foi removido do temporário após a extração. Nenhum segredo ou `.env` foi lido ou exposto.
+
+**Pendência para o usuário:** fornecer/confirmar os PDFs oficiais da Fase 02, conforme o checklist P0/P1/P2. O 2-D precisa de PDF standalone atual ou confirmação da CP; não será recortado/redesenhado.
+
+**Próxima fase elegível:** 02 — portão humano de PDFs. Não iniciar a Fase 03 antes da verificação dos arquivos e da aprovação do mapeamento na Fase 04.
 
 ### Modelo de relatório ao final de cada fase
 
