@@ -1,62 +1,79 @@
-# Catálogo de formulários oficiais
+# Catálogo de formulários oficiais (independente de serviços)
 
-**Status:** inventário inicial; nenhum PDF foi fornecido ou homologado nesta etapa.
+**Estado:** inventário inicial, nenhum PDF oficial obtido ou homologado no repositório.
+O cadastro dos formulários é independente de transferência, renovação, inscrição ou qualquer outro serviço.
 
-## Objetivo e fonte de verdade
+## Entidades e responsabilidades
 
-Cadastrar **modelos oficiais**, não criar um PDF diferente para cada serviço.
-Cada modelo tem identificador, versão interna, norma, origem oficial, data da conferência,
-hash SHA-256, caminho do arquivo original, tipo de PDF, campos semânticos e estado.
-Um modelo pode pertencer a diversos serviços, sem duplicar o arquivo ou a lógica.
-Não afirmar que um formulário é obrigatório sem verificar a norma vigente e as
-orientações da Capitania relevante.
+| Entidade | Descrição | Validação |
+| --- | --- | --- |
+| `FieldDefinition` | Dado semântico como `person.fullName` ou `vessel.hullId` | Reutilizável entre documentos, OCR e formulários |
+| `FormDefinition` | Identidade lógica estável do formulário | `id` não inclui nome do serviço |
+| `FormVersion` | Um PDF oficial imutável, revisão, origem, norma, hash, tipo e situação | `IDENTIFIED`, `VERIFIED` ou `OUTDATED` |
+| `FormMapping` | Revisão técnica dos nomes de campos ou coordenadas de **uma versão** | `DRAFT`, `TESTED` ou `APPROVED` |
+| `ServiceForm` | Associação muitos-para-muitos do serviço à **versão** do formulário | Pode ter condições declarativas e ordem |
 
-## Estados
+`FormVersion.status = VERIFIED` confirma arquivo e metadados; **não** homologa o preenchimento.
+A homologação visual de cada versão só ocorre com `FormMapping.status = APPROVED`,
+relatório, testes com dados sintéticos e revisão humana. Somente versões verificadas
+com exatamente um mapeamento aprovado podem ser usadas em serviços ativos.
 
-- `IDENTIFIED`: localizado, ainda sem mapeamento confiável.
-- `MAPPED`: campos identificados e mapeados; precisa de testes.
-- `TESTED`: testes de geração e inspeção visual realizados.
-- `APPROVED`: modelo, fontes, versão e revisão humana aprovados para uso.
-- `OUTDATED`: substituído ou desatualizado; não gerar novos documentos.
+## Inventário inicial — candidatos não homologados
 
-## Inventário inicial
+| Formulário candidato | Identificador sugerido | Norma a conferir | PDF | Estado |
+| --- | --- | --- | --- | --- |
+| Boletim de Dados de Moto Aquática (BDMOTO) | `bdmoto` | NORMAM-212/DPC vigente e Capitania competente | Não baixado | Candidato, não cadastrado como `FormVersion` |
 
-| ID proposto | Formulário | Norma | PDF oficial | Versão | Estado |
-| --- | --- | --- | --- | --- | --- |
-| `bdmoto` | Boletim de Dados de Moto Aquática (a confirmar aplicabilidade ao piloto) | NORMAM-212/DPC, conferir edição vigente | Pendente | Pendente | `IDENTIFIED` |
+**A tabela não confirma exigência do BDMOTO nem qualquer outro formulário no serviço
+piloto.** Conferir fontes oficiais e requisitos condicionais antes de baixar ou vincular.
+Formulários com nomes semelhantes podem ter PDFs distintos por norma e não devem
+compartilhar o mesmo `FormVersion` sem equivalência comprovada.
 
-**O inventário não confirma obrigatoriedade** no serviço piloto. As hipóteses
-de exigência, outros anexos e formulários dependem da conferência oficial.
-Não disponibilizar geração ou simular aprovação enquanto houver pendências.
+## Diretórios versionados — NÃO por serviço
 
-## Checklist de cadastramento
+```text
+backend/templates/
+  <form-id>/
+    <revisao-interna>/
+      original.pdf
 
-1. Obter PDF na fonte oficial e registrar URL, data de consulta, versão e SHA-256.
-2. Confirmar norma vigente, jurisdição, serviço e condições que exigem o formulário.
-3. Inspecionar dimensões/páginas e descobrir AcroForm, PDF estático ou híbrido.
-4. Definir campos semânticos reutilizáveis (ex.: `person.fullName`) e validar formatos.
-5. Mapear o campo para nome de AcroForm ou coordenadas por página (sem alterar original).
-6. Gerar PDF com dados **fictícios**, incluindo textos longos, acentos e páginas múltiplas.
-7. Renderizar e conferir visualmente cada página, integridade e espaço para assinatura.
-8. Aprovar a versão revisada; ao receber novo modelo, criar nova versão e revalidar.
+backend/src/modules/catalog/
+  contracts.ts
+  catalog.ts
+  validate-catalog.ts
+  catalog.test.ts
 
-## Separação de arquivos
+docs/
+  FORM_CATALOG.md
+  SERVICE_FORM_MATRIX.md
+  FORM_MAPPING_REPORT_TEMPLATE.md
+```
 
-- PDFs oficiais versionados: `backend/templates/` (quando efetivamente obtidos).
-- Contratos e definições do catálogo: `backend/src/modules/catalog/`.
-- Futuros mapeamentos de PDF: módulo de PDF separado das regras de serviços.
-- Arquivos temporários de usuários: diretório privado, fora do repositório, fora
-  do webroot, com política de expiração e limpeza.
-- Nunca versionar documentos pessoais ou PDFs preenchidos com dados reais.
+Por exemplo, `backend/templates/bdmoto/v1/original.pdf` é somente um exemplo
+de caminho interno, **não** representa uma edição oficial confirmada.
+IDs/revisões são slugs controlados. Um `FormVersion` preserva ainda a
+identificação da revisão oficial, quando existir.
 
-## Campos semânticos iniciais
+## Procedimento por formulário e versão
 
-Os IDs `person.fullName`, `person.cpf`, `person.address` e
-`vessel.hullId` são **exemplos técnicos**, não uma lista validada de
-campos obrigatórios para o BDMOTO. Devem ser revisados com o PDF oficial.
+1. Pesquisar norma vigente, requisitos do serviço piloto e se o modelo já existe no catálogo.
+2. Solicitar **somente PDFs ainda ausentes**, informando nome, link oficial e caminho por formulário.
+3. Verificar conteúdo `%PDF`, tamanho, páginas, URL, revisão oficial, data e SHA-256.
+4. Registrar `FormDefinition` e `FormVersion` sem atribuir um serviço proprietário.
+5. Identificar AcroForm ou PDF estático; mapear cada posição/nome em `FormMapping` independente.
+6. Gerar arquivo preenchido com dados fictícios, conferir todas as páginas e registrar
+   preenchimento automático, revisão manual e pendências no relatório de mapeamento.
+7. Somente após aprovação humana registrar `FormMapping.status = APPROVED`.
+8. Confirmar aplicabilidade normativa e associar a versão aos serviços via `ServiceForm`.
+9. Quando o PDF mudar: adicionar **nova** `FormVersion`, recalcular hash, criar novo
+   `FormMapping` e refazer os testes. Nunca sobrescrever silenciosamente a revisão anterior.
 
-## Política para alterações
+## Segurança e verificação
 
-Toda atualização de PDF requer novo hash, revalidação do mapeamento,
-testes de regressão e revisão humana; nunca mudar silenciosamente o
-arquivo de uma versão já aprovada.
+- `validateCatalog` valida referências, duplicatas, URLs HTTPS, hash em formato SHA-256,
+  pasta esperada, mapeamentos e estados, mas **não abre o arquivo nem comprova a
+  autenticidade da fonte oficial**; essa verificação e a inspeção visual são separadas.
+- Nenhum documento real de cliente, PDF preenchido, OCR ou imagem temporária pode entrar
+  no Git, na pasta de modelos, nos logs ou em backup de dados persistentes.
+- Os formulários só devem ser commitados após conferir a fonte e a possibilidade de
+  redistribuição, com revisão independente do conteúdo.

@@ -4,7 +4,7 @@
 >
 > **Escopo:** primeiro serviço = transferência de propriedade de moto aquática. Modelo comercial = créditos avulsos e pacotes pré-pagos; **sem assinatura nem planos empresariais**. Nenhuma integração real com a Marinha ou promessa de aprovação.
 >
-> **Fontes de verdade:** `AGENTS.md` (segurança e engenharia), `MVP_PLAN.md` (requisitos), `UI_DESIGN_GUIDE.md` (UX), `docs/FORM_CATALOG.md` e `docs/SERVICE_FORM_MATRIX.md` (catalogação). Em conflito, **não avançar** sem registrar a divergência e priorizar a regra mais segura.
+> **Fontes de verdade:** `AGENTS.md` (segurança e engenharia), `MVP_PLAN.md` (requisitos), `UI_DESIGN_GUIDE.md` (UX), `docs/FORM_CATALOG.md`, `docs/SERVICE_FORM_MATRIX.md` e `docs/FORM_MAPPING_REPORT_TEMPLATE.md` (catalogação). Em conflito, **não avançar** sem registrar a divergência e priorizar a regra mais segura.
 
 ## 0. Protocolo obrigatório do agente
 
@@ -40,8 +40,8 @@
 | --- | --- | --- | --- |
 | 00 | Revalidar fundação existente | — | [ ] |
 | 01 | Catalogar serviço e modelos exigidos | 00 | [ ] |
-| 02 | **Solicitar PDFs oficiais ao usuário e homologar modelos** | 01 | [ ] |
-| 03 | API de catálogo e integração de seleção | 02 para liberar serviço; estrutura pode ser preparada antes | [ ] |
+| 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [ ] |
+| 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [ ] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] |
 | 06 | OCR/extração estruturada no servidor | 05 | [ ] |
@@ -73,31 +73,34 @@
 - [ ] Verificar a **NORMAM-212/DPC vigente** e as orientações da Capitania/jurisdição aplicável; registrar links, data, versão e particularidades.
 - [ ] Identificar exatamente os formulários aplicáveis à **transferência de propriedade de moto aquática**, distinguindo obrigatórios, condicionais e **documentos de origem do usuário** (não confundir com modelos em branco).
 - [ ] Atualizar `docs/FORM_CATALOG.md` e `docs/SERVICE_FORM_MATRIX.md` com evidências oficiais, perguntas condicionais e pendências.
-- [ ] Conferir o código dos contratos (`FormTemplate`, `FieldDefinition`, `ServiceForm`) sem criar relações fictícias.
+- [ ] Conferir `FormDefinition`, `FormVersion`, `FormMapping`, `FieldDefinition` e `ServiceForm`, mantendo cada formulário independente de serviços.
+- [ ] Para cada candidato, procurar um formulário/versão já cadastrado e reutilizá-lo; não criar cópias por categoria ou serviço.
 - [ ] Gerar **checklist de downloads pendentes**: nome oficial, código/anexo, finalidade, link oficial direto ou página de origem, formato e nome de arquivo sugerido.
 - **Aceite:** matriz sustentada por fontes verificáveis; nenhuma exigência sem referência; lista de PDFs pronta para apresentar ao usuário.
 
 ## Fase 02 — PORTÃO OBRIGATÓRIO: solicitar e validar os PDFs oficiais
 
-**Esta é a hora exata em que o OpenCode deve solicitar ao usuário que baixe/adicone os arquivos. NÃO solicitar todos os PDFs da Marinha antecipadamente.**
+**Esta é a hora exata em que o OpenCode deve solicitar ao usuário os PDFs que ainda não existem no catálogo. NÃO solicitar todos os PDFs da Marinha antecipadamente. O diretório é por identidade e revisão do formulário, nunca por serviço.**
 
 - [ ] Parar a execução e mostrar **somente os PDFs efetivamente necessários ao serviço piloto**, separando modelos condicionais, com links oficiais verificados.
-- [ ] Pedir que o usuário salve os **modelos oficiais em branco** em `backend/templates/motos-aquaticas/`, usando os nomes recomendados. Aceitar modelos obtidos diretamente pelo agente apenas se a origem oficial puder ser comprovada, a ferramenta permitir e o usuário autorizar; **não criar PDFs substitutos**.
+- [ ] Para cada formulário **ainda não disponível e verificado**, solicitar o PDF oficial em branco para `backend/templates/<form-id>/<revisao-interna>/original.pdf`. O `form-id` identifica o formulário, não o serviço; `revisao-interna` é um slug controlado e **não** se confunde com versão oficial. Exemplo ilustrativo: `backend/templates/bdmoto/v1/original.pdf`.
+- [ ] Aceitar download realizado pelo agente apenas com fonte oficial comprovável e autorização do usuário; **nunca fabricar, redesenhar ou substituir o PDF original**.
 - [ ] **AGUARDAR a confirmação de que os arquivos estão presentes**, depois inspecionar bytes, assinatura `%PDF`, páginas, dimensões, campos AcroForm e metadados.
-- [ ] Registrar para cada arquivo: URL oficial, norma, jurisdição, data de verificação, versão, SHA-256, caminho, tipo PDF (`ACROFORM`, `STATIC` ou outro), estado e observações.
+- [ ] Registrar cada **FormVersion**: `formId`, `revision` interna, revisão oficial (se existir), fonte e norma, jurisdição relevante, data de verificação, SHA-256, caminho, tipo PDF (`ACROFORM`, `STATIC` ou `UNKNOWN`) e status `IDENTIFIED`/`VERIFIED`/`OUTDATED`.
+- [ ] Reutilizar o mesmo arquivo e seu futuro mapeamento quando mais de um serviço empregar a mesma versão oficial.
 - [ ] Conferir se a versão/estrutura é consistente com a fonte; em caso de divergência, bloqueio ou PDF ausente, **não avançar**.
 - [ ] Verificar condições de uso/versionamento de modelos públicos; nunca adicionar documentos pessoais nem arquivos preenchidos com dados reais ao Git.
-- [ ] **Portão humano:** apresentar resumo dos PDFs e solicitar confirmação de que o conjunto corresponde ao serviço escolhido, antes de homologar.
-- **Aceite:** todos os modelos necessários ao fluxo piloto presentes, verificados e associados à fonte; ainda não marcar `APPROVED` antes de mapeamento e testes da Fase 04.
+- [ ] **Portão humano:** apresentar a relação de arquivos oficiais disponíveis, requisitos documentais verificados e lacunas; confirmar com o usuário antes de encerrar a fase. Nenhum mapeamento será marcado como aprovado aqui.
+- **Aceite:** modelos oficiais necessários para o serviço piloto presentes, individualmente versionados e verificados contra a fonte. **Aprovação de FormMapping somente na Fase 04** após teste visual humano. Relações com serviços serão adicionadas apenas após confirmação de sua aplicabilidade.
 
 ### Mensagem que o OpenCode deve apresentar no portão de PDFs
 
-> Chegamos à etapa de cadastro dos formulários oficiais. Para continuar, preciso dos seguintes PDFs em branco, obtidos nas fontes oficiais verificadas: **[lista por nome + finalidade + link + nome de destino]**. Salve-os em `backend/templates/motos-aquaticas/` e me avise quando terminar. **Não envie documentos preenchidos ou com dados pessoais.** Após sua confirmação, verificarei versão, integridade e campos e seguirei com o mapeamento. Se a lista ainda estiver incerta, informarei quais requisitos precisam de confirmação.
+> Chegamos ao cadastro independente de formulários oficiais. Para continuar, preciso dos **PDFs em branco ainda ausentes**: **[nome e ID do formulário + finalidade + norma/versão + link oficial verificado + caminho de destino `backend/templates/<form-id>/<revisao-interna>/original.pdf`]**. O arquivo poderá ser reutilizado por vários serviços. Não envie documentos preenchidos ou com dados pessoais. Confirme quando os PDFs estiverem disponíveis; verificarei integridade, fonte, versão e campos antes de mapear. Se a lista ainda estiver incerta, informarei o que precisa ser esclarecido.
 
 ## Fase 03 — API de catálogo e contratos
 
-- [ ] Validar referencialmente serviços, campos, templates e relações muitos-para-muitos, inclusive condições.
-- [ ] Expor endpoints públicos **apenas de serviços realmente disponíveis**; rascunhos são internos e não liberam geração.
+- [ ] Utilizar `validateCatalog` e conferir serviços, formulários, versões, mapeamentos e `ServiceForm` muitos-para-muitos por **FormVersion**, inclusive perguntas e condições enumeradas.
+- [ ] Expor endpoints públicos **apenas de serviços realmente disponíveis**; rascunhos são internos e não liberam geração. O piloto só muda para `AVAILABLE` **depois** de modelos verificados e mapeamentos aprovados na Fase 04.
 - [ ] Migrar seleção/checklist do frontend de dados hardcoded para a API sem remover a demonstração.
 - [ ] Testar relações inexistentes, versões inativas, condições e restrição de disponibilidade.
 - **Aceite:** API e interface mostram o mesmo catálogo validado; nenhuma exigência inventada é exposta como oficial.
@@ -106,10 +109,11 @@
 
 - [ ] Detectar campos AcroForm; para PDFs estáticos, definir coordenadas por página, unidades e fontes.
 - [ ] Separar **campo semântico** de **campo/posição do PDF**, permitindo reutilização do motor entre serviços.
-- [ ] Versionar mapeamento e modelo; não modificar o PDF original nem recriar o layout oficial.
+- [ ] Versionar `FormVersion` (modelo oficial e hash) e `FormMapping` (revisão técnica) separadamente. Nunca modificar o PDF original nem recriar seu layout.
+- [ ] Criar um relatório **por formulário/versão** usando `docs/FORM_MAPPING_REPORT_TEMPLATE.md`, identificando campos automáticos, revisados e pendentes, páginas, geometria, casos de teste e resultados.
 - [ ] Implementar validações de comprimento, acentos, quebras de linha, espaços para assinaturas e campos condicionais.
 - [ ] Gerar PDFs com **dados sintéticos**, renderizar **todas as páginas** e conferir visualmente texto cortado, sobreposição e paginação.
-- [ ] Executar testes automatizados de regressão por modelo e registrar revisão humana antes de marcá-lo `APPROVED`.
+- [ ] Executar testes automatizados de regressão por modelo, guardar evidências sintéticas sem dados reais e obter revisão humana explícita antes de marcar **FormMapping = `APPROVED`**; manter FormVersion = `VERIFIED` e bloquear versões `OUTDATED`.
 - **Aceite:** pacote piloto gerado corretamente com dados fictícios, modelo preservado, visual inspecionado e sem documento real.
 
 ## Fase 05 — Upload seguro e temporário
@@ -229,7 +233,7 @@
 ## Fase 18 — Expansão incremental e manutenção
 
 - [ ] Priorizar novos serviços com base em demanda e custo de implementação, sem inferir obrigatoriedade de formulários.
-- [ ] Para **cada novo serviço**, repetir pesquisa normativa (Fase 01), solicitação dos PDFs (Fase 02), mapeamento/testes visuais (Fase 04), regras, revisão e homologação antes de disponibilizar.
+- [ ] Para **cada novo serviço**, pesquisar exigências (Fase 01), **reutilizar FormVersion e FormMapping já aprovados** quando aplicáveis, solicitar apenas PDFs ausentes/atualizados na Fase 02, mapear/testar versões novas na Fase 04, vincular em `ServiceForm` e homologar antes de disponibilizar.
 - [ ] Monitorar mudanças normativas, desativar modelos desatualizados e preservar histórico de versões.
 - [ ] Analisar métricas agregadas e feedback sem reter conteúdo documental; melhorar OCR somente mediante testes comparativos.
 - [ ] Considerar equipes/contas empresariais e assinaturas **apenas se houver nova decisão explícita**.
@@ -240,6 +244,7 @@
 | Data (Brasília) | Fase | Situação | Evidências (comandos, testes, arquivos, revisão) | Commit / bloqueio |
 | --- | --- | --- | --- | --- |
 | 2026-10-26 | Inicialização | Plano criado; nenhuma fase certificada | Estado anterior conhecido apenas pelo histórico do repositório; verificar no ambiente OpenCode | — |
+| 2026-10-26 | Auditoria de arquitetura (fora das fases) | Contratos e documentação corrigidos; nenhuma fase certificada | Formulário/versão/mapeamento separados; regras e testes sintéticos adicionados. Typecheck/test/build devem ser confirmados no CI/OpenCode. | Consultar commits recentes |
 
 ### Modelo de relatório ao final de cada fase
 

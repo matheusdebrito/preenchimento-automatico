@@ -34,7 +34,10 @@ Se as instruções entrarem em conflito, informar o conflito e seguir a alternat
 - O backend é a fonte de verdade para requisitos, disponibilidade de serviços, custo em créditos e vínculos com formulários; dados de `frontend/src/data/demo.ts` são exclusivamente demonstrativos.
 - Antes de criar um novo formulário, procurar versão/modelo reutilizável no catálogo. Reutilizar `FieldDefinition` e motor de preenchimento, sem duplicar lógica por serviço.
 - Definir `ServiceForm` como vínculo muitos-para-muitos com condições explícitas validadas no servidor; nunca executar expressões arbitrárias fornecidas pelo cliente.
-- Um `FormTemplate` deve registrar fonte oficial, norma, data da verificação, versão, hash SHA-256, tipo PDF e status. Não marcar `APPROVED` nem liberar serviço `AVAILABLE` sem revisão documental e teste visual.
+- Separar `FormDefinition` (identidade independente), `FormVersion` (arquivo, revisão, origem, norma, hash e status), `FormMapping` (campos e revisão técnica) e `ServiceForm` (vínculo muitos-para-muitos por `formVersionId`). Não criar arquivos ou mapeamentos duplicados por serviço.
+- PDFs oficiais devem ser armazenados somente em `backend/templates/<form-id>/<revisao-interna>/original.pdf`. Nunca usar subpastas por serviço. A revisão interna não deve ser confundida com a revisão da Marinha.
+- Não marcar `FormVersion` como `VERIFIED` sem evidências documentais e verificação do arquivo, nem `FormMapping` como `APPROVED` sem relatório, testes e revisão visual humana. Serviços `AVAILABLE` exigem versão verificada + mapeamento aprovado.
+- Validar dados do catálogo com `validateCatalog` nos testes e na futura inicialização da API; essa validação estática **não** substitui checagem do PDF real ou fonte oficial.
 - Preservar o PDF oficial original; detectar AcroForm antes de recorrer ao preenchimento por coordenadas. Tratar cada nova versão como novo mapeamento validado.
 - Gerar documentos com dados fictícios, renderizar **todas as páginas**, inspecionar alinhamento/cortes/fontes e executar testes de regressão antes de liberar produção.
 - Arquivos pessoais, OCR e PDFs preenchidos não podem ser versionados ou colocados na pasta de templates; usar armazenamento temporário privado com expiração.
@@ -109,7 +112,7 @@ Antes de concluir uma tarefa, revisar e, quando pertinente, testar:
 - Exigir confirmação humana antes da geração final e sinalizar claramente dados incertos.
 - Usar **PDFs oficiais versionados e mapeamento determinístico de campos**; não recriar livremente os layouts com IA.
 - Testar campos longos, acentos, formatação, impressão, páginas, assinaturas e integridade visual do PDF.
-- Separar `ServiceDefinition`, `DocumentRequirement` e `FormTemplate` para que o serviço determine os formulários e documentos necessários.
+- Separar `ServiceDefinition`, `DocumentRequirement`, `FormDefinition`, `FormVersion`, `FormMapping` e `ServiceForm`. O backend associa versões de documentos a serviços somente após validar exigências e condições.
 - Não afirmar que o documento gerado foi aprovado pela Marinha ou que substitui assinatura/protocolo oficial.
 
 ## 7. Desempenho e otimização
@@ -127,11 +130,11 @@ Antes de concluir uma tarefa, revisar e, quando pertinente, testar:
 
 Exigir, conforme a mudança:
 - `lint`, `typecheck`, `build` e testes automatizados existentes passando.
-- Testes unitários para regras de serviços, validação de campos, saldo/créditos e expiração.
+- Testes unitários para o catálogo independente, relações muitos-para-muitos, versões, mapeamentos, condições, crédito, validação de campos e expiração. Criar fixtures sintéticas de dois serviços compartilhando um mesmo formulário.
 - Testes de integração para upload, OCR (com mocks quando apropriado), geração de PDF e autorização.
 - Testes de segurança para acesso indevido, extensão falsa, arquivo acima do limite, arquivo corrompido, repetição de requisições, concorrência e tentativas de path traversal.
 - Testes de falha: timeout OCR, falha do worker, usuário fechando navegador, sessão expirada, falta de espaço e limpeza de temporários.
-- Conferência visual dos formulários PDF gerados contra modelos oficiais, com dados **fictícios** e casos difíceis.
+- Conferência visual dos formulários PDF gerados contra modelos oficiais, com dados **fictícios**, casos difíceis e relatório padronizado por versão (`docs/FORM_MAPPING_REPORT_TEMPLATE.md`).
 - Teste de restauração dos dados persistentes financeiros antes de produção.
 
 Se um teste não puder ser executado, informar claramente **qual teste, por quê e qual risco permanece**. Nunca marcar validação como concluída sem executar.

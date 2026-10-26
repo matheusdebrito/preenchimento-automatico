@@ -237,3 +237,8 @@ Usar os componentes já existentes no projeto sempre que satisfizerem os requisi
 7. Ao concluir, listar arquivos alterados, verificações executadas, falhas encontradas, limitações e próximos passos.
 
 > **Resumo visual:** azul profundo `#142F43` + verde-petróleo `#197A83` + superfícies claras + ícones Lucide náuticos + texto simples + wizard mobile-first. O objetivo é que o usuário escolha o serviço, envie fotos, confira os dados e baixe PDFs, sem precisar conhecer termos técnicos.
+
+
+## Regra de catálogo e estado demonstrativo
+
+O frontend atual utiliza serviços e dados fictícios **apenas para demonstração**, mesmo quando a categoria pode ser clicada. Na integração real, o backend será a fonte de verdade dos serviços efetivamente disponíveis e dos requisitos. Nunca confundir uma categoria clicável da demonstração com serviço homologado. Manter a identidade visual e componentes aprovados; não criar painel complexo ou interface administrativa para o usuário final sem necessidade.

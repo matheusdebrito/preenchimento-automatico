@@ -1,30 +1,29 @@
-# Matriz de serviços e formulários
+# Matriz de serviços e versões de formulários
 
-Esta matriz vincula serviços a **versões de modelos**, inclusive com
-condições. Não pressupõe que um modelo usado em uma norma possa ser
-substituído por outro visualmente semelhante.
+Os formulários são cadastrados e mapeados individualmente. **Só depois**
+o backend relaciona os serviços às versões oficiais verificadas; os serviços
+não são donos dos PDFs e não criam cópias nem mapeamentos próprios.
 
-| Serviço | ID | Modelo | Condição | Situação |
+| Serviço | ID | FormVersion ligada | Condição | Situação |
 | --- | --- | --- | --- | --- |
-| Transferência de propriedade de moto aquática | `transferencia-moto-aquatica` | A confirmar após consulta oficial | A verificar (jurisdição e caso concreto) | `DRAFT` — não liberado |
+| Transferência de moto aquática | `transferencia-moto-aquatica` | A confirmar com fonte oficial | A verificar por norma e jurisdição | `DRAFT` |
 
-## Regras de associação
+## Contrato
 
-- Um serviço pode ter vários formulários; cada formulário pode pertencer a vários serviços.
-- A associação `ServiceForm` guarda `serviceId`, `formTemplateId`,
-  condições e ordem de geração.
-- As condições aceitam apenas respostas predefinidas e validadas no backend;
-  não executar expressões dinâmicas ou código recebido do cliente.
-- Um serviço só pode ser marcado `AVAILABLE` quando seus requisitos e
-  formulários efetivamente necessários estiverem validados e os modelos
-  aplicáveis estiverem `APPROVED`.
-- A decisão de geração e seu custo são conferidos no servidor.
-- Reutilizar campos semânticos e motor de PDF; manter mapeamentos
-  distintos quando os PDFs oficiais diferirem.
+- `ServiceForm` associa `serviceId` e `formVersionId`, com `order` e condições.
+- A mesma `formVersionId` pode ser associada a **vários** `serviceId`.
+- As condições são comparações exatas com opções enumeradas em `ServiceQuestion`.
+  Não executar código/expression arbitrária enviada pelo usuário.
+- `DocumentRequirement` descreve **documentos de origem** que o usuário envia;
+  é distinto de `FormDefinition` e não é um PDF de formulário em branco.
+- Disponibilizar um serviço somente depois de confirmar os requisitos oficiais,
+  validar suas condições e ter cada `FormVersion = VERIFIED` com
+  exatamente um `FormMapping = APPROVED`.
+- `validateCatalog` impede referências órfãs ou inconsistentes no catálogo,
+  mas não substitui a revisão normativa humana.
 
-## Próxima verificação documental
+## Evolução
 
-Confirmar NORMAM-212/DPC vigente, orientação da Capitania aplicável,
-requisitos da transferência de moto aquática, variantes do procedimento
-e links oficiais de cada formulário exigido. Sem isso, manter o serviço
-apenas como demonstração, sem gerar documentos reais.
+Ao adicionar serviço novo, primeiro consultar o catálogo e reutilizar versões
+existentes onde válidas. Pedir ao usuário somente os modelos ausentes ou
+atualizados; não repetir o trabalho de mapeamento por serviço.

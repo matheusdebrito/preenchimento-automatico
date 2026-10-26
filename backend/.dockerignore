@@ -5,3 +5,13 @@ coverage
 .env.*
 *.log
 *.tsbuildinfo
+
+# Private user uploads and generated documents are never build inputs.
+storage/
+uploads/
+tmp/
+generated/
+output/
+.ocr-cache/
+*.filled.pdf
+*.preenchido.pdf

@@ -144,9 +144,11 @@ Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a iden
 
 ## Catálogo reutilizável de formulários (fundação)
 
-- Contratos e catálogo conservador: `backend/src/modules/catalog/`.
+- Contratos, catálogo conservador e validador de referências/versões: `backend/src/modules/catalog/`.
+- Os formulários oficiais são organizados por identidade e revisão: `backend/templates/<form-id>/<revisao-interna>/original.pdf`. Não usar pastas por serviço.
 - Inventário e processo de homologação: `docs/FORM_CATALOG.md`.
-- Relação serviços × formulários: `docs/SERVICE_FORM_MATRIX.md`.
+- Relação serviços × versões de formulários: `docs/SERVICE_FORM_MATRIX.md`.
+- Relatório de revisão por formulário e versão: `docs/FORM_MAPPING_REPORT_TEMPLATE.md`.
 - O piloto permanece `DRAFT`; ainda não há modelos PDF oficiais validados nem geração real.
 - A interface demonstrativa continua isolada no frontend, sem enviar documentos ao servidor.
 - Próximo passo: validar os modelos oficiais aplicáveis ao piloto antes de criar motor de PDF ou liberar serviço.

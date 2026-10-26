@@ -9,3 +9,13 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 Thumbs.db
+
+# Temporary uploads, OCR data and generated documents must never be committed.
+backend/storage/
+backend/uploads/
+backend/tmp/
+backend/generated/
+backend/output/
+backend/.ocr-cache/
+*.filled.pdf
+*.preenchido.pdf

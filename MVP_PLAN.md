@@ -75,7 +75,7 @@ Antes de mapear PDFs:
 - `auth`: contas, autenticação e sessões.
 - `credits`: concessão, saldo, consumo, estorno e livro-razão, sem planos nem assinaturas.
 - `payments` (fase comercial posterior): compra de créditos, conciliação e confirmação pelo provedor.
-- `catalog`: serviços, requisitos condicionais e versões dos formulários.
+- `catalog`: formulários independentes (`FormDefinition`), versões (`FormVersion`), mapeamentos (`FormMapping`), serviços, perguntas/requisitos e associações (`ServiceForm`).
 - `upload`: recepção, limites, inspeção e armazenamento temporário.
 - `extraction`: PDF textual/OCR, parsing, origem e validação dos campos.
 - `review`: confirmação explícita de dados.
@@ -88,8 +88,10 @@ Antes de mapear PDFs:
 - `CreditLedger`: id, userId, tipo (`GRANT`, `PURCHASE`, `CONSUME`, `REFUND`, `ADJUSTMENT`), quantidade, referência idempotente, timestamp. `PURCHASE` só será usado com pagamentos reais.
 - `CreditPurchase` (fase comercial): userId, pacote, quantidade, valor, status, id externo do pagamento e chave de idempotência; não armazenar dados de cartão.
 - `GenerationRecord`: id técnico, userId, serviceId, status, referência de consumo, timestamp; **sem nome/CPF/dados da embarcação**.
-- `FormTemplate`: código e versão do modelo, hash do PDF, fonte oficial, situação de mapeamento/homologação; **não possui um único serviço proprietário**.
-- `ServiceForm`: relação muitos-para-muitos entre serviço e versão do formulário, com condições de aplicabilidade e ordem.
+- `FormDefinition`: identidade estável e independente do formulário oficial, sem associação intrínseca a serviço.
+- `FormVersion`: versão/arquivo PDF oficial, revisão interna, revisão normativa quando conhecida, hash SHA-256, fonte, status e caminho `backend/templates/<form-id>/<revisao-interna>/original.pdf`.
+- `FormMapping`: revisão técnica independente da versão PDF, posições/nomes de campos, status e evidência de revisão visual.
+- `ServiceForm`: associação muitos-para-muitos entre serviço e **FormVersion**, com condições declarativas e ordem.
 - `FieldDefinition`: identificadores de campos semânticos independentes do OCR e da posição no PDF.
 - O catálogo inicial pode ser versionado em código; não criar tabelas Prisma para configuração estática antes de haver necessidade comprovada.
 
@@ -150,7 +152,8 @@ Antes de mapear PDFs:
 ### Etapa B — Catálogo reutilizável de serviços e formulários
 - Definir contratos independentes para serviços, modelos PDF, campos semânticos, requisitos documentais e relações muitos-para-muitos condicionais.
 - Manter serviço-piloto como rascunho até confirmar normas, jurisdição e PDFs oficiais. Registrar inventário em `docs/FORM_CATALOG.md` e matriz em `docs/SERVICE_FORM_MATRIX.md`.
-- Versionar modelo oficial e mapeamento separadamente, reaproveitando campos e motor de PDF entre serviços.
+- Versionar modelo oficial e mapeamento separadamente, **por formulário**, não por serviço. Associar depois em `ServiceForm` apenas as versões confirmadas; reaproveitar campos e motor de PDF entre serviços.
+- Produzir relatório por modelo conforme `docs/FORM_MAPPING_REPORT_TEMPLATE.md` e exigir inspeção visual de todas as páginas com dados fictícios.
 - **Status:** contratos iniciais e documentos criados; conferência oficial e motor ainda pendentes.
 - **Validar:** seleção do serviço exibe checklist correto e arquivo PDF oficial corresponde à versão conferida.
 

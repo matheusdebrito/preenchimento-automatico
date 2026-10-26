@@ -1,0 +1,40 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [backend, frontend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+      - name: Install locked dependencies
+        working-directory: ${{ matrix.package }}
+        run: npm ci
+      - name: Typecheck
+        working-directory: ${{ matrix.package }}
+        run: npm run typecheck
+      - name: Lint
+        working-directory: ${{ matrix.package }}
+        run: npm run lint
+      - name: Tests
+        working-directory: ${{ matrix.package }}
+        run: npm test
+      - name: Build
+        working-directory: ${{ matrix.package }}
+        run: npm run build
