@@ -1,4 +1,6 @@
 import type { CatalogDefinition } from './contracts.js';
+import { additionalFields } from './fields.js';
+import { draftMappings } from './draft-mappings.js';
 
 /**
  * This is configuration, not evidence of applicable official forms.
@@ -12,6 +14,7 @@ export const catalog: CatalogDefinition = {
     { id: 'person.cpf', label: 'CPF', valueKind: 'text', validationRuleId: 'cpf' },
     { id: 'person.address', label: 'Endereço', valueKind: 'text' },
     { id: 'vessel.hullId', label: 'Identificação do casco', valueKind: 'text' },
+    ...additionalFields,
   ],
   forms: [
     {
@@ -128,7 +131,7 @@ export const catalog: CatalogDefinition = {
       status: 'VERIFIED',
     },
   ],
-  mappings: [],
+  mappings: draftMappings,
   services: [
     {
       id: 'transferencia-moto-aquatica',
