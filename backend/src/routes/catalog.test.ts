@@ -22,6 +22,11 @@ describe('API catalog', () => {
     expect(result.json()).toEqual({ services: [] });
   });
 
+  it('não disponibiliza cotações para serviço não homologado', async () => {
+    const result = await app.inject({method:'POST',url:'/api/services/transferencia-moto-aquatica/quote',payload:{answers:{}}});
+    expect(result.statusCode).toBe(404);
+  });
+
   it('não publica o piloto como disponível', async () => {
     const result = await app.inject({ method: 'GET', url: '/api/services/transferencia-moto-aquatica' });
     expect(result.statusCode).toBe(404);

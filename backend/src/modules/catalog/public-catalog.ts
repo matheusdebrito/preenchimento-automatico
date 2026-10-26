@@ -9,6 +9,7 @@ export interface PublicService {
   documentRequirements: readonly DocumentRequirement[];
   /** Only IDs, never paths or internal approval metadata. */
   formVersionIds: readonly string[];
+  reviewFields: readonly { id: string; label: string; valueKind: string }[];
 }
 
 function matches(
@@ -45,6 +46,14 @@ export function publicService(
     return null;
   }
 
+  const versionIds = relations
+    .filter((relation) => matches(relation.conditions, answers))
+    .sort((a, b) => a.order - b.order)
+    .map((relation) => relation.formVersionId);
+  const mappedFields = new Set(catalog.mappings
+    .filter((mapping) => mapping.status === 'APPROVED' && versionIds.includes(mapping.formVersionId))
+    .flatMap((mapping) => mapping.placements.map((p) => p.fieldId)));
+
   return {
     id: service.id,
     title: service.title,
@@ -53,10 +62,9 @@ export function publicService(
     questions: service.questions,
     documentRequirements: service.documentRequirements.filter((requirement) =>
       matches(requirement.conditions, answers)),
-    formVersionIds: relations
-      .filter((relation) => matches(relation.conditions, answers))
-      .sort((a, b) => a.order - b.order)
-      .map((relation) => relation.formVersionId),
+    formVersionIds: versionIds,
+    reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
+      .map(({ id, label, valueKind }) => ({ id, label, valueKind })),
   };
 }
 

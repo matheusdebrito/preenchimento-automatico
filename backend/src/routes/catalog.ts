@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { catalog } from '../modules/catalog/catalog.js';
 import { publicService, publicServices } from '../modules/catalog/public-catalog.js';
 import { validateCatalog } from '../modules/catalog/validate-catalog.js';
@@ -18,6 +19,14 @@ export function registerCatalogRoutes(app: FastifyInstance): void {
         error: 'not_found', message: 'Serviço não disponível.',
       });
     }
+    return { service };
+  });
+
+  app.post<{ Params: { id: string } }>('/api/services/:id/quote', async (request, reply) => {
+    const parsed = z.object({ answers: z.record(z.string().max(100), z.string().max(100)) }).safeParse(request.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
+    const service = publicService(catalog, request.params.id, parsed.data.answers);
+    if (!service) return reply.status(404).send({ error: 'not_available' });
     return { service };
   });
 }
