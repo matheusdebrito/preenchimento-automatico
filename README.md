@@ -2,18 +2,23 @@
 
 Aplicação web mobile-first para preenchimento assistido de formulários náuticos da Marinha do Brasil. O usuário escolhe um serviço, envia documentos de origem, revisa os dados extraídos e recebe os formulários oficiais preenchidos.
 
-> **Estado atual:** fundação técnica e protótipo de interface. O fluxo do frontend é uma demonstração claramente identificada: nenhum arquivo real é enviado, nenhum OCR é executado, nenhum pagamento é processado e nenhum PDF oficial é gerado.
+> **Estado atual:** fundação técnica, protótipo de interface, pesquisa normativa (Fase 01) e Fase 02 concluída com seis PDFs oficiais verificados e confirmados. O serviço continua `DRAFT` até o mapeamento da Fase 04. O fluxo do frontend é uma demonstração claramente identificada: nenhum arquivo real é enviado, nenhum OCR é executado, nenhum pagamento é processado e nenhum PDF oficial é gerado.
 
 ## Estrutura
 
 ```text
 preenchimento-automatico/
+├── .github/workflows/ci.yml  Typecheck, lint, testes, build e audit
 ├── backend/          API Node.js + TypeScript + Fastify
+│   └── templates/    PDFs oficiais por formulário/revisão (6 anexos verificados)
 ├── frontend/         React + TypeScript + Vite
+├── docs/             Catálogo, matriz de serviços e modelo de relatório
 ├── compose.yaml      API, PostgreSQL e frontend
 ├── .env.example      Variáveis do ambiente local
+├── AGENTS.md         Regras de segurança e engenharia
 ├── MVP_PLAN.md       Plano de implementação
-└── UI_DESIGN_GUIDE.md
+├── PROJECT_TRACKER.md Fases, evidências e próximos passos
+└── UI_DESIGN_GUIDE.md Referência visual
 ```
 
 ## Requisitos
@@ -126,6 +131,7 @@ npm run build
 
 - A CSP do frontend usa `connect-src 'self'`. Quando o frontend passar a chamar a API, será necessário usar um proxy same-origin no Nginx ou atualizar a política com a origem explícita da API.
 - O `/health` da API é apenas liveness. A verificação de prontidão do banco será adicionada junto com a camada de persistência.
+- O CI atual valida Node.js, testes e builds; o build das imagens Docker foi validado localmente na Fase 00 e ainda não faz parte do workflow.
 - Não há HTTPS no Compose local. Em ambiente público, use um proxy reverso com TLS e não exponha as portas diretamente.
 - As credenciais do PostgreSQL são passadas por variáveis de ambiente no Compose local. Em produção, use um gerenciador de segredos.
 - O volume do PostgreSQL não possui rotina de backup nesta etapa.
@@ -135,11 +141,12 @@ npm run build
 O acompanhamento executável está em [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md).
 A fundação e os contratos do catálogo já existem, mas o serviço piloto continua `DRAFT`.
 
-1. Verificar fundação local (incluindo Docker Compose) e registrar os testes pendentes da Fase 00.
-2. Conferir os formulários oficiais aplicáveis ao piloto e solicitar somente os PDFs ausentes na Fase 02.
-3. Completar API de catálogo, motor PDF por formulário, upload temporário e OCR seguro.
-4. Integrar a revisão humana, o download, a autenticação e os créditos de teste.
-5. Homologar o MVP; pagamentos reais e implantação comercial ficam para fases posteriores, sujeitas a aprovação.
+1. **Fase 00 concluída em 26/10/2026:** fundação local, testes, builds e Docker Compose validados; evidências no `PROJECT_TRACKER.md`.
+2. **Fase 01 concluída em 26/10/2026:** NORMAM-212/DPC 2026 conferida; NORMAM-101/DPC e NORMAM-211/DPC conferidas e descartadas para MA (a 211 exclui expressamente moto aquática e motonauta); formulários 2-A, 2-B, 2-D, 2-E, 2-C e 1-C identificados e separados dos documentos de origem; catálogo e matriz atualizados.
+3. **Fase 02 concluída em 26/10/2026:** seis PDFs oficiais obtidos, verificados e confirmados pelo usuário (2-A, 2-B, 2-C e 1-C standalone 2026; 2-D e 2-E extraídos da NORMAM-212/DPC 2026); seis `FormVersion` `VERIFIED`/`STATIC` registradas. Nenhum `FormMapping` ou `ServiceForm` foi criado.
+4. **Fase 03 (próxima, não iniciada):** completar a API de catálogo. Depois, motor PDF por formulário, upload temporário e OCR seguro.
+5. Integrar a revisão humana, o download, a autenticação e os créditos de teste.
+6. Homologar o MVP; pagamentos reais e implantação comercial ficam para fases posteriores, sujeitas a aprovação.
 
 Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a identidade visual.
 
@@ -151,9 +158,9 @@ Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a iden
 - Inventário e processo de homologação: `docs/FORM_CATALOG.md`.
 - Relação serviços × versões de formulários: `docs/SERVICE_FORM_MATRIX.md`.
 - Relatório de revisão por formulário e versão: `docs/FORM_MAPPING_REPORT_TEMPLATE.md`.
-- O piloto permanece `DRAFT`; ainda não há modelos PDF oficiais validados nem geração real.
+- O piloto permanece `DRAFT`; os seis PDFs oficiais foram obtidos e verificados na Fase 02 e registrados como `FormVersion` `VERIFIED`/`STATIC`, mas ainda não há `FormMapping` aprovado, geração real ou `ServiceForm`.
 - A interface demonstrativa continua isolada no frontend, sem enviar documentos ao servidor.
-- Próximo passo: validar os modelos oficiais aplicáveis ao piloto antes de criar motor de PDF ou liberar serviço.
+- Próximo passo: iniciar a Fase 03 (API de catálogo), mediante nova autorização. A geração de PDF e o mapeamento ficam para a Fase 04.
 
 ## Acompanhamento do desenvolvimento
 
