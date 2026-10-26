@@ -41,5 +41,6 @@ jobs:
           git add docs/_pdf_test_previews
           if ! git diff --cached --quiet; then
             git commit -m 'test(pdf): record synthetic renders for coordinate QA'
+            git pull --rebase origin main
             git push origin HEAD:main
           fi

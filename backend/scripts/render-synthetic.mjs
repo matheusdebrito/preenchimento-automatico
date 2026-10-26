@@ -4,6 +4,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { catalog } from '../dist/modules/catalog/catalog.js';
 import { fillPdf } from '../dist/modules/pdf/fill-pdf.js';
 
+// All test data below is synthetic; only visual previews are committed.
 const root = resolve(process.cwd(), '..');
 const synthetic = {
   'person.fullName': 'MARIA TESTE',
