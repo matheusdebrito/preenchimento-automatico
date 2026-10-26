@@ -140,3 +140,13 @@ npm run build
 6. Créditos, pagamentos e auditoria.
 
 Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a identidade visual.
+
+
+## Catálogo reutilizável de formulários (fundação)
+
+- Contratos e catálogo conservador: `backend/src/modules/catalog/`.
+- Inventário e processo de homologação: `docs/FORM_CATALOG.md`.
+- Relação serviços × formulários: `docs/SERVICE_FORM_MATRIX.md`.
+- O piloto permanece `DRAFT`; ainda não há modelos PDF oficiais validados nem geração real.
+- A interface demonstrativa continua isolada no frontend, sem enviar documentos ao servidor.
+- Próximo passo: validar os modelos oficiais aplicáveis ao piloto antes de criar motor de PDF ou liberar serviço.
