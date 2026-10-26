@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react';
 import { History } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
 import { Notice } from '../components/ui/Notice';
 import { StateMessage } from '../components/ui/StateMessage';
 import { DEMO_CREDIT_HISTORY } from '../data/demo';
+import { api } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { formatShortDate } from '../lib/format';
 
@@ -16,6 +18,15 @@ const amountLabels: Record<string, string> = {
 
 export function CreditHistoryPage() {
   useDocumentTitle('Histórico de créditos');
+  const [real, setReal] = useState<readonly {id:string;reason:string;amount:number;created_at:string}[] | null>(null);
+  useEffect(() => {
+    if (typeof fetch !== 'function') return;
+    let mounted = true;
+    void api<{movements:{id:string;reason:string;amount:number;created_at:string}[]}>('/api/credits/history')
+      .then((data) => { if (mounted) setReal(data.movements); })
+      .catch(() => undefined);
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <PageLayout>
@@ -29,18 +40,20 @@ export function CreditHistoryPage() {
             </p>
           </header>
 
-          <Notice tone="demo" title="Demonstração de interface">
-            As movimentações abaixo são fictícias e servem para apresentar o layout. O histórico
-            real será carregado do servidor quando a autenticação estiver integrada.
-          </Notice>
+          {real === null ? <Notice tone="demo" title="Demonstração de interface">
+            As movimentações abaixo são fictícias. <Link to="/entrar">Entre na conta</Link> para consultar o histórico real.
+          </Notice> : <Notice tone="info">Exibindo somente lançamentos operacionais da sua conta.</Notice>}
 
-          {DEMO_CREDIT_HISTORY.length === 0 ? (
+          {(real !== null ? real.length === 0 : DEMO_CREDIT_HISTORY.length === 0) ? (
             <StateMessage title="Você ainda não tem movimentações.">
               <p>Quando houver uma concessão, uso ou estorno, ela aparecerá aqui.</p>
             </StateMessage>
           ) : (
             <ul className="history-list">
-              {DEMO_CREDIT_HISTORY.map((movement) => {
+              {(real !== null ? real.map((movement) => ({
+                id: movement.id, kind: movement.reason, label: ({test_grant:'Concessão de teste', consume:'Uso em um processo', refund:'Estorno', adjust:'Ajuste'} as Record<string,string>)[movement.reason] ?? 'Movimentação',
+                date: movement.created_at, amount: movement.amount, reference: 'Registro financeiro', icon: History,
+              })) : DEMO_CREDIT_HISTORY).map((movement) => {
                 const Icon = movement.icon;
                 const isCredit = movement.amount > 0;
 

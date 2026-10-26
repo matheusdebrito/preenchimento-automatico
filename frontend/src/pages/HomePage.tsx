@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ArrowRight, ChevronRight, ShieldCheck, ShipWheel, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppFooter } from '../components/layout/AppFooter';
@@ -5,10 +6,21 @@ import { AppHeader } from '../components/layout/AppHeader';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { SERVICE_CATEGORIES } from '../data/catalog';
+import { api } from '../lib/api';
+import type { LiveService } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export function HomePage() {
   useDocumentTitle();
+  const [available, setAvailable] = useState<readonly LiveService[]>([]);
+  useEffect(() => {
+    if (typeof fetch !== 'function') return;
+    let mounted = true;
+    void api<{services:LiveService[]}>('/api/services').then((result) => {
+      if (mounted) setAvailable(result.services);
+    }).catch(() => undefined);
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="app-shell">
@@ -108,6 +120,28 @@ export function HomePage() {
             </div>
           </div>
         </section>
+
+        {available.length ? (
+          <section className="home-section home-section--flush-top" aria-labelledby="ready-title">
+            <div className="container">
+              <div className="section-heading">
+                <h2 id="ready-title">Serviços homologados</h2>
+                <p>Modelos oficiais verificados, com preenchimento e conferência dos dados.</p>
+              </div>
+              <div className="category-grid">
+                {available.map((service) => <Link key={service.id} className="category-card category-card--link"
+                  to={"/preencher-real/" + encodeURIComponent(service.id)}>
+                  <span className="category-card__content">
+                    <strong className="category-card__title">{service.title}</strong>
+                    <span className="category-card__description">{service.description}</span>
+                    <span className="category-card__available">Preencher — {service.creditCost} crédito</span>
+                  </span>
+                  <ChevronRight aria-hidden="true" />
+                </Link>)}
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <section className="home-section home-section--flush-top" aria-labelledby="how-title">
           <div className="container">
