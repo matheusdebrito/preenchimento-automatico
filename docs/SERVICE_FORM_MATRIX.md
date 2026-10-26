@@ -4,11 +4,11 @@ Os formulários são cadastrados e mapeados individualmente. **Só depois** o
 backend relaciona os serviços às versões oficiais verificadas; os serviços não
 são donos dos PDFs e não criam cópias nem mapeamentos próprios.
 
-**Estado em 26/10/2026:** pesquisa documental da Fase 01 concluída. Seis PDFs
-oficiais foram obtidos e verificados tecnicamente na Fase 02; as seis
-`FormVersion` estão registradas como `VERIFIED`/`STATIC`. Nenhum `FormMapping`
-foi aprovado e nenhum `ServiceForm` foi criado. O serviço continua `DRAFT` e o
-portão humano da Fase 02 ainda precisa ser confirmado.
+**Estado em 26/10/2026:** pesquisa documental da Fase 01 concluída e Fase 02
+encerrada após confirmação do usuário. Seis PDFs oficiais foram obtidos e
+verificados; as seis `FormVersion` estão registradas como `VERIFIED`/`STATIC`.
+Nenhum `FormMapping` foi aprovado e nenhum `ServiceForm` foi criado. O serviço
+continua `DRAFT` até o mapeamento da Fase 04.
 
 ## Serviço piloto
 
@@ -109,10 +109,11 @@ condicional.
   presencial.
 - Geração de PDF antes de o modelo oficial ser verificado e mapeado.
 
-## Gate para a Fase 02
+## Gate da Fase 02 — concluído
 
-O **portão humano dos PDFs** está em andamento. Os seis arquivos oficiais já
-foram baixados e verificados; o serviço continua `DRAFT`. O agente deve:
+O **portão humano dos PDFs** foi confirmado pelo usuário em 26/10/2026. Os seis
+arquivos oficiais foram baixados e verificados; o serviço continua `DRAFT`. O
+agente deve:
 
 1. ~~inspecionar bytes, assinatura `%PDF`, páginas, dimensões, metadados e tipo~~
    — concluído em 26/10/2026;
@@ -124,9 +125,10 @@ foram baixados e verificados; o serviço continua `DRAFT`. O agente deve:
    — pendente;
 5. manter o serviço `DRAFT` até todos os requisitos estarem completos — mantido.
 
-**Pendência do portão:** confirmação humana de que os PDFs e as fontes estão
-corretos. Depois da confirmação, a Fase 02 pode ser encerrada; a Fase 03 só
-começa com autorização e a Fase 04 é a responsável pelo mapeamento visual.
+**Pendência do portão:** nenhuma. A Fase 02 foi encerrada em 26/10/2026 após o
+usuário confirmar os PDFs, as fontes, os extratos 2-D/2-E e o descarte do 2-E
+antigo (2-F). A Fase 03 só começa com nova autorização; a Fase 04 é a
+responsável pelo mapeamento visual.
 
 ## Evolução
 

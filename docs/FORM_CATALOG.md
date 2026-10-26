@@ -1,10 +1,10 @@
 # Catálogo de formulários oficiais (independente de serviços)
 
-**Estado:** pesquisa normativa da Fase 01 concluída em 26/10/2026. Na Fase 02,
-seis PDFs oficiais foram obtidos e verificados tecnicamente em 26/10/2026; as
-respectivas `FormVersion` foram registradas como `VERIFIED`/`STATIC` no catálogo
-em código. Nenhum `FormMapping` ou `ServiceForm` foi criado. O serviço piloto
-permanece `DRAFT`, e o portão humano da Fase 02 ainda precisa ser confirmado.
+**Estado:** pesquisa normativa da Fase 01 concluída em 26/10/2026. A Fase 02 foi
+concluída em 26/10/2026: seis PDFs oficiais foram obtidos, verificados e
+confirmados pelo usuário; as respectivas `FormVersion` foram registradas como
+`VERIFIED`/`STATIC` no catálogo em código. Nenhum `FormMapping` ou `ServiceForm`
+foi criado. O serviço piloto permanece `DRAFT` até o mapeamento da Fase 04.
 
 O cadastro dos formulários é independente de transferência, renovação, inscrição
 ou qualquer outro serviço. Os IDs e nomes abaixo identificam a identidade lógica
@@ -216,10 +216,10 @@ Registradas para não serem resolvidas por suposição:
 
 ## 7. Checklist de downloads para a Fase 02
 
-**Arquivos baixados e inspecionados em 26/10/2026**, com autorização do usuário.
-A Fase 02 permanece aberta até a confirmação humana do portão; os arquivos já
-estão nos caminhos definitivos e as `FormVersion` foram registradas no catálogo
-em código.
+**Arquivos baixados, inspecionados e confirmados em 26/10/2026**, com autorização
+do usuário. A Fase 02 foi encerrada após a confirmação do portão humano; os
+arquivos estão nos caminhos definitivos e as `FormVersion` foram registradas no
+catálogo em código.
 
 Legenda: **P0** = necessário ao fluxo principal; **P1** = condicional/opcional;
 **P2** = alternativa de residência.

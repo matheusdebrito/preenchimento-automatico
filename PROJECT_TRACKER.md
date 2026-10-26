@@ -40,7 +40,7 @@
 | --- | --- | --- | --- |
 | 00 | Revalidar fundação existente | — | [x] |
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] |
-| 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [ ] |
+| 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [x] |
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [ ] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] |
@@ -58,7 +58,7 @@
 | 17 | Lançamento controlado e acompanhamento | 16 e autorização explícita | [ ] |
 | 18 | Expansão incremental de serviços | 17 e decisão por serviço | [ ] |
 
-> **Estado conhecido em 26/10/2026:** frontend demonstrativo, API Fastify com healthcheck, Compose/PostgreSQL e contratos preliminares de catálogo foram adicionados ao repositório. Esses fatos **não significam** aprovação de build/testes nem homologação dos PDFs. A Fase 00 foi executada localmente e registrada abaixo em 26/10/2026; a Fase 01 também foi registrada na mesma data, com pesquisa normativa concluída. Na Fase 02, seis PDFs oficiais foram obtidos e verificados tecnicamente, mas o portão humano ainda não foi confirmado. O registro contém as evidências verificáveis.
+> **Estado conhecido em 26/10/2026:** frontend demonstrativo, API Fastify com healthcheck, Compose/PostgreSQL e contratos preliminares de catálogo foram adicionados ao repositório. Esses fatos **não significam** aprovação de build/testes nem homologação dos PDFs. A Fase 00 foi executada localmente e registrada abaixo em 26/10/2026; a Fase 01 também foi registrada na mesma data, com pesquisa normativa concluída. Na Fase 02, seis PDFs oficiais foram obtidos e verificados tecnicamente; o portão humano foi confirmado pelo usuário em 26/10/2026 e a fase foi encerrada. O registro contém as evidências verificáveis.
 
 ## Fase 00 — Revalidar a fundação existente
 
@@ -82,17 +82,17 @@
 
 **Esta é a hora exata em que o OpenCode deve solicitar ao usuário os PDFs que ainda não existem no catálogo. NÃO solicitar todos os PDFs da Marinha antecipadamente. O diretório é por identidade e revisão do formulário, nunca por serviço.**
 
-**Situação em 26/10/2026:** downloads autorizados pelo usuário, seis PDFs obtidos e inspecionados, versões registradas no catálogo em código. A fase permanece aberta **somente** até a confirmação humana do portão.
+**Situação em 26/10/2026:** downloads autorizados pelo usuário, seis PDFs obtidos e inspecionados, versões registradas no catálogo em código e portão humano **confirmado pelo usuário**. Fase **CONCLUÍDA** em 26/10/2026.
 
 - [x] Parar a execução e mostrar **somente os PDFs efetivamente necessários ao serviço piloto**, separando modelos condicionais, com links oficiais verificados.
 - [x] Para cada formulário **ainda não disponível e verificado**, solicitar o PDF oficial em branco para `backend/templates/<form-id>/<revisao-interna>/original.pdf`. O `form-id` identifica o formulário, não o serviço; `revisao-interna` é um slug controlado e **não** se confunde com versão oficial. Exemplo ilustrativo: `backend/templates/bdmoto/v1/original.pdf`.
 - [x] Aceitar download realizado pelo agente apenas com fonte oficial comprovável e autorização do usuário; **nunca fabricar, redesenhar ou substituir o PDF original**. O 2-D e o 2-E são extratos de páginas inteiras do PDF oficial da NORMAM-212/DPC 2026.
-- [x] **AGUARDAR a confirmação de que os arquivos estão presentes**, depois inspecionar bytes, assinatura `%PDF`, páginas, dimensões, campos AcroForm e metadados. Os arquivos foram baixados, mas a confirmação humana final do portão segue pendente.
+- [x] **AGUARDAR a confirmação de que os arquivos estão presentes**, depois inspecionar bytes, assinatura `%PDF`, páginas, dimensões, campos AcroForm e metadados. Os arquivos foram baixados, inspecionados e confirmados pelo usuário.
 - [x] Registrar cada **FormVersion**: `formId`, `revision` interna, revisão oficial (se existir), fonte e norma, jurisdição relevante, data de verificação, SHA-256, caminho, tipo PDF (`ACROFORM`, `STATIC` ou `UNKNOWN`) e status `IDENTIFIED`/`VERIFIED`/`OUTDATED`.
 - [x] Reutilizar o mesmo arquivo e seu futuro mapeamento quando mais de um serviço empregar a mesma versão oficial. Ainda não há segundo serviço; as versões foram cadastradas por identidade, sem cópia por serviço.
 - [x] Conferir se a versão/estrutura é consistente com a fonte; em caso de divergência, bloqueio ou PDF ausente, **não avançar**. As divergências textuais da norma foram registradas; os PDFs não foram alterados.
 - [x] Verificar condições de uso/versionamento de modelos públicos; nunca adicionar documentos pessoais nem arquivos preenchidos com dados reais ao Git.
-- [ ] **Portão humano:** apresentar a relação de arquivos oficiais disponíveis, requisitos documentais verificados e lacunas; confirmar com o usuário antes de encerrar a fase. Nenhum mapeamento será marcado como aprovado aqui.
+- [x] **Portão humano:** apresentar a relação de arquivos oficiais disponíveis, requisitos documentais verificados e lacunas; confirmar com o usuário antes de encerrar a fase. Nenhum mapeamento será marcado como aprovado aqui. Confirmação registrada em 26/10/2026: “está tudo correto”.
 - **Aceite:** modelos oficiais necessários para o serviço piloto presentes, individualmente versionados e verificados contra a fonte. **Aprovação de FormMapping somente na Fase 04** após teste visual humano. Relações com serviços serão adicionadas apenas após confirmação de sua aplicabilidade.
 
 ### Mensagem que o OpenCode deve apresentar no portão de PDFs
@@ -249,7 +249,7 @@
 | 2026-10-26 | Auditoria de arquitetura (fora das fases) | Contratos e documentação corrigidos; nenhuma fase integralmente certificada | Formulário/versão/mapeamento separados; testes sintéticos. GitHub Actions CI [40382726714](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40382726714): backend e frontend com `npm ci`, `npm audit --omit=dev --audit-level=high`, typecheck, lint, testes e build **aprovados**. Docker Compose, navegação manual e arquivos oficiais ainda não verificados nesta auditoria. | Commits de 26/10/2026; continuar Fase 00 localmente |
 | 2026-10-26 | 00 — Revalidar fundação | CONCLUÍDA | Inspeção de git/estrutura/versões; backend: `npm ci`, audit 0, typecheck, lint, 22 testes e build; frontend: `npm ci` (229 pacotes após encerrar Vite que travava um binário), audit 0, typecheck, lint, 20 testes e build; Compose build/up com API, PostgreSQL e frontend `healthy`; smoke HTTP, CORS, headers e isolamento; fluxo demonstrativo completo e Lighthouse 1.0. | Base `dcaad28`; sem bloqueio |
 | 2026-10-26 | 01 — Pesquisa documental | CONCLUÍDA (pesquisa; sem PDFs) | NORMAM-212/DPC 2026 conferida no PDF oficial (112 páginas; SHA-256 `A10CEDAB96556B9747AC43B5F3F8CB79637DB365071A1609F75181852C5A90A0`); item 2.4.1 e anexos 1-C, 2-A a 2-E lidos; NORMAM-101/DPC e NORMAM-211/DPC conferidas e descartadas para MA (a 211 exclui expressamente moto aquática e motonauta); página do gov.br conferida; formulários e documentos de origem separados; checklist P0/P1/P2 criado; nenhum PDF de formulário baixado para o repositório. | Commit local na branch `docs/fases-00-01`; não enviado. Fase 02 é o portão humano dos PDFs |
-| 2026-10-26 | 02 — PDFs oficiais | EM ANDAMENTO: arquivos baixados e verificados; aguardando confirmação humana | NORMAM-212/DPC 2026 oficial (112 páginas; SHA-256 `A10CED...A90A0`); 2-A, 2-B, 2-C e 1-C standalone 2026 verificados visualmente contra a NORMAM; 2-D extraído das p. 81-82 e 2-E da p. 84; o candidato CPRS do 2-E é o antigo 2-F e foi descartado; seis `FormVersion` `VERIFIED`/`STATIC` no catálogo em código; teste de integridade dos PDFs; `typecheck`, `lint`, 23 testes e `build` do backend aprovados. | Commit `commit local da fase` na branch `feat/fase-02-pdfs-oficiais`; portão humano pendente; sem push/PR |
+| 2026-10-26 | 02 — PDFs oficiais | CONCLUÍDA: arquivos baixados, verificados e portão humano confirmado | NORMAM-212/DPC 2026 oficial (112 páginas; SHA-256 `A10CED...A90A0`); 2-A, 2-B, 2-C e 1-C standalone 2026 verificados visualmente contra a NORMAM; 2-D extraído das p. 81-82 e 2-E da p. 84; o candidato CPRS do 2-E é o antigo 2-F e foi descartado; seis `FormVersion` `VERIFIED`/`STATIC` no catálogo em código; teste de integridade dos PDFs; `typecheck`, `lint`, 23 testes e `build` do backend aprovados; usuário confirmou “está tudo correto” em 26/10/2026. | Commit local da fase na branch `feat/fase-02-pdfs-oficiais`; sem push/PR. Fase 03 não iniciada |
 
 ### Relatório da Fase 00 — 26/10/2026
 
@@ -309,9 +309,9 @@
 
 **Próxima fase elegível:** 02 — portão humano de PDFs. Não iniciar a Fase 03 antes da verificação dos arquivos e da aprovação do mapeamento na Fase 04.
 
-### Relatório parcial da Fase 02 — 26/10/2026
+### Relatório da Fase 02 — 26/10/2026
 
-**Status:** EM ANDAMENTO (downloads e verificação técnica concluídos; portão humano pendente).
+**Status:** CONCLUÍDA (downloads e verificação técnica concluídos; portão humano confirmado pelo usuário em 26/10/2026).
 
 **Arquivos obtidos e verificados:**
 
@@ -335,9 +335,9 @@
 
 **Segurança e privacidade:** nenhum documento pessoal, upload, OCR, PDF preenchido ou dado de cliente foi usado. A NORMAM é publicação pública; o PDF completo não foi versionado. O 2-D e o 2-E são derivados de páginas oficiais e estão identificados como extratos, não como arquivos standalone. Nenhum segredo ou `.env` foi lido.
 
-**Pendência para o usuário:** confirmar o portão humano da Fase 02: (a) aceitar os seis PDFs e as fontes; (b) confirmar que o 2-D/2-E podem ser usados como extratos oficiais da NORMAM; (c) confirmar que o 2-E antigo (2-F) foi corretamente descartado. Após a confirmação, a Fase 02 pode ser encerrada e a Fase 03 fica elegível, sem iniciar automaticamente.
+**Pendência para o usuário:** nenhuma para a Fase 02. A confirmação do portão foi registrada em 26/10/2026: o usuário aceitou os seis PDFs, as fontes e os extratos 2-D/2-E, e confirmou o descarte do 2-E antigo (2-F).
 
-**Próxima fase elegível:** 03 — API de catálogo, somente após confirmação do portão. A Fase 04 continua responsável pelo `FormMapping` e pela renderização com dados sintéticos.
+**Próxima fase elegível:** 03 — API de catálogo. Não iniciada; depende de nova autorização. A Fase 04 continua responsável pelo `FormMapping` e pela renderização com dados sintéticos.
 
 **Commit:** `commit local da fase` na branch `feat/fase-02-pdfs-oficiais`; não enviado ao remoto e sem PR.
 

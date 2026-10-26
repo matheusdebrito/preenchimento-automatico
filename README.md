@@ -2,7 +2,7 @@
 
 Aplicação web mobile-first para preenchimento assistido de formulários náuticos da Marinha do Brasil. O usuário escolhe um serviço, envia documentos de origem, revisa os dados extraídos e recebe os formulários oficiais preenchidos.
 
-> **Estado atual:** fundação técnica, protótipo de interface, pesquisa normativa (Fase 01) e PDFs oficiais da Fase 02 obtidos e verificados tecnicamente. O portão humano da Fase 02 ainda precisa ser confirmado. O fluxo do frontend é uma demonstração claramente identificada: nenhum arquivo real é enviado, nenhum OCR é executado, nenhum pagamento é processado e nenhum PDF oficial é gerado.
+> **Estado atual:** fundação técnica, protótipo de interface, pesquisa normativa (Fase 01) e Fase 02 concluída com seis PDFs oficiais verificados e confirmados. O serviço continua `DRAFT` até o mapeamento da Fase 04. O fluxo do frontend é uma demonstração claramente identificada: nenhum arquivo real é enviado, nenhum OCR é executado, nenhum pagamento é processado e nenhum PDF oficial é gerado.
 
 ## Estrutura
 
@@ -143,8 +143,8 @@ A fundação e os contratos do catálogo já existem, mas o serviço piloto cont
 
 1. **Fase 00 concluída em 26/10/2026:** fundação local, testes, builds e Docker Compose validados; evidências no `PROJECT_TRACKER.md`.
 2. **Fase 01 concluída em 26/10/2026:** NORMAM-212/DPC 2026 conferida; NORMAM-101/DPC e NORMAM-211/DPC conferidas e descartadas para MA (a 211 exclui expressamente moto aquática e motonauta); formulários 2-A, 2-B, 2-D, 2-E, 2-C e 1-C identificados e separados dos documentos de origem; catálogo e matriz atualizados.
-3. **Fase 02 em andamento:** seis PDFs oficiais obtidos e verificados (2-A, 2-B, 2-C e 1-C standalone 2026; 2-D e 2-E extraídos da NORMAM-212/DPC 2026); seis `FormVersion` `VERIFIED`/`STATIC` registradas. Falta confirmar o portão humano. Nenhum `FormMapping` ou `ServiceForm` foi criado.
-4. Após a confirmação, completar a API de catálogo, o motor PDF por formulário, o upload temporário e o OCR seguro.
+3. **Fase 02 concluída em 26/10/2026:** seis PDFs oficiais obtidos, verificados e confirmados pelo usuário (2-A, 2-B, 2-C e 1-C standalone 2026; 2-D e 2-E extraídos da NORMAM-212/DPC 2026); seis `FormVersion` `VERIFIED`/`STATIC` registradas. Nenhum `FormMapping` ou `ServiceForm` foi criado.
+4. **Fase 03 (próxima, não iniciada):** completar a API de catálogo. Depois, motor PDF por formulário, upload temporário e OCR seguro.
 5. Integrar a revisão humana, o download, a autenticação e os créditos de teste.
 6. Homologar o MVP; pagamentos reais e implantação comercial ficam para fases posteriores, sujeitas a aprovação.
 
@@ -160,7 +160,7 @@ Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a iden
 - Relatório de revisão por formulário e versão: `docs/FORM_MAPPING_REPORT_TEMPLATE.md`.
 - O piloto permanece `DRAFT`; os seis PDFs oficiais foram obtidos e verificados na Fase 02 e registrados como `FormVersion` `VERIFIED`/`STATIC`, mas ainda não há `FormMapping` aprovado, geração real ou `ServiceForm`.
 - A interface demonstrativa continua isolada no frontend, sem enviar documentos ao servidor.
-- Próximo passo: confirmar o portão humano da Fase 02; depois iniciar a Fase 03 (API de catálogo). A geração de PDF e o mapeamento ficam para a Fase 04.
+- Próximo passo: iniciar a Fase 03 (API de catálogo), mediante nova autorização. A geração de PDF e o mapeamento ficam para a Fase 04.
 
 ## Acompanhamento do desenvolvimento
 
