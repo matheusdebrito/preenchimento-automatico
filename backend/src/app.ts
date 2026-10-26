@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import { loadEnv } from './config/env.js';
 import type { AppEnv } from './config/env.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerCatalogRoutes } from './routes/catalog.js';
 
 interface BuildAppOptions {
   env?: AppEnv;
@@ -52,6 +53,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   registerHealthRoutes(app);
+  registerCatalogRoutes(app);
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({
