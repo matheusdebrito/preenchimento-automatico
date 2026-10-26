@@ -150,3 +150,7 @@ Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a iden
 - O piloto permanece `DRAFT`; ainda não há modelos PDF oficiais validados nem geração real.
 - A interface demonstrativa continua isolada no frontend, sem enviar documentos ao servidor.
 - Próximo passo: validar os modelos oficiais aplicáveis ao piloto antes de criar motor de PDF ou liberar serviço.
+
+## Acompanhamento do desenvolvimento
+
+O progresso incremental do OpenCode, critérios de aceite e o ponto obrigatório de solicitação dos PDFs oficiais estão em [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md). Leia o plano antes de iniciar outra fase; arquivos `.md` não substituem validação de testes nem conferência oficial dos formulários.
