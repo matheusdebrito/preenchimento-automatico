@@ -244,7 +244,7 @@
 | Data (Brasília) | Fase | Situação | Evidências (comandos, testes, arquivos, revisão) | Commit / bloqueio |
 | --- | --- | --- | --- | --- |
 | 2026-10-26 | Inicialização | Plano criado; nenhuma fase certificada | Estado anterior conhecido apenas pelo histórico do repositório; verificar no ambiente OpenCode | — |
-| 2026-10-26 | Auditoria de arquitetura (fora das fases) | Contratos e documentação corrigidos; nenhuma fase certificada | Formulário/versão/mapeamento separados; regras e testes sintéticos adicionados. Typecheck/test/build devem ser confirmados no CI/OpenCode. | Consultar commits recentes |
+| 2026-10-26 | Auditoria de arquitetura (fora das fases) | Contratos e documentação corrigidos; nenhuma fase integralmente certificada | Formulário/versão/mapeamento separados; testes sintéticos. GitHub Actions CI [40382726714](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40382726714): backend e frontend com `npm ci`, `npm audit --omit=dev --audit-level=high`, typecheck, lint, testes e build **aprovados**. Docker Compose, navegação manual e arquivos oficiais ainda não verificados nesta auditoria. | Commits de 26/10/2026; continuar Fase 00 localmente |
 
 ### Modelo de relatório ao final de cada fase
 

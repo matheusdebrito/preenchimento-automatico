@@ -1,10 +1,51 @@
+# Estrutura atual do projeto — 26/10/2026
+
+> Este arquivo descreve a estrutura existente, não todas as funcionalidades concluídas.
+> Consulte o PROJECT_TRACKER.md para status e critérios de aceite.
+
+```text
 preenchimento-automatico/
-├── frontend/
-├── backend/
-├── docs/
-│   ├── formularios/
-│   └── especificacoes/
-├── compose.yaml
-├── .gitignore
+├── .github/workflows/ci.yml   # Typecheck, lint, testes, build e audit
+├── AGENTS.md                  # Regras do agente
+├── MVP_PLAN.md                # Escopo do MVP
+├── PROJECT_TRACKER.md         # Fases até produção/expansão
+├── UI_DESIGN_GUIDE.md         # Referência visual aprovada
 ├── README.md
-└── MVP_PLAN.md
+├── compose.yaml               # Frontend, backend e PostgreSQL local
+├── backend/
+│   ├── src/
+│   │   ├── modules/catalog/
+│   │   │   ├── contracts.ts
+│   │   │   ├── catalog.ts
+│   │   │   ├── validate-catalog.ts
+│   │   │   └── catalog.test.ts
+│   │   ├── config/
+│   │   └── routes/
+│   ├── templates/README.md    # PDFs futuros por form-id/revisão
+│   ├── package.json
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── features/wizard/
+│   │   ├── data/              # Apenas demonstração
+│   │   └── pages/
+│   ├── package.json
+│   └── Dockerfile
+└── docs/
+    ├── FORM_CATALOG.md
+    ├── SERVICE_FORM_MATRIX.md
+    └── FORM_MAPPING_REPORT_TEMPLATE.md
+```
+
+## Arquitetura de formulários
+
+Cada PDF oficial terá diretório independente em
+`backend/templates/<form-id>/<revisao-interna>/original.pdf`.
+`FormDefinition` define a identidade; `FormVersion`, o PDF
+oficial imutável; `FormMapping`, o mapeamento técnico versionado;
+`ServiceForm`, a associação com um ou vários serviços.
+
+Nenhum PDF oficial foi cadastrado neste momento. A interface atual
+é uma demonstração e não faz upload, OCR nem gera arquivos reais.
+A liberação do serviço piloto depende de fontes oficiais e revisão humana.

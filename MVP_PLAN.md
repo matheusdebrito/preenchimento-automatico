@@ -189,9 +189,9 @@ Antes de mapear PDFs:
 
 > Leia todo este `MVP_PLAN.md` antes de alterar arquivos. Inspecione o repositório e informe o que já existe. Trabalhe apenas na etapa solicitada; não antecipe fases. Antes de propor dependências ou comandos, confira versões e compatibilidade com o código atual. Preserve o escopo e as regras de não retenção de documentos. Para cada etapa, apresente: arquivos alterados, decisões tomadas, comandos executados, resultados de testes/typecheck/build, riscos e critérios de aceite atendidos. Se uma norma, formulário ou requisito oficial não estiver confirmado, sinalize a lacuna e não invente. Não avance com falhas de validação sem corrigi-las.
 
-### Primeiro comando sugerido para o OpenCode
+### Comando de retomada no OpenCode
 
-> Leia `MVP_PLAN.md`, inspecione o repositório e proponha **somente a Etapa A — Fundação**, com versões justificadas, estrutura de pastas, Docker Compose e critérios de validação. Não implemente OCR, pagamentos ou novos serviços agora. Caso não seja um repositório vazio, adapte-se ao código existente e apresente o plano antes de modificar arquivos.
+> Leia `AGENTS.md`, `PROJECT_TRACKER.md`, `MVP_PLAN.md` e as especificações do catálogo. Inspecione o repositório e o histórico de execução, consulte o resultado do CI e valide as etapas locais ainda pendentes. Execute **somente a primeira fase incompleta** indicada no `PROJECT_TRACKER.md`, preservando o frontend demonstrativo e o catálogo independente de formulários. Não reimplemente a fundação existente nem avance automaticamente; reporte critérios de aceite, resultados reais, riscos e bloqueios.
 
 
 ## Plano de producao e expansao

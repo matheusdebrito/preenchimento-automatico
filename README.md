@@ -132,12 +132,14 @@ npm run build
 
 ## Próximas etapas
 
-1. Catálogo de serviços e checklist de documentos com dados reais validados.
-2. Modelo de dados, Prisma, migrations, autenticação e autorização.
-3. Upload temporário com validação de assinatura, limites e limpeza por TTL.
-4. Extração de texto/OCR e revisão humana.
-5. Modelos oficiais versionados e geração determinística de PDF.
-6. Créditos, pagamentos e auditoria.
+O acompanhamento executável está em [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md).
+A fundação e os contratos do catálogo já existem, mas o serviço piloto continua `DRAFT`.
+
+1. Verificar fundação local (incluindo Docker Compose) e registrar os testes pendentes da Fase 00.
+2. Conferir os formulários oficiais aplicáveis ao piloto e solicitar somente os PDFs ausentes na Fase 02.
+3. Completar API de catálogo, motor PDF por formulário, upload temporário e OCR seguro.
+4. Integrar a revisão humana, o download, a autenticação e os créditos de teste.
+5. Homologar o MVP; pagamentos reais e implantação comercial ficam para fases posteriores, sujeitas a aprovação.
 
 Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a identidade visual.
 
