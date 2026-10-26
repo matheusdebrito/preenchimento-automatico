@@ -1,6 +1,6 @@
 # MVP — Preenchimento Automático de Formulários da Marinha
 
-**Status:** plano de implementação | **Prioridade:** colocar um fluxo ponta a ponta em funcionamento antes de ampliar serviços.
+**Execução por fases:** seguir `PROJECT_TRACKER.md` (checklists, bloqueios, evidências e solicitação de PDFs oficiais) | **Status:** plano de implementação | **Prioridade:** colocar um fluxo ponta a ponta em funcionamento antes de ampliar serviços.
 
 ## 1. Objetivo
 
