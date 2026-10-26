@@ -65,7 +65,7 @@ export function ServiceStep() {
               <span className="service-option__title">{PILOT_SERVICE.title}</span>
               <span className="service-option__description">{PILOT_SERVICE.summary}</span>
               <span className="service-option__meta">
-                <Badge tone="test">Fluxo disponível</Badge>
+                <Badge tone="test">Demonstração disponível</Badge>
                 <Badge tone="neutral">1 crédito</Badge>
               </span>
             </span>

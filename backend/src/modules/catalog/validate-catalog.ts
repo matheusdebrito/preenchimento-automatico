@@ -67,7 +67,7 @@ export function validateCatalog(data: CatalogDefinition): string[] {
   const fields = buildIndex(data.fields, 'campo', issues);
   const forms = buildIndex(data.forms, 'formulário', issues);
   const versions = buildIndex(data.versions, 'versão', issues);
-  const mappings = buildIndex(data.mappings, 'mapeamento', issues);
+  buildIndex(data.mappings, 'mapeamento', issues);
   const services = buildIndex(data.services, 'serviço', issues);
   const versionRevisions = new Set<string>();
   const mappingRevisions = new Set<string>();

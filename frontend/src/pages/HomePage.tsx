@@ -68,7 +68,7 @@ export function HomePage() {
               {SERVICE_CATEGORIES.map((category) => {
                 const Icon = category.icon;
 
-                if (!category.available) {
+                if (!category.demoAvailable) {
                   return (
                     <article key={category.id} className="category-card category-card--soon">
                       <span className="icon-badge" aria-hidden="true">
@@ -98,7 +98,7 @@ export function HomePage() {
                       <h3 className="category-card__title">{category.title}</h3>
                       <p className="category-card__description">{category.description}</p>
                       <div className="category-card__meta">
-                        <span className="category-card__available">Fluxo disponível</span>
+                        <span className="category-card__available">Demonstração disponível</span>
                       </div>
                     </div>
                     <ChevronRight className="category-card__chevron" aria-hidden="true" />
