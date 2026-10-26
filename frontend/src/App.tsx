@@ -3,6 +3,9 @@ import { LoaderCircle } from 'lucide-react';
 import { Route, Routes } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 
+const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
+const LiveFlowPage = lazy(() => import('./features/real/LiveFlowPage').then((module) => ({ default: module.LiveFlowPage })));
+
 const AccountPage = lazy(() =>
   import('./pages/AccountPage').then((module) => ({ default: module.AccountPage })),
 );
@@ -33,6 +36,8 @@ export function App() {
     <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/entrar" element={<AuthPage />} />
+        <Route path="/preencher-real/:serviceId" element={<LiveFlowPage />} />
         <Route path="/minha-conta" element={<AccountPage />} />
         <Route path="/creditos" element={<CreditsPage />} />
         <Route path="/creditos/historico" element={<CreditHistoryPage />} />

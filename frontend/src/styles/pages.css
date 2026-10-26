@@ -1228,3 +1228,12 @@
   gap: 0.75rem;
   margin-top: 0.5rem;
 }
+
+/* Live, opt-in flow; the existing demo remains separate until homologation. */
+.live-auth { max-width: 35rem; margin-inline: auto; display: grid; gap: 1.25rem; }
+.live-form { display: grid; gap: 1rem; min-width: 0; }
+.live-form h2 { color: var(--color-navy); font-size: 1.375rem; }
+.live-form .btn { justify-self: start; }
+.live-text-button { border: 0; background: transparent; color: var(--color-teal-strong); font: inherit; cursor: pointer; padding: .4rem 0; text-align: left; }
+.live-flow .card { max-width: 55rem; }
+.live-flow a.btn { width: fit-content; max-width: 100%; }

@@ -57,6 +57,9 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
           <NavLink to="/" end className="site-nav__link" onClick={closeMenu}>
             Início
           </NavLink>
+          <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
+            Entrar
+          </NavLink>
           <NavLink to="/minha-conta" className="site-nav__link" onClick={closeMenu}>
             Minha conta
           </NavLink>
