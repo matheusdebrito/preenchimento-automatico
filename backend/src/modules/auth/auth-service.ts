@@ -47,7 +47,7 @@ export async function registerUser(pool: Database, body: unknown): Promise<{ id:
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error &&
       (error as {code?:unknown}).code === '23505') {
-      throw new Error('E-mail já cadastrado.');
+      throw new Error('E-mail já cadastrado.', { cause: error });
     }
     throw error;
   }
