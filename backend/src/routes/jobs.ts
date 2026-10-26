@@ -133,6 +133,7 @@ export function registerJobRoutes(
       return reply.status(400).send({ error: 'invalid_field' });
     }
     job.values = { ...parsed.data.values };
+    job.reviewConfirmed = true;
     return { confirmed: true, fieldCount: Object.keys(job.values).length };
   });
 
@@ -141,7 +142,7 @@ export function registerJobRoutes(
     const job = store.get(req.params.id, userId);
     if (!job) return reply.status(404).send({ error: 'not_found' });
     if (job.stage === 'GENERATED') return { downloads: [...job.outputs.keys()], reused: true };
-    if (job.stage !== 'REVIEW' || Object.keys(job.values).length === 0) {
+    if (job.stage !== 'REVIEW' || !job.reviewConfirmed || Object.keys(job.values).length === 0) {
       return reply.status(409).send({ error: 'review_required' });
     }
     const service = publicService(definitions, job.serviceId);

@@ -9,6 +9,7 @@ export interface StoredDocument {
   requirementId: string;
   path: string;
   kind: DocumentKind;
+  size: number;
 }
 export interface DocumentJob {
   id: string;
@@ -20,6 +21,7 @@ export interface DocumentJob {
   sourceNotes: Record<string, string>;
   outputs: Map<string, string>;
   stage: 'CREATED' | 'UPLOADED' | 'REVIEW' | 'GENERATED';
+  reviewConfirmed: boolean;
 }
 
 const TTL = 20 * 60_000;
@@ -42,7 +44,7 @@ export class JobStore {
     await mkdir(join(this.root, id), { recursive: true, mode: 0o700 });
     const job: DocumentJob = {
       id, userId, serviceId, expiresAt: Date.now() + TTL,
-      files: [], values: {}, sourceNotes: {}, outputs: new Map(), stage: 'CREATED',
+      files: [], values: {}, sourceNotes: {}, outputs: new Map(), stage: 'CREATED', reviewConfirmed: false,
     };
     this.jobs.set(id, job);
     return job;
@@ -57,8 +59,9 @@ export class JobStore {
   async upload(job: DocumentJob, requirementId: string, bytes: Buffer, contentType: string): Promise<StoredDocument> {
     if (job.files.length >= DOCUMENT_LIMIT) throw new Error('Limite de documentos atingido.');
     if (job.stage === 'GENERATED') throw new Error('Processo já finalizado.');
-    const sizeSum = job.files.length * (10 * 1024 * 1024);
-    if (sizeSum >= DOCUMENT_LIMIT * 10 * 1024 * 1024) throw new Error('Limite de uploads.');
+    if (job.files.reduce((sum, doc) => sum + doc.size, 0) + bytes.length > 40 * 1024 * 1024) {
+      throw new Error('Limite total de uploads de 40 MB excedido.');
+    }
     const kind = classifyDocument(bytes, contentType);
     const id = randomUUID();
     const path = join(this.root, job.id, id + '.' + kind);
@@ -69,7 +72,7 @@ export class JobStore {
       await rm(path, { force: true });
       throw error;
     }
-    const doc = { id, requirementId, path, kind };
+    const doc = { id, requirementId, path, kind, size: bytes.length };
     job.files.push(doc);
     job.stage = 'UPLOADED';
     return doc;
