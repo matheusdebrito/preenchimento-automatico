@@ -15,3 +15,5 @@ output/
 .ocr-cache/
 *.filled.pdf
 *.preenchido.pdf
+
+.temp-documents/

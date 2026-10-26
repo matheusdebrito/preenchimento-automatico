@@ -19,3 +19,8 @@ backend/output/
 backend/.ocr-cache/
 *.filled.pdf
 *.preenchido.pdf
+
+# Never version runtime uploads, even in local testing.
+backend/.temp-documents/
+backend/.temp-documents-*/
+.temp-documents/

@@ -71,7 +71,7 @@ export function LiveFlowPage() {
     setBusy(true); setError('');
     try {
       const job = await api<{id:string}>('/api/jobs',
-        { method:'POST', body:JSON.stringify({serviceId:service.id}) });
+        { method:'POST', body:JSON.stringify({serviceId:service.id,answers}) });
       setJobId(job.id);
       for (const [requirementId, file] of Object.entries(files)) {
         await api<{id:string}>(

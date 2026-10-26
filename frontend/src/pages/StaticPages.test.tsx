@@ -22,7 +22,7 @@ describe('páginas internas', () => {
       ).toBeTruthy();
       expect(screen.getByText('Seus créditos')).toBeTruthy();
       expect(screen.getByText('processos disponíveis')).toBeTruthy();
-      expect(screen.getByText('Créditos de teste')).toBeTruthy();
+      expect(screen.getByText('Créditos fictícios')).toBeTruthy();
 
       const fillLink = screen.getByRole('link', { name: /Preencher documentos/ });
       expect(fillLink.getAttribute('href')).toBe('/preencher/servico');

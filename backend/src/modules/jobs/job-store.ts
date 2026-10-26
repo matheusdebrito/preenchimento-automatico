@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { tmpdir } from 'node:os';
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { classifyDocument, validatePdfPages } from './document-validator.js';
@@ -15,12 +16,13 @@ export interface DocumentJob {
   id: string;
   userId: string;
   serviceId: string;
+  answers: Readonly<Record<string, string>>;
   expiresAt: number;
   files: StoredDocument[];
   values: Record<string, string>;
   sourceNotes: Record<string, string>;
   outputs: Map<string, string>;
-  stage: 'CREATED' | 'UPLOADED' | 'REVIEW' | 'GENERATED';
+  stage: 'CREATED' | 'UPLOADED' | 'PROCESSING' | 'REVIEW' | 'GENERATING' | 'GENERATED';
   reviewConfirmed: boolean;
 }
 
@@ -32,18 +34,18 @@ export class JobStore {
   private readonly jobs = new Map<string, DocumentJob>();
   private readonly timer: NodeJS.Timeout;
 
-  constructor(private readonly root = resolve(process.cwd(), '.temp-documents')) {
+  constructor(private readonly root = resolve(tmpdir(), 'preenchimento-automatico-jobs')) {
     this.timer = setInterval(() => { void this.cleanup().catch(() => undefined); }, 60_000);
     this.timer.unref();
   }
 
-  async create(userId: string, serviceId: string): Promise<DocumentJob> {
+  async create(userId: string, serviceId: string, answers: Readonly<Record<string, string>> = {}): Promise<DocumentJob> {
     await this.cleanup();
     if (this.jobs.size >= MAX_ROOT_FILES) throw new Error('Limite temporário de processamento atingido.');
     const id = randomUUID();
     await mkdir(join(this.root, id), { recursive: true, mode: 0o700 });
     const job: DocumentJob = {
-      id, userId, serviceId, expiresAt: Date.now() + TTL,
+      id, userId, serviceId, answers, expiresAt: Date.now() + TTL,
       files: [], values: {}, sourceNotes: {}, outputs: new Map(), stage: 'CREATED', reviewConfirmed: false,
     };
     this.jobs.set(id, job);
@@ -58,7 +60,7 @@ export class JobStore {
 
   async upload(job: DocumentJob, requirementId: string, bytes: Buffer, contentType: string): Promise<StoredDocument> {
     if (job.files.length >= DOCUMENT_LIMIT) throw new Error('Limite de documentos atingido.');
-    if (job.stage === 'GENERATED') throw new Error('Processo já finalizado.');
+    if (job.stage !== 'CREATED' && job.stage !== 'UPLOADED') throw new Error('Envio não permitido neste estágio.');
     if (job.files.reduce((sum, doc) => sum + doc.size, 0) + bytes.length > 40 * 1024 * 1024) {
       throw new Error('Limite total de uploads de 40 MB excedido.');
     }

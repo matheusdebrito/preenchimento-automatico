@@ -13,7 +13,9 @@ import { JobStore } from '../modules/jobs/job-store.js';
 import { extractText, suggestFields } from '../modules/jobs/ocr.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
 
-const createSchema = z.object({ serviceId: z.string().max(100) });
+const createSchema = z.object({ serviceId: z.string().max(100),
+  answers: z.record(z.string().max(100), z.string().max(100)).default({}),
+});
 const reviewSchema = z.object({
   confirmed: z.literal(true),
   values: z.record(z.string().max(100), z.string().max(500)).refine(
@@ -44,11 +46,11 @@ export function registerJobRoutes(
     const userId = await actor(req);
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
-    const service = publicService(definitions, parsed.data.serviceId);
+    const service = publicService(definitions, parsed.data.serviceId, parsed.data.answers);
     if (!service) return reply.status(409).send({
       error: 'not_available', message: 'Serviço ainda não homologado.',
     });
-    const job = await store.create(userId, service.id);
+    const job = await store.create(userId, service.id, parsed.data.answers);
     return reply.status(201).send({ id: job.id, status: job.stage, expiresAt: job.expiresAt });
   });
 
@@ -69,7 +71,7 @@ export function registerJobRoutes(
     const userId = await actor(req);
     const job = store.get(req.params.id, userId);
     if (!job) return reply.status(404).send({ error: 'not_found' });
-    const service = publicService(definitions, job.serviceId);
+    const service = publicService(definitions, job.serviceId, job.answers);
     if (!service || !service.documentRequirements.some((doc) => doc.id === req.params.requirementId)) {
       return reply.status(400).send({ error: 'invalid_requirement' });
     }
@@ -88,19 +90,23 @@ export function registerJobRoutes(
     const job = store.get(req.params.id, userId);
     if (!job) return reply.status(404).send({ error: 'not_found' });
     if (job.stage !== 'UPLOADED') return reply.status(409).send({ error: 'invalid_state' });
-    const service = publicService(definitions, job.serviceId);
+    const service = publicService(definitions, job.serviceId, job.answers);
     if (!service) return reply.status(409).send({ error: 'service_unavailable' });
     const required = service.documentRequirements.filter((doc) => doc.required);
     if (required.some((doc) => !job.files.some((file) => file.requirementId === doc.id))) {
       return reply.status(422).send({ error: 'missing_document' });
     }
 
+    job.stage = 'PROCESSING';
     const conflicts = new Set<string>();
     for (const document of job.files) {
       let text: string;
       try {
         text = await extractText(document, store.directory(job));
       } catch {
+        job.stage = 'UPLOADED';
+        job.values = {};
+        job.sourceNotes = {};
         return reply.status(503).send({ error: 'ocr_failed', message: 'Não foi possível ler o documento.' });
       }
       const suggestions = suggestFields(text, document.requirementId);
@@ -145,10 +151,11 @@ export function registerJobRoutes(
     if (job.stage !== 'REVIEW' || !job.reviewConfirmed || Object.keys(job.values).length === 0) {
       return reply.status(409).send({ error: 'review_required' });
     }
-    const service = publicService(definitions, job.serviceId);
+    const service = publicService(definitions, job.serviceId, job.answers);
     if (!service || service.formVersionIds.length === 0) {
       return reply.status(409).send({ error: 'service_unavailable' });
     }
+    job.stage = 'GENERATING';
     const generated = new Map<string, string>();
     try {
       for (const id of service.formVersionIds) {
@@ -162,6 +169,7 @@ export function registerJobRoutes(
       job.stage = 'GENERATED';
       return { downloads: [...generated.keys()], reused: false };
     } catch {
+      job.stage = 'REVIEW';
       for (const path of generated.values()) await rm(path, { force: true });
       return reply.status(422).send({
         error: 'generation_failed', message: 'Verifique campos, saldo e modelo homologado.',
