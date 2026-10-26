@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Preenchimento Automático">
+  <rect width="64" height="64" rx="16" fill="#142F43"/>
+  <g fill="none" stroke="#EAF3F2" stroke-width="4" stroke-linecap="round">
+    <path d="M12 40c5 0 5-4 10-4s5 4 10 4 5-4 10-4 5 4 10 4"/>
+    <path d="M12 49c5 0 5-4 10-4s5 4 10 4 5-4 10-4 5 4 10 4"/>
+    <path d="M32 32V14l12 6-12 6"/>
+  </g>
+</svg>

@@ -1,0 +1,55 @@
+:root {
+  color-scheme: light;
+
+  /* Brand palette — UI_DESIGN_GUIDE.md */
+  --color-navy: #142f43;
+  --color-navy-soft: #1d4059;
+  --color-teal: #197a83;
+  --color-teal-strong: #11636b;
+  --color-mint: #eaf3f2;
+  --color-page: #f7f9fa;
+  --color-amber: #e49b46;
+  --color-white: #ffffff;
+  --color-hero-muted: #d5e3ea;
+
+  /* Text — contrast checked against their usual surfaces (WCAG AA) */
+  --color-text: #142f43;
+  --color-muted: #5d7080;
+  --color-muted-strong: #4e626f;
+
+  /* Surfaces and lines */
+  --color-border: #dfe6eb;
+  --color-border-strong: #b7c6cf;
+  --color-input-border: #6f8492;
+  --color-amber-soft: #fdf3e6;
+  --color-amber-ink: #7a4b0e;
+  --color-info-soft: #eef6f7;
+  --color-info-border: #c6dfe2;
+  --color-info-ink: #234650;
+  --color-success: #1c6b4a;
+  --color-success-soft: #e6f4ec;
+  --color-danger: #a12b2b;
+  --color-danger-soft: #fbeaea;
+
+  /* Focus */
+  --color-focus: #0d5c63;
+  --color-focus-on-dark: #f2c078;
+
+  /* Elevation and radii */
+  --shadow-sm: 0 1px 2px rgb(20 47 67 / 6%), 0 1px 3px rgb(20 47 67 / 8%);
+  --shadow-md: 0 12px 32px rgb(20 47 67 / 10%);
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* Type and layout */
+  --font-sans:
+    Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial,
+    sans-serif;
+  --container-max: 70rem;
+  --header-height: 4.5rem;
+  --transition: 160ms ease;
+  --transition-slow: 240ms ease;
+}

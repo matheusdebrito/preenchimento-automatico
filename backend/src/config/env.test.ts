@@ -1,0 +1,63 @@
+import { describe, expect, it } from 'vitest';
+import { loadEnv } from './env.js';
+
+describe('loadEnv', () => {
+  it('aplica padrões seguros de desenvolvimento', () => {
+    const env = loadEnv({});
+
+    expect(env.NODE_ENV).toBe('development');
+    expect(env.API_HOST).toBe('0.0.0.0');
+    expect(env.API_PORT).toBe(3000);
+    expect(env.LOG_LEVEL).toBe('info');
+    expect(env.CORS_ORIGINS).toEqual([
+      'http://localhost:5173',
+      'http://localhost:8080',
+    ]);
+  });
+
+  it('normaliza e deduplica origens CORS', () => {
+    const env = loadEnv({
+      NODE_ENV: 'production',
+      API_PORT: '8080',
+      CORS_ORIGINS:
+        'https://app.example.com/, https://app.example.com,https://admin.example.com',
+    });
+
+    expect(env.NODE_ENV).toBe('production');
+    expect(env.API_PORT).toBe(8080);
+    expect(env.CORS_ORIGINS).toEqual([
+      'https://app.example.com',
+      'https://admin.example.com',
+    ]);
+  });
+
+  it('mantém a URL do banco quando informada', () => {
+    const databaseUrl = 'postgresql://usuario:senha@localhost:5432/preenchimento';
+    const env = loadEnv({ DATABASE_URL: databaseUrl });
+
+    expect(env.DATABASE_URL).toBe(databaseUrl);
+  });
+
+  it('rejeita curinga de CORS', () => {
+    expect(() => loadEnv({ CORS_ORIGINS: '*' })).toThrow(/curinga/);
+  });
+
+  it('rejeita origem CORS com caminho', () => {
+    expect(() => loadEnv({ CORS_ORIGINS: 'https://app.example.com/entrar' })).toThrow(
+      /Origem CORS inválida/,
+    );
+  });
+
+  it('rejeita lista de CORS vazia', () => {
+    expect(() => loadEnv({ CORS_ORIGINS: ' , ' })).toThrow(/ao menos uma origem/);
+  });
+
+  it('rejeita porta inválida', () => {
+    expect(() => loadEnv({ API_PORT: 'abc' })).toThrow(/API_PORT/);
+    expect(() => loadEnv({ API_PORT: '70000' })).toThrow(/API_PORT/);
+  });
+
+  it('rejeita nível de log desconhecido', () => {
+    expect(() => loadEnv({ LOG_LEVEL: 'verbose' })).toThrow(/LOG_LEVEL/);
+  });
+});

@@ -20,6 +20,7 @@ Antes de editar:
 - Identificar stack, versões instaladas e suportadas, scripts, configuração TypeScript, ORM, migrations, Docker, variáveis de ambiente e padrões existentes.
 - Não supor versões, APIs, sintaxes, nomes de arquivos ou comportamento de bibliotecas. Conferir documentação oficial quando disponível e compatibilidade com o código real.
 - Respeitar o escopo do MVP; não adicionar IA generativa, microserviços, filas, Redis ou serviços pagos sem justificativa mensurável e aprovação explícita.
+- Monetização aprovada: **créditos avulsos e pacotes pré-pagos**. Não implementar planos mensais, assinaturas, empresas ou cobranças por usuário.
 - Preferir soluções e padrões já adotados no projeto. Evitar dependências desnecessárias.
 - Os requisitos normativos e arquivos PDF oficiais precisam ser conferidos contra a versão vigente e a jurisdição pertinente antes de declarar um formulário apto a produção. Não inventar exigências da Marinha.
 
@@ -123,15 +124,18 @@ Se um teste não puder ser executado, informar claramente **qual teste, por quê
 
 ## 9. Escopo de dados e créditos
 
-Persistente: usuários, credenciais em hash, organizações se houver, planos, compras, referências de pagamento, histórico imutável de movimentações de crédito, configurações e catálogo/versionamento de formulários.
+Persistente: usuários, credenciais em hash, movimentações auditáveis de créditos, configurações e catálogo/versionamento de formulários. Compras e referências externas de pagamento somente quando a etapa comercial for implementada. Não criar organizações, planos ou assinaturas no MVP.
 
 Temporário: uploads, imagens intermediárias, dados OCR, dados de processo, prévias e PDFs preenchidos.
 
 - Um crédito corresponde a **um processo documental**, não a cada formulário ou correção.
 - Não consumir crédito irreversivelmente antes da geração prevista; tratar falhas com estorno ou liberação da reserva, em transação idempotente.
 - Correções e reexportações da mesma sessão não devem cobrar novamente dentro da política definida.
-- Verificar o plano e saldo no backend.
+- Verificar saldo e permissão no backend, sem pressupor plano mensal.
+- No protótipo, usar concessão de créditos de teste. Na etapa comercial, permitir compras avulsas e pacotes pré-pagos.
+- Ao integrar pagamento, creditar somente após confirmação válida, autenticar webhooks, assegurar idempotência e conciliar falhas.
 - Não implementar cobrança real até existir especificação e testes específicos de integração com o provedor.
+- Não impor vencimento a créditos comprados sem política explícita e revisão das obrigações aplicáveis.
 
 ## 10. Condições de entrega para cada etapa
 

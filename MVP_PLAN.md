@@ -20,14 +20,15 @@ Criar um SaaS web, mobile-first, que permita ao usuário selecionar um serviço 
 - Download dos formulários gerados (individualmente e/ou ZIP).
 - Limpeza automática dos arquivos de origem, dados extraídos e PDFs gerados após encerramento/expiração.
 - Autenticação por e-mail e senha; saldos e lançamentos de créditos persistentes.
-- **Créditos de teste concedidos manualmente** para o MVP; consumir um crédito apenas na primeira geração bem-sucedida do pacote, com idempotência.
+- **Créditos de teste concedidos manualmente** no protótipo; consumir um crédito apenas na primeira geração bem-sucedida do pacote, com idempotência.
+- **Monetização escolhida:** créditos avulsos e pacotes pré-pagos, sem assinatura ou mensalidade. Pagamento real entra em fase comercial posterior.
 - Layout legível e responsivo para celulares e computadores lentos.
 
 ### Fora do MVP
 
 - Gestão de processos, clientes e embarcações em banco de dados.
 - Múltiplos serviços da Marinha além do piloto.
-- Pagamento real, assinaturas, planos empresariais e integrações de cobrança.
+- Pagamento real no protótipo inicial, assinaturas, planos empresariais e cobrança por usuários. A compra avulsa de créditos será integrada depois da validação do fluxo documental.
 - Fine-tuning, RAG, Ollama ou modelo de linguagem pago.
 - Integração/protocolo automático com sistemas da Marinha.
 - Assinatura eletrônica, disparos de WhatsApp, validação jurídica automática e aprovação automática de documentos.
@@ -72,7 +73,8 @@ Antes de mapear PDFs:
 ### Separação de responsabilidades
 
 - `auth`: contas, autenticação e sessões.
-- `billing`: créditos e livro-razão; sem pagamento real no MVP.
+- `credits`: concessão, saldo, consumo, estorno e livro-razão, sem planos nem assinaturas.
+- `payments` (fase comercial posterior): compra de créditos, conciliação e confirmação pelo provedor.
 - `catalog`: serviços, requisitos condicionais e versões dos formulários.
 - `upload`: recepção, limites, inspeção e armazenamento temporário.
 - `extraction`: PDF textual/OCR, parsing, origem e validação dos campos.
@@ -83,7 +85,8 @@ Antes de mapear PDFs:
 ## 6. Modelo mínimo de dados persistentes
 
 - `User`: id, e-mail normalizado e único, hash da senha, timestamps.
-- `CreditLedger`: id, userId, tipo (`GRANT`, `CONSUME`, `REFUND`), quantidade, referência idempotente, timestamp.
+- `CreditLedger`: id, userId, tipo (`GRANT`, `PURCHASE`, `CONSUME`, `REFUND`, `ADJUSTMENT`), quantidade, referência idempotente, timestamp. `PURCHASE` só será usado com pagamentos reais.
+- `CreditPurchase` (fase comercial): userId, pacote, quantidade, valor, status, id externo do pagamento e chave de idempotência; não armazenar dados de cartão.
 - `GenerationRecord`: id técnico, userId, serviceId, status, referência de consumo, timestamp; **sem nome/CPF/dados da embarcação**.
 - `FormTemplate`: código, versão, serviço, hash do PDF, fonte, status de vigência.
 
@@ -92,6 +95,9 @@ Antes de mapear PDFs:
 ## 7. Regras de negócio
 
 - Uma unidade de cobrança = **um pacote documental de um serviço**, não uma página ou um formulário individual.
+- Sem mensalidade, renovação automática, cobrança por funcionário ou planos empresariais no MVP.
+- Creditar compras apenas após confirmação válida do pagamento, sem duplicação em reenvios de webhook.
+- Definir explicitamente eventual expiração, estorno e reembolso de créditos antes de vendê-los; não expirar créditos silenciosamente.
 - Exibir quantidade de créditos antes de gerar, bloquear geração se saldo insuficiente.
 - **Não debitar** por upload, OCR, erro do servidor ou simples prévia.
 - Consumo com transação no banco e chave de idempotência; repetição de requisição não consome crédito novamente.
@@ -165,8 +171,8 @@ Antes de mapear PDFs:
 ## 11. Próxima fase (não implementar antes do MVP validado)
 
 - Mais serviços: inscrição de embarcações, renovação de Arrais/Mestre/Capitão-Amador, serviços de aquaviários, conforme normas verificadas.
-- Integração de pagamento real (Pix/cartão) com webhooks assinados e idempotentes.
-- Pacotes de créditos e eventual assinatura, com saldo compartilhável por organização.
+- **Primeira evolução comercial:** venda avulsa de créditos e pacotes pré-pagos via Pix/cartão com webhooks verificados, idempotência e conciliação.
+- **Futuro fora do escopo:** equipes, contas empresariais, saldos compartilhados e eventual assinatura; não implementar sem nova decisão.
 - Comparação Tesseract x PaddleOCR por documento e campo; IA local somente onde métricas demonstrarem necessidade.
 - Gestão de versões dos formulários, revisão editorial e monitoramento de alterações normativas.
 
