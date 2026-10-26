@@ -96,6 +96,11 @@ export class JobStore {
     }
   }
 
+  async remove(job: DocumentJob): Promise<void> {
+    this.jobs.delete(job.id);
+    await rm(join(this.root, job.id), { recursive: true, force: true });
+  }
+
   async close(): Promise<void> {
     clearInterval(this.timer);
     for (const id of this.jobs.keys()) await rm(join(this.root, id), { recursive: true, force: true });

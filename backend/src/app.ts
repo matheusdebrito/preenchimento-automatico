@@ -6,6 +6,7 @@ import type { AppEnv } from './config/env.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerJobRoutes } from './routes/jobs.js';
 import type { Database } from './modules/auth/db.js';
 
 interface BuildAppOptions {
@@ -58,6 +59,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerHealthRoutes(app);
   registerCatalogRoutes(app);
   registerAuthRoutes(app, env, options.pool);
+  registerJobRoutes(app, options.pool);
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({
