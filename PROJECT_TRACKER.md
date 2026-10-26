@@ -1,6 +1,6 @@
-# PROJECT_TRACKER.md — Plano executável do MVP
+# PROJECT_TRACKER.md — Plano do MVP à produção e expansão
 
-> **Objetivo:** orientar o OpenCode na implementação incremental, permitindo retomar o trabalho e marcar cada fase somente quando seus critérios forem comprovadamente atendidos.
+> **Objetivo:** orientar o OpenCode da prova técnica ao lançamento comercial e à expansão, permitindo retomar o trabalho e marcar cada fase somente quando seus critérios forem comprovadamente atendidos.
 >
 > **Escopo:** primeiro serviço = transferência de propriedade de moto aquática. Modelo comercial = créditos avulsos e pacotes pré-pagos; **sem assinatura nem planos empresariais**. Nenhuma integração real com a Marinha ou promessa de aprovação.
 >
@@ -26,6 +26,14 @@
 - Uma fase pode depender de subetapas, mas não de suposições; uma confirmação verbal não substitui inspeção/teste.
 - O agente pode corrigir problemas da fase atual sem abrir uma nova fase.
 
+## Marcos e portões de aprovação
+
+- **Marco 1 — MVP técnico:** fases 00–09. Demonstrar preenchimento ponta a ponta com dados sintéticos; **não significa pronto para usuários reais**.
+- **Marco 2 — Produção comercial:** fases 10–17. Exige autorização explícita antes de pagar por serviços, configurar infraestrutura externa, ativar cobrança real, processar documentos reais ou publicar a aplicação.
+- **Marco 3 — Expansão:** fase 18 e posteriores; somente após estabilização em produção e validação de demanda, serviço por serviço.
+- Aprovação para **planejar** não autoriza contratação, custos, uso de dados reais, migração destrutiva, publicação nem cobrança. Registrar cada autorização e seus limites no Registro de execução.
+- Dependências e políticas de segurança do MVP continuam válidas em produção; não suspender requisitos de segurança por serem uma fase futura.
+
 ## 1. Quadro geral de progresso
 
 | Fase | Objetivo | Dependência | Situação |
@@ -40,7 +48,15 @@
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] |
-| 10 | Pagamentos reais de créditos (fase comercial posterior) | MVP homologado e autorização explícita | [ ] |
+| 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
+| 11 | Infraestrutura de produção e deploy reproduzível | 09 e aprovação explícita | [ ] |
+| 12 | Segurança de produção e gestão de segredos | 11 | [ ] |
+| 13 | LGPD, políticas e retenção verificadas | 09, 11 e revisão responsável | [ ] |
+| 14 | Observabilidade, backup e recuperação | 11, 12 | [ ] |
+| 15 | Carga, capacidade e custos operacionais | 11, 14 | [ ] |
+| 16 | Homologação pré-lançamento e revisão do go/no-go | 10–15 | [ ] |
+| 17 | Lançamento controlado e acompanhamento | 16 e autorização explícita | [ ] |
+| 18 | Expansão incremental de serviços | 17 e decisão por serviço | [ ] |
 
 > **Estado inicial conhecido em 26/10/2026:** frontend demonstrativo, API Fastify com healthcheck, Compose/PostgreSQL e contratos preliminares de catálogo foram adicionados ao repositório. Esses fatos **não significam** aprovação de build/testes nem homologação dos PDFs. A Fase 00 deverá verificar o estado local real antes de qualquer [x].
 
@@ -151,6 +167,74 @@
 - **Aceite:** aprovação explícita do usuário e testes financeiros/auditoria concluídos.
 - **Fora de escopo:** mensalidades, assinaturas e planos empresariais.
 
+## Fase 11 — Infraestrutura de produção e entrega reproduzível
+
+- [ ] Definir provedor, região, orçamento, domínio, topologia, separação de ambientes e processo de atualização/rollback; **pedir aprovação antes de contratar ou publicar**.
+- [ ] Preparar deploy reproduzível, TLS/HTTPS e renovação, rede e firewall com banco e worker não expostos à internet.
+- [ ] Configurar isolamento do processamento de PDFs/OCR, armazenamento temporário privado, limites de CPU/memória e volumes persistentes apenas para dados necessários.
+- [ ] Criar pipeline com verificações obrigatórias e proteção de branches, migrations com estratégia segura e rollback comprovado em ambiente de homologação.
+- **Aceite:** infraestrutura testada com dados sintéticos, documentação de operação e custos, sem publicação pública não autorizada.
+
+## Fase 12 — Segurança operacional de produção
+
+- [ ] Definir modelo de ameaças e revisar autenticação, autorização por recurso, sessões, CSRF conforme mecanismo de autenticação, CORS/CSP, rate limit e abuso automatizado.
+- [ ] Adotar gerenciador de segredos/credenciais, menor privilégio, rotatividade e remoção de segredos dos logs e imagens.
+- [ ] Revisar upload/decodificadores PDF e imagem, isolamento de worker, proteção a DoS e sandbox de processamento.
+- [ ] Automatizar verificação de dependências/imagens, atualizações de segurança e verificação de permissões.
+- [ ] Testar falhas relevantes sem dados reais; registrar riscos remanescentes e responsáveis.
+- **Aceite:** checklist e evidências de segurança revisados, sem vulnerabilidade crítica pendente para lançamento.
+
+## Fase 13 — Privacidade, LGPD e políticas
+
+- [ ] Documentar finalidade, base legal adequada, minimização, retenção, descarte, terceiros envolvidos e direitos dos titulares; submeter documentos jurídicos à revisão apropriada antes do lançamento.
+- [ ] Verificar que documentos enviados, prévias, OCR e PDFs finais são temporários e não entram em backups, telemetria, logs nem ferramentas terceirizadas sem justificativa e proteção.
+- [ ] Testar exclusão após conclusão/expiração, inclusive cancelamentos, falhas, jobs órfãos e volumes.
+- [ ] Criar política de privacidade, termos de uso, orientações de segurança e canal de atendimento pertinentes, com promessas técnicas verificadas.
+- **Aceite:** fluxo de dados e políticas documentados/revisados; retenção e exclusão comprovadas em ambiente de homologação.
+
+## Fase 14 — Observabilidade, backup e recuperação
+
+- [ ] Implementar métricas técnicas, logs sem dados pessoais documentais, alertas sobre erros, filas, CPU/memória, disco e falhas de processamento/pagamento.
+- [ ] Configurar backups criptografados **somente dos dados persistentes necessários**, com retenção e permissões, sem documentos temporários.
+- [ ] Testar restauração do banco, recuperação após queda, reprocessamentos idempotentes e procedimentos de incidente.
+- [ ] Documentar runbooks de indisponibilidade, suspensão de pagamentos, reversão de deploy e contatos operacionais.
+- **Aceite:** alertas e restauração testados; evidências registradas e dados sensíveis protegidos.
+
+## Fase 15 — Capacidade, desempenho e custos
+
+- [ ] Estabelecer metas de tempo de processamento e concorrência realistas, sem prometer valores não medidos.
+- [ ] Realizar teste de carga com documentos sintéticos de diferentes tamanhos, incluindo imagens problemáticas e PDFs multipágina.
+- [ ] Medir uso de CPU/RAM/disco, latência, filas e custo por pacote; ajustar limites, paralelismo e backpressure com evidências.
+- [ ] Avaliar saturação do servidor e experiência em celular/rede lenta; testar limites e mensagens de indisponibilidade.
+- **Aceite:** orçamento de recursos e capacidade inicial documentados com medições e critérios de escalonamento.
+
+## Fase 16 — Homologação final e decisão de lançamento
+
+- [ ] Executar testes unitários, integração, E2E, segurança, carga mínima, acessibilidade e backup/restore em ambiente representativo.
+- [ ] Conferir a vigência e apresentação de **todos** os modelos oficiais ativos, regras condicionais e assinatura/validação humana necessária.
+- [ ] Homologar compras, webhooks, duplicidade, reembolsos, estornos e reconciliação do saldo com provedor em sandbox.
+- [ ] Verificar domínio, TLS, privacidade, suporte, políticas comerciais, métricas, incidentes, rollback e custos.
+- [ ] Elaborar relatório **GO/NO-GO** com falhas bloqueantes e riscos residuais; **pedir autorização explícita antes de publicar/aceitar dados reais/cobrar**.
+- **Aceite:** decisão documentada, sem bloqueadores críticos não resolvidos e aprovação registrada.
+
+## Fase 17 — Lançamento controlado
+
+- [ ] Publicar somente após GO explícito e verificar serviços em produção sem expor banco, arquivos temporários ou informações sensíveis.
+- [ ] Ativar pagamentos reais somente após confirmação do provedor e da autorização específica para cobrança.
+- [ ] Fazer smoke tests seguros de catálogo, acesso, pagamento e geração; evitar uso de documentação pessoal real em testes.
+- [ ] Acompanhar erros, consumo, custos, limpeza e disponibilidade nos primeiros ciclos, com plano de suspensão e rollback.
+- [ ] Registrar incidentes, ajustes e aceite operacional pós-lançamento.
+- **Aceite:** produto operando sob monitoramento e com procedimentos de correção e suspensão documentados.
+
+## Fase 18 — Expansão incremental e manutenção
+
+- [ ] Priorizar novos serviços com base em demanda e custo de implementação, sem inferir obrigatoriedade de formulários.
+- [ ] Para **cada novo serviço**, repetir pesquisa normativa (Fase 01), solicitação dos PDFs (Fase 02), mapeamento/testes visuais (Fase 04), regras, revisão e homologação antes de disponibilizar.
+- [ ] Monitorar mudanças normativas, desativar modelos desatualizados e preservar histórico de versões.
+- [ ] Analisar métricas agregadas e feedback sem reter conteúdo documental; melhorar OCR somente mediante testes comparativos.
+- [ ] Considerar equipes/contas empresariais e assinaturas **apenas se houver nova decisão explícita**.
+- **Aceite:** cada ampliação passa por sua própria revisão, testes, autorização e registro de lançamento.
+
 ## Registro de execução — atualizar a cada sessão/fase
 
 | Data (Brasília) | Fase | Situação | Evidências (comandos, testes, arquivos, revisão) | Commit / bloqueio |
@@ -173,4 +257,7 @@ Commit: [SHA, se realizado]
 
 ## Critério de encerramento do plano
 
-O MVP técnico está pronto apenas quando **fases 00 a 09** estiverem todas marcadas [x], com evidências no registro e o fluxo completo validado. A fase 10 é uma evolução comercial separada, não uma exigência para concluir o protótipo.
+- **MVP técnico:** fases 00–09 com [x] e evidências; isso **não** autoriza atendimento público nem processamento de dados reais.
+- **Prontidão para produção:** fases 10–16 com [x], checklist GO/NO-GO e autorizações de custo, dados reais e cobrança.
+- **Lançamento:** fase 17 com [x], publicação aprovada e acompanhamento inicial.
+- **Expansão:** fase 18 é recorrente por serviço; nunca considerar todo o catálogo da Marinha concluído de uma vez.
