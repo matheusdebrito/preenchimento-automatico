@@ -15,6 +15,9 @@ Prioridades, nesta ordem:
 
 ## 2. Fonte de verdade e contexto
 
+**Obrigatório:** seguir `PROJECT_TRACKER.md` como checklist operacional de fases, atualizar seus marcadores somente após evidências de testes e parar no portão humano de download de PDFs oficiais (Fase 02). Ao retomar uma sessão, verificar a primeira fase incompleta. Não avançar de fase sem informar o resultado e não solicitar PDFs antes da pesquisa documental (Fase 01).
+
+
 Antes de editar:
 - Ler este arquivo, `MVP_PLAN.md`, README, configuração existente, estrutura de pastas, arquivos relevantes, testes e histórico recente de alterações disponível.
 - Identificar stack, versões instaladas e suportadas, scripts, configuração TypeScript, ORM, migrations, Docker, variáveis de ambiente e padrões existentes.
