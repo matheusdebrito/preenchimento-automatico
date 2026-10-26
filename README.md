@@ -154,3 +154,8 @@ Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a iden
 ## Acompanhamento do desenvolvimento
 
 O progresso incremental do OpenCode, critérios de aceite e o ponto obrigatório de solicitação dos PDFs oficiais estão em [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md). Leia o plano antes de iniciar outra fase; arquivos `.md` não substituem validação de testes nem conferência oficial dos formulários.
+
+
+## Producao e expansao
+
+O `PROJECT_TRACKER.md` tambem descreve as fases de pagamento por creditos, seguranca, LGPD, infraestrutura, monitoramento, capacidade, homologacao, lancamento e expansao. A conclusao do MVP tecnico nao autoriza ativar producao nem pagamentos. Consulte os pontos de aprovacao no tracker.
