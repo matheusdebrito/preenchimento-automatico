@@ -1,65 +1,93 @@
-/**
- * Contratos de catálogo. Nenhum formulário é liberado em produção sem
- * fonte oficial, versão, mapeamento e validação humana documentados.
- *
- * Estes tipos não contêm dados pessoais de clientes.
- */
-export type CatalogStatus =
-  | 'IDENTIFIED'
-  | 'MAPPED'
-  | 'TESTED'
-  | 'APPROVED'
-  | 'OUTDATED';
-
-export type FieldValueKind = 'text' | 'date' | 'boolean' | 'number';
+/** Contracts for independently versioned official forms and service associations. */
+export type FormVersionStatus = 'IDENTIFIED' | 'VERIFIED' | 'OUTDATED';
+export type MappingStatus = 'DRAFT' | 'TESTED' | 'APPROVED';
 export type PdfTemplateKind = 'ACROFORM' | 'STATIC' | 'UNKNOWN';
+export type FieldValueKind = 'text' | 'date' | 'boolean' | 'number';
 
 export interface FieldDefinition {
-  /** Identificador semântico estável, p.ex. person.cpf. */
+  /** Reusable semantic ID; never a physical PDF coordinate. */
   id: string;
   label: string;
   valueKind: FieldValueKind;
-  /** Informa a regra de validação sem acoplar os campos ao OCR. */
   validationRuleId?: string;
 }
 
-export interface FormTemplate {
+export interface FormDefinition {
+  /** Stable document identity, independent of services and revisions. */
   id: string;
   name: string;
-  /** Versão interna imutável do mapeamento/modelo. */
-  version: string;
+  description?: string;
+}
+
+export interface FormVersion {
+  id: string;
+  formId: string;
+  /** Internal immutable directory revision, e.g. v1 (not official revision). */
+  revision: string;
+  officialRevision: string | null;
   regulation: string;
   sourceUrl: string | null;
   verifiedAt: string | null;
-  /** SHA-256 do arquivo PDF original, quando disponibilizado. */
   sha256: string | null;
+  /** backend/templates/<formId>/<revision>/original.pdf */
   templatePath: string | null;
   pdfKind: PdfTemplateKind;
-  status: CatalogStatus;
-  /** IDs dos campos semânticos necessários para preencher este modelo. */
-  fieldIds: readonly string[];
+  status: FormVersionStatus;
+}
+
+export interface AcroFormPlacement {
+  kind: 'ACROFORM';
+  fieldId: string;
+  required: boolean;
+  pdfFieldName: string;
+}
+
+export interface CoordinatePlacement {
+  kind: 'COORDINATES';
+  fieldId: string;
+  required: boolean;
+  /** Zero-based page; PDF points, origin at bottom-left. */
+  pageIndex: number;
+  x: number;
+  y: number;
+  fontSize: number;
+  maxWidth: number;
+}
+
+export type FieldPlacement = AcroFormPlacement | CoordinatePlacement;
+
+export interface FormMapping {
+  id: string;
+  formVersionId: string;
+  /** Independent technical mapping revision. */
+  revision: string;
+  status: MappingStatus;
+  placements: readonly FieldPlacement[];
+  /** Human review of synthetic output, required for APPROVED. */
+  reviewedAt: string | null;
+  reviewer: string | null;
+  reportPath: string | null;
+}
+
+export interface ServiceQuestion {
+  id: string;
+  label: string;
+  /** Only explicitly enumerated answers may be used in rules. */
+  options: readonly string[];
+}
+
+export interface ServiceCondition {
+  questionId: string;
+  equals: string;
 }
 
 export interface DocumentRequirement {
   id: string;
   label: string;
   description?: string;
-  /** Obrigatório somente se as condições do serviço indicarem. */
   required: boolean;
-}
-
-export interface ServiceCondition {
-  /** Chave de uma resposta controlada e validada no servidor. */
-  questionId: string;
-  equals: string | boolean;
-}
-
-export interface ServiceForm {
-  serviceId: string;
-  formTemplateId: string;
-  /** Condições devem ser avaliadas no backend, sem código arbitrário. */
+  /** All conditions must match; absent means unconditional. */
   conditions?: readonly ServiceCondition[];
-  order: number;
 }
 
 export interface ServiceDefinition {
@@ -68,13 +96,24 @@ export interface ServiceDefinition {
   description: string;
   creditCost: number;
   status: 'DRAFT' | 'AVAILABLE' | 'SUSPENDED';
+  questions: readonly ServiceQuestion[];
   documentRequirements: readonly DocumentRequirement[];
-  /** O relacionamento é separado do template para permitir muitos-para-muitos. */
-  formRelations: readonly ServiceForm[];
+}
+
+/** Many-to-many relationship pinned to a specific verified PDF version. */
+export interface ServiceForm {
+  serviceId: string;
+  formVersionId: string;
+  order: number;
+  /** All conditions must match; absent means unconditional. */
+  conditions?: readonly ServiceCondition[];
 }
 
 export interface CatalogDefinition {
   fields: readonly FieldDefinition[];
-  templates: readonly FormTemplate[];
+  forms: readonly FormDefinition[];
+  versions: readonly FormVersion[];
+  mappings: readonly FormMapping[];
   services: readonly ServiceDefinition[];
+  serviceForms: readonly ServiceForm[];
 }

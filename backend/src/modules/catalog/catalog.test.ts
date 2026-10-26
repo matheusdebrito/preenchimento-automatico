@@ -1,47 +1,124 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
+import { validateCatalog } from './validate-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
 
-function catalogIssues(data: CatalogDefinition): string[] {
-  const issues: string[] = [];
-  const fields = new Set(data.fields.map((field) => field.id));
-  const forms = new Map(data.templates.map((form) => [form.id, form]));
-  const services = new Set(data.services.map((service) => service.id));
-
-  if (fields.size !== data.fields.length) issues.push('duplicate field id');
-  if (forms.size !== data.templates.length) issues.push('duplicate form id');
-  if (services.size !== data.services.length) issues.push('duplicate service id');
-
-  for (const form of data.templates) {
-    for (const fieldId of form.fieldIds) {
-      if (!fields.has(fieldId)) issues.push('unknown field: ' + fieldId);
-    }
-    if (form.status === 'APPROVED' &&
-      (!form.sourceUrl || !form.verifiedAt || !form.sha256 || !form.templatePath || form.pdfKind === 'UNKNOWN')) {
-      issues.push('approved form missing verified evidence: ' + form.id);
-    }
-  }
-  for (const service of data.services) {
-    for (const relation of service.formRelations) {
-      if (relation.serviceId !== service.id) issues.push('relation references another service');
-      if (!forms.has(relation.formTemplateId)) issues.push('unknown form relation');
-    }
-    if (service.status === 'AVAILABLE' &&
-      (service.formRelations.length === 0 ||
-        service.formRelations.some((relation) => forms.get(relation.formTemplateId)?.status !== 'APPROVED'))) {
-      issues.push('available service missing approved forms');
-    }
-  }
-  return issues;
+/** Isolated synthetic fixture; NO real form or official approval is implied. */
+function sharedFormFixture(): CatalogDefinition {
+  return {
+    fields: [{ id: 'person.fullName', label: 'Nome', valueKind: 'text' }],
+    forms: [{ id: 'example-form', name: 'Modelo sintético' }],
+    versions: [{
+      id: 'example-form-v1', formId: 'example-form', revision: 'v1',
+      officialRevision: null, regulation: 'N/A - teste',
+      sourceUrl: 'https://example.invalid/form.pdf', verifiedAt: '2026-10-26',
+      sha256: 'a'.repeat(64), templatePath: 'backend/templates/example-form/v1/original.pdf',
+      pdfKind: 'ACROFORM', status: 'VERIFIED',
+    }],
+    mappings: [{
+      id: 'example-map-v1', formVersionId: 'example-form-v1',
+      revision: 'v1', status: 'APPROVED',
+      reviewedAt: '2026-10-26', reviewer: 'revisor-fixture',
+      reportPath: 'docs/mapping-reports/fixture.md',
+      placements: [{
+        kind: 'ACROFORM', fieldId: 'person.fullName',
+        required: true, pdfFieldName: 'person_name',
+      }],
+    }],
+    services: [
+      { id: 'service-a', title: 'Serviço A', description: 'Teste', creditCost: 1,
+        status: 'AVAILABLE', questions: [], documentRequirements: [] },
+      { id: 'service-b', title: 'Serviço B', description: 'Teste', creditCost: 1,
+        status: 'AVAILABLE', questions: [{ id: 'mode', label: 'Modalidade', options: ['yes', 'no'] }],
+        documentRequirements: [{
+          id: 'document-b', label: 'Documento de teste', required: true,
+          conditions: [{ questionId: 'mode', equals: 'yes' }],
+        }] },
+    ],
+    serviceForms: [
+      { serviceId: 'service-a', formVersionId: 'example-form-v1', order: 1 },
+      { serviceId: 'service-b', formVersionId: 'example-form-v1', order: 1,
+        conditions: [{ questionId: 'mode', equals: 'yes' }] },
+    ],
+  };
 }
 
-describe('catálogo documental', () => {
-  it('não contém relações quebradas nem modelos aprovados sem evidências', () => {
-    expect(catalogIssues(catalog)).toEqual([]);
+describe('catálogo reutilizável de formulários', () => {
+  it('mantém o piloto em DRAFT, sem PDFs supostamente homologados', () => {
+    expect(catalog.services[0]?.status).toBe('DRAFT');
+    expect(catalog.forms).toEqual([]);
+    expect(catalog.versions).toEqual([]);
+    expect(catalog.mappings).toEqual([]);
+    expect(validateCatalog(catalog)).toEqual([]);
   });
 
-  it('mantém o piloto como rascunho até validar formulários oficiais', () => {
-    expect(catalog.services[0]?.status).toBe('DRAFT');
-    expect(catalog.services[0]?.formRelations).toEqual([]);
+  it('permite a mesma versão do PDF em dois serviços sem duplicar o mapeamento', () => {
+    const fixture = sharedFormFixture();
+    expect(fixture.mappings).toHaveLength(1);
+    expect(fixture.serviceForms).toHaveLength(2);
+    expect(validateCatalog(fixture)).toEqual([]);
+  });
+
+  it('rejeita relação que aponta para versão inexistente', () => {
+    const fixture = sharedFormFixture();
+    fixture.serviceForms = [{ serviceId: 'service-a', formVersionId: 'missing', order: 1 }];
+    expect(validateCatalog(fixture).join(' ')).toContain('versão inexistente');
+  });
+
+  it('rejeita serviço disponível com mapeamento não aprovado', () => {
+    const fixture = sharedFormFixture();
+    fixture.mappings = [{ ...fixture.mappings[0]!, status: 'TESTED' }];
+    expect(validateCatalog(fixture).join(' ')).toContain('sem versão/mapeamento aprovados');
+  });
+
+  it('rejeita modelos sem evidências verificáveis e caminho indevido', () => {
+    const fixture = sharedFormFixture();
+    fixture.versions = [{ ...fixture.versions[0]!, sha256: 'invalid',
+      templatePath: '../other.pdf' }];
+    const problems = validateCatalog(fixture).join(' ');
+    expect(problems).toContain('SHA-256 inválido');
+    expect(problems).toContain('caminho fora da estrutura');
+  });
+
+  it('rejeita campo desconhecido em mapeamento e posição repetida', () => {
+    const fixture = sharedFormFixture();
+    fixture.mappings = [{ ...fixture.mappings[0]!, placements: [
+      { kind: 'ACROFORM', fieldId: 'unknown', required: true, pdfFieldName: 'person_name' },
+      { kind: 'ACROFORM', fieldId: 'person.fullName', required: true, pdfFieldName: 'person_name' },
+    ] }];
+    const problems = validateCatalog(fixture).join(' ');
+    expect(problems).toContain('campo inexistente');
+    expect(problems).toContain('posição repetida');
+  });
+
+  it('não aceita condições com respostas não declaradas', () => {
+    const fixture = sharedFormFixture();
+    fixture.serviceForms = [{ serviceId: 'service-b', formVersionId: 'example-form-v1', order: 1,
+      conditions: [{ questionId: 'mode', equals: 'maybe' }] }];
+    expect(validateCatalog(fixture).join(' ')).toContain('resposta fora das opções');
+  });
+
+  it('não permite versão desatualizada em serviço ativo', () => {
+    const fixture = sharedFormFixture();
+    fixture.versions = [{ ...fixture.versions[0]!, status: 'OUTDATED' }];
+    const problems = validateCatalog(fixture).join(' ');
+    expect(problems).toContain('versão desatualizada');
+    expect(problems).toContain('sem versão/mapeamento aprovados');
+  });
+
+  it('rejeita colisões de identificadores e revisão', () => {
+    const fixture = sharedFormFixture();
+    fixture.forms = [...fixture.forms, fixture.forms[0]!];
+    expect(validateCatalog(fixture).join(' ')).toContain('identificador duplicado');
+  });
+
+  it('rejeita coordenadas impossíveis antes de renderizar um PDF', () => {
+    const fixture = sharedFormFixture();
+    fixture.versions = [{ ...fixture.versions[0]!, pdfKind: 'STATIC' }];
+    fixture.mappings = [{ ...fixture.mappings[0]!, placements: [
+      { kind: 'COORDINATES', fieldId: 'person.fullName', required: true,
+        pageIndex: 0, x: -10, y: 400, fontSize: 10, maxWidth: 150 },
+    ] }];
+    expect(validateCatalog(fixture).join(' ')).toContain('coordenadas inválidas');
   });
 });
