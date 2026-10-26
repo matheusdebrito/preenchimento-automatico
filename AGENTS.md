@@ -26,6 +26,17 @@ Antes de editar:
 
 Se as instruções entrarem em conflito, informar o conflito e seguir a alternativa mais segura. Não modificar segredos, infraestrutura de produção ou dados reais sem autorização.
 
+## 2.1. Catálogo de serviços e PDFs reutilizáveis
+
+- O backend é a fonte de verdade para requisitos, disponibilidade de serviços, custo em créditos e vínculos com formulários; dados de `frontend/src/data/demo.ts` são exclusivamente demonstrativos.
+- Antes de criar um novo formulário, procurar versão/modelo reutilizável no catálogo. Reutilizar `FieldDefinition` e motor de preenchimento, sem duplicar lógica por serviço.
+- Definir `ServiceForm` como vínculo muitos-para-muitos com condições explícitas validadas no servidor; nunca executar expressões arbitrárias fornecidas pelo cliente.
+- Um `FormTemplate` deve registrar fonte oficial, norma, data da verificação, versão, hash SHA-256, tipo PDF e status. Não marcar `APPROVED` nem liberar serviço `AVAILABLE` sem revisão documental e teste visual.
+- Preservar o PDF oficial original; detectar AcroForm antes de recorrer ao preenchimento por coordenadas. Tratar cada nova versão como novo mapeamento validado.
+- Gerar documentos com dados fictícios, renderizar **todas as páginas**, inspecionar alinhamento/cortes/fontes e executar testes de regressão antes de liberar produção.
+- Arquivos pessoais, OCR e PDFs preenchidos não podem ser versionados ou colocados na pasta de templates; usar armazenamento temporário privado com expiração.
+- Consultar `docs/FORM_CATALOG.md` e `docs/SERVICE_FORM_MATRIX.md`; eles descrevem pendências e não substituem verificação normativa oficial.
+
 ## 3. Método de trabalho incremental
 
 Para cada mudança:
