@@ -19,6 +19,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
+COPY --chown=node:node templates ./templates
 
 USER node
 EXPOSE 3000

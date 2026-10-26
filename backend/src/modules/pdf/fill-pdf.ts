@@ -28,7 +28,7 @@ export async function fillPdf(
       if (placement.required) throw new Error('Campo obrigatório vazio: ' + placement.fieldId);
       continue;
     }
-    if (value.length > 500 || /[\u0000-\u0008\u000B-\u001F\u007F]/.test(value)) {
+    if (value.length > 500 || Array.from(value).some((char) => { const code = char.charCodeAt(0); return (code < 32 && code !== 9 && code !== 10 && code !== 13) || code === 127; })) {
       throw new Error('Campo contém caracteres inválidos: ' + placement.fieldId);
     }
     if (placement.kind === 'ACROFORM') {

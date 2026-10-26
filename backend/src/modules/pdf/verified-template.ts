@@ -1,11 +1,10 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { CatalogDefinition } from '../catalog/contracts.js';
 import { fillPdf } from './fill-pdf.js';
 
-const ROOT = resolve(fileURLToPath(new URL('../../../../', import.meta.url)));
+const TEMPLATE_ROOT = resolve(process.cwd(), 'templates');
 /** Rejects unapproved mappings, substituted files and arbitrary paths. */
 export async function fillApprovedTemplate(
   catalog: CatalogDefinition,
@@ -23,7 +22,7 @@ export async function fillApprovedTemplate(
   if (version.templatePath !== expectedPath) {
     throw new Error('Caminho de modelo fora do catálogo.');
   }
-  const pdfBytes = await readFile(resolve(ROOT, expectedPath));
+  const pdfBytes = await readFile(resolve(TEMPLATE_ROOT, version.formId, version.revision, 'original.pdf'));
   const hash = createHash('sha256').update(pdfBytes).digest('hex').toUpperCase();
   if (hash !== version.sha256.toUpperCase()) {
     throw new Error('O PDF original diverge do hash homologado.');
