@@ -168,3 +168,8 @@ Próxima menor etapa recomendada:
 ```
 
 **Não executar tarefas futuras por iniciativa própria. Não mascarar erros, não pular validações e não declarar o MVP pronto para produção sem revisão de segurança, privacidade e conformidade documental.**
+
+
+## Continuidade ate producao
+
+Siga as fases 10 a 18 de PROJECT_TRACKER.md apos concluir o MVP tecnico. Exija aprovacao explicita antes de contratar infraestrutura, publicar o sistema, aceitar documentos reais ou ativar cobrancas. Verifique seguranca, LGPD, backups e restauracao, monitoramento, carga, rollback e decisao de lancamento. A expansao de cada novo servico requer nova verificacao de formularios e homologacao. Planos empresariais e assinaturas continuam fora do escopo aprovado.
