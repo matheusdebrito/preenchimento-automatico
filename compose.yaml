@@ -23,11 +23,13 @@ services:
     build:
       context: ./backend
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       API_HOST: 0.0.0.0
       API_PORT: 3000
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-preenchimento}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:-preenchimento}
+      DEV_GRANT_SECRET: ${DEV_GRANT_SECRET:-}
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     depends_on:

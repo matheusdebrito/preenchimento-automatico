@@ -5,9 +5,12 @@ import { loadEnv } from './config/env.js';
 import type { AppEnv } from './config/env.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
+import { registerAuthRoutes } from './routes/auth.js';
+import type { Database } from './modules/auth/db.js';
 
 interface BuildAppOptions {
   env?: AppEnv;
+  pool?: Database;
 }
 
 const REDACTED_LOG_PATHS = [
@@ -54,6 +57,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   registerHealthRoutes(app);
   registerCatalogRoutes(app);
+  registerAuthRoutes(app, env, options.pool);
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({

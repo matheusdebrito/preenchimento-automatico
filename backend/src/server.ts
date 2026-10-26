@@ -1,8 +1,11 @@
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
+import { connectDatabase } from './modules/auth/db.js';
 
 const env = loadEnv();
-const app = await buildApp({ env });
+const pool = env.DATABASE_URL ? await connectDatabase(env.DATABASE_URL) : undefined;
+const app = await buildApp({ env, pool });
+app.addHook('onClose', async () => { await pool?.end(); });
 let shuttingDown = false;
 
 async function shutdown(signal: NodeJS.Signals): Promise<void> {

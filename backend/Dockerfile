@@ -20,6 +20,7 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
 COPY --chown=node:node templates ./templates
+COPY --chown=node:node migrations ./migrations
 
 USER node
 EXPOSE 3000

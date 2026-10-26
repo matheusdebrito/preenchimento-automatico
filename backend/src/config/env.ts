@@ -9,6 +9,7 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:8080'),
   LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
   DATABASE_URL: z.string().trim().min(1).optional(),
+  DEV_GRANT_SECRET: z.string().min(24).optional(),
 });
 
 export type NodeEnvironment = z.infer<typeof envSchema>['NODE_ENV'];
@@ -21,6 +22,7 @@ export interface AppEnv {
   CORS_ORIGINS: readonly string[];
   LOG_LEVEL: LogLevel;
   DATABASE_URL?: string;
+  DEV_GRANT_SECRET?: string;
 }
 
 function normalizeOrigin(value: string): string {
@@ -81,6 +83,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
 
   if (result.data.DATABASE_URL) {
     env.DATABASE_URL = result.data.DATABASE_URL;
+  }
+  if (result.data.DEV_GRANT_SECRET && result.data.NODE_ENV !== 'production') {
+    env.DEV_GRANT_SECRET = result.data.DEV_GRANT_SECRET;
   }
 
   return Object.freeze(env);
