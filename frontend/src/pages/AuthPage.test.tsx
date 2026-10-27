@@ -1,0 +1,64 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { App } from '../App';
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('sessão compartilhada de navegação e autenticação', () => {
+  it('impede mostrar o formulário de login quando já há sessão ativa', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
+      const path = String(url);
+      if (path === '/api/auth/me') return json({
+        user: { id: 'owner-fixture', email: 'owner@example.invalid' },
+      });
+      if (path === '/api/credits/balance') return json({ balance: 0 });
+      return json({ error: 'not_found' }, 404);
+    }));
+    render(<MemoryRouter initialEntries={['/entrar']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'Sua conta' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Entrar na minha conta' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Entrar' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Sair' })).toBeTruthy();
+  });
+
+  it('atualiza menu e rota após login sem precisar recarregar', async () => {
+    let signedIn = false;
+    const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(url);
+      if (path === '/api/auth/me') return signedIn
+        ? json({ user: { id: 'owner-fixture', email: 'owner@example.invalid' } })
+        : json({ error: 'unauthorized' }, 401);
+      if (path === '/api/auth/login' && init?.method === 'POST') {
+        signedIn = true;
+        return json({ user: { id: 'owner-fixture', email: 'owner@example.invalid' } });
+      }
+      if (path === '/api/credits/balance') return json({ balance: 0 });
+      if (path === '/api/auth/logout') {
+        signedIn = false;
+        return json({ ok: true });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/entrar']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    await user.type(screen.getByLabelText('E-mail'), 'owner@example.invalid');
+    await user.type(screen.getByLabelText(/Senha/), 'senha-de-teste-12345');
+    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+    expect(await screen.findByRole('heading', { name: 'Sua conta' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Minha conta' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Entrar' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Sair' }));
+    expect(await screen.findByRole('link', { name: 'Entrar' })).toBeTruthy();
+  }, 25000);
+});
