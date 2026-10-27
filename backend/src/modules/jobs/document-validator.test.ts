@@ -192,6 +192,34 @@ describe('candidatos OCR conservadores', () => {
     expect(fields['person.identity']).toBeUndefined();
   });
 
+  it('sugere Cidade, Bairro, CEP, UF, número e complemento em campos BDMOTO distintos', () => {
+    const fields = suggestFields(
+      'ENDEREÇO: RUA DAS FLORES\nNÚMERO: 120\nCOMPLEMENTO: APTO 302\n' +
+      'CIDADE: NITERÓI\nBAIRRO: ICARAÍ\nCEP: 24230100\nUF: RJ',
+      'residence-proof',
+    );
+    expect(fields['person.address']?.value).toBe('RUA DAS FLORES');
+    expect(fields['person.streetNumber']?.value).toBe('120');
+    expect(fields['person.apartment']?.value).toBe('APTO 302');
+    expect(fields['person.city']?.value).toBe('NITERÓI');
+    expect(fields['person.neighborhood']?.value).toBe('ICARAÍ');
+    expect(fields['person.postalCode']?.value).toBe('24230-100');
+    expect(fields['person.state']?.value).toBe('RJ');
+    expect(Object.values(fields).every((field) => field.status === 'REVIEW_REQUIRED')).toBe(true);
+
+    const conflicting = suggestFields(
+      'CIDADE: NITERÓI\nCIDADE: RIO DE JANEIRO\nBAIRRO: CENTRO\nCEP: 24000-000',
+      'residence-proof',
+    );
+    expect(conflicting['person.city']).toBeUndefined();
+    expect(conflicting['person.neighborhood']?.value).toBe('CENTRO');
+    expect(suggestFields('CIDADE: NITERÓI', 'tie')['person.city']).toBeUndefined();
+    // An unlabeled postal address does not provide trustworthy administrative boundaries.
+    const unlabelled = suggestFields('RUA DAS FLORES 120, CENTRO, NITERÓI, RJ', 'residence-proof');
+    expect(unlabelled['person.city']).toBeUndefined();
+    expect(unlabelled['person.neighborhood']).toBeUndefined();
+  });
+
   it('sugere endereço e CEP somente com rótulos explícitos em comprovante', () => {
     const fields = suggestFields('ENDEREÇO: RUA SÃO JOSÉ 100\nCEP: 22000-000',
       'residence-proof');
