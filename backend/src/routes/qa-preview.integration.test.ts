@@ -104,6 +104,31 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       expect(fields.fields['person.fullName']).toBe('MARIA DE SOUZA');
       expect(fields.fields['vessel.name']).toBe('MAR TESTE');
 
+      const invalidCpf = await app.inject({
+        method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
+        headers: { cookie },
+        payload: { confirmed: true, values: {
+          'person.fullName': 'MARIA DE SOUZA',
+          'vessel.name': 'MAR TESTE', 'person.cpf': '111.111.111-11',
+        } },
+      });
+      expect(invalidCpf.statusCode).toBe(422);
+      expect(invalidCpf.json<{error:string;fieldId:string}>()).toEqual({
+        error: 'invalid_field_value', fieldId: 'person.cpf',
+      });
+      const invalidDate = await app.inject({
+        method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
+        headers: { cookie },
+        payload: { confirmed: true, values: {
+          'person.fullName': 'MARIA DE SOUZA',
+          'vessel.name': 'MAR TESTE', 'sale.date': '31/02/2026',
+        } },
+      });
+      expect(invalidDate.statusCode).toBe(422);
+      expect(invalidDate.json<{error:string;fieldId:string}>()).toEqual({
+        error: 'invalid_field_value', fieldId: 'sale.date',
+      });
+
       const reviewed = await app.inject({
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
         headers: { cookie },
