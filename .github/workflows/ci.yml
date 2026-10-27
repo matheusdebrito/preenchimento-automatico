@@ -78,6 +78,8 @@ jobs:
       POSTGRES_PASSWORD: local_ci_password_only
       POSTGRES_USER: preenchimento
       POSTGRES_DB: preenchimento
+      # Force same-origin detection through the real Nginx proxy; do not rely on CORS.
+      CORS_ORIGINS: http://localhost:5173
     steps:
       - uses: actions/checkout@v5
       - name: Validate Compose configuration
