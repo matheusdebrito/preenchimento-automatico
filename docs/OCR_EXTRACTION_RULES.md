@@ -10,12 +10,16 @@ O backend chama `suggestFields(text, requirementId)` após extrair texto nativo 
 | --- | --- | --- |
 | `buyer-identity` | `person.cpf`, `person.fullName`, `person.identity`, `person.issuer` | CPF com dígitos verificadores; nome e identidade apenas com rótulos explícitos |
 | `seller-identity` | `seller.cpf`, `seller.fullName`, `seller.identity`, `seller.issuer` | Mesmos filtros, mas **nunca transferidos aos campos do comprador** |
-| `tie` | `vessel.name`, `vessel.registration`, `vessel.hullId` | Registro e nome apenas com rótulos claros da embarcação; nenhum CPF do titular atribuído ao comprador |
+| `tie` | `vessel.name`, `vessel.registration`, `vessel.hullId`, `vessel.year`, `vessel.length`, `vessel.capacity` | Atributos da embarcação somente com rótulos explícitos; nenhum CPF do titular atribuído ao comprador |
 | `residence-proof` | `person.address`, `person.postalCode` | Endereço/CEP explícitos; nunca presume quem reside no imóvel |
+| `sale-document` | `sale.invoice`, `sale.date`, `sale.price` | Número, data válida (DD/MM/AAAA) e valor rotulados de forma inequívoca; nenhum comprador/vendedor inferido |
 | `source` (somente fixture de CI) | `vessel.hullId` | Rótulo HIN/CIN/casco |
+| fotos da popa/través, GRU, procuração e requisitos desconhecidos | não são enviados ao OCR | Sem heurística semântica confiável neste escopo; permanecem documentos de checklist |
 | outros requisitos | nenhum campo novo específico | Não há heurística arbitrária |
 
 Cada regra recusa múltiplos valores diferentes para o mesmo campo. Valores presentes são **sugestões**, não dados comprovados. A interface exibe o nome do documento de origem, e o usuário precisa conferir/corrigir tudo.
+
+A API monta os resultados de cada extração em estruturas locais temporárias e só os publica na revisão quando todos os documentos semanticamente relevantes terminam de processar. Falhas retornam o job a `UPLOADED`, limpam sugestões parciais e permitem nova tentativa; não é preciso refazer todos os uploads.
 
 ## Segurança e qualidade
 
@@ -41,5 +45,5 @@ Arquivos: `backend/src/modules/jobs/ocr.ts`, `backend/src/modules/jobs/document-
 
 - [ ] Bateria com imagens fictícias de diferentes resoluções, sombras, rotação, cortes e múltiplas páginas.
 - [ ] Extrair e avaliar qualidade/confiança efetiva com corpus controlado, critérios mensuráveis e testes de erro.
-- [ ] Validar as variantes de campos dos documentos aceitos; melhorar pré-processamento sem comprometer privacidade/limites.
+- [ ] Validar variantes reais dos rótulos de identidade, TIE e venda com corpus controlado e melhorar pré-processamento sem comprometer privacidade/limites. Os campos TIE/venda novos usam apenas casos sintéticos e são sempre `REVIEW_REQUIRED`.
 - [ ] Registrar e mitigar falso positivo/negativo, com revisão independente antes de habilitar o piloto.
