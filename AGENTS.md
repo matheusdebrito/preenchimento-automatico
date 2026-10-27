@@ -54,6 +54,19 @@ Para cada mudança:
 
 Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custos ou mudanças estruturais relevantes, solicitar aprovação antes de executar. Não avançar para outra etapa enquanto erros introduzidos pela etapa atual estiverem pendentes.
 
+## 3.1. Sincronização obrigatória do PROJECT_TRACKER.md
+
+**Regra de entrega (sem exceções):** toda alteração de código, teste, arquitetura ou documentação que represente avanço, correção, bloqueio ou mudança de escopo de uma fase deve atualizar o `PROJECT_TRACKER.md` **na mesma entrega**, antes de declarar o trabalho encerrado. Não basta acrescentar uma nota ao final do arquivo.
+
+Checklist obrigatório, nesta ordem:
+1. **Quadro geral de progresso (seção 1):** revisar a linha de cada fase afetada e atualizar a descrição de situação para `Concluída`, `Parcial`, `Pendente` ou `Bloqueada`, informando em poucas palavras o que falta. Manter `[ ]` para fases parciais, pendentes ou bloqueadas e só usar `[x]` quando todos os critérios de aceite forem comprovados.
+2. **Checklist detalhado da fase:** marcar as subtarefas realmente comprovadas, preservar pendências e registrar impedimentos. Nunca marcar tarefas apenas porque o código foi escrito ou o teste foi adicionado.
+3. **Registro de execução:** incluir data, fase, escopo, arquivos alterados, commits, comandos e resultados reais, testes não executados, riscos e próximo passo. Distinguir `implementado`, `testado` e `homologado`.
+4. **Resumo de estado:** corrigir qualquer texto antigo no próprio `PROJECT_TRACKER.md` que contradiga o quadro e, quando a funcionalidade, operação ou estado público do MVP mudar, revisar também o `README.md` e a documentação técnica pertinente.
+5. **Verificação final:** antes de commit/push ou relatório final, reler o quadro geral e a fase detalhada e verificar que seções, registro e README (quando aplicável) não se contradizem. Confirmar no GitHub que as alterações foram gravadas. Se o tracker não puder ser atualizado, relatar expressamente o bloqueio e **não afirmar que a entrega documental está completa**.
+
+Atualizações somente documentais que corrijam um registro anterior também devem verificar a coerência do quadro geral. Teste criado mas não executado deve constar como **não verificado**; CI verde anterior não comprova teste novo. Aprovação humana, homologação dos PDFs, produção e pagamentos não podem ser inferidos de alterações técnicas.
+
 ## 4. Regras gerais de código
 
 - TypeScript estrito (`strict`), tipos explícitos nas fronteiras e validação de entrada em runtime; não usar `any` nem `as unknown as` para contornar erros.
