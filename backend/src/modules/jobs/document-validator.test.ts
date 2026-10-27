@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PDFDocument } from 'pdf-lib';
 import { classifyDocument, validatePdfPages } from './document-validator.js';
-import { suggestFields, shouldExtractDocument } from './ocr.js';
+import { suggestFields, shouldExtractDocument, shouldRetryIdentityLayout, chooseIdentityLayout } from './ocr.js';
 
 describe('validação de assinatura do documento', () => {
   it('rejeita PDF falso, MIME incorreto e arquivo vazio', () => {
@@ -169,6 +169,34 @@ describe('candidatos OCR conservadores', () => {
     expect(candidate['seller.fullName']).toBeUndefined();
     expect(suggestFields(photoLike, 'seller-identity')['seller.fullName']?.value)
       .toBe('MARIA DE SOUZA');
+  });
+
+  it('reprocessa RG mesmo quando CPF e RG foram identificados, mas nome não', () => {
+    const primary = 'CPF 123.456.789-09\nRG: 12345678';
+    const alternative = 'NOME / NAME\nMARIA DE SOUZA\nCPF 123.456.789-09';
+    expect(shouldRetryIdentityLayout(primary, 'buyer-identity')).toBe(true);
+    expect(chooseIdentityLayout(primary, alternative, 'buyer-identity')).toBe(alternative);
+    expect(suggestFields(alternative, 'buyer-identity')['person.fullName']?.value)
+      .toBe('MARIA DE SOUZA');
+    expect(suggestFields(alternative, 'buyer-identity')['person.cpf']?.value)
+      .toBe('123.456.789-09');
+    expect(shouldRetryIdentityLayout(
+      'NOME: MARIA DE SOUZA\nCPF 123.456.789-09', 'buyer-identity',
+    )).toBe(false);
+    // Never trade a valid name for extra numeric fields in another reading.
+    expect(chooseIdentityLayout(
+      'NOME MARIA DE SOUZA\nCPF 123.456.789-09', 'buyer-identity',
+      'RG: 12345678\nCPF 123.456.789-09\nÓRGÃO EMISSOR: SSP RJ', 'buyer-identity',
+    )).toContain('NOME MARIA');
+  });
+
+  it('aceita NOME E SOBRENOME sem dois-pontos, mas não interpreta nome dos pais', () => {
+    expect(suggestFields('NOME E SOBRENOME\nMARIA DE SOUZA', 'buyer-identity')
+      ['person.fullName']?.value).toBe('MARIA DE SOUZA');
+    expect(suggestFields('NOME MARIA DE SOUZA', 'buyer-identity')
+      ['person.fullName']?.value).toBe('MARIA DE SOUZA');
+    expect(suggestFields('NOME DA GENITORA\nMARIA DE SOUZA', 'buyer-identity')
+      ['person.fullName']).toBeUndefined();
   });
 
   it('não atribui nome da mãe, nome social ou linhas sem rótulo ao titular', () => {
