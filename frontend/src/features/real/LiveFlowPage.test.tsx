@@ -65,4 +65,50 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText(/ainda não foi homologado/)).toBeTruthy();
   });
+
+  it('retoma o mesmo job após falha temporária de upload e permite cancelar', async () => {
+    let jobsCreated = 0;
+    let uploadsAttempted = 0;
+    let deleted = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
+      if (path.endsWith('/quote')) return json({ service });
+      if (path === '/api/jobs' && init?.method === 'POST') {
+        jobsCreated++;
+        return json({ id: 'job-resume' }, 201);
+      }
+      if (path === '/api/jobs/job-resume' && !init?.method) {
+        return json({ status: 'CREATED', uploadedRequirementIds: [] });
+      }
+      if (path.endsWith('/documents/source')) {
+        uploadsAttempted++;
+        return uploadsAttempted === 1 ? json({ error: 'unavailable' }, 503)
+          : json({ id: 'file-resume' }, 201);
+      }
+      if (path.endsWith('/extract')) return json({ fields: {}, sources: {} });
+      if (path === '/api/jobs/job-resume' && init?.method === 'DELETE') {
+        deleted++;
+        return json({ removed: true });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
+      new File(['fixture'], 'fake.png', { type: 'image/png' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(jobsCreated).toBe(1);
+    expect(uploadsAttempted).toBe(2);
+    await user.click(screen.getByRole('button', { name: 'Cancelar e apagar documentos temporários' }));
+    expect(await screen.findByRole('heading', { name: 'Dados do serviço' })).toBeTruthy();
+    expect(deleted).toBe(1);
+  }, 25000);
+
 });
