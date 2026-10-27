@@ -8,7 +8,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 
 | Componente | Implementado | Restrições |
 | --- | --- | --- |
-| Catálogo de serviços e condições | API e frontend integrados | Só serviços aprovados ficam disponíveis |
+| Catálogo de serviços e condições | API e frontend integrados; fotos de popa/través excluídas dos uploads de preenchimento | Só serviços aprovados ficam disponíveis; não substitui rol documental oficial |
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
 | Mapeamento PDF reutilizável | **135 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
@@ -98,6 +98,16 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e abra o cartão **Teste técnico com dados fictícios** na página inicial. Depois desative a flag e reconstrua os containers.
 
 O modo QA é recusado em produção, não consome créditos e usa **o mesmo serviço `transferencia-moto-aquatica`**: perguntas, requisitos reais e as posições dos seis anexos. Os anexos 2-A e 2-B entram sempre, e 2-C/2-D/2-E/1-C entram quando suas condições são selecionadas. O catálogo de produção mantém o serviço e os mapeamentos `DRAFT`; só o ambiente local permite prévias com **AMOSTRA em todas as páginas**. **Não use documentos pessoais reais**, pois os PDFs não são homologados nem válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). Para a revisão de amanhã, leia [as pendências priorizadas de 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md), com os portões documentais e os testes ainda necessários.
+
+### Uploads necessários para preencher formulários
+
+O aplicativo solicita apenas as entradas configuradas para auxiliar na
+identificação e conferência dos campos dos formulários. **Não solicita fotos
+da embarcação (popa e través)**, pois elas não são usadas na extração nem na
+geração dos PDFs. A API também rejeita upload para esses identificadores.
+A possível exigência de fotos durante a transferência oficial, descrita em
+[docs/SERVICE_FORM_MATRIX.md](docs/SERVICE_FORM_MATRIX.md), é **separada**
+deste produto, que não protocola documentos perante a Marinha.
 
 ### Datas, OCR do BDMOTO e teste no serviço verdadeiro
 
