@@ -224,12 +224,13 @@ export function HomePage() {
               <div className="trust-card__content">
                 <h2 id="trust-title">Seus documentos ficam sob seu controle</h2>
                 <p>
-                  Nesta demonstração, as fotos e os arquivos que você escolher permanecem no seu
-                  navegador e não são enviados para nenhum servidor.
+                  A demonstração visual funciona no navegador. No preenchimento assistido,
+                  os arquivos enviados são processados temporariamente no servidor para
+                  extrair os dados e gerar os formulários.
                 </p>
                 <p className="trust-card__note">
-                  Quando o processamento estiver disponível, o prazo de retenção e a política de
-                  exclusão serão exibidos antes de qualquer envio.
+                  Os processos temporários podem ser apagados pelo usuário e expiram após
+                  20 minutos, com renovação limitada a uma hora. Revise cada dado antes de gerar.
                 </p>
               </div>
             </div>
