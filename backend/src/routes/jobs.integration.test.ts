@@ -87,6 +87,32 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     page.drawText('HIN BR-TESTE-123456 - apenas para testes tecnicos', {x:50,y:720,size:14,font});
     const data=await pdf.save();
 
+    const otherEmail = 'isolated-' + randomUUID() + '@example.invalid';
+    const other = await app.inject({ method:'POST', url:'/api/auth/register',
+      payload:{email:otherEmail,password} });
+    expect(other.statusCode).toBe(201);
+    const otherCookie = String(other.headers['set-cookie']).split(';')[0]!;
+    const otherGet = await app.inject({
+      method:'GET',url:'/api/jobs/'+jobId,headers:{cookie:otherCookie},
+    });
+    expect(otherGet.statusCode).toBe(404);
+    const otherUpload = await app.inject({ method:'POST',
+      url:'/api/jobs/'+jobId+'/documents/source',
+      headers:{cookie:otherCookie,'content-type':'application/pdf'},
+      payload:Buffer.from(data),
+    });
+    expect(otherUpload.statusCode).toBe(404);
+    const otherExtract = await app.inject({
+      method:'POST',url:'/api/jobs/'+jobId+'/extract',
+      headers:{cookie:otherCookie},payload:{},
+    });
+    expect(otherExtract.statusCode).toBe(404);
+    const otherDelete = await app.inject({
+      method:'DELETE',url:'/api/jobs/'+jobId,headers:{cookie:otherCookie},
+    });
+    expect(otherDelete.statusCode).toBe(404);
+    await pool.query('DELETE FROM app_users WHERE email=$1',[otherEmail]);
+
     const unauthenticatedUpload = await app.inject({
       method: 'POST',
       url: '/api/jobs/' + jobId + '/documents/source',
@@ -155,6 +181,23 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
         'person.cpf':'123.456.789-09',
       }}});
     expect(review.statusCode,review.body).toBe(200);
+    const invalidReview = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
+      headers:{cookie},payload:{confirmed:true,values:{
+        'person.fullName':'MARIA TESTE 🙂','vessel.name':'MA TESTE',
+        'person.cpf':'123.456.789-09',
+      }}});
+    expect(invalidReview.statusCode).toBe(200);
+    const invalidGenerate = await app.inject({method:'POST',
+      url:'/api/jobs/'+jobId+'/generate',headers:{cookie},payload:{}});
+    expect(invalidGenerate.statusCode).toBe(422);
+    expect(await creditBalance(pool,userId)).toBe(3);
+    const validAgain = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
+      headers:{cookie},payload:{confirmed:true,values:{
+        'person.fullName':'MARIA TESTE','vessel.name':'MA TESTE',
+        'person.cpf':'123.456.789-09',
+      }}});
+    expect(validAgain.statusCode).toBe(200);
+
     const generate=await app.inject({method:'POST',url:'/api/jobs/'+jobId+'/generate',
       headers:{cookie},payload:{}});
     expect(generate.statusCode,generate.body).toBe(200);
