@@ -10,7 +10,7 @@
 | OCR do TIE | Ano, comprimento e lotação rotulados; complementa nome, registro e casco existentes | Dados sem rótulo ficam vazios; não presume proprietário/comprador |
 | OCR robustecido | Ignora fotos da moto aquática/GRU sem mapeamento semântico; publica revisão atomica e restaura upload após falha | OCR de imagem continua falível, sem precisão percentual medida |
 | Captura por câmera | Campo mobile `capture=environment` para JPG/PNG, mantendo upload PDF normal | Captura em aparelho físico e HTTPS local ainda não validados |
-| Modo QA local | `DEV_QA_PREVIEW=true`, serviço `qa-synthetic-moto`, amostras 2-A/2-B com marca d'água em todas as páginas, custo zero | Exige dados totalmente fictícios; não habilita o serviço oficial |
+| Modo QA local | `DEV_QA_PREVIEW=true`, sobreposição do serviço real `transferencia-moto-aquatica`, seis mapas completos com condições, PDFs AMOSTRA sem créditos | Só para dados fictícios; catálogo oficial segue DRAFT, sem homologação |
 | Integração técnica | Teste PNG sintético → Tesseract → Fastify → revisão → PDF → download → saldo de créditos 0 | Não comprova confiabilidade em fotos reais nem exatidão oficial |
 | Isolamento dos testes | Cada instância Fastify de teste ganha raiz temporária própria para impedir limpeza cruzada | Produção ainda é de instância única |
 
@@ -24,6 +24,14 @@
 - **Validação mais forte do resultado:** o teste QA passou a inspecionar **ambos** os PDFs 2-A/2-B, conferindo valores revisados e marca d'água por página, além do saldo zero.
 - **Evidência confirmada:** o [CI 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) para o commit de código `68c149c` passou nos cinco jobs (frontend, backend, integração PostgreSQL, prévias PDF e Docker Compose). Isso valida as regressões sintéticas descritas acima, mas **não** homologa PDFs oficiais nem prova acurácia com fotografias reais.
 
+### Correções adicionais para o teste real de 27/10/2026
+
+- Máscara `DD/MM/AAAA` progressiva nos campos de data; dia/mês reais continuam validados pelo backend.
+- Campos rotulados de comprovante de residência extraídos individualmente para `person.address`, `person.city`, `person.neighborhood`, `person.postalCode`, `person.state`, número e complemento. Datas de emissão, local de venda e dados rotulados do motor receberam regras adicionais.
+- A simulação separada foi substituída por um **overlay local do serviço real**. Testar o mesmo questionário e os seis mapeamentos, com modelos condicionais e marca d'água; isso **não aprova** documentos DRAFT ou permite processamento de clientes.
+- **Pendência visual importante:** o BDMOTO oficial mostra Endereço, Cidade, Bairro e CEP como áreas separadas. Antes de remover a linha de Endereço ou alterar coordenadas, comparar a prévia sintética com o PDF original e documentar o resultado em `docs/mapping-reports/bdmoto-v1.md`.
+- A precisão do OCR em documentos reais de diferentes modelos **não foi medida**; nenhuma regra automática pode prometer preenchimento total de dados ausentes ou ambíguos.
+
 ## 2. O que você pode testar amanhã, sem dados reais
 
 1. Ler [o roteiro do QA sintético](QA_SYNTHETIC_PREVIEW.md).
@@ -31,7 +39,7 @@
 3. Executar `docker compose up -d --build` e abrir **http://127.0.0.1:8080** no mesmo computador.
 4. Criar conta de **teste**, acessar o cartão **Teste técnico com dados fictícios**, e anexar imagem/PDF inventado (exemplos de texto no roteiro).
 5. Conferir se os campos sugeridos correspondem aos rótulos; corrigir manualmente o que estiver ausente ou incorreto.
-6. Gerar, baixar e visualizar os dois PDFs com marca **AMOSTRA**, verificando páginas, alinhamento, caracteres e download. Encerrar e remover os documentos do job.
+6. Gerar e visualizar os PDFs selecionados pelo serviço real (2-A/2-B sempre e os demais conforme respostas), todos com marca **AMOSTRA**. Conferir página a página, principalmente Endereço, Cidade, Bairro e CEP no BDMOTO. Encerrar e remover o job.
 7. Desligar `DEV_QA_PREVIEW` após o teste.
 
 **Não usar dados de clientes.** A stack local vincula suas portas a `127.0.0.1`; fotografar diretamente em celular na mesma rede exigirá uma solução segura de acesso HTTPS para testes. Não abra as portas para `0.0.0.0` apenas para contornar essa restrição.
