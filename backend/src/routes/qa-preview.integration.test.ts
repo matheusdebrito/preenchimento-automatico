@@ -13,6 +13,8 @@ import { connectDatabase } from '../modules/auth/db.js';
 import { creditBalance } from '../modules/auth/credits.js';
 import { qaPreviewCatalog, QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
 import { classifyDocument } from '../modules/jobs/document-validator.js';
+import { publicService } from '../modules/catalog/public-catalog.js';
+import { catalog } from '../modules/catalog/catalog.js';
 
 const execFile = promisify(execFileCallback);
 const databaseUrl = process.env.DATABASE_TEST_URL;
@@ -238,4 +240,101 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       await rm(root, { recursive: true, force: true });
     }
   }, 90000);
+  it('permite preencher todos os campos sem anexos ou com apenas um RG fictício', async () => {
+    const pool = await connectDatabase(databaseUrl!);
+    const email = 'manual-qa-' + randomUUID() + '@example.invalid';
+    const password = 'senha-sintetica-teste-12345';
+    let app: FastifyInstance | undefined;
+    try {
+      const qa = qaPreviewCatalog();
+      app = await buildApp({ env, pool, catalogOverride: qa, qaPreview: true });
+      const registered = await app.inject({
+        method: 'POST', url: '/api/auth/register', payload: { email, password },
+      });
+      expect(registered.statusCode, registered.body).toBe(201);
+      const owner = registered.json<{user:{id:string}}>().user.id;
+      const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
+      const answers = {
+        tieSituation: 'regular', transferAuthorization: 'consta_tie',
+        sellerCommunication: 'nao', residenceProof: 'comprovante',
+        coOwner: 'nao', representative: 'nao',
+      };
+      const service = publicService(qa, QA_PREVIEW_SERVICE_ID, answers);
+      expect(service).not.toBeNull();
+      expect(service?.documentRequirements.every((item) => !item.required)).toBe(true);
+      // Keep PDF requirements while making SOURCE DOCUMENTS entirely optional.
+      const values = Object.fromEntries((service?.reviewFields ?? [])
+        .filter((field) => field.required)
+        .map((field) => {
+          const definition = catalog.fields.find((item) => item.id === field.id);
+          const value = field.id.endsWith('.cpf') ? '123.456.789-09'
+            : definition?.validationRuleId === 'simNao' ? 'nao'
+            : field.valueKind === 'date' ? '15/10/2026'
+            : field.valueKind === 'boolean' ? 'true'
+            : field.valueKind === 'number' ? '3'
+            : field.id === 'person.fullName' ? 'MARIA DE SOUZA'
+            : field.id === 'seller.fullName' ? 'JOAO DE SOUZA'
+            : field.id === 'vessel.name' ? 'MAR TESTE' : 'X';
+          return [field.id, value];
+        }));
+
+      for (const withSingleRg of [false, true]) {
+        const created = await app.inject({
+          method: 'POST', url: '/api/jobs', headers: { cookie },
+          payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers },
+        });
+        expect(created.statusCode, created.body).toBe(201);
+        const jobId = created.json<{id:string}>().id;
+        if (withSingleRg) {
+          const bytes = await fakeTextPdf([
+            'DOCUMENTO FICTICIO',
+            'NOME: MARIA DE SOUZA',
+            'CPF: 123.456.789-09',
+          ]);
+          const uploaded = await app.inject({
+            method: 'POST', url: '/api/jobs/' + jobId + '/documents/buyer-identity',
+            headers: { cookie, 'content-type': 'application/pdf' },
+            payload: Buffer.from(bytes),
+          });
+          expect(uploaded.statusCode, uploaded.body).toBe(201);
+        }
+        const extracted = await app.inject({
+          method: 'POST', url: '/api/jobs/' + jobId + '/extract',
+          headers: { cookie }, payload: {},
+        });
+        expect(extracted.statusCode, extracted.body).toBe(200);
+        const extraction = extracted.json<{
+          status:string;fields:Record<string,string>;diagnostics:unknown[];
+        }>();
+        expect(extraction.status).toBe('REVIEW');
+        if (withSingleRg) {
+          expect(extraction.fields['person.fullName']).toBe('MARIA DE SOUZA');
+          expect(extraction.diagnostics).toHaveLength(1);
+          expect(extraction.fields['seller.fullName']).toBeUndefined();
+        } else {
+          expect(extraction.fields).toEqual({});
+          expect(extraction.diagnostics).toEqual([]);
+        }
+        const reviewed = await app.inject({
+          method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
+          headers: { cookie },
+          payload: { confirmed: true, values },
+        });
+        expect(reviewed.statusCode, reviewed.body).toBe(200);
+        const generated = await app.inject({
+          method: 'POST', url: '/api/jobs/' + jobId + '/generate',
+          headers: { cookie }, payload: {},
+        });
+        expect(generated.statusCode, generated.body).toBe(200);
+        expect(generated.json<{downloads:string[]}>().downloads)
+          .toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
+        expect(await creditBalance(pool, owner)).toBe(0);
+      }
+    } finally {
+      await app?.close();
+      await pool.query('DELETE FROM app_users WHERE email=$1', [email]);
+      await pool.end();
+    }
+  }, 90000);
+
 });
