@@ -107,7 +107,11 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
     const date = screen.getByLabelText(/Data da venda/) as HTMLInputElement;
     expect(date.placeholder).toBe('DD/MM/AAAA');
-    await user.type(date, '31/02/2026');
+    await user.type(date, '01012026');
+    expect(date.value).toBe('01/01/2026');
+    await user.clear(date);
+    await user.type(date, '31022026');
+    expect(date.value).toBe('31/02/2026');
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByText(/Confira Data da venda: use uma data válida/i)).toBeTruthy();
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(0);
