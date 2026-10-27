@@ -30,9 +30,10 @@ export function registerJobRoutes(
   pool?: Database,
   definitions: CatalogDefinition = catalog,
   qaPreview = false,
+  testRoot?: string,
 ): void {
   const isQaJob = (serviceId: string) => qaPreview && serviceId === QA_PREVIEW_SERVICE_ID;
-  const store = new JobStore(process.env.TEMP_DOCUMENT_ROOT, async (jobId) => {
+  const store = new JobStore(testRoot ?? process.env.TEMP_DOCUMENT_ROOT, async (jobId) => {
     if (!pool) return;
     try {
       await refundUndeliveredJobCredit(pool, jobId);
@@ -41,7 +42,10 @@ export function registerJobRoutes(
       app.log.error({ err: error }, 'expired_job_refund_pending');
     }
   });
-  app.addHook('onClose', async () => { await store.close(); });
+  app.addHook('onClose', async () => {
+    await store.close();
+    if (testRoot) await rm(testRoot, { recursive: true, force: true });
+  });
 
   // Reject unauthenticated and unknown uploads BEFORE Fastify buffers a file.
   // The handler-level checks remain authoritative for the actual write.
