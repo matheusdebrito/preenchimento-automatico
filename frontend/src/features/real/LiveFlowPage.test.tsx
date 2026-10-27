@@ -111,4 +111,37 @@ describe('jornada real isolada da demonstração', () => {
     expect(deleted).toBe(1);
   }, 25000);
 
+
+  it('recupera downloads já gerados quando a resposta de geração se perde', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
+      if (path.endsWith('/quote')) return json({ service });
+      if (path === '/api/jobs' && init?.method === 'POST') return json({ id: 'job-completed' }, 201);
+      if (path.endsWith('/documents/source')) return json({ id: 'file' }, 201);
+      if (path.endsWith('/extract')) return json({
+        fields: { 'person.fullName': 'MARIA TESTE' }, sources: { 'person.fullName': 'source' },
+      });
+      if (path.endsWith('/review')) return json({ confirmed: true });
+      if (path.endsWith('/generate')) throw new TypeError('Conexão interrompida após gravar PDF');
+      if (path === '/api/jobs/job-completed' && !init?.method) {
+        return json({ status: 'GENERATED', downloads: ['requerimento-ma-v1'] });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
+      new File(['example'], 'image.png', { type: 'image/png' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
+    expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /crédito já utilizado/ })).toBeTruthy();
+  }, 25000);
+
 });

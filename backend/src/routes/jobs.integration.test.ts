@@ -91,6 +91,16 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
       url:'/api/jobs/'+jobId+'/documents/source',
       headers:{cookie,'content-type':'application/pdf'},payload:Buffer.from(data)});
     expect(upload.statusCode,upload.body).toBe(201);
+    const overview = await app.inject({
+      method:'GET',url:'/api/jobs/'+jobId,headers:{cookie},
+    });
+    expect(overview.statusCode).toBe(200);
+    expect(overview.json<{uploadedRequirementIds:string[]}>().uploadedRequirementIds)
+      .toEqual(['source']);
+    const duplicate = await app.inject({method:'POST',
+      url:'/api/jobs/'+jobId+'/documents/source',
+      headers:{cookie,'content-type':'application/pdf'},payload:Buffer.from(data)});
+    expect(duplicate.statusCode).toBe(400);
 
     const scanned=await app.inject({method:'POST',url:'/api/jobs/'+jobId+'/extract',
       headers:{cookie},payload:{}});

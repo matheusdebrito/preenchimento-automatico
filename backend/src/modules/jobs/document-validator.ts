@@ -108,7 +108,8 @@ export function classifyDocument(bytes: Buffer, contentType: string): DocumentKi
 
 export async function validatePdfPages(path: string): Promise<number> {
   const { stdout } = await execFile('pdfinfo', [path], {
-    timeout: 8000, maxBuffer: 20_000, env: { ...process.env, LC_ALL: 'C' },
+    timeout: 8000, maxBuffer: 20_000,
+    env: { PATH: process.env.PATH ?? '/usr/bin:/bin', LC_ALL: 'C' },
   });
   if (/Encrypted:\s+yes/i.test(stdout)) throw new Error('PDF criptografado não suportado.');
   const match = /^Pages:\s*(\d+)/m.exec(stdout);
