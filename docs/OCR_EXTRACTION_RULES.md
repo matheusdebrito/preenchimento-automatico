@@ -116,6 +116,37 @@ continua limitada a duas tentativas, sem mistura de textos divergentes e com
 revisão humana obrigatória. Não afirmar sucesso com a foto real do usuário
 sem um novo teste controlado.
 
+## Rastreamento sem dados pessoais do nome do RG — 27/10/2026
+
+A resposta do usuário comprovou `fields` com apenas `person.cpf` e
+`diagnostics[0].suggestionCount = 1`. A API não retornou
+`person.fullName`; o campo existe nos mapeamentos dos formulários 2-A e
+BDMOTO. Isso descarta um problema de renderização da sugestão pelo frontend
+e de ausência do campo nesses formulários, mas **não distingue** texto que o
+Tesseract deixou de reconhecer de texto rejeitado pelo parser.
+
+**Instrumentação implementada, somente em QA local:** cada diagnóstico de
+identidade `buyer-identity` ou `seller-identity` inclui `nameStage`, sem
+valor do nome, texto OCR bruto ou outro dado pessoal:
+
+- `label_not_detected`: nenhuma linha da saída textual apresenta rótulo de
+  titular reconhecível, mesmo com tolerância limitada a erros de OCR.
+- `label_seen_name_rejected`: rótulo parecido com NOME encontrado, mas a
+  extração conservadora não validou um nome associado a ele.
+- `name_not_mapped`: nome identificado, mas o PDF selecionado não contém
+  campo correspondente.
+- `name_recognized`: nome validado como candidato no campo do formulário
+  (continua sujeito à revisão).
+
+Esse diagnóstico indica **em qual estágio investigar**, não fornece nome
+real nem prova ausência da palavra na foto: uma leitura com rótulo distorcido
+pode aparecer como `label_not_detected` mesmo se o nome foi transcrito. O
+rótulo de filiação/nome social não deve ser usado como prova de titular.
+O código testa esses estados com dados integralmente fictícios. Fora do QA,
+o campo `nameStage` não é incluído na resposta. O reteste depende de
+reconstruir containers, iniciar um novo job e ler apenas esse código de
+estado, sem copiar CPF, nome, RG ou documentos reais.
+
 ## Campos vazios sem erro HTTP — diagnóstico de integração (27/10/2026)
 
 Uma operação `POST /api/jobs/:id/extract` pode responder HTTP 200 e manter
