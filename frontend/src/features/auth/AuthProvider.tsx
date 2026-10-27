@@ -23,7 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshSession = useCallback(async () => {
     const version = ++requestVersion.current;
-    setSession({ status: 'loading', user: null });
+    // Initial state is already loading. Avoid a synchronous state update
+    // inside the mount effect; only the resolved request commits new state.
     try {
       const response = await api<{ user: SessionUser }>('/api/auth/me');
       if (version === requestVersion.current) {
