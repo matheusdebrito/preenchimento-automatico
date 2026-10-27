@@ -68,6 +68,60 @@ describe('jornada real isolada da demonstração', () => {
     expect(JSON.parse(reviewCall![1]!.body as string).values['person.fullName']).toBe('MARIA CONFERIDA');
   }, 25000);
 
+  it('popula nome, CPF e RG do comprador quando a API entrega candidatos válidos', async () => {
+    const identityService = {
+      ...service,
+      documentRequirements: [
+        { id: 'buyer-identity', label: 'Identidade do comprador', required: false },
+      ],
+      reviewFields: [
+        { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+        { id: 'person.cpf', label: 'CPF', valueKind: 'text', required: true },
+        { id: 'person.identity', label: 'RG', valueKind: 'text', required: false },
+      ],
+    };
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) {
+        return json({ service: identityService });
+      }
+      if (path.endsWith('/quote')) return json({ service: identityService });
+      if (path === '/api/jobs' && init?.method === 'POST') return json({ id: 'job-identity' }, 201);
+      if (path.endsWith('/documents/buyer-identity')) return json({ id: 'identity-photo' }, 201);
+      if (path.endsWith('/extract')) return json({
+        status: 'REVIEW',
+        fields: {
+          'person.fullName': 'MARIA DE SOUZA',
+          'person.cpf': '123.456.789-09',
+          'person.identity': '12.345.678-9',
+        },
+        sources: {
+          'person.fullName': 'buyer-identity',
+          'person.cpf': 'buyer-identity',
+          'person.identity': 'buyer-identity',
+        },
+        diagnostics: [{ requirementId: 'buyer-identity', outcome: 'suggested', suggestionCount: 3 }],
+      });
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.upload(screen.getByLabelText(/Identidade do comprador/) as HTMLInputElement,
+      new File(['synthetic'], 'rg-ficticio.jpg', { type: 'image/jpeg' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA DE SOUZA');
+    expect((screen.getByLabelText(/^CPF/) as HTMLInputElement).value).toBe('123.456.789-09');
+    expect((screen.getByLabelText(/^RG/) as HTMLInputElement).value).toBe('12.345.678-9');
+    expect(screen.getByText(/3 sugestão\(ões\) encontrada/)).toBeTruthy();
+    expect(screen.queryByText('Nenhum campo preenchido pelo OCR')).toBeNull();
+    expect(fetcher.mock.calls.some(([url]) =>
+      String(url).endsWith('/documents/buyer-identity'))).toBe(true);
+  }, 25000);
+
   it('permite gerar pela jornada manual sem anexar qualquer documento', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);
@@ -199,9 +253,9 @@ describe('jornada real isolada da demonstração', () => {
       String(url).includes('/documents/tie'))).toHaveLength(0);
 
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
-    expect(screen.getByText(/Nenhum campo foi identificado automaticamente/)).toBeTruthy();
-    expect(screen.getByText(/texto lido, mas nenhum campo com rótulo suportado/)).toBeTruthy();
-    expect(screen.getByText(/não foi possível reconhecer texto/)).toBeTruthy();
+    expect(screen.getByText('Nenhum campo preenchido pelo OCR')).toBeTruthy();
+    expect(screen.getByText(/texto detectado, mas nome\/CPF\/RG não foram identificados com segurança/)).toBeTruthy();
+    expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(screen.getByText(/Preencha o campo obrigatório: Nome completo/)).toBeTruthy();
     expect(reviewAttempts).toBe(0);
