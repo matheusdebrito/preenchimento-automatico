@@ -35,6 +35,33 @@ describe('validação de assinatura do documento', () => {
     expect(() => classifyDocument(fake, 'image/png')).toThrow();
   });
 
+
+  it('rejeita IHDR PNG com cor/profundidade incompatíveis, sem PLTE ou chunk crítico desconhecido', () => {
+    const valid = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const incompatible = Buffer.from(valid);
+    incompatible[24] = 1; // 1-bit RGB is invalid per PNG Third Edition 11.2.1.
+    expect(() => classifyDocument(incompatible, 'image/png')).toThrow('IHDR PNG inválido');
+
+    const indexedWithoutPalette = Buffer.from(valid);
+    indexedWithoutPalette[25] = 3; // Indexed color must have PLTE before IDAT.
+    expect(() => classifyDocument(indexedWithoutPalette, 'image/png')).toThrow('PLTE ausente');
+
+    const critical = Buffer.from(valid);
+    critical.write('ABCD', 37); // Replace IDAT with an unsupported critical chunk.
+    expect(() => classifyDocument(critical, 'image/png')).toThrow('crítico PNG');
+  });
+
+  it('rejeita JPEG com dimensão zero declarada no segmento SOF', () => {
+    const zeroHeight = Buffer.from([
+      0xff, 0xd8, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x00,
+      0x00, 0x02, 0x01, 0x01, 0x11, 0x00, 0xff, 0xd9,
+    ]);
+    expect(() => classifyDocument(zeroHeight, 'image/jpeg')).toThrow('Imagem inválida');
+  });
+
   it('aceita PDF sintético com assinatura e fim de arquivo', () => {
     expect(classifyDocument(Buffer.from('%PDF-1.7\n1 0 obj\nendobj\n%%EOF'), 'application/pdf')).toBe('pdf');
   });
