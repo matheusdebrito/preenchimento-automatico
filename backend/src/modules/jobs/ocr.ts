@@ -163,6 +163,20 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     if (vesselName) {
       result['vessel.name'] = { value: vesselName, source, status: 'REVIEW_REQUIRED' };
     }
+
+    // Only explicitly labelled TIE attributes; do not infer specifications
+    // from arbitrary OCR numbers or from the current owner's identity.
+    const year = singleLabelled(text,
+      /^\s*ANO\s+(?:DE\s+)?CONSTRU[CÇ][AÃ]O\s*[:-]\s*((?:19|20)\d{2})\s*$/gim, 4);
+    if (year) result['vessel.year'] = { value: year, source, status: 'REVIEW_REQUIRED' };
+
+    const length = singleLabelled(text,
+      /^\s*COMPRIMENTO\s*(?:TOTAL\s*)?(?:\(M\)\s*)?[:-]\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*(?:M|METROS?)?\s*$/gim, 5);
+    if (length) result['vessel.length'] = { value: length, source, status: 'REVIEW_REQUIRED' };
+
+    const capacity = singleLabelled(text,
+      /^\s*(?:LOTA[CÇ][AÃ]O|CAPACIDADE\s+DE\s+PESSOAS)\s*[:-]\s*(\d{1,2})\s*$/gim, 2);
+    if (capacity) result['vessel.capacity'] = { value: capacity, source, status: 'REVIEW_REQUIRED' };
   }
 
   if (source === 'sale-document') {
