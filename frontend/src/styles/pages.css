@@ -1242,3 +1242,22 @@
 .live-upload-field { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-page); min-width: 0; }
 .live-upload-field .field { min-width: 0; }
 .live-upload-field input[type='file'] { max-width: 100%; }
+
+/* OCR reports expose only counts and document requirement labels, never OCR text. */
+.live-ocr-report {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-page);
+  color: var(--color-navy);
+  font-size: 0.875rem;
+}
+.live-ocr-report ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+.live-ocr-report li + li { margin-top: 0.4rem; }
+.live-form .field__input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 2px var(--color-danger-soft);
+}
