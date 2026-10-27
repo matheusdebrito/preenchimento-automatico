@@ -67,6 +67,20 @@ Checklist obrigatório, nesta ordem:
 
 Atualizações somente documentais que corrijam um registro anterior também devem verificar a coerência do quadro geral. Teste criado mas não executado deve constar como **não verificado**; CI verde anterior não comprova teste novo. Aprovação humana, homologação dos PDFs, produção e pagamentos não podem ser inferidos de alterações técnicas.
 
+## 3.2. Padrão de engenharia ponta a ponta e regressões de QA
+
+**Obrigatório após qualquer bug reportado pelo usuário:** investigar a causa-raiz e o fluxo completo (navegador, sessão, contrato HTTP, regras de domínio, armazenamento, OCR, geração e recuperação). Não corrigir apenas o sintoma visual ou reduzir validações de segurança para fazer um teste passar.
+
+- Para toda operação do usuário, projetar e testar estados **inicial, carregando, sucesso, entrada ausente/inválida, indisponibilidade, retentativa, cancelamento e recuperação** conforme aplicáveis. Nenhum botão deve parecer inerte: informar a causa do bloqueio próximo à ação, inclusive para teclado/leitor de tela.
+- Mensagens de erro de API devem fornecer **código estável e identificador de campo/requisito do catálogo**, nunca valores sensíveis, conteúdo OCR, documentos ou tokens. No frontend, mostrar a explicação em linguagem humana e permitir corrigir sem perder o job.
+- A interface nunca é a única barreira de autorização: duplicar no backend as regras de autenticação, propriedade, troca de conta, preenchimento, créditos, expiração e disponibilidade.
+- Ao alterar autenticação ou estado compartilhado, auditar cabeçalho, login, conta, logout, atualização da sessão, sessão expirada e navegação móvel, além de testes diretos da API.
+- Ao alterar OCR, distinguir **texto não detectado, texto sem rótulo reconhecido, valores ambíguos e dados válidos**. Não inventar informações nem inferir identidade; incluir regressões com dados fictícios e manter a revisão humana obrigatória.
+- Conferir coerência de textos, termos e privacidade **em todas as páginas**, evitando alegações desatualizadas ou informações duplicadas entre header, footer, cadastro e fluxo real.
+- Antes de concluir, rodar todos os jobs do CI para o último commit de **código** (frontend, backend, PostgreSQL, PDF e Compose). Corrigir falhas e registrar o hash/execução. Testes automatizados não substituem execução manual em navegador/dispositivo e homologação normativa.
+- Sempre atualizar **quadro geral, checklists e registro** do `PROJECT_TRACKER.md`, os documentos de QA afetados e o README quando a experiência ou contrato mudar. Registrar a pendência se faltar fixture, imagem anonimizada ou homologação externa.
+- Avaliar segurança, manutenção, estruturas de dados, desempenho e escalabilidade pelo **sistema inteiro**, mas não adicionar infraestrutura complexa sem necessidade comprovada. Não afirmar ausência de erros ou prontidão de produção sem evidências.
+
 ## 4. Regras gerais de código
 
 - TypeScript estrito (`strict`), tipos explícitos nas fronteiras e validação de entrada em runtime; não usar `any` nem `as unknown as` para contornar erros.
