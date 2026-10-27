@@ -20,7 +20,8 @@ function coordinate(
 export const draftMappings: readonly FormMapping[] = [
   {
     id: 'requerimento-ma-v1-map-v1', formVersionId: 'requerimento-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null, reportPath: null,
+    status: 'DRAFT', reviewedAt: null, reviewer: null,
+    reportPath: 'docs/mapping-reports/requerimento-ma-v1.md',
     placements: [
       coordinate("person.fullName", 176, 321, 557, 8, 0),
       coordinate("person.address", 202, 345, 283, 7, 0),
@@ -42,7 +43,8 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'bdmoto-v1-map-v1', formVersionId: 'bdmoto-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null, reportPath: null,
+    status: 'DRAFT', reviewedAt: null, reviewer: null,
+    reportPath: 'docs/mapping-reports/bdmoto-v1.md',
     placements: [
       coordinate("process.transferOwnership", 338, 376, 20, 10, 0),
       coordinate("person.fullName", 310, 461, 442, 7.5, 0),
@@ -52,7 +54,7 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("person.postalCode", 589, 509, 171, 7.2, 0),
       coordinate("person.identity", 219, 538, 100, 6.5, 0),
       coordinate("person.issuer", 457, 538, 91, 6.5, 0),
-      coordinate("person.issueDate", 683, 538, 85, 6.5, 0),
+      coordinate("person.issueDate", 704, 538, 62, 6.2, 0),
       coordinate("person.cpf", 206, 563, 108, 6.4, 0),
       coordinate("person.phone", 363, 563, 183, 6.7, 0),
       coordinate("person.mobile", 591, 563, 172, 6.7, 0),
@@ -76,7 +78,8 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'autorizacao-transferencia-ma-v1-map-v1', formVersionId: 'autorizacao-transferencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null, reportPath: null,
+    status: 'DRAFT', reviewedAt: null, reviewer: null,
+    reportPath: 'docs/mapping-reports/autorizacao-transferencia-ma-v1.md',
     placements: [
       coordinate("vessel.name", 256, 213, 176, 7, 0),
       coordinate("vessel.registration", 530, 213, 230, 7, 0),
@@ -103,7 +106,8 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'comunicacao-transferencia-ma-v1-map-v1', formVersionId: 'comunicacao-transferencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null, reportPath: null,
+    status: 'DRAFT', reviewedAt: null, reviewer: null,
+    reportPath: 'docs/mapping-reports/comunicacao-transferencia-ma-v1.md',
     placements: [
       coordinate("vessel.name", 190, 269, 307, 6.8, 0),
       coordinate("vessel.registration", 621, 269, 137, 6.6, 0),
@@ -131,7 +135,8 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'declaracao-perda-tie-ma-v1-map-v1', formVersionId: 'declaracao-perda-tie-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null, reportPath: null,
+    status: 'DRAFT', reviewedAt: null, reviewer: null,
+    reportPath: 'docs/mapping-reports/declaracao-perda-tie-ma-v1.md',
     placements: [
       coordinate("seller.fullName", 152, 297, 602, 7.2, 0),
       coordinate("seller.identity", 230, 325, 102, 6.6, 0),
@@ -146,7 +151,8 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'declaracao-residencia-ma-v1-map-v1', formVersionId: 'declaracao-residencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null, reportPath: null,
+    status: 'DRAFT', reviewedAt: null, reviewer: null,
+    reportPath: 'docs/mapping-reports/declaracao-residencia-ma-v1.md',
     placements: [
       coordinate("person.fullName", 153, 325, 598, 7.3, 0),
       coordinate("person.cpf", 177, 356, 122, 6.1, 0),
