@@ -27,7 +27,6 @@ export function LiveFlowPage() {
   const [values, setValues] = useState<Record<string,string>>({});
   const [sources, setSources] = useState<Record<string,string>>({});
   const [diagnostics, setDiagnostics] = useState<ExtractionDiagnostic[]>([]);
-  const [requestedMissingDocs, setRequestedMissingDocs] = useState(false);
   const [invalidFieldId, setInvalidFieldId] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
@@ -108,7 +107,6 @@ export function LiveFlowPage() {
         { method: 'POST', body: JSON.stringify({ answers }) },
       );
       setService(result.service);
-      setRequestedMissingDocs(false);
       setStep('files');
     } catch { setError('Não foi possível validar os requisitos do serviço.'); }
     finally { setBusy(false); }
@@ -145,14 +143,6 @@ export function LiveFlowPage() {
 
   const extract = async () => {
     if (!service) return;
-    const missing = service.documentRequirements.filter((required) =>
-      required.required && !files[required.id] && !uploadedRequirements.includes(required.id));
-    if (missing.length > 0) {
-      setRequestedMissingDocs(true);
-      setError('');
-      return;
-    }
-    setRequestedMissingDocs(false);
     setBusy(true);
     setError('');
     try {
@@ -256,7 +246,6 @@ export function LiveFlowPage() {
       setValues({});
       setSources({});
       setDiagnostics([]);
-      setRequestedMissingDocs(false);
       setInvalidFieldId(null);
       setDownloads([]);
       setStep('questions');
@@ -362,13 +351,16 @@ export function LiveFlowPage() {
               ) : null}
               {step === 'files' ? (
                 <>
-                  <h2>Documentos necessários</h2>
-                  <p>Os arquivos serão enviados ao servidor temporariamente e excluídos após a sessão expirar.
-                    Os itens marcados com * são obrigatórios.</p>
+                  <h2>Documentos para leitura automática (opcionais)</h2>
+                  <p>Você pode anexar apenas um documento, vários ou nenhum.
+                    O OCR tentará sugerir os dados disponíveis; todos os demais campos
+                    poderão ser preenchidos manualmente na próxima etapa.</p>
+                  <p className="field__hint">Os arquivos escolhidos são enviados temporariamente
+                    ao servidor e excluídos ao cancelar ou expirar o processo.</p>
                   {service.documentRequirements.map((required) => (
                     <div key={required.id} className="live-upload-field">
                       <label className="field">
-                        <span className="field__label">{required.label}{required.required ? ' *' : ' (opcional)'}</span>
+                        <span className="field__label">{required.label} (opcional)</span>
                         <span className="field__hint">{required.description}</span>
                         <input className="field__input" type="file" accept=".pdf,.png,.jpg,.jpeg"
                           disabled={uploadedRequirements.includes(required.id) || busy}
@@ -386,22 +378,14 @@ export function LiveFlowPage() {
                         : files[required.id]
                           ? <span className="field__hint">{files[required.id]?.name}</span>
                           : null}
-                      {requestedMissingDocs && required.required && !files[required.id] &&
-                        !uploadedRequirements.includes(required.id)
-                        ? <span className="field__error">Documento obrigatório pendente.</span> : null}
                     </div>
                   ))}
-                  {requestedMissingDocs && service.documentRequirements.some((item) =>
-                    item.required && !files[item.id] && !uploadedRequirements.includes(item.id))
-                    ? <Notice tone="danger" role="alert">
-                        Selecione os documentos obrigatórios antes de continuar:
-                        {' ' + service.documentRequirements.filter((item) =>
-                          item.required && !files[item.id] && !uploadedRequirements.includes(item.id))
-                          .map((item) => item.label).join(', ')}.
-                      </Notice> : null}
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   <Button disabled={busy} onClick={() => void extract()}>
-                    {busy ? 'Lendo documentos…' : 'Enviar e analisar documentos'}
+                    {busy ? 'Preparando revisão…' :
+                      Object.keys(files).length > 0 || uploadedRequirements.length > 0
+                        ? 'Analisar documentos e revisar campos'
+                        : 'Continuar sem anexos — preencher manualmente'}
                   </Button>
                 </>
               ) : null}
@@ -409,10 +393,16 @@ export function LiveFlowPage() {
                 <>
                   <h2>Confira cada campo</h2>
                   <p>As sugestões do OCR podem estar incorretas. Corrija e confirme os valores antes de gerar.</p>
-                  {service.reviewFields.some((field) => sources[field.id] &&
+                  {diagnostics.length === 0 ? (
+                    <Notice tone="info" role="status">
+                      Você optou por preencher sem documentos. Informe manualmente os campos
+                      necessários para os formulários selecionados.
+                    </Notice>
+                  ) : service.reviewFields.some((field) => sources[field.id] &&
                     service.documentRequirements.some((doc) => doc.id === sources[field.id])) ? (
                     <Notice tone="info" role="status">
                       Alguns campos foram sugeridos automaticamente. Confira todos antes de confirmar.
+                      Os demais podem ser preenchidos manualmente.
                     </Notice>
                   ) : (
                     <Notice tone="info" role="status">
