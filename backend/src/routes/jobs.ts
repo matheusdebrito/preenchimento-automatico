@@ -31,6 +31,34 @@ export function registerJobRoutes(
   const store = new JobStore(process.env.TEMP_DOCUMENT_ROOT);
   app.addHook('onClose', async () => { await store.close(); });
 
+  // Reject unauthenticated and unknown uploads BEFORE Fastify buffers a file.
+  // The handler-level checks remain authoritative for the actual write.
+  app.addHook('onRequest', async (request, reply) => {
+    if (request.method !== 'POST') return;
+    const parts = request.url.split('?')[0]!.split('/');
+    if (parts.length !== 6 || parts[1] !== 'api' || parts[2] !== 'jobs' ||
+      parts[4] !== 'documents' || !parts[3] || !parts[5]) return;
+
+    if (!pool) return reply.status(503).send({ error: 'unavailable' });
+    const user = await getCurrentUser(pool, request);
+    if (!user) return reply.status(401).send({ error: 'unauthorized' });
+
+    const job = store.get(parts[3], user.id);
+    if (!job) return reply.status(404).send({ error: 'not_found' });
+    const service = publicService(definitions, job.serviceId, job.answers);
+    if (!service || !service.documentRequirements.some((document) => document.id === parts[5])) {
+      return reply.status(400).send({ error: 'invalid_requirement' });
+    }
+    if (job.stage !== 'CREATED' && job.stage !== 'UPLOADED') {
+      return reply.status(409).send({ error: 'invalid_state' });
+    }
+    const declaredLength = request.headers['content-length'];
+    if (declaredLength !== undefined &&
+      (!/^\d+$/.test(declaredLength) || Number(declaredLength) > 10 * 1024 * 1024)) {
+      return reply.status(413).send({ error: 'document_too_large' });
+    }
+  });
+
   app.addContentTypeParser(['application/pdf', 'image/jpeg', 'image/png'],
     { parseAs: 'buffer', bodyLimit: 10 * 1024 * 1024 },
     (_request, body, done) => done(null, body));

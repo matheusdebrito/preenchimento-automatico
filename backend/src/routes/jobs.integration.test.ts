@@ -87,6 +87,28 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     page.drawText('HIN BR-TESTE-123456 - apenas para testes tecnicos', {x:50,y:720,size:14,font});
     const data=await pdf.save();
 
+    const unauthenticatedUpload = await app.inject({
+      method: 'POST',
+      url: '/api/jobs/' + jobId + '/documents/source',
+      headers: { 'content-type': 'application/pdf' },
+      payload: Buffer.from(data),
+    });
+    expect(unauthenticatedUpload.statusCode).toBe(401);
+    const wrongOwner = await app.inject({
+      method: 'POST',
+      url: '/api/jobs/' + randomUUID() + '/documents/source',
+      headers: { cookie, 'content-type': 'application/pdf' },
+      payload: Buffer.from(data),
+    });
+    expect(wrongOwner.statusCode).toBe(404);
+    const wrongRequirement = await app.inject({
+      method: 'POST',
+      url: '/api/jobs/' + jobId + '/documents/not-in-checklist',
+      headers: { cookie, 'content-type': 'application/pdf' },
+      payload: Buffer.from(data),
+    });
+    expect(wrongRequirement.statusCode).toBe(400);
+
     const upload = await app.inject({method:'POST',
       url:'/api/jobs/'+jobId+'/documents/source',
       headers:{cookie,'content-type':'application/pdf'},payload:Buffer.from(data)});
