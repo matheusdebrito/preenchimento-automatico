@@ -333,7 +333,14 @@ export function LiveFlowPage() {
                       <span className="field__label">{field.label}{field.required ? ' *' : ''}</span>
                       <input className="field__input" required={field.required} value={values[field.id] ?? ''}
                         onChange={(event) => setValues((prev) => ({ ...prev, [field.id]:event.target.value }))} />
-                      <span className="field__hint">{sources[field.id] ? 'Origem: ' + sources[field.id] : 'Preenchimento manual necessário'}</span>
+                      <span className="field__hint">
+                        {sources[field.id]
+                          ? 'Sugestão de ' +
+                            (service.documentRequirements.find((document) =>
+                              document.id === sources[field.id])?.label ?? 'documento enviado') +
+                            ' — confira antes de confirmar'
+                          : 'Preenchimento manual necessário'}
+                      </span>
                     </label>
                   ))}
                   <Button disabled={busy} onClick={() => void generate()}>
