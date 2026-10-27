@@ -262,7 +262,9 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       });
       expect(created.statusCode, created.body).toBe(201);
       const jobId = created.json<{id:string}>().id;
-      const seller = Buffer.from(await fakeTextPdf(['RG: 12345678']));
+      const seller = Buffer.from(await fakeTextPdf([
+        'DOCUMENTO FICTICIO DE IDENTIDADE - AMOSTRA SINTETICA', 'RG: 12345678',
+      ]));
       const upload = await app.inject({
         method: 'POST', url: '/api/jobs/' + jobId + '/documents/seller-identity',
         headers: { cookie, 'content-type': 'application/pdf' }, payload: seller,
