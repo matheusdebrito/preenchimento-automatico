@@ -15,6 +15,8 @@ interface BuildAppOptions {
   pool?: Database;
   /** Test-only override. Production always uses the verified default catalog. */
   catalogOverride?: CatalogDefinition;
+  /** Local/test-only synthetic QA. Never allow in production. */
+  qaPreview?: boolean;
 }
 
 const REDACTED_LOG_PATHS = [
@@ -29,6 +31,12 @@ const REDACTED_LOG_PATHS = [
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
   const env = options.env ?? loadEnv();
   const isTest = env.NODE_ENV === 'test';
+  if (env.NODE_ENV === 'production' && (options.catalogOverride || options.qaPreview)) {
+    throw new Error('Catálogo de QA não permitido em produção.');
+  }
+  if (options.qaPreview && !options.catalogOverride) {
+    throw new Error('Prévia QA exige catálogo sintético explícito.');
+  }
 
   const app = Fastify({
     logger: isTest
@@ -62,7 +70,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerHealthRoutes(app);
   registerCatalogRoutes(app, options.catalogOverride);
   registerAuthRoutes(app, env, options.pool);
-  registerJobRoutes(app, options.pool, options.catalogOverride);
+  registerJobRoutes(app, options.pool, options.catalogOverride, options.qaPreview === true);
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({
