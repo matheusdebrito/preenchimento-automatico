@@ -32,6 +32,7 @@ describe('jornada real isolada da demonstração', () => {
         fields: { 'person.fullName': 'MARIA EXEMPLO' }, sources: { 'person.fullName': 'source' },
       });
       if (path.endsWith('/review')) return json({ confirmed: true });
+      if (path.endsWith('/renew')) return json({ expiresAt: Date.now() + 20 * 60_000 });
       if (path.endsWith('/generate')) return json({ downloads: ['requerimento-ma-v1'] });
       return json({ error: 'not_found' }, 404);
     });
@@ -47,6 +48,8 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button',{name:'Enviar e analisar documentos'}));
     expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA EXEMPLO');
+    await user.click(screen.getByRole('button', { name: 'Prorrogar sessão temporária' }));
+    expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/renew'))).toBe(true);
     await user.clear(screen.getByLabelText(/Nome completo/));
     await user.type(screen.getByLabelText(/Nome completo/), 'MARIA CONFERIDA');
     await user.click(screen.getByRole('button',{name:'Confirmar e gerar formulários'}));

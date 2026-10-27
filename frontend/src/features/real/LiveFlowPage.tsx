@@ -20,6 +20,7 @@ export function LiveFlowPage() {
   const [values, setValues] = useState<Record<string,string>>({});
   const [sources, setSources] = useState<Record<string,string>>({});
   const [jobId, setJobId] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -88,9 +89,10 @@ export function LiveFlowPage() {
       if (currentJob) {
         // Recover when an upload was stored but the browser lost the response.
         const status = await api<{
-          status: string; uploadedRequirementIds: string[];
+          status: string; uploadedRequirementIds: string[]; expiresAt?: number;
           fields?: Record<string,string>; sources?: Record<string,string>; downloads?: string[];
         }>('/api/jobs/' + currentJob);
+        if (status.expiresAt) setExpiresAt(status.expiresAt);
         if (status.status === 'REVIEW') {
           showReview(status.fields ?? {}, status.sources ?? {});
           return;
@@ -106,10 +108,11 @@ export function LiveFlowPage() {
           throw new ApiError(409, 'Este processo não aceita novos documentos.');
         }
       } else {
-        const job = await api<{id:string}>('/api/jobs',
+        const job = await api<{id:string;expiresAt:number}>('/api/jobs',
           { method:'POST', body:JSON.stringify({serviceId:service.id,answers}) });
         currentJob = job.id;
         setJobId(job.id);
+        setExpiresAt(job.expiresAt);
       }
       for (const [requirementId, file] of Object.entries(files)) {
         if (present.has(requirementId)) continue;
@@ -129,10 +132,26 @@ export function LiveFlowPage() {
       if (issue instanceof ApiError && issue.status === 404) {
         setJobId(null);
         setUploadedRequirements([]);
+        setExpiresAt(null);
         setError('O processo expirou. Tente enviar novamente os documentos.');
       } else {
         setError(issue instanceof ApiError ? issue.message : 'Falha na leitura. Tente novamente.');
       }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const renewSession = async () => {
+    if (!jobId || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const response = await api<{expiresAt:number}>('/api/jobs/' + jobId + '/renew',
+        { method: 'POST', body: JSON.stringify({}) });
+      setExpiresAt(response.expiresAt);
+    } catch {
+      setError('Não foi possível prolongar a sessão temporária. Ela pode ter expirado.');
     } finally {
       setBusy(false);
     }
@@ -152,6 +171,7 @@ export function LiveFlowPage() {
         }
       }
       setJobId(null);
+      setExpiresAt(null);
       setUploadedRequirements([]);
       setFiles({});
       setValues({});
@@ -262,6 +282,19 @@ export function LiveFlowPage() {
                     {busy ? 'Gerando…' : 'Confirmar e gerar formulários'}
                   </Button>
                 </>
+              ) : null}
+              {jobId && step !== 'questions' ? (
+                <div className="field">
+                  <p className="field__hint">
+                    Documentos temporários: até 20 minutos por renovação,
+                    limitados a 1 hora desde o início.
+                    {expiresAt ? ' Prazo indicado: ' + new Date(expiresAt).toLocaleTimeString('pt-BR') + '.' : ''}
+                  </p>
+                  <button type="button" className="live-text-button" disabled={busy}
+                    onClick={() => void renewSession()}>
+                    Prorrogar sessão temporária
+                  </button>
+                </div>
               ) : null}
               {(step === 'files' || step === 'review' || step === 'download') ? (
                 <button type="button" className="live-text-button" disabled={busy}
