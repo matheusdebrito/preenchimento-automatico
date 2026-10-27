@@ -83,3 +83,12 @@ export async function removeSession(pool: Database, request: FastifyRequest, rep
   reply.header('Set-Cookie',
     'pa_session=; Path=/api; HttpOnly; SameSite=Strict; Max-Age=0' + (secure ? '; Secure' : ''));
 }
+
+/**
+ * Delete only expired opaque session digests. Accounts and credit movements
+ * remain untouched. Called on startup and periodically in the single-instance MVP.
+ */
+export async function pruneExpiredSessions(pool: Database): Promise<number> {
+  const removed = await pool.query('DELETE FROM app_sessions WHERE expires_at <= now()');
+  return removed.rowCount ?? 0;
+}
