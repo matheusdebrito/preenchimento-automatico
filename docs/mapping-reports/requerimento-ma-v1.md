@@ -7,7 +7,7 @@
 - Identidade do formulário: `requerimento-ma`
 - Versão técnica: `v1` (não confundir com edição oficial)
 - Tipo: estático, preenchimento por coordenadas
-- Total de posições em rascunho: **16**
+- Total de posições em rascunho: **17**
 - Método: imagem PNG de 850×1200 px, convertida em pontos PDF A4; imagens `pdftoppm`, arquivo oficial imutável
 - Inspeção técnica: imagens fictícias geradas pela CI e analisadas visualmente pelo agente
 - **Revisão humana independente:** PENDENTE — não confundir com inspeção técnica pelo agente.
@@ -19,26 +19,29 @@
 
 ## Coordenadas e campos
 
-Coordenadas abaixo referem-se aos pixels da imagem-base; o mapeamento no código usa pontos PDF (origem inferior esquerda).
+**17 posições**, **17 campos semânticos**, **5 campos obrigatórios** no mapeamento atual. Para marcações sim/não, o mesmo ID aparece em duas posições e **somente uma** deve receber X.
 
-| Campo semântico | Página | Posição X / linha Y | Largura máxima | Fonte |
-|---|---:|---:|---:|---:|
-| `person.fullName` | 1 | 176 / 321 px | 557 px | 8 pt |
-| `person.address` | 1 | 202 / 345 px | 283 px | 7 pt |
-| `person.streetNumber` | 1 | 517 / 345 px | 40 px | 6.5 pt |
-| `person.apartment` | 1 | 636 / 346 px | 120 px | 7 pt |
-| `person.city` | 1 | 175 / 369 px | 247 px | 7 pt |
-| `person.state` | 1 | 451 / 369 px | 116 px | 7 pt |
-| `person.identity` | 1 | 650 / 370 px | 110 px | 7 pt |
-| `person.issuer` | 1 | 183 / 392 px | 135 px | 7 pt |
-| `person.postalCode` | 1 | 354 / 392 px | 133 px | 7 pt |
-| `person.phone` | 1 | 520 / 392 px | 48 px | 5.8 pt |
-| `person.cpf` | 1 | 700 / 392 px | 66 px | 5.2 pt |
-| `vessel.registration` | 1 | 232 / 466 px | 324 px | 7.6 pt |
-| `vessel.name` | 1 | 177 / 488 px | 375 px | 7.6 pt |
-| `vessel.length` | 1 | 241 / 515 px | 134 px | 7.5 pt |
-| `vessel.hullId` | 1 | 230 / 536 px | 340 px | 7.5 pt |
-| `process.transferOwnership` | 1 | 137 / 655 px | 20 px | 9 pt |
+As coordenadas abaixo são pixels da imagem-base de 850 × 1200; o código converte para pontos PDF. As assinaturas e os espaços reservados para reconhecimento de firma NÃO estão mapeados.
+
+| Campo semântico | Página | X / linha Y | Largura | Fonte | Obrigatório | Renderização |
+|---|---:|---:|---:|---:|---|---|
+| `person.fullName` | 1 | 176 / 321 px | 557 px | 8 pt | Sim | Texto |
+| `person.address` | 1 | 202 / 345 px | 283 px | 7 pt | Não | Texto |
+| `person.streetNumber` | 1 | 517 / 345 px | 40 px | 6.5 pt | Não | Texto |
+| `person.apartment` | 1 | 636 / 346 px | 120 px | 7 pt | Não | Texto |
+| `person.city` | 1 | 175 / 369 px | 247 px | 7 pt | Não | Texto |
+| `person.state` | 1 | 451 / 369 px | 116 px | 7 pt | Não | Texto |
+| `person.identity` | 1 | 650 / 370 px | 110 px | 7 pt | Não | Texto |
+| `person.issuer` | 1 | 183 / 392 px | 135 px | 7 pt | Não | Texto |
+| `person.postalCode` | 1 | 354 / 392 px | 133 px | 7 pt | Não | Texto |
+| `person.phone` | 1 | 520 / 392 px | 48 px | 5.8 pt | Não | Texto |
+| `person.cpf` | 1 | 700 / 392 px | 66 px | 5.2 pt | Sim | Texto |
+| `vessel.registration` | 1 | 232 / 466 px | 324 px | 7.6 pt | Sim | Texto |
+| `vessel.name` | 1 | 177 / 488 px | 375 px | 7.6 pt | Sim | Texto |
+| `vessel.length` | 1 | 241 / 515 px | 134 px | 7.5 pt | Não | Texto |
+| `vessel.hullId` | 1 | 230 / 536 px | 340 px | 7.5 pt | Sim | Texto |
+| `process.transferOwnership` | 1 | 137 / 655 px | 20 px | 9 pt | Não | Texto |
+| `person.placeDate` | 1 | 132 / 1011 px | 284 px | 8 pt | Não | Texto |
 
 ## Critérios de validação
 
@@ -52,6 +55,8 @@ Coordenadas abaixo referem-se aos pixels da imagem-base; o mapeamento no código
 
 ## Riscos e pendências
 
-Campos de local/data e assinatura não foram automatizados. Tipos empresariais, representante e alterações além da transferência não são contemplados. O tamanho mínimo do CPF exige revalidação em impressão.
+Local e data agora aparecem na posição correspondente; assinatura e CPF/CNPJ do requerente continuam exclusivamente manuais. O campo estreito de CPF na primeira página exige conferência em impressão. Em casos de pessoa jurídica, representantes e mudanças conjuntas, revalidar regras antes de ativar serviço.
+
+Os exemplos atuais usam dados fictícios curtos. **Texto excessivo, letras acentuadas, campos obrigatórios, regras condicionais e separação de assinaturas** devem ser revistos com casos de teste representativos. Se um nome não couber, o motor bloqueia a emissão em vez de cortar o texto.
 
 **Decisão:** manter `DRAFT` e bloquear geração real até completar a revisão e os cenários.
