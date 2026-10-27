@@ -46,7 +46,7 @@
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — PNG/JPEG preflight reforçado; fuzzing, isolamento e carga pendentes |
 | 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — OCR e teto de arquivos rasterizados implementados; isolamento CPU/RAM e qualidade pendentes |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — interface integrada; E2E em navegador real e acessibilidade pendentes |
-| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — estorno/autorização com CI aprovado; limpeza de sessões adicionada; crash real pendente |
+| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — recibos, sessões e estorno antecipado no TTL testados; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
 | 11 | Infraestrutura de produção e deploy reproduzível | 09 e aprovação explícita | [ ] |
@@ -163,6 +163,7 @@
 - [x] Testar concorrência, acesso entre usuários, estorno idempotente e falha de geração de PDF **sem consumir créditos**.
 - [x] Criar recibo persistente mínimo, com débito atômico no PostgreSQL e estorno idempotente de jobs não entregues após cancelamento, expiração ou reinício em **instância única**.
 - [x] Verificar no CI a limpeza de sessões expiradas no startup e a cada hora; preservar sessões vigentes sem alterar contas ou ledger de créditos.
+- [x] Estornar recibo não entregue quando o job expirar pelo TTL deslizante de 20 minutos, após apagar os arquivos privados; preservar pacotes entregues e usar reconciliação posterior se o banco falhar. Testes unitários e com PostgreSQL no CI 40437615191.
 - [ ] Testar falha real de processo durante o download, inconsistência de banco e execução multi-instância antes de produção.
 - **Aceite:** segurança e invariantes de saldo verificadas por testes.
 
@@ -481,3 +482,14 @@ Commit: [SHA, se realizado]
 - **Validação comprovada:** [CI 40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173) do commit de código `009cf56` passou nos cinco jobs: checks frontend/backend (typecheck, lint, testes, build e auditoria de dependências), integração PostgreSQL, prévias PDF sintéticas e Compose. Esse resultado inclui os testes PNG/JPEG, OCR raster e limpeza de sessões. Commits de documentação posteriores exigem checagem própria de CI; eles não alteram esse resultado de código.
 - **Pendências priorizadas:** `docs/RELATORIO_CONTINUIDADE_2026-10-26.md`; revisão humana dos seis mapas (todos `DRAFT`), isolamento/fuzzing do OCR, testes reais de crash e recuperação de créditos, E2E em navegador, carga e segurança antes de produção.
 - **Próximo passo:** revisar CI, corrigir falhas sem avançar o marcador de fase; depois atualizar esta evidência, quadro e checklists. Não liberar `AVAILABLE` nem pagamentos reais.
+
+## Registro complementar — estorno antecipado no TTL (Fase 08, 26/10/2026)
+
+**Status:** SUBTAREFA CONCLUÍDA com evidência, Fase 08 permanece PARCIAL.
+
+- **Mudanças:** `backend/src/modules/jobs/job-store.ts` notifica a expiração após remover o diretório temporário; `backend/src/routes/jobs.ts` tenta estornar com `refundUndeliveredJobCredit` (transação/idempotência preexistentes), sem atrasar a exclusão de arquivos privados se o banco estiver indisponível.
+- **Testes:** `backend/src/modules/jobs/job-store.test.ts` verifica callback único, arquivos apagados antes da tentativa de estorno e limpeza mesmo com falha do callback; `backend/src/modules/auth/job-credit.integration.test.ts` usa PostgreSQL e UUIDs fictícios para verificar estorno no TTL e não estornar pacotes entregues.
+- **Evidência:** [CI 40437615191](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437615191) do commit `8e88717` aprovado nos cinco jobs, incluindo PostgreSQL real, backend/frontend, previsualizações sintéticas e Docker Compose. Commits de código: `a6948bc`, `4b4417d`, `51d4aea`, `dc137e7`, `8e88717`.
+- **Documentação:** `docs/CREDIT_DELIVERY_LIFECYCLE.md` atualizada para distinguir TTL deslizante de 20 minutos e prazo absoluto de uma hora.
+- **Limitações:** se o estorno antecipado falhar, a compensação só ocorre na reconciliação posterior (limite absoluto ou reinício); nenhum crash real ou falha de PostgreSQL durante o download foi validado. Instância única, créditos fictícios, nenhum pagamento real.
+- **Próximos passos:** confirmar falhas abruptas, cronologia de downloads, disponibilidade de PostgreSQL e eventual arquitetura coordenada antes de escalar. Não marcar Fase 08 ou 09 como concluída.
