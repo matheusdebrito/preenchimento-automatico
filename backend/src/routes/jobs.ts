@@ -5,6 +5,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { catalog } from '../modules/catalog/catalog.js';
 import { publicService } from '../modules/catalog/public-catalog.js';
+import { isValidCpf, isValidBrazilianDate } from '../modules/catalog/field-validation.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
 import { QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
 import type { Database } from '../modules/auth/db.js';
@@ -220,6 +221,19 @@ export function registerJobRoutes(
     if (service.reviewFields.some((field) => field.required &&
       !parsed.data.values[field.id]?.trim())) {
       return reply.status(422).send({ error: 'missing_required_fields' });
+    }
+    const fieldsById = new Map(definitions.fields.map((field) => [field.id, field]));
+    for (const [fieldId, raw] of Object.entries(parsed.data.values)) {
+      if (!raw.trim()) continue;
+      const field = fieldsById.get(fieldId);
+      const invalid = (field?.validationRuleId === 'cpf' && !isValidCpf(raw)) ||
+        (field?.validationRuleId === 'simNao' && !['sim', 'nao'].includes(raw)) ||
+        (field?.valueKind === 'date' && !isValidBrazilianDate(raw)) ||
+        (field?.valueKind === 'boolean' && !['true', 'false'].includes(raw));
+      if (invalid) {
+        // The field identifier is safe catalog metadata, never sensitive content.
+        return reply.status(422).send({ error: 'invalid_field_value', fieldId });
+      }
     }
     job.values = { ...parsed.data.values };
     job.reviewConfirmed = true;
