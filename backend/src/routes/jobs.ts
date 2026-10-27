@@ -210,7 +210,10 @@ export function registerJobRoutes(
     if (!path || !job) return reply.status(404).send({ error: 'not_found' });
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     const stream = createReadStream(path);
-    stream.once('close', () => store.endOperation(job));
+    const release = () => store.endOperation(job);
+    stream.once('end', release);
+    stream.once('close', release);
+    stream.once('error', release);
     reply.header('Content-Type', 'application/pdf');
     reply.header('Content-Disposition', 'attachment; filename="' + req.params.versionId + '.pdf"');
     return reply.send(stream);
