@@ -99,4 +99,23 @@ describe('JobStore', () => {
     expect(job.files).toHaveLength(1);
   });
 
+
+  it('renova explicitamente até no máximo uma hora desde a criação', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-renew-'));
+    directories.push(root);
+    const store = new JobStore(root);
+    stores.push(store);
+    const job = await store.create('alice', 'service');
+    const initial = job.expiresAt;
+    expect(store.renew(job)).toBeGreaterThanOrEqual(initial);
+    job.createdAt = Date.now() - 59 * 60_000;
+    const capped = store.renew(job);
+    expect(capped).toBeLessThanOrEqual(job.createdAt + 60 * 60_000);
+    expect(capped).toBeGreaterThan(Date.now());
+    job.createdAt = Date.now() - 61 * 60_000;
+    expect(store.renew(job)).toBeNull();
+    job.expiresAt = Date.now() - 1;
+    expect(store.renew(job)).toBeNull();
+  });
+
 });

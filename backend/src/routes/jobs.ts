@@ -76,6 +76,15 @@ export function registerJobRoutes(
     };
   });
 
+  app.post<{Params:{id:string}}>('/api/jobs/:id/renew', async (req, reply) => {
+    const userId = await actor(req);
+    const job = store.get(req.params.id, userId);
+    if (!job) return reply.status(404).send({ error: 'not_found' });
+    const expiresAt = store.renew(job);
+    if (!expiresAt) return reply.status(410).send({ error: 'expired' });
+    return { expiresAt, maxExpiresAt: job.createdAt + 60 * 60_000 };
+  });
+
   app.post<{Params:{id:string;requirementId:string}}>('/api/jobs/:id/documents/:requirementId', async (req, reply) => {
     const userId = await actor(req);
     const job = store.get(req.params.id, userId);

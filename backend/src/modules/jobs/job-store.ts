@@ -18,6 +18,7 @@ export interface DocumentJob {
   serviceId: string;
   answers: Readonly<Record<string, string>>;
   expiresAt: number;
+  createdAt: number;
   files: StoredDocument[];
   values: Record<string, string>;
   sourceNotes: Record<string, string>;
@@ -27,6 +28,7 @@ export interface DocumentJob {
 }
 
 const TTL = 20 * 60_000;
+const MAX_LIFETIME = 60 * 60_000;
 const DOCUMENT_LIMIT = 12;
 const MAX_ROOT_FILES = 3;
 const MAX_USER_JOBS = 2;
@@ -56,8 +58,9 @@ export class JobStore {
     this.pendingCreates.set(id, userId);
     try {
       await mkdir(join(this.root, id), { recursive: true, mode: 0o700 });
+      const createdAt = Date.now();
       const job: DocumentJob = {
-        id, userId, serviceId, answers, expiresAt: Date.now() + TTL,
+        id, userId, serviceId, answers, createdAt, expiresAt: createdAt + TTL,
         files: [], values: {}, sourceNotes: {}, outputs: new Map(), stage: 'CREATED', reviewConfirmed: false,
       };
       this.jobs.set(id, job);
@@ -73,6 +76,20 @@ export class JobStore {
     return job;
   }
 
+  private refreshDeadline(job: DocumentJob): void {
+    job.expiresAt = Math.min(Date.now() + TTL, job.createdAt + MAX_LIFETIME);
+  }
+
+  /**
+   * Explicit, authenticated renewal. Never retain document content beyond the
+   * absolute one-hour bound, even when the user repeatedly asks to extend.
+   */
+  renew(job: DocumentJob): number | null {
+    if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now()) return null;
+    this.refreshDeadline(job);
+    return job.expiresAt > Date.now() ? job.expiresAt : null;
+  }
+
   /** Prevent expiration/cancellation while a request reads or generates private files. */
   beginOperation(job: DocumentJob): boolean {
     if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now() ||
@@ -84,7 +101,7 @@ export class JobStore {
   endOperation(job: DocumentJob): void {
     if (this.activeJobs.delete(job.id) && this.jobs.get(job.id) === job) {
       // The user can review/download the result after a potentially long OCR operation.
-      job.expiresAt = Date.now() + TTL;
+      this.refreshDeadline(job);
     }
   }
 
@@ -121,7 +138,7 @@ export class JobStore {
       const doc = { id, requirementId, path, kind, size: bytes.length };
       job.files.push(doc);
       job.stage = 'UPLOADED';
-      job.expiresAt = Date.now() + TTL;
+      this.refreshDeadline(job);
       return doc;
     } finally {
       this.activeUploads.delete(job.id);
