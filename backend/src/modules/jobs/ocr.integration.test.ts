@@ -74,6 +74,46 @@ describeOcr('OCR real no Linux com ferramentas instaladas', () => {
       await rm(root, { recursive: true, force: true });
     }
   }, 90_000);
+  it('lê RG fictício em foto com rótulos separados dos valores', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-ocr-rg-'));
+    try {
+      const card = await PDFDocument.create();
+      const page = card.addPage([595, 842]);
+      const font = await card.embedFont(StandardFonts.Helvetica);
+      const labels = [
+        'DOCUMENTO DE IDENTIDADE FICTICIO',
+        'NOME',
+        'MARIA DE SOUZA',
+        'REGISTRO GERAL',
+        '12.345.678-9',
+        'CPF',
+        '123.456.789-09',
+      ];
+      labels.forEach((line, index) => page.drawText(line, {
+        x: 65, y: 730 - index * 75, size: 23, font,
+      }));
+      const source = join(root, 'synthetic-id.pdf');
+      await writeFile(source, await card.save());
+      const prefix = join(root, 'synthetic-id-photo');
+      await execFile('pdftoppm',
+        ['-f', '1', '-l', '1', '-singlefile', '-r', '180', '-jpeg', source, prefix],
+        { timeout: 30_000, maxBuffer: 10_000 });
+      const file = prefix + '.jpg';
+      const bytes = await readFile(file);
+      const jpg: StoredDocument = {
+        id: 'rg-photo', requirementId: 'buyer-identity',
+        path: file, kind: 'jpeg', size: bytes.byteLength,
+      };
+      const recognized = await extractText(jpg, root);
+      const suggestions = suggestFields(recognized, 'buyer-identity');
+      expect(suggestions['person.fullName']?.value).toBe('MARIA DE SOUZA');
+      expect(suggestions['person.cpf']?.value).toBe('123.456.789-09');
+      expect(suggestions['seller.fullName']).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 60000);
+
   it('aceita foto JPEG sintética e extrai nome rotulado sem presumir identidade', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pa-ocr-jpeg-'));
     try {
