@@ -232,7 +232,8 @@ describe('jornada real isolada da demonstração', () => {
       if (path.includes('/documents/')) return json({ id: 'synthetic-file' }, 201);
       if (path.endsWith('/extract')) return json({
         fields: {}, sources: {}, diagnostics: [
-          { requirementId: 'buyer-identity', outcome: 'no_supported_labels', suggestionCount: 0 },
+          { requirementId: 'buyer-identity', outcome: 'no_supported_labels', suggestionCount: 0,
+            nameStage: 'label_seen_name_rejected' },
           { requirementId: 'tie', outcome: 'no_text', suggestionCount: 0 },
         ],
       });
@@ -262,6 +263,7 @@ describe('jornada real isolada da demonstração', () => {
 
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
     expect(screen.getByText('Nenhum campo preenchido pelo OCR')).toBeTruthy();
+    expect(screen.getByText(/Nome: rótulo encontrado, mas valor não validado/)).toBeTruthy();
     expect(screen.getByText(/texto detectado, mas nome\/CPF\/RG não foram identificados com segurança/)).toBeTruthy();
     expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
