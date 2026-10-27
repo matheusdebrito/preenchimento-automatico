@@ -93,7 +93,7 @@ export function suggestFields(text: string, source: string): Record<string, Extr
   if (buyer || seller) {
     // Avoid guessing a name from unrelated OCR lines, dates or surrounding labels.
     const nameLines = [...text.matchAll(
-      /^(?:NOME(?:\s+COMPLETO)?|NOME\s+DO\s+TITULAR)\s*[:\-]\s*([A-ZÀ-Ý][A-ZÀ-Ý' .-]{5,100})\s*$/gim,
+      /^(?:NOME(?:\s+COMPLETO)?|NOME\s+DO\s+TITULAR)\s*[:-]\s*([A-ZÀ-Ý][A-ZÀ-Ý' .-]{5,100})\s*$/gim,
     )].map((match) => match[1]!.trim());
     const uniqueNames = [...new Set(nameLines.map((name) => name.toUpperCase()))];
     if (uniqueNames.length === 1 && uniqueNames[0]!.split(/\s+/).length >= 2) {
