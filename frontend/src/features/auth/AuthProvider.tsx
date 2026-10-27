@@ -16,6 +16,18 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+async function readSession(): Promise<SessionState> {
+  try {
+    const response = await api<{ user: SessionUser }>('/api/auth/me');
+    return { status: 'authenticated', user: response.user };
+  } catch (error) {
+    return {
+      status: error instanceof ApiError && error.status === 401 ? 'guest' : 'unavailable',
+      user: null,
+    };
+  }
+}
+
 /** One authoritative browser session state for menus, login and account pages. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<SessionState>({ status: 'loading', user: null });
@@ -23,30 +35,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshSession = useCallback(async () => {
     const version = ++requestVersion.current;
-    // Initial state is already loading. Avoid a synchronous state update
-    // inside the mount effect; only the resolved request commits new state.
-    try {
-      const response = await api<{ user: SessionUser }>('/api/auth/me');
-      if (version === requestVersion.current) {
-        setSession({ status: 'authenticated', user: response.user });
-      }
-    } catch (error) {
-      if (version === requestVersion.current) {
-        setSession({
-          status: error instanceof ApiError && error.status === 401 ? 'guest' : 'unavailable',
-          user: null,
-        });
-      }
-    }
+    const result = await readSession();
+    if (version === requestVersion.current) setSession(result);
   }, []);
 
   useEffect(() => {
-    void refreshSession();
+    // Commit only after the async request finishes. Late responses cannot
+    // overwrite a successful login/logout or a subsequent session refresh.
+    const version = ++requestVersion.current;
+    void readSession().then((result) => {
+      if (version === requestVersion.current) setSession(result);
+    });
     return () => { requestVersion.current++; };
-  }, [refreshSession]);
+  }, []);
 
   const acceptLogin = useCallback((user: SessionUser) => {
-    // Discard an older /me response if login completed before it.
     requestVersion.current++;
     setSession({ status: 'authenticated', user });
   }, []);
