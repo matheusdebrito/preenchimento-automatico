@@ -16,6 +16,8 @@ type ExtractionDiagnostic = {
   requirementId: string;
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
+  nameStage?: 'name_recognized' | 'name_not_mapped' |
+    'label_seen_name_rejected' | 'label_not_detected';
 };
 
 export function LiveFlowPage() {
@@ -470,6 +472,19 @@ export function LiveFlowPage() {
                                   : item.outcome === 'no_applicable_fields'
                                     ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
                                     : 'texto detectado, mas nome/CPF/RG não foram identificados com segurança')}
+                            {item.nameStage ? (
+                              <span className="live-ocr-name-stage">
+                                {' · Nome: ' + (
+                                  item.nameStage === 'name_recognized'
+                                    ? 'identificado para revisão'
+                                    : item.nameStage === 'name_not_mapped'
+                                      ? 'identificado, mas sem campo no formulário'
+                                      : item.nameStage === 'label_seen_name_rejected'
+                                        ? 'rótulo encontrado, mas valor não validado'
+                                        : 'rótulo não localizado na saída textual do OCR'
+                                )}
+                              </span>
+                            ) : null}
                           </li>
                         ))}
                       </ul>
