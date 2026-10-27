@@ -108,14 +108,23 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
           'DOCUMENTO FICTICIO', 'NOME: JOAO VENDEDOR', 'RG: 12345678',
         ])), 'application/pdf'],
         ['residence-proof', Buffer.from(residence), 'application/pdf'],
-        ['photo-stern', png, 'image/png'],
-        ['photo-side', png, 'image/png'],
       ] as const) {
         const upload = await app.inject({
           method: 'POST', url: '/api/jobs/' + jobId + '/documents/' + requirement,
           headers: { cookie, 'content-type': mime }, payload: bytes,
         });
         expect(upload.statusCode, upload.body).toBe(201);
+      }
+
+      // An input irrelevant to filling PDF fields must be rejected by the
+      // server even if a client bypasses the UI.
+      for (const photoId of ['photo-stern', 'photo-side']) {
+        const rejected = await app.inject({
+          method: 'POST', url: '/api/jobs/' + jobId + '/documents/' + photoId,
+          headers: { cookie, 'content-type': 'image/png' }, payload: png,
+        });
+        expect(rejected.statusCode).toBe(400);
+        expect(rejected.json()).toEqual({ error: 'invalid_requirement' });
       }
 
       const extracted = await app.inject({
@@ -143,7 +152,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const restored = await app.inject({
         method: 'GET', url: '/api/jobs/' + jobId, headers: { cookie },
       });
-      expect(restored.json<{diagnostics:unknown[]}>().diagnostics).toHaveLength(6);
+      expect(restored.json<{diagnostics:unknown[]}>().diagnostics).toHaveLength(4);
 
       const incomplete = await app.inject({
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
