@@ -10,6 +10,11 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
 type Step = 'questions' | 'files' | 'review' | 'download';
+type ExtractionDiagnostic = {
+  requirementId: string;
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'not_analyzed';
+  suggestionCount: number;
+};
 
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
@@ -20,6 +25,9 @@ export function LiveFlowPage() {
   const [files, setFiles] = useState<Record<string,File>>({});
   const [values, setValues] = useState<Record<string,string>>({});
   const [sources, setSources] = useState<Record<string,string>>({});
+  const [diagnostics, setDiagnostics] = useState<ExtractionDiagnostic[]>([]);
+  const [requestedMissingDocs, setRequestedMissingDocs] = useState(false);
+  const [invalidFieldId, setInvalidFieldId] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
@@ -44,6 +52,7 @@ export function LiveFlowPage() {
             status: string; expiresAt: number; answers: Record<string,string>;
             uploadedRequirementIds: string[];
             fields: Record<string,string>; sources: Record<string,string>; downloads: string[];
+            diagnostics?: ExtractionDiagnostic[];
           }>('/api/jobs/' + savedId);
           const quoted = await api<{service:LiveService}>(
             '/api/services/' + encodeURIComponent(serviceId) + '/quote',
@@ -61,6 +70,7 @@ export function LiveFlowPage() {
               Object.entries(status.fields ?? {}).filter(([id]) => visible.has(id))));
             setSources(Object.fromEntries(
               Object.entries(status.sources ?? {}).filter(([id]) => visible.has(id))));
+            setDiagnostics(status.diagnostics ?? []);
             if (status.status === 'GENERATED') setDownloads(status.downloads ?? []);
             setStep(status.status === 'GENERATED' ? 'download' : 'review');
           } else {
@@ -97,6 +107,7 @@ export function LiveFlowPage() {
         { method: 'POST', body: JSON.stringify({ answers }) },
       );
       setService(result.service);
+      setRequestedMissingDocs(false);
       setStep('files');
     } catch { setError('Não foi possível validar os requisitos do serviço.'); }
     finally { setBusy(false); }
@@ -118,20 +129,29 @@ export function LiveFlowPage() {
     setError('');
   };
 
-  const showReview = (fields: Record<string, string>, originNotes: Record<string, string>) => {
+  const showReview = (
+    fields: Record<string, string>,
+    originNotes: Record<string, string>,
+    reports: ExtractionDiagnostic[] = [],
+  ) => {
     const visible = new Set(service?.reviewFields.map((field) => field.id) ?? []);
     setValues(Object.fromEntries(Object.entries(fields).filter(([key]) => visible.has(key))));
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
+    setDiagnostics(reports);
+    setInvalidFieldId(null);
     setStep('review');
   };
 
   const extract = async () => {
     if (!service) return;
-    if (service.documentRequirements.some((required) =>
-      required.required && !files[required.id] && !uploadedRequirements.includes(required.id))) {
-      setError('Adicione os documentos obrigatórios antes de continuar.');
+    const missing = service.documentRequirements.filter((required) =>
+      required.required && !files[required.id] && !uploadedRequirements.includes(required.id));
+    if (missing.length > 0) {
+      setRequestedMissingDocs(true);
+      setError('');
       return;
     }
+    setRequestedMissingDocs(false);
     setBusy(true);
     setError('');
     try {
@@ -142,10 +162,11 @@ export function LiveFlowPage() {
         const status = await api<{
           status: string; uploadedRequirementIds: string[]; expiresAt?: number;
           fields?: Record<string,string>; sources?: Record<string,string>; downloads?: string[];
+          diagnostics?: ExtractionDiagnostic[];
         }>('/api/jobs/' + currentJob);
         if (status.expiresAt) setExpiresAt(status.expiresAt);
         if (status.status === 'REVIEW') {
-          showReview(status.fields ?? {}, status.sources ?? {});
+          showReview(status.fields ?? {}, status.sources ?? {}, status.diagnostics ?? []);
           return;
         }
         if (status.status === 'GENERATED') {
@@ -175,11 +196,14 @@ export function LiveFlowPage() {
         present.add(requirementId);
         setUploadedRequirements([...present]);
       }
-      const read = await api<{fields:Record<string,string>;sources:Record<string,string>}>(
+      const read = await api<{
+        fields: Record<string,string>; sources: Record<string,string>;
+        diagnostics?: ExtractionDiagnostic[];
+      }>(
         '/api/jobs/' + currentJob + '/extract', { method:'POST', body:JSON.stringify({}) },
       );
       // Present and send only fields that the user can visibly review.
-      showReview(read.fields, read.sources);
+      showReview(read.fields, read.sources, read.diagnostics ?? []);
     } catch (issue) {
       if (issue instanceof ApiError && issue.status === 404) {
         if (serviceId) forgetTemporaryJob(serviceId);
@@ -230,6 +254,9 @@ export function LiveFlowPage() {
       setFiles({});
       setValues({});
       setSources({});
+      setDiagnostics([]);
+      setRequestedMissingDocs(false);
+      setInvalidFieldId(null);
       setDownloads([]);
       setStep('questions');
     } catch {
@@ -240,13 +267,20 @@ export function LiveFlowPage() {
   };
 
   const generate = async () => {
-    if (!jobId) return;
-    setBusy(true); setError('');
+    if (!jobId || !service) return;
+    setError('');
+    setInvalidFieldId(null);
+    const missing = service.reviewFields.find((field) =>
+      field.required && !values[field.id]?.trim());
+    if (missing) {
+      setInvalidFieldId(missing.id);
+      setError('Preencha o campo obrigatório: ' + missing.label + '.');
+      document.getElementById('review-' + missing.id)?.focus();
+      return;
+    }
+
+    setBusy(true);
     try {
-      if (service?.reviewFields.some((field) => field.required && !values[field.id]?.trim())) {
-        setError('Preencha os campos obrigatórios antes de gerar.');
-        return;
-      }
       await api<{confirmed:boolean}>('/api/jobs/' + jobId + '/review',
         {method:'PATCH', body:JSON.stringify({confirmed:true,values})});
       const result = await api<{downloads:string[]}>('/api/jobs/' + jobId + '/generate',
@@ -254,8 +288,7 @@ export function LiveFlowPage() {
       setDownloads(result.downloads);
       setStep('download');
     } catch (issue) {
-      // The server can finish the debit/generation while the response is lost.
-      // Recover the already generated package rather than attempting another debit.
+      // A lost response after generation must not trigger another debit.
       try {
         const current = await api<{status:string;downloads:string[]}>('/api/jobs/' + jobId);
         if (current.status === 'GENERATED') {
@@ -264,17 +297,21 @@ export function LiveFlowPage() {
           return;
         }
       } catch {
-        // An expired or unavailable job is reported by the original error.
+        // Preserve the original issue, including a precise field ID.
       }
       if (issue instanceof ApiError && issue.fieldId) {
-        const invalidField = service?.reviewFields.find((field) => field.id === issue.fieldId);
-        const name = invalidField?.label ?? 'o campo informado';
-        const tip = invalidField?.valueKind === 'date'
-          ? 'use uma data válida no formato DD/MM/AAAA.'
-          : issue.fieldId.endsWith('.cpf')
-            ? 'informe um CPF válido com os dígitos verificadores.'
-            : 'verifique o formato e o valor antes de confirmar.';
-        setError('Confira ' + name + ': ' + tip);
+        const field = service.reviewFields.find((item) => item.id === issue.fieldId);
+        const label = field?.label ?? 'o campo informado';
+        const tip = issue.errorCode === 'missing_required_fields'
+          ? 'é obrigatório e precisa ser preenchido.'
+          : field?.valueKind === 'date'
+            ? 'use uma data real no formato DD/MM/AAAA.'
+            : issue.fieldId.endsWith('.cpf')
+              ? 'informe um CPF válido com os dígitos verificadores.'
+              : 'revise o formato e o valor.';
+        setInvalidFieldId(issue.fieldId);
+        setError('Confira ' + label + ': ' + tip);
+        document.getElementById('review-' + issue.fieldId)?.focus();
       } else {
         setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
       }
@@ -290,7 +327,8 @@ export function LiveFlowPage() {
             <h1>{service?.title ?? 'Serviço náutico'}</h1>
             <p className="lead">{service?.description ?? 'Carregando disponibilidade do serviço…'}</p>
           </header>
-          {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
+          {error && step !== 'files' && step !== 'review'
+            ? <Notice tone="danger" role="alert">{error}</Notice> : null}
           {!service ? (
             <Notice tone="info">Os formulários só serão liberados após validação oficial e revisão do preenchimento. <Link to="/preencher/servico">Conhecer demonstração</Link>.</Notice>
           ) : (
@@ -324,7 +362,8 @@ export function LiveFlowPage() {
               {step === 'files' ? (
                 <>
                   <h2>Documentos necessários</h2>
-                  <p>Os arquivos serão enviados ao servidor temporariamente e excluídos após a sessão expirar.</p>
+                  <p>Os arquivos serão enviados ao servidor temporariamente e excluídos após a sessão expirar.
+                    Os itens marcados com * são obrigatórios.</p>
                   {service.documentRequirements.map((required) => (
                     <div key={required.id} className="live-upload-field">
                       <label className="field">
@@ -346,8 +385,20 @@ export function LiveFlowPage() {
                         : files[required.id]
                           ? <span className="field__hint">{files[required.id]?.name}</span>
                           : null}
+                      {requestedMissingDocs && required.required && !files[required.id] &&
+                        !uploadedRequirements.includes(required.id)
+                        ? <span className="field__error">Documento obrigatório pendente.</span> : null}
                     </div>
                   ))}
+                  {requestedMissingDocs && service.documentRequirements.some((item) =>
+                    item.required && !files[item.id] && !uploadedRequirements.includes(item.id))
+                    ? <Notice tone="danger" role="alert">
+                        Selecione os documentos obrigatórios antes de continuar:
+                        {' ' + service.documentRequirements.filter((item) =>
+                          item.required && !files[item.id] && !uploadedRequirements.includes(item.id))
+                          .map((item) => item.label).join(', ')}.
+                      </Notice> : null}
+                  {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   <Button disabled={busy} onClick={() => void extract()}>
                     {busy ? 'Lendo documentos…' : 'Enviar e analisar documentos'}
                   </Button>
@@ -357,23 +408,66 @@ export function LiveFlowPage() {
                 <>
                   <h2>Confira cada campo</h2>
                   <p>As sugestões do OCR podem estar incorretas. Corrija e confirme os valores antes de gerar.</p>
+                  {service.reviewFields.some((field) => sources[field.id] &&
+                    service.documentRequirements.some((doc) => doc.id === sources[field.id])) ? (
+                    <Notice tone="info" role="status">
+                      Alguns campos foram sugeridos automaticamente. Confira todos antes de confirmar.
+                    </Notice>
+                  ) : (
+                    <Notice tone="info" role="status">
+                      Nenhum campo foi identificado automaticamente. Isso pode ocorrer quando a
+                      imagem está pouco legível ou o texto não contém os rótulos reconhecidos.
+                      Confira os arquivos e preencha os campos manualmente; não foram inventados valores.
+                    </Notice>
+                  )}
+                  {diagnostics.length > 0 ? (
+                    <div className="live-ocr-report">
+                      <strong>Resultado da leitura por documento</strong>
+                      <ul>
+                        {diagnostics.map((item) => (
+                          <li key={item.requirementId}>
+                            {service.documentRequirements.find((doc) =>
+                              doc.id === item.requirementId)?.label ?? 'Documento enviado'}:
+                            {' ' + (item.outcome === 'suggested'
+                              ? item.suggestionCount + ' sugestão(ões) encontrada(s), sujeitas à revisão'
+                              : item.outcome === 'no_text' ? 'não foi possível reconhecer texto'
+                                : item.outcome === 'not_analyzed' ? 'não há extração automática configurada'
+                                  : 'texto lido, mas nenhum campo com rótulo suportado')}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   {service.reviewFields.map((field) => (
                     <label key={field.id} className="field">
                       <span className="field__label">{field.label}{field.required ? ' *' : ''}</span>
-                      <input className="field__input" required={field.required} value={values[field.id] ?? ''}
+                      <input id={'review-' + field.id} className="field__input"
+                        required={field.required} value={values[field.id] ?? ''}
+                        aria-invalid={invalidFieldId === field.id || undefined}
                         inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
                         placeholder={field.valueKind === 'date' ? 'DD/MM/AAAA' : undefined}
-                        onChange={(event) => setValues((prev) => ({ ...prev, [field.id]:event.target.value }))} />
+                        onChange={(event) => {
+                          setValues((prev) => ({ ...prev, [field.id]:event.target.value }));
+                          if (invalidFieldId === field.id) {
+                            setInvalidFieldId(null);
+                            setError('');
+                          }
+                        }} />
                       <span className="field__hint">
-                        {sources[field.id]
+                        {sources[field.id] &&
+                          service.documentRequirements.some((doc) => doc.id === sources[field.id])
                           ? 'Sugestão de ' +
                             (service.documentRequirements.find((document) =>
                               document.id === sources[field.id])?.label ?? 'documento enviado') +
                             ' — confira antes de confirmar'
                           : 'Preenchimento manual necessário'}
                       </span>
+                      {invalidFieldId === field.id
+                        ? <span className="field__error">Confira o valor informado neste campo.</span>
+                        : null}
                     </label>
                   ))}
+                  {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   <Button disabled={busy} onClick={() => void generate()}>
                     {busy ? 'Gerando…' : 'Confirmar e gerar formulários'}
                   </Button>
