@@ -111,8 +111,8 @@ export function HomePage() {
                       <Icon />
                     </span>
                     <div className="category-card__content">
-                      <h3 className="category-card__title">{category.title}</h3>
-                      <p className="category-card__description">{category.description}</p>
+                      <h3 className="category-card__title">{liveService.title}</h3>
+                      <p className="category-card__description">{liveService.description}</p>
                       <div className="category-card__meta">
                         <span className="category-card__available">{liveService.creditCost === 0
                           ? 'Prévia local para revisão — sem créditos'
