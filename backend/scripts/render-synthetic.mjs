@@ -7,6 +7,9 @@ import { fillPdf } from '../dist/modules/pdf/fill-pdf.js';
 // All test data below is synthetic; only visual previews are committed.
 const root = resolve(process.cwd(), '..');
 const synthetic = {
+  'process.transferOwnership': 'X',
+  'seller.nationality': 'BRASILEIRO',
+  'seller.birthplace': 'RJ',
   'person.fullName': 'MARIA TESTE',
   'person.address': 'RUA EXEMPLO',
   'person.cpf': '000.000.000-00',

@@ -159,7 +159,10 @@ export function registerJobRoutes(
     const generated = new Map<string, string>();
     try {
       for (const id of service.formVersionIds) {
-        const bytes = await fillApprovedTemplate(definitions, id, job.values);
+        const relation = definitions.serviceForms.find((item) =>
+          item.serviceId === job.serviceId && item.formVersionId === id);
+        const values = { ...job.values, ...relation?.fixedValues };
+        const bytes = await fillApprovedTemplate(definitions, id, values);
         const path = join(store.directory(job), id + '.pdf');
         await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
         generated.set(id, path);

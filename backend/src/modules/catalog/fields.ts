@@ -41,4 +41,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: "seller.postalCode", label: "CEP do vendedor", valueKind: 'text' },
   { id: "person.nationality", label: "Nacionalidade", valueKind: 'text' },
   { id: "person.birthplace", label: "Naturalidade", valueKind: 'text' },
+  { id: 'seller.nationality', label: 'Nacionalidade do vendedor', valueKind: 'text' },
+  { id: 'seller.birthplace', label: 'Naturalidade do vendedor', valueKind: 'text' },
+  { id: 'process.transferOwnership', label: 'Transferência de propriedade', valueKind: 'text' },
 ];

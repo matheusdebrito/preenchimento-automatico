@@ -105,6 +105,8 @@ export interface ServiceForm {
   serviceId: string;
   formVersionId: string;
   order: number;
+  /** Static values supplied by the service, never trusted from the browser. */
+  fixedValues?: Readonly<Record<string, string>>;
   /** All conditions must match; absent means unconditional. */
   conditions?: readonly ServiceCondition[];
 }

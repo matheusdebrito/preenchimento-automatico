@@ -64,6 +64,7 @@ export function publicService(
       matches(requirement.conditions, answers)),
     formVersionIds: versionIds,
     reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
+      .filter((field) => !field.id.startsWith('process.'))
       .map(({ id, label, valueKind }) => ({ id, label, valueKind })),
   };
 }

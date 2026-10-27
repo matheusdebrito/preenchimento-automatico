@@ -188,6 +188,11 @@ export function validateCatalog(data: CatalogDefinition): string[] {
     orders.add(order);
     formsByService.set(relation.serviceId, (formsByService.get(relation.serviceId) ?? 0) + 1);
     validateConditions(relation.conditions, questionsByService.get(relation.serviceId) ?? new Map(), pair, issues);
+    for (const [fieldId, value] of Object.entries(relation.fixedValues ?? {})) {
+      if (!fields.has(fieldId) || !value || value.length > 20) {
+        issues.push('relação: valor fixo inválido: ' + fieldId);
+      }
+    }
     if (version?.status === 'OUTDATED') issues.push('relação: versão desatualizada ' + relation.formVersionId);
     if (service?.status === 'AVAILABLE' &&
       (version?.status !== 'VERIFIED' || approvedMappings.get(relation.formVersionId) !== 1)) {
