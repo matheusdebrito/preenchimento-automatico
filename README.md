@@ -13,9 +13,9 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Mapeamento PDF reutilizável | **135 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
-| OCR no servidor | `pdftotext` + Tesseract; rótulos do TIE, identidade e comprovante, mais limite de bytes de rasterização | Sugestões conservadoras; faltam limites de CPU/RAM por worker e validação de qualidade |
+| OCR no servidor | `pdftotext` + Tesseract; sugestões conservadoras para identidade, TIE, residência e documento de venda; teto de rasterização | Fotos e dados ficam sujeitos a erros; revisão obrigatória, sem métricas reais de precisão |
 | Autenticação e créditos | PostgreSQL, sessões HttpOnly com limpeza de expiradas, ledger, recibos e estorno antecipado de jobs vencidos | Instância única, créditos de teste; sem pagamentos reais |
-| Fluxo real React | Perguntas, upload, revisão, geração, download e recuperação na mesma aba | Liberado somente para serviços homologados |
+| Fluxo React integrado | Perguntas, upload, captura com câmera, revisão, geração, download e recuperação na mesma aba | Serviço real somente homologado; QA sintético local com PDFs marcados como AMOSTRA |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
 Consulte o [fluxo de entrega e estorno de créditos](docs/CREDIT_DELIVERY_LIFECYCLE.md), as [regras e limites do OCR](docs/OCR_EXTRACTION_RULES.md), o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
@@ -90,6 +90,12 @@ npm run build
 O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de dependências de produção, integração com PostgreSQL real e smoke test Docker Compose. Os testes usam dados sintéticos, inclusive PDFs oficiais preenchidos só para QA.
 
 **Validação incremental:** o teste de autorização entre contas e estorno por expiração (`a8607e3`) foi aprovado no [CI com PostgreSQL e Compose](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40435783780). Também foram adicionados controles de consistência para PNG/JPEG, limite de bytes dos arquivos rasterizados do OCR e limpeza de sessões expiradas no PostgreSQL, com regressões sintéticas. **As novas alterações passaram no CI [40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173)** com backend, frontend, PostgreSQL, prévias sintéticas e Compose; isso não substitui fuzzing, sandbox de OCR, homologação documental nem testes de carga. O histórico detalhado fica no [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md), e as pendências em [`docs/RELATORIO_CONTINUIDADE_2026-10-26.md`](docs/RELATORIO_CONTINUIDADE_2026-10-26.md).
+
+### Simulação local de OCR e PDFs com dados fictícios
+
+Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e abra o cartão **Teste técnico com dados fictícios** na página inicial. Depois desative a flag e reconstrua os containers.
+
+O modo QA é recusado em produção, não consome créditos, mantém o serviço piloto `DRAFT` e gera **somente duas amostras (2-A e 2-B)** com marca d'água em todas as páginas. **Não use documentos pessoais reais**, pois os PDFs de exemplo não são homologados ou válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). As pendências finais estarão registradas no arquivo de revisão de 27/10/2026.
 
 ## Endpoints implementados
 
