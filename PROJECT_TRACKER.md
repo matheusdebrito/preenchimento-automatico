@@ -43,9 +43,9 @@
 | 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [x] |
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — QA local usa os seis mapas reais e vínculos condicionais; aprovação visual e normativa pendente |
-| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads e feedback de obrigatórios testados; fuzzing, isolamento e carga pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — endereço/cidade/bairro/CEP e outros campos rotulados ampliados; fotos reais e isolamento pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — fluxo QA real, máscara de datas e botão mobile com rótulo Menu implementados; teste físico e homologação pendentes |
+| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — todos os uploads opcionais, inclusive zero, com limites mantidos; fuzzing e isolamento pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — sugestões por documentos disponíveis, sem bloquear revisão; fotos/layouts reais ainda sem reprodução e precisão medida |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — um só serviço, OCR opcional ou preenchimento 100% manual validado no CI; teste físico/homologação pendentes |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
@@ -58,7 +58,7 @@
 | 17 | Lançamento controlado e acompanhamento | 16 e autorização explícita | [ ] |
 | 18 | Expansão incremental de serviços | 17 e decisão por serviço | [ ] |
 
-> **Estado consolidado ao final de 26/10/2026:** fases 00–03 concluídas; fases 04–08 parciais; Fase 09 pendente. Os seis PDFs oficiais estão verificados, mas seus mapeamentos e o serviço de transferência continuam `DRAFT`. O CI de créditos anterior (`a8607e3`) e o novo CI de QA (`83b7d0c`, [execução 40440558586](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40440558586)) passaram. A simulação local `qa-synthetic-moto` está desabilitada por padrão, usa apenas amostras com marca d'água, nunca habilita serviço real nem consome créditos. O [CI 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) também aprovou regressões de JPEG sintético, verificação do conteúdo dos dois PDFs, validação de CPF/data na revisão e migrations concorrentes. A integração técnica não valida precisão OCR em documentos reais nem substitui revisão humana dos mapeamentos. Sem pagamentos ou lançamento público.
+> **Estado consolidado ao final de 26/10/2026:** fases 00–03 concluídas; fases 04–08 parciais; Fase 09 pendente. Os seis PDFs oficiais estão verificados, mas seus mapeamentos e o serviço de transferência continuam `DRAFT`. O CI de créditos anterior (`a8607e3`) e o novo CI de QA (`83b7d0c`, [execução 40440558586](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40440558586)) passaram. O QA local hoje reutiliza `transferencia-moto-aquatica` com status transitório apenas em memória (`DEV_QA_PREVIEW=true`), saída AMOSTRA e custo zero; a demonstração independente antiga foi retirada da navegação. Os documentos de origem agora são opcionais até mesmo quando não se anexa nenhum arquivo; os campos obrigatórios do PDF continuam validados. O [CI 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) também aprovou regressões de JPEG sintético, verificação do conteúdo dos dois PDFs, validação de CPF/data na revisão e migrations concorrentes. A integração técnica não valida precisão OCR em documentos reais nem substitui revisão humana dos mapeamentos. Sem pagamentos ou lançamento público.
 
 ## Fase 00 — Revalidar a fundação existente
 
@@ -103,7 +103,7 @@
 
 - [x] Utilizar `validateCatalog` e conferir serviços, formulários, versões, mapeamentos e `ServiceForm` muitos-para-muitos por **FormVersion**, inclusive perguntas e condições enumeradas.
 - [x] Expor endpoints públicos **apenas de serviços realmente disponíveis**; rascunhos são internos e não liberam geração. O piloto só muda para `AVAILABLE` **depois** de modelos verificados e mapeamentos aprovados na Fase 04.
-- [x] Criar fluxo real com seleção e checklist obtidos da API, preservando o frontend demonstrativo claramente separado.
+- [x] Criar fluxo real com seleção e requisitos obtidos da API. A demonstração paralela legada foi removida da navegação e rotas `/preencher/*` redirecionam à página inicial; QA usa somente serviço real (CI 40524621900).
 - [x] Testar relações inexistentes, versões inativas, condições e restrição de disponibilidade com fixtures sintéticas.
 - **Aceite:** API e interface mostram o mesmo catálogo validado; nenhuma exigência inventada é exposta como oficial.
 
@@ -131,7 +131,7 @@
 - [x] Validar no CI o novo preflight baseado no PNG Third Edition (IHDR, PLTE, chunks críticos) e rejeição de JPEG com dimensões zero; fixture sintética corrigida após falhas intermediárias.
 - [x] Conferir em integração PostgreSQL/Poppler o upload de foto PNG fictícia e isolamento de arquivos temporários entre instâncias de teste; CI 40440558586 (sem dados reais).
 - [x] Regressão com JPEG fictício gerado pelo Poppler, preflight e OCR Tesseract, além do PNG já testado; CI 40441312938.
-- [x] Exibir identificação de requisitos de upload obrigatórios ausentes na API/UI sem enviar documentos desnecessários; teste React e CI 40510328039.
+- [x] Historicamente identificar requisitos obrigatórios ausentes (CI 40510328039); **regra substituída em 27/10:** arquivos de origem são todos opcionais. Frontend e backend agora permitem continuar com zero ou alguns anexos, mantendo limites e autorização (CI 40524621900).
 - [ ] Complementar fuzzing e isolamento de decodificadores JPEG/PNG/PDF, ensaios sob carga e recuperação de falhas súbitas antes de homologar a Fase 05.
 - **Aceite:** nenhum dado documental persistido no PostgreSQL, logs ou repositório.
 
@@ -156,11 +156,11 @@
 
 ## Fase 07 — Revisão e integração do wizard
 
-- [x] Manter demonstração claramente separada da jornada real da API, liberada só para serviços `AVAILABLE`.
+- [x] Retirar a demonstração paralela do caminho público e redirecionar rotas antigas; exibir apenas `transferencia-moto-aquatica` no QA local, sem habilitar serviço `DRAFT` em produção (CI 40524621900).
 - [x] Expor todos os campos visíveis para correção e confirmação explícita; impedir geração antes de verificar obrigatórios.
 - [x] Integrar seleção → upload → leitura → conferência → geração → download para fixtures sintéticas no CI.
 - [x] Disponibilizar captura por câmera traseira (`capture=environment`) além de upload PDF/JPG/PNG, coberta por teste React com API simulada.
-- [x] Disponibilizar QA local opt-in (`DEV_QA_PREVIEW=true`) com catálogo sintético isolado, duas amostras 2-A/2-B marcadas, revisão obrigatória e custo zero; CI de integração 40440558586.
+- [x] Disponibilizar QA local opt-in (`DEV_QA_PREVIEW=true`) sobre o **mesmo serviço real** com seis mapeamentos condicionais, PDFs AMOSTRA, revisão obrigatória e crédito zero. CI 40516185481 e 40524621900.
 - [x] Validar CPF por dígitos e datas DD/MM/AAAA na API antes da geração e exibir indicação do campo inválido no frontend, com teste React e PostgreSQL; CI 40441312938.
 - [x] Verificar em ambos os PDFs QA 2-A e 2-B o conteúdo de campos revisados e marca AMOSTRA em todas as páginas; CI 40441312938.
 - [x] Corrigir UX de documento obrigatório, 422 na revisão com `fieldId` e mensagens próximas aos controles; manter o job após campo inválido e não relatar sucesso silencioso sem candidatos OCR. Testes frontend/backend, CI 40510328039.
@@ -170,6 +170,8 @@
 - [ ] Inspecionar em navegador mobile real a 320, 375 e 767 px o botão fixo de 100×44 px, a marca sem sobreposição, a animação e o contraste nos temas padrão/hero. O teste React/JSDOM não mede layout.
 - [x] Implementar máscara DD/MM/AAAA progressiva com inserção automática de barras, entrada colada, limite de 8 dígitos, e validação no backend preservada; cobertura frontend/CI 40516185481.
 - [x] Usar a mesma rota de seleção e revisão do serviço de transferência no QA local, sem serviço fictício separado; todos os formulários seguem AMOSTRA e zero crédito. CI 40516185481.
+- [x] Aceitar zero arquivos de origem: job CREATED → extract sem OCR → REVIEW → campos manualmente preenchidos → PDF, com CI 40524621900. Permitir também somente um RG e completar os demais campos por digitação, sem bloqueio de upload; teste PostgreSQL e React no mesmo CI.
+- [x] Exibir somente um serviço acessível no cartão de categoria do catálogo; remover CTA da demonstração antiga e redirecionar `/preencher/*` para início, com teste de regressão CI 40524621900.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
 - [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
 - [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
@@ -595,3 +597,17 @@ Os testes extras de data de emissão, local de venda e motor foram adicionados e
 - **Layout:** `frontend/src/styles/components.css` fixa o botão em 100×44 px, com a coluna reservada de 100 px na grade mobile e ícone/texto em células separadas. A largura não muda entre aberto/fechado, e a transição CSS e `prefers-reduced-motion` permanecem intactos.
 - **Teste criado:** `frontend/src/components/layout/AppHeader.test.tsx` verifica a persistência do mesmo botão e do texto Menu, o estado expandido, o nome de ação acessível e o fechamento por Escape/link. O README foi atualizado com a nova dimensão e roteiro de revisão.
 - **Evidência:** alteração entregue nos commits de código `5ac47b2`, `29a074f` e `57de764`. **CI da alteração de código: [40518276152](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40518276152), commit `57de764`, conclusão geral `success`, com job de frontend aprovado**. A inspeção visual em dispositivo físico ainda aguarda comprovação, portanto a Fase 07 permanece **PARCIAL**. Verificar principalmente 320 px e 375 px, inclusive a marca, o texto e as animações.
+
+## Registro de execução — 27/10/2026: upload opcional, preenchimento manual e fluxo único
+
+**Estado:** mudanças de código implementadas e **testadas** em [GitHub Actions 40524621900](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40524621900), commit `306f023`, com conclusão `success`. Este registro não homologa OCR de imagens reais, PDFs oficiais ou ambiente de produção.
+
+- **Relato do usuário:** dois caminhos (demonstração e transferência real), RG/TIE/outros documentos exigidos apesar de o objetivo ser somente preencher PDFs, e OCR sem sugestões nos documentos anexados.
+- **Causa comprovada:** `HomePage.tsx` e `App.tsx` ainda encaminhavam ao `WizardRoute` antigo; `catalog.ts` marcava documentos como `required: true`; `jobs.ts` bloqueava `/extract` se faltassem uploads e se o job estivesse `CREATED`; `LiveFlowPage.tsx` exigia anexos antes de criar o job.
+- **Correção de catálogo e API:** `backend/src/modules/catalog/catalog.ts` define todos os requisitos de arquivo como opcionais. `backend/src/routes/jobs.ts` aceita OCR com zero documentos e passa diretamente à revisão, sem inventar dados. Autorização, formato, privacidade, limite de upload, confirmação e validação de CPF/datas e campos obrigatórios de PDF permanecem.
+- **Correção de UX:** `frontend/src/features/real/LiveFlowPage.tsx` informa que cada arquivo é opcional e oferece a ação explícita **Continuar sem anexos — preencher manualmente**. `frontend/src/pages/HomePage.tsx` remove o cartão duplicado de QA e associa o cartão Embarcações e jet skis diretamente à API, quando disponível; `frontend/src/App.tsx` redireciona rotas de demonstração antigas à página inicial. `backend/src/modules/catalog/qa-preview.ts` conserva o título do serviço real e diferencia QA por aviso contextual.
+- **Testes adicionados/ajustados:** `backend/src/routes/qa-preview.integration.test.ts` realiza geração de PDFs sintéticos sem arquivos e com um único RG, além de testes completos já existentes; `frontend/src/features/real/LiveFlowPage.test.tsx` cobre preenchimento 100% manual e um RG parcial; `frontend/src/pages/HomePage.test.tsx` verifica serviço único; `frontend/src/features/wizard/WizardFlow.test.tsx` verifica redirecionamento de caminhos legados; `qa-preview.test.ts` confirma uploads opcionais.
+- **Resultado real:** CI 40524621900 aprovou os cinco jobs do workflow (frontend, backend, PostgreSQL, PDFs sintéticos, Compose). Falhas intermediárias de asserções antigas/links e catálogo foram corrigidas antes desse CI verde. Os commits documentais posteriores disparam novas execuções e devem ser verificados independentemente.
+- **Limite ainda aberto:** fotos do usuário que não produziram sugestões **não foram fornecidas à análise**. O OCR usa rótulos e validações conservadoras e permanece sem corpus de avaliação por layout. Não afirmar que o problema de reconhecimento de fotos reais está corrigido. Precisamos de exemplos sintéticos/anônimos e resultados esperados para reproduzir e melhorar o pipeline.
+- **Próximo teste humano:** QA local com `DEV_QA_PREVIEW=true`: 1) sem anexos, preencher campos do BDMOTO/2-A manualmente; 2) apenas RG fictício, confirmar sugestões e digitar dados restantes; 3) PDF gerado AMOSTRA sem créditos; 4) checar posições e requisitos condicionais. Serviço e seis mapas seguem `DRAFT` em produção.
+
