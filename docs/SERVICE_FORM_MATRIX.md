@@ -79,9 +79,12 @@ A descrição completa, com os efeitos e as pendências, está em
 | `buyerType` | `pessoa_fisica`, `pessoa_juridica` | Seleciona CPF/CNPJ e documento de identificação |
 | `jurisdictionChange` | `nao`, `sim` | `sim` está fora do piloto; orientar serviço separado |
 
-## Documentos de origem
+## Documentação do procedimento oficial (referência normativa)
 
-São entradas do usuário, não formulários em branco:
+A relação abaixo descreve peças que podem integrar o procedimento de
+transferência perante a autoridade competente. **Não equivale à lista de
+uploads do aplicativo**, cuja função é apenas extrair informações e preencher
+formulários — não reunir nem protocolar o dossiê oficial.
 
 - TIE atual (digital com QR Code impresso ou modelo antigo);
 - autorização de transferência assinada e reconhecida (2-D ou campo equivalente
@@ -93,6 +96,14 @@ São entradas do usuário, não formulários em branco:
 - dados da nota fiscal/venda para preencher o BDMOTO;
 - procuração e identificação do outorgado, quando aplicável;
 - assinatura do co-proprietário, quando houver.
+
+**Uploads no preenchimento automático:** o catálogo só deve solicitar
+documentos que ajudem a identificar/corroborar campos do formulário. As fotos
+coloridas de popa e través foram removidas do upload obrigatório e da
+interface do aplicativo porque não alimentam o OCR nem o PDF. A eventual
+exigência dessas fotos **no procedimento oficial** permanece sujeita à norma
+vigente e à Capitania competente; sua ausência no aplicativo não significa
+dispensa na etapa de protocolo.
 
 **Não incluir por padrão:** DPEM, vistoria, CSN, contrato social/estatuto ou
 nota fiscal como documento autônomo. Se a CP/DL/AG escolhida exigir algo
