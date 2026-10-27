@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from 'react';
 import { Menu, Waves, X } from 'lucide-react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { cx } from '../../lib/cx';
+import { useAuth } from '../../features/auth/AuthProvider';
 
 interface AppHeaderProps {
   variant?: 'default' | 'hero';
@@ -9,6 +10,10 @@ interface AppHeaderProps {
 
 export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+  const { session, logout } = useAuth();
+  const navigate = useNavigate();
   const navId = useId();
 
   useEffect(() => {
@@ -27,6 +32,20 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
   }, [menuOpen]);
 
   const closeMenu = () => setMenuOpen(false);
+  const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    setLogoutError('');
+    try {
+      await logout();
+      closeMenu();
+      navigate('/', { replace: true });
+    } catch {
+      setLogoutError('Não foi possível encerrar a sessão. Tente novamente.');
+    } finally {
+      setSigningOut(false);
+    }
+  };
 
   return (
     <header className={cx('site-header', variant === 'hero' && 'site-header--hero')}>
@@ -57,15 +76,29 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
           <NavLink to="/" end className="site-nav__link" onClick={closeMenu}>
             Início
           </NavLink>
-          <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
-            Entrar
-          </NavLink>
-          <NavLink to="/minha-conta" className="site-nav__link" onClick={closeMenu}>
-            Minha conta
-          </NavLink>
+          {session.status === 'authenticated' ? (
+            <NavLink to="/minha-conta" className="site-nav__link" onClick={closeMenu}>
+              Minha conta
+            </NavLink>
+          ) : session.status === 'guest' ? (
+            <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
+              Entrar
+            </NavLink>
+          ) : session.status === 'unavailable' ? (
+            <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
+              Verificar sessão
+            </NavLink>
+          ) : null}
           <NavLink to="/creditos" className="site-nav__link" onClick={closeMenu}>
             Créditos
           </NavLink>
+          {session.status === 'authenticated' ? (
+            <button type="button" className="site-nav__link site-nav__button"
+              disabled={signingOut} onClick={() => void signOut()}>
+              {signingOut ? 'Saindo…' : 'Sair'}
+            </button>
+          ) : null}
+          {logoutError ? <span className="site-nav__error" role="alert">{logoutError}</span> : null}
         </nav>
       </div>
     </header>
