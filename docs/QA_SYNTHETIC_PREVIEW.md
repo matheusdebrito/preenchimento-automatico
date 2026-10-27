@@ -39,26 +39,46 @@ continua obrigatória antes de tornar o serviço oficial disponível.
    PostgreSQL. Não enviar o `.env` ao GitHub.
 3. Executar `docker compose up -d --build` e abrir
    `http://127.0.0.1:8080` no próprio computador.
-4. Entrar com conta sintética e selecionar **Transferência de moto aquática —
-   prévia local de QA**, no bloco de testes técnicos.
+4. Entrar com conta sintética e selecionar **Embarcações e jet skis**.
+   Esse é o único acesso ao serviço de transferência; a demonstração paralela
+   foi retirada da navegação. A interface exibirá o aviso de QA local.
 5. Responder **todas as perguntas reais**. Uma combinação simples para testar
    os anexos 2-A/2-B: TIE regular, autorização já consta no TIE, sem comunicação
    opcional do vendedor, comprovante de residência, sem coproprietário e sem
    representante.
-6. Enviar os documentos de origem solicitados para extrair dados:
-   identidade fictícia do comprador, identidade fictícia do vendedor, TIE
-   fictício (se disponível) e comprovante fictício de residência (se a
-   condição selecionada exigir). **Não é necessário enviar fotos da
-   embarcação**, pois elas não fornecem campos para o preenchimento. Outros
-   requisitos de entrada podem variar conforme as respostas.
-7. Revisar todos os campos, inclusive **cidade, bairro e CEP separadamente**.
-   O OCR só sugere campos encontrados de maneira inequívoca; os demais
-   precisam ser preenchidos manualmente.
+6. **Escolher quantos arquivos enviar (inclusive nenhum).** Todos os
+   uploads são opcionais: pode anexar somente um RG fictício, anexar outros
+   documentos fictícios ou clicar **Continuar sem anexos — preencher
+   manualmente**. Nenhuma foto da embarcação é necessária. O backend permite
+   continuar sem qualquer upload. Os dados exigidos pelo formulário serão
+   informados na próxima etapa.
+7. Revisar e completar todos os campos visíveis, inclusive **cidade, bairro
+   e CEP separadamente**. Com arquivos, o OCR fornece apenas sugestões
+   reconhecidas e indica quando não encontrou um campo. Sem arquivos, todos
+   os campos são preenchidos manualmente. Os obrigatórios e valores inválidos
+   continuam sendo verificados antes da geração.
 8. Gerar as prévias condicionais, baixar cada PDF e conferir campo por campo,
    posição, acentos, texto cortado, assinaturas vazias e marca AMOSTRA em todas
    as páginas. Os anexos 2-A/2-B são selecionados por padrão; 2-C, 2-D,
    2-E e 1-C aparecem somente se as respostas exigirem seus vínculos de QA.
 9. Desligar `DEV_QA_PREVIEW` após os testes e reconstruir os containers.
+
+## Cenários de regressão prioritários
+
+- **Sem anexos:** responder às perguntas, prosseguir diretamente à revisão,
+  preencher manualmente os campos obrigatórios e gerar 2-A/2-B de AMOSTRA.
+- **Somente RG fictício:** anexar apenas o documento do comprador, verificar
+  sugestões de nome/CPF quando reconhecidas, completar os dados do vendedor,
+  moto aquática e endereço manualmente; não devem ser pedidos outros uploads.
+- **Arquivos parciais sem texto reconhecido:** a revisão continua disponível,
+  com diagnóstico do OCR e campos editáveis, sem inventar informações.
+- **Permissões:** usuários diferentes não acessam os jobs alheios; o modo QA
+  não debita créditos. Os formulários oficiais seguem bloqueados em produção.
+
+A análise automática de fotos reais ainda não foi validada com os documentos
+que apresentaram falha durante o teste do usuário. Fotos e PDFs **sintéticos**
+com o mesmo formato visual são necessários para diagnosticar a qualidade do
+OCR sem utilizar dados pessoais.
 
 ## OCR e endereço
 
