@@ -15,9 +15,24 @@ export async function connectDatabase(databaseUrl: string): Promise<Database> {
     application_name: 'preenchimento-api',
   });
   try {
-    for (const filename of ['001_initial.sql', '002_job_credit_receipts.sql']) {
-      const sql = await readFile(resolve(process.cwd(), 'migrations', filename), 'utf8');
-      await pool.query(sql);
+    // CREATE TABLE IF NOT EXISTS does not prevent two independent startups from
+    // racing in PostgreSQL's system catalog. Serialize schema initialization
+    // across processes with a transaction-scoped advisory lock. A crash
+    // automatically releases it, unlike a session-scoped lock.
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock(145902, 1)');
+      for (const filename of ['001_initial.sql', '002_job_credit_receipts.sql']) {
+        const sql = await readFile(resolve(process.cwd(), 'migrations', filename), 'utf8');
+        await client.query(sql);
+      }
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
     }
     await pool.query('SELECT 1');
     return pool;
