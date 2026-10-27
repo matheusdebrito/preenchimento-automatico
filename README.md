@@ -95,7 +95,7 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 
 Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e abra o cartão **Teste técnico com dados fictícios** na página inicial. Depois desative a flag e reconstrua os containers.
 
-O modo QA é recusado em produção, não consome créditos, mantém o serviço piloto `DRAFT` e gera **somente duas amostras (2-A e 2-B)** com marca d'água em todas as páginas. **Não use documentos pessoais reais**, pois os PDFs de exemplo não são homologados ou válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). As pendências finais estarão registradas no arquivo de revisão de 27/10/2026.
+O modo QA é recusado em produção, não consome créditos, mantém o serviço piloto `DRAFT` e gera **somente duas amostras (2-A e 2-B)** com marca d'água em todas as páginas. **Não use documentos pessoais reais**, pois os PDFs de exemplo não são homologados ou válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). Para a revisão de amanhã, leia [as pendências priorizadas de 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md), com os portões documentais e os testes ainda necessários.
 
 ## Endpoints implementados
 
