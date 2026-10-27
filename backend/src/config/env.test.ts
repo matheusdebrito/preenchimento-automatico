@@ -38,6 +38,12 @@ describe('loadEnv', () => {
     expect(env.DATABASE_URL).toBe(databaseUrl);
   });
 
+  it('ignora segredo opcional vazio sem permitir valores curtos', () => {
+    expect(loadEnv({ DEV_GRANT_SECRET: '' }).DEV_GRANT_SECRET).toBeUndefined();
+    expect(() => loadEnv({ DEV_GRANT_SECRET: 'curto' })).toThrow('DEV_GRANT_SECRET');
+    expect(loadEnv({ NODE_ENV: 'production', DEV_GRANT_SECRET: 'a'.repeat(32) }).DEV_GRANT_SECRET).toBeUndefined();
+  });
+
   it('rejeita curinga de CORS', () => {
     expect(() => loadEnv({ CORS_ORIGINS: '*' })).toThrow(/curinga/);
   });

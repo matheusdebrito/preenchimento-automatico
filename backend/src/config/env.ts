@@ -9,7 +9,7 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:8080'),
   LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
   DATABASE_URL: z.string().trim().min(1).optional(),
-  DEV_GRANT_SECRET: z.string().min(24).optional(),
+  DEV_GRANT_SECRET: z.preprocess((value) => value === '' ? undefined : value, z.string().min(24).optional()),
 });
 
 export type NodeEnvironment = z.infer<typeof envSchema>['NODE_ENV'];
