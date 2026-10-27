@@ -5,6 +5,7 @@ import { PageLayout } from '../../components/layout/PageLayout';
 import { Notice } from '../../components/ui/Notice';
 import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
+import { formatBrazilianDateInput } from '../../lib/date-mask';
 import type { LiveService } from '../../lib/api';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
@@ -135,7 +136,7 @@ export function LiveFlowPage() {
     reports: ExtractionDiagnostic[] = [],
   ) => {
     const visible = new Set(service?.reviewFields.map((field) => field.id) ?? []);
-    setValues(Object.fromEntries(Object.entries(fields).filter(([key]) => visible.has(key))));
+    setValues(Object.fromEntries(Object.entries(fields).filter(([key]) => visible.has(key)).map(([key, value]) => [key, service?.reviewFields.find((field) => field.id === key)?.valueKind === 'date' ? formatBrazilianDateInput(value) : value])));
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
     setInvalidFieldId(null);
@@ -445,9 +446,13 @@ export function LiveFlowPage() {
                         required={field.required} value={values[field.id] ?? ''}
                         aria-invalid={invalidFieldId === field.id || undefined}
                         inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
+                        maxLength={field.valueKind === 'date' ? 10 : undefined}
                         placeholder={field.valueKind === 'date' ? 'DD/MM/AAAA' : undefined}
                         onChange={(event) => {
-                          setValues((prev) => ({ ...prev, [field.id]:event.target.value }));
+                          const typed = field.valueKind === 'date'
+                            ? formatBrazilianDateInput(event.target.value)
+                            : event.target.value;
+                          setValues((prev) => ({ ...prev, [field.id]:typed }));
                           if (invalidFieldId === field.id) {
                             setInvalidFieldId(null);
                             setError('');
