@@ -5,10 +5,27 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
-import { extractText, suggestFields } from './ocr.js';
+import { extractText, suggestFields, validateRasterBudget } from './ocr.js';
 import type { StoredDocument } from './job-store.js';
 
 const execFile = promisify(execCallback);
+describe('limites de rasterização de OCR', () => {
+  const mib = 1024 * 1024;
+  it('aceita arquivos rasterizados dentro dos limites por página e totais', () => {
+    expect(() => validateRasterBudget([8 * mib, 12 * mib, 16 * mib])).not.toThrow();
+  });
+
+  it('rejeita página muito grande, conjunto excessivo e tamanhos inválidos', () => {
+    expect(() => validateRasterBudget([16 * mib + 1])).toThrow('Página rasterizada');
+    expect(() => validateRasterBudget([12 * mib, 12 * mib, 12 * mib, 12 * mib, 1]))
+      .toThrow('Conjunto de páginas');
+    expect(() => validateRasterBudget([0])).toThrow('Página rasterizada');
+    expect(() => validateRasterBudget([Number.NaN])).toThrow('Página rasterizada');
+    expect(() => validateRasterBudget([])).toThrow('Quantidade de páginas');
+  });
+});
+
+
 const describeOcr = process.env.DATABASE_TEST_URL ? describe : describe.skip;
 
 describeOcr('OCR real no Linux com ferramentas instaladas', () => {
