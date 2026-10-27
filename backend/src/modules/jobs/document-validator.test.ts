@@ -185,7 +185,7 @@ describe('candidatos OCR conservadores', () => {
     )).toBe(false);
     // Never trade a valid name for extra numeric fields in another reading.
     expect(chooseIdentityLayout(
-      'NOME MARIA DE SOUZA\nCPF 123.456.789-09', 'buyer-identity',
+      'NOME MARIA DE SOUZA\nCPF 123.456.789-09',
       'RG: 12345678\nCPF 123.456.789-09\nÓRGÃO EMISSOR: SSP RJ', 'buyer-identity',
     )).toContain('NOME MARIA');
   });
