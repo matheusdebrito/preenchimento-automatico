@@ -158,8 +158,12 @@ export function registerJobRoutes(
     const service = publicService(definitions, job.serviceId, job.answers);
     if (!service) return reply.status(409).send({ error: 'service_unavailable' });
     const required = service.documentRequirements.filter((doc) => doc.required);
-    if (required.some((doc) => !job.files.some((file) => file.requirementId === doc.id))) {
-      return reply.status(422).send({ error: 'missing_document' });
+    const missingDocument = required.find((doc) =>
+      !job.files.some((file) => file.requirementId === doc.id));
+    if (missingDocument) {
+      return reply.status(422).send({
+        error: 'missing_document', requirementId: missingDocument.id,
+      });
     }
 
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
@@ -218,9 +222,13 @@ export function registerJobRoutes(
     if (Object.keys(parsed.data.values).some((field) => !allowedFields.has(field))) {
       return reply.status(400).send({ error: 'invalid_field' });
     }
-    if (service.reviewFields.some((field) => field.required &&
-      !parsed.data.values[field.id]?.trim())) {
-      return reply.status(422).send({ error: 'missing_required_fields' });
+    const missingField = service.reviewFields.find((field) => field.required &&
+      !parsed.data.values[field.id]?.trim());
+    if (missingField) {
+      // Only public catalog metadata is returned, never private field content.
+      return reply.status(422).send({
+        error: 'missing_required_fields', fieldId: missingField.id,
+      });
     }
     const fieldsById = new Map(definitions.fields.map((field) => [field.id, field]));
     for (const [fieldId, raw] of Object.entries(parsed.data.values)) {
