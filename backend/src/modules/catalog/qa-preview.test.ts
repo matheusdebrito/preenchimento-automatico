@@ -35,6 +35,12 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(preview?.documentRequirements).toContainEqual(expect.objectContaining({
       id: 'seller-identity', required: true,
     }));
+    // Photos may be relevant to official filing, but not to filling form fields.
+    expect(preview?.documentRequirements.some((document) =>
+      document.id === 'photo-stern' || document.id === 'photo-side')).toBe(false);
+    expect(catalog.services[0]?.documentRequirements.some((document) =>
+      document.id === 'photo-stern' || document.id === 'photo-side')).toBe(false);
+
     expect(preview?.reviewFields.some((field) => field.id === 'person.city')).toBe(true);
     expect(preview?.reviewFields.some((field) => field.id === 'person.neighborhood')).toBe(true);
     expect(preview?.reviewFields.some((field) => field.id === 'person.postalCode')).toBe(true);
