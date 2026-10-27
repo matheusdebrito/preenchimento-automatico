@@ -406,7 +406,7 @@ export function LiveFlowPage() {
                     </Notice>
                   ) : (
                     <Notice tone="danger" role="alert" title="Nenhum campo preenchido pelo OCR">
-                      A foto foi recebida, mas não foi possível aproveitar dados dela para os
+                      O arquivo foi recebido, mas não foi possível aproveitar dados dele para os
                       formulários selecionados. Confira o resultado da leitura por documento abaixo.
                       Se necessário, refaça a foto com o documento inteiro, bem iluminado, sem
                       reflexos e com o texto nítido. Você pode continuar preenchendo manualmente.
