@@ -126,6 +126,24 @@ e os PDFs permanecem com marca **AMOSTRA**, sem custos. Instruções:
 [roteiro de QA](docs/QA_SYNTHETIC_PREVIEW.md). O comportamento das fotos
 reais do usuário **não foi confirmado** sem amostras adequadas.
 
+### Quando a foto é enviada, mas os campos continuam vazios
+
+Uma leitura OCR pode concluir sem erro HTTP e sem sugestões, por exemplo quando
+há texto ilegível, rótulos não interpretados ou candidatos não presentes no PDF.
+Isso **não significa** que o formulário recebeu dados válidos. Na revisão,
+o aviso **Nenhum campo preenchido pelo OCR** agora fica destacado e a seção
+**Resultado da leitura por documento** diferencia `no_text` (sem texto legível),
+`no_supported_labels` (texto sem candidatos), `no_applicable_fields` (candidato
+não mapeado) e `suggested` (sugestões aplicáveis). Esses estados não exibem
+dados pessoais nem o texto reconhecido.
+
+Testes React provam que nome, CPF e RG retornados pela API aparecem de fato
+nos campos correspondentes; a integração PostgreSQL testa o caso de campo
+identificado mas não mapeado. **Não foi possível reproduzir a foto específica
+enviada pelo usuário**, de modo que a falha real de reconhecimento permanece
+em investigação. Para reteste, utilizar foto inteiramente fictícia, subir a
+versão mais recente, iniciar job novo e verificar o estado exibido por arquivo.
+
 ### Reconhecimento de RG fotografado
 
 O OCR de identidade agora utiliza segmentação de texto disperso para fotos de
