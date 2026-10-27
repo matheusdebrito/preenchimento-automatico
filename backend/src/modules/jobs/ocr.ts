@@ -1,6 +1,6 @@
 import { promisify } from 'node:util';
 import { execFile as execFileCallback } from 'node:child_process';
-import { readdir, rm } from 'node:fs/promises';
+import { readdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { StoredDocument } from './job-store.js';
 import { isValidCpf } from '../catalog/field-validation.js';
@@ -8,6 +8,26 @@ import { isValidCpf } from '../catalog/field-validation.js';
 const execFile = promisify(execFileCallback);
 let active = 0;
 const MAX_CONCURRENT = 2;
+const MAX_RASTER_PAGE_BYTES = 16 * 1024 * 1024;
+const MAX_RASTER_TOTAL_BYTES = 48 * 1024 * 1024;
+
+/** Guard the disk footprint of Poppler output before Tesseract decodes it. */
+export function validateRasterBudget(pageSizes: readonly number[]): void {
+  if (pageSizes.length < 1 || pageSizes.length > 5) {
+    throw new Error('Quantidade de páginas rasterizadas não suportada.');
+  }
+  let total = 0;
+  for (const size of pageSizes) {
+    if (!Number.isSafeInteger(size) || size < 1 || size > MAX_RASTER_PAGE_BYTES) {
+      throw new Error('Página rasterizada excede limite de armazenamento para OCR.');
+    }
+    total += size;
+    if (total > MAX_RASTER_TOTAL_BYTES) {
+      throw new Error('Conjunto de páginas rasterizadas excede limite para OCR.');
+    }
+  }
+}
+
 
 async function run(command: string, args: readonly string[], timeout = 15_000): Promise<string> {
   const { stdout } = await execFile(command, [...args], {
@@ -35,6 +55,9 @@ async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
     const pages = (await readdir(tempDir))
       .filter((name) => name.startsWith(doc.id + '-page') && name.endsWith('.png')).sort();
     if (pages.length === 0) throw new Error('PDF não pôde ser convertido para OCR.');
+    // A compressed 10 MB PDF can expand to much larger raster files.
+    const pageStats = await Promise.all(pages.map((page) => stat(join(tempDir, page))));
+    validateRasterBudget(pageStats.map((page) => page.size));
     const texts: string[] = [];
     for (const page of pages) texts.push(await run('tesseract',
       [join(tempDir, page), 'stdout', '-l', 'por', '--psm', '6'], 25_000));
