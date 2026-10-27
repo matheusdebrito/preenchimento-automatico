@@ -3,7 +3,7 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { readdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { StoredDocument } from './job-store.js';
-import { isValidCpf } from '../catalog/field-validation.js';
+import { isValidCpf, isValidBrazilianDate } from '../catalog/field-validation.js';
 
 const execFile = promisify(execFileCallback);
 let active = 0;
@@ -83,6 +83,19 @@ export async function extractText(doc: StoredDocument, tempDir: string): Promise
   }
 }
 
+/**
+ * Only source documents with known, role-specific semantic fields need OCR.
+ * Photos of the vessel and payment receipts are still uploaded for the
+ * official checklist, but OCR on them adds latency and false positives.
+ */
+const SEMANTIC_SOURCES = new Set([
+  'buyer-identity', 'seller-identity', 'tie', 'residence-proof', 'sale-document',
+  'source', // CI-only synthetic source; not present in the real service.
+]);
+export function shouldExtractDocument(requirementId: string): boolean {
+  return SEMANTIC_SOURCES.has(requirementId);
+}
+
 export interface ExtractionCandidate {
   value: string;
   source: string;
@@ -150,6 +163,24 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     if (vesselName) {
       result['vessel.name'] = { value: vesselName, source, status: 'REVIEW_REQUIRED' };
     }
+  }
+
+  if (source === 'sale-document') {
+    // Invoice and sale details are candidates, not legal proof of transfer.
+    // Use narrowly anchored labels so an unrelated date or price never fills the sale.
+    const invoice = singleLabelled(text,
+      /^\s*(?:NOTA\s+FISCAL(?:\s*N[ºO.]?)?|N[ÚU]MERO\s+DA\s+NOTA\s+FISCAL)\s*[:-]\s*([A-Z0-9./-]{3,32})\s*$/gim, 32);
+    if (invoice) result['sale.invoice'] = { value: invoice, source, status: 'REVIEW_REQUIRED' };
+
+    const date = singleLabelled(text,
+      /^\s*DATA\s+(?:DA\s+VENDA|DA\s+TRANSFER[EÊ]NCIA)\s*[:-]\s*(\d{2}\/\d{2}\/\d{4})\s*$/gim, 10);
+    if (date && isValidBrazilianDate(date)) {
+      result['sale.date'] = { value: date, source, status: 'REVIEW_REQUIRED' };
+    }
+
+    const price = singleLabelled(text,
+      /^\s*(?:VALOR\s+(?:DA\s+VENDA|TOTAL\s+DA\s+VENDA)|PRE[CÇ]O\s+DA\s+VENDA)\s*[:-]\s*((?:R\$\s*)?[\d.]+,\d{2})\s*$/gim, 32);
+    if (price) result['sale.price'] = { value: price, source, status: 'REVIEW_REQUIRED' };
   }
 
   if (source === 'residence-proof') {
