@@ -1,0 +1,68 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { App } from '../../App';
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status, headers: { 'Content-Type': 'application/json' },
+  });
+}
+const service = {
+  id: 'ci-only-service', title: 'Serviço de teste', description: 'Dados fictícios',
+  creditCost: 1, questions: [], documentRequirements: [
+    { id: 'source', label: 'Documento de teste', required: true },
+  ],
+  formVersionIds: ['requerimento-ma-v1'],
+  reviewFields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text' }],
+};
+
+afterEach(() => { vi.unstubAllGlobals(); });
+
+describe('jornada real isolada da demonstração', () => {
+  it('navega pelo ciclo upload, OCR, revisão e download com API simulada', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
+      if (path.endsWith('/quote')) return json({ service });
+      if (path === '/api/jobs') return json({ id: 'job-fixture' }, 201);
+      if (path.endsWith('/documents/source')) return json({ id: 'file-fixture' }, 201);
+      if (path.endsWith('/extract')) return json({
+        fields: { 'person.fullName': 'MARIA EXEMPLO' }, sources: { 'person.fullName': 'source' },
+      });
+      if (path.endsWith('/review')) return json({ confirmed: true });
+      if (path.endsWith('/generate')) return json({ downloads: ['requerimento-ma-v1'] });
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading',{name:'Serviço de teste'})).toBeTruthy();
+    await user.click(screen.getByRole('button',{name:'Conferir documentos necessários'}));
+    expect(await screen.findByRole('heading',{name:'Documentos necessários'})).toBeTruthy();
+    const uploader = screen.getByLabelText(/Documento de teste/) as HTMLInputElement;
+    await user.upload(uploader, new File(['fake-content'], 'foto.png', {type:'image/png'}));
+    await user.click(screen.getByRole('button',{name:'Enviar e analisar documentos'}));
+    expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
+    expect((screen.getByLabelText('Nome completo') as HTMLInputElement).value).toBe('MARIA EXEMPLO');
+    await user.clear(screen.getByLabelText('Nome completo'));
+    await user.type(screen.getByLabelText('Nome completo'), 'MARIA CONFERIDA');
+    await user.click(screen.getByRole('button',{name:'Confirmar e gerar formulários'}));
+    expect(await screen.findByRole('heading',{name:'Formulários gerados'})).toBeTruthy();
+    expect(screen.getByRole('link',{name:'Baixar PDF — requerimento-ma-v1'})
+      .getAttribute('href')).toBe('/api/jobs/job-fixture/download/requerimento-ma-v1');
+    expect(fetcher).toHaveBeenCalled();
+    const reviewCall = fetcher.mock.calls.find((call) => String(call[0]).endsWith('/review'));
+    expect(reviewCall).toBeDefined();
+    expect(JSON.parse(reviewCall![1]!.body as string).values['person.fullName']).toBe('MARIA CONFERIDA');
+  }, 25000);
+
+  it('bloqueia acesso ao serviço ainda não homologado', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({error:'not_available'},404)));
+    render(<MemoryRouter initialEntries={['/preencher-real/transferencia-moto-aquatica']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText(/ainda não foi homologado/)).toBeTruthy();
+  });
+});
