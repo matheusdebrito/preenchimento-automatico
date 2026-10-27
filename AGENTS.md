@@ -54,6 +54,14 @@ Para cada mudança:
 
 Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custos ou mudanças estruturais relevantes, solicitar aprovação antes de executar. Não avançar para outra etapa enquanto erros introduzidos pela etapa atual estiverem pendentes.
 
+## 2.2. QA do mesmo serviço real — sem homologação implícita
+
+- Em desenvolvimento local (`NODE_ENV=development` + `DEV_QA_PREVIEW=true`), testar o identificador e os contratos reais de `transferencia-moto-aquatica`, não um serviço paralelo com campos simplificados.
+- O overlay `qaPreviewCatalog` reutiliza perguntas, documentos, vínculos condicionais e os seis mapeamentos originais. A elevação transitória de status é **somente em memória no QA**; jamais escrever `APPROVED` ou `AVAILABLE` no catálogo de produção sem revisão humana.
+- PDFs de QA são **sempre marcados AMOSTRA em todas as páginas**, não debitam créditos, não são válidos para protocolo e só podem usar dados inteiramente fictícios.
+- Quando usuário questionar campo de PDF, conferir separadamente **rótulo impresso, área de preenchimento, identificador semântico, coordenadas e extração OCR**; não alterar/remover um campo normativo com base em suposição. Registrar divergência em `docs/mapping-reports/` e aguardar o portão de revisão visual.
+- Ao ampliar OCR, aceitar somente pistas consistentes por requisito/documento e gerar sugestões para campos presentes na seleção. Não prometer reconhecimento total sem corpus medido de layouts e imagens.
+
 ## 3.1. Sincronização obrigatória do PROJECT_TRACKER.md
 
 **Regra de entrega (sem exceções):** toda alteração de código, teste, arquitetura ou documentação que represente avanço, correção, bloqueio ou mudança de escopo de uma fase deve atualizar o `PROJECT_TRACKER.md` **na mesma entrega**, antes de declarar o trabalho encerrado. Não basta acrescentar uma nota ao final do arquivo.
