@@ -103,6 +103,28 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       expect(fields.reviewRequired).toBe(true);
       expect(fields.fields['person.fullName']).toBe('MARIA DE SOUZA');
       expect(fields.fields['vessel.name']).toBe('MAR TESTE');
+      const diagnostics = extracted.json<{diagnostics:{
+        requirementId:string;outcome:string;suggestionCount:number;
+      }[]}>().diagnostics;
+      expect(diagnostics).toEqual(expect.arrayContaining([
+        expect.objectContaining({ requirementId: 'buyer-identity', outcome: 'suggested' }),
+        expect.objectContaining({ requirementId: 'tie', outcome: 'suggested' }),
+      ]));
+      const restored = await app.inject({
+        method: 'GET', url: '/api/jobs/' + jobId, headers: { cookie },
+      });
+      expect(restored.json<{diagnostics:unknown[]}>().diagnostics).toHaveLength(2);
+
+      const incomplete = await app.inject({
+        method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
+        headers: { cookie },
+        payload: { confirmed: true, values: { 'person.fullName': 'MARIA DE SOUZA' } },
+      });
+      expect(incomplete.statusCode).toBe(422);
+      expect(incomplete.json()).toEqual({
+        error: 'missing_required_fields', fieldId: 'vessel.name',
+      });
+      expect(incomplete.body).not.toContain('MARIA DE SOUZA');
 
       const invalidCpf = await app.inject({
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
