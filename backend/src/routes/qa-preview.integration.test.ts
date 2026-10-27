@@ -240,6 +240,53 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       await rm(root, { recursive: true, force: true });
     }
   }, 90000);
+  it('informa separadamente quando um RG é lido mas o campo não pertence ao formulário', async () => {
+    const pool = await connectDatabase(databaseUrl!);
+    const email = 'qa-excluded-' + randomUUID() + '@example.invalid';
+    const password = 'senha-sintetica-teste-12345';
+    let app: FastifyInstance | undefined;
+    try {
+      app = await buildApp({ env, pool, catalogOverride: qaPreviewCatalog(), qaPreview: true });
+      const registered = await app.inject({
+        method: 'POST', url: '/api/auth/register', payload: { email, password },
+      });
+      expect(registered.statusCode, registered.body).toBe(201);
+      const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
+      const created = await app.inject({
+        method: 'POST', url: '/api/jobs', headers: { cookie },
+        payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers: {
+          tieSituation: 'regular', transferAuthorization: 'consta_tie',
+          sellerCommunication: 'nao', residenceProof: 'comprovante',
+          coOwner: 'nao', representative: 'nao',
+        } },
+      });
+      expect(created.statusCode, created.body).toBe(201);
+      const jobId = created.json<{id:string}>().id;
+      const seller = Buffer.from(await fakeTextPdf(['RG: 12345678']));
+      const upload = await app.inject({
+        method: 'POST', url: '/api/jobs/' + jobId + '/documents/seller-identity',
+        headers: { cookie, 'content-type': 'application/pdf' }, payload: seller,
+      });
+      expect(upload.statusCode, upload.body).toBe(201);
+      const extracted = await app.inject({
+        method: 'POST', url: '/api/jobs/' + jobId + '/extract',
+        headers: { cookie }, payload: {},
+      });
+      expect(extracted.statusCode, extracted.body).toBe(200);
+      expect(extracted.json<{fields:Record<string,string>}>().fields).toEqual({});
+      expect(extracted.json<{diagnostics:unknown[]}>().diagnostics).toEqual([{
+        requirementId: 'seller-identity',
+        outcome: 'no_applicable_fields',
+        suggestionCount: 0,
+      }]);
+      expect(extracted.body).not.toContain('12345678');
+    } finally {
+      await app?.close();
+      await pool.query('DELETE FROM app_users WHERE email=$1', [email]);
+      await pool.end();
+    }
+  }, 45000);
+
   it('permite preencher todos os campos sem anexos ou com apenas um RG fictício', async () => {
     const pool = await connectDatabase(databaseUrl!);
     const email = 'manual-qa-' + randomUUID() + '@example.invalid';
