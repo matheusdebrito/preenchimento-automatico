@@ -92,6 +92,18 @@ jobs:
             if curl -fsS http://127.0.0.1:3000/health >/dev/null && \
                curl -fsS http://127.0.0.1:8080/api/services >/dev/null; then
               curl -fsS http://127.0.0.1:8080/api/services
+              # A legitimate browser POST must reach auth (401: unknown user),
+              # while a cross-site POST must be blocked before authentication (403).
+              local_status=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+                -H 'Origin: http://127.0.0.1:8080' -H 'Content-Type: application/json' \
+                --data '{"email":"missing@example.invalid","password":"temporary-test-password"}' \
+                http://127.0.0.1:8080/api/auth/login)
+              foreign_status=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+                -H 'Origin: https://malicious.example' -H 'Content-Type: application/json' \
+                --data '{"email":"missing@example.invalid","password":"temporary-test-password"}' \
+                http://127.0.0.1:8080/api/auth/login)
+              test "$local_status" = "401"
+              test "$foreign_status" = "403"
               exit 0
             fi
             sleep 2
