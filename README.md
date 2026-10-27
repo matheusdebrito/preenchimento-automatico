@@ -15,7 +15,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
 | OCR no servidor | `pdftotext` + Tesseract; sugestões conservadoras, teto de rasterização e diagnóstico por documento quando não há campo identificado | Fotos e dados ficam sujeitos a erros; revisão obrigatória, sem métricas reais de precisão |
 | Autenticação e créditos | PostgreSQL, sessões HttpOnly, menu conectado à sessão, logout obrigatório para trocar conta, ledger/recibos/estornos | Instância única, créditos de teste; sem pagamentos reais |
-| Fluxo React integrado | Upload/câmera, feedback de arquivos obrigatórios, OCR com diagnóstico, revisão com erro por campo, geração e download | Serviço real somente homologado; QA sintético local com PDFs marcados como AMOSTRA |
+| Fluxo React integrado | Upload/câmera, feedback de obrigatórios, OCR/revisão, geração, download e menu mobile com controle fixo e transições acessíveis | Serviço real somente homologado; QA sintético local com PDFs marcados como AMOSTRA |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
 Consulte o [fluxo de entrega e estorno de créditos](docs/CREDIT_DELIVERY_LIFECYCLE.md), as [regras e limites do OCR](docs/OCR_EXTRACTION_RULES.md), o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
@@ -104,6 +104,12 @@ O modo QA é recusado em produção, não consome créditos, mantém o serviço 
 As falhas relatadas na navegação autenticada, links repetidos no rodapé, ausência de feedback dos requisitos, OCR sem explicação e erro `422` na revisão receberam correções verificadas em [GitHub Actions 40510328039](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40510328039). Agora o frontend exibe **Entrar apenas ao visitante** e oferece **Sair** ao usuário autenticado; o backend também exige logout para alternar de conta. No wizard, os documentos obrigatórios ausentes e o campo inválido são identificados. Se o OCR não sugerir dados, a interface exibe o resultado por documento, sem inventar valores.
 
 Para reproduzir o reteste com **documentos totalmente fictícios**, seguir [o roteiro de correções](docs/QA_CORRECOES_2026-10-27.md). O erro `422` observado pelo usuário não teve seu campo exato identificado, pois não houve acesso ao JSON da resposta original; não foi enfraquecida a validação de CPF/data. **Essas correções não homologam os mapeamentos oficiais nem comprovam precisão do OCR com fotos reais.**
+
+### Menu mobile — reteste visual
+
+Em telas de até 767 px, o botão do cabeçalho permanece no canto superior direito em tamanho fixo (44×44 px), alternando **apenas o ícone de Menu e X**, com nome acessível atualizado. O painel de links abre e fecha com transição suave; Escape, seleção de rota e logout preservam o fechamento. Em dispositivos com preferência por redução de movimento, a transição não é executada. No desktop, o menu continua horizontal.
+
+**Teste manual pendente:** conferir na sua máquina com o modo responsivo do navegador em 320, 375 e 767 px, além de um celular real, abertura/fechamento, posição fixa do botão, ausência de sobreposição, links acessíveis e redução de movimento. A suíte React/JSDOM verifica estados e acessibilidade básica, mas não substitui a inspeção visual em navegador.
 
 ## Endpoints implementados
 
