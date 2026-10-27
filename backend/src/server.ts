@@ -1,4 +1,5 @@
 import { buildApp } from './app.js';
+import { qaPreviewCatalog } from './modules/catalog/qa-preview.js';
 import { loadEnv } from './config/env.js';
 import { connectDatabase } from './modules/auth/db.js';
 import { pruneExpiredSessions } from './modules/auth/auth-service.js';
@@ -11,7 +12,10 @@ if (pool) await pruneExpiredSessions(pool);
 // The MVP is intentionally single-instance. Ephemeral jobs disappear on restart.
 // Refund unfinished package charges before accepting requests.
 const recovered = pool ? await refundJobsAfterRestart(pool) : 0;
-const app = await buildApp({ env, pool });
+const app = await buildApp({
+  env, pool,
+  ...(env.DEV_QA_PREVIEW ? { catalogOverride: qaPreviewCatalog(), qaPreview: true } : {}),
+});
 if (recovered > 0) app.log.warn({ recovered }, 'unavailable_job_credits_refunded');
 const creditSweep = pool ? setInterval(() => {
   void refundExpiredJobCredits(pool).catch((error: unknown) => {
