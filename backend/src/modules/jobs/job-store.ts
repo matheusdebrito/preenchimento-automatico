@@ -12,6 +12,13 @@ export interface StoredDocument {
   kind: DocumentKind;
   size: number;
 }
+// Only technical outcomes and catalog IDs are retained, never OCR text here.
+export interface ExtractionDiagnostic {
+  requirementId: string;
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'not_analyzed';
+  suggestionCount: number;
+}
+
 export interface DocumentJob {
   id: string;
   userId: string;
@@ -22,6 +29,7 @@ export interface DocumentJob {
   files: StoredDocument[];
   values: Record<string, string>;
   sourceNotes: Record<string, string>;
+  diagnostics: ExtractionDiagnostic[];
   outputs: Map<string, string>;
   stage: 'CREATED' | 'UPLOADED' | 'PROCESSING' | 'REVIEW' | 'GENERATING' | 'GENERATED';
   reviewConfirmed: boolean;
@@ -71,7 +79,8 @@ export class JobStore {
       const createdAt = Date.now();
       const job: DocumentJob = {
         id, userId, serviceId, answers, createdAt, expiresAt: createdAt + TTL,
-        files: [], values: {}, sourceNotes: {}, outputs: new Map(), stage: 'CREATED', reviewConfirmed: false,
+        files: [], values: {}, sourceNotes: {}, diagnostics: [],
+        outputs: new Map(), stage: 'CREATED', reviewConfirmed: false,
       };
       this.jobs.set(id, job);
       return job;
