@@ -126,6 +126,22 @@ e os PDFs permanecem com marca **AMOSTRA**, sem custos. Instruções:
 [roteiro de QA](docs/QA_SYNTHETIC_PREVIEW.md). O comportamento das fotos
 reais do usuário **não foi confirmado** sem amostras adequadas.
 
+### Reconhecimento de RG fotografado
+
+O OCR de identidade agora utiliza segmentação de texto disperso para fotos de
+RG (Tesseract `--psm 11`), com uma tentativa limitada de outro modo quando
+poucos campos válidos são detectados. Reconhece rótulos como `NOME`,
+`REGISTRO GERAL`, `CPF` e órgão emissor quando o valor está na mesma linha
+ou logo abaixo, sem copiar nome da mãe ou do pai como titular. **Todas as
+sugestões exigem conferência do usuário**. Testes com RG fictício renderizado
+em JPEG passam pelo Tesseract real; isso **não comprova** leitura de fotos reais
+com qualidade/layout variáveis. Ver
+[regras e limitações do OCR](docs/OCR_EXTRACTION_RULES.md).
+
+No QA local, use apenas dados falsos: após anexar um RG fictício, a etapa
+**Confira cada campo** informa se o documento não produziu texto ou se o texto
+não continha rótulos reconhecidos. Preencha manualmente qualquer dado ausente.
+
 ### Datas, OCR do BDMOTO e teste no serviço verdadeiro
 
 Os campos semânticos de data exibem `DD/MM/AAAA` automaticamente enquanto se digita; o backend continua a rejeitar datas inválidas. O OCR foi ampliado para sugerir separadamente `Cidade`, `Bairro`, `CEP`, `UF`, `Número` e `Complemento` quando os rótulos aparecem no comprovante. **Endereço é um campo distinto no PDF oficial BDMOTO** e não foi removido sem revisão visual. Campos ausentes, fotos ilegíveis e layouts desconhecidos continuam exigindo conferência manual. O backend limita sugestões aos campos da seleção atual.
