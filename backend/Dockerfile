@@ -14,7 +14,8 @@ RUN npm run build
 FROM node:24-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
-RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-por
+RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-por \
+    tesseract-ocr-data-osd imagemagick imagemagick-jpeg
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
