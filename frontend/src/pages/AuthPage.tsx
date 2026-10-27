@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
 import { Button } from '../components/ui/Button';
 import { Notice } from '../components/ui/Notice';
 import { api } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useAuth } from '../features/auth/AuthProvider';
 
 export function AuthPage() {
   useDocumentTitle('Entrar');
@@ -16,18 +17,21 @@ export function AuthPage() {
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const { session, acceptLogin, refreshSession } = useAuth();
+  const next = params.get('next');
+  const safeNext = next?.startsWith('/preencher-real/') && !next.startsWith('//')
+    ? next : '/minha-conta';
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
     setBusy(true);
     try {
-      await api<{user:{id:string;email:string}}>(
+      const result = await api<{user:{id:string;email:string}}>(
         register ? '/api/auth/register' : '/api/auth/login',
         { method: 'POST', body: JSON.stringify({ email, password }) },
       );
-      const next = params.get('next');
-      const safeNext = next?.startsWith('/preencher-real/') && !next.startsWith('//') ? next : '/minha-conta';
+      acceptLogin(result.user);
       navigate(safeNext, { replace: true });
     } catch {
       setError('Não foi possível acessar a conta. Verifique os dados e tente novamente.');
@@ -35,6 +39,25 @@ export function AuthPage() {
       setBusy(false);
     }
   };
+
+  if (session.status === 'authenticated') {
+    return <Navigate to={safeNext} replace />;
+  }
+  if (session.status === 'loading' || session.status === 'unavailable') {
+    return (
+      <PageLayout>
+        <div className="page"><div className="container page-stack">
+          {session.status === 'loading'
+            ? <Notice tone="info" role="status">Verificando sua sessão…</Notice>
+            : <Notice tone="danger" role="alert">
+                Não foi possível consultar sua sessão. Verifique a conexão e
+                <button type="button" className="live-text-button"
+                  onClick={() => void refreshSession()}>tente novamente</button>.
+              </Notice>}
+        </div></div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>
