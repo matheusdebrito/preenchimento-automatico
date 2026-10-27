@@ -130,6 +130,9 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       expect(fields.fields['person.city']).toBe('NITEROI');
       expect(fields.fields['person.neighborhood']).toBe('ICARAI');
       expect(fields.fields['person.postalCode']).toBe('24230-100');
+      // Seller RG is detected but is not a field in 2-A/2-B; never expose
+      // unrelated OCR candidates to the selected package's review.
+      expect(fields.fields['seller.identity']).toBeUndefined();
       const diagnostics = extracted.json<{diagnostics:{
         requirementId:string;outcome:string;suggestionCount:number;
       }[]}>().diagnostics;
