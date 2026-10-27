@@ -140,7 +140,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const restored = await app.inject({
         method: 'GET', url: '/api/jobs/' + jobId, headers: { cookie },
       });
-      expect(restored.json<{diagnostics:unknown[]}>().diagnostics).toHaveLength(5);
+      expect(restored.json<{diagnostics:unknown[]}>().diagnostics).toHaveLength(6);
 
       const incomplete = await app.inject({
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
