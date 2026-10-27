@@ -305,7 +305,7 @@ export function LiveFlowPage() {
         const tip = issue.errorCode === 'missing_required_fields'
           ? 'é obrigatório e precisa ser preenchido.'
           : field?.valueKind === 'date'
-            ? 'use uma data real no formato DD/MM/AAAA.'
+            ? 'use uma data válida no formato DD/MM/AAAA.'
             : issue.fieldId.endsWith('.cpf')
               ? 'informe um CPF válido com os dígitos verificadores.'
               : 'revise o formato e o valor.';
