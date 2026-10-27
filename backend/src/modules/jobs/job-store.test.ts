@@ -151,7 +151,7 @@ describe('JobStore', () => {
     const actual = join(root, 'actual');
     const linked = join(root, 'linked');
     await mkdir(actual);
-    await symlink(actual, linked, 'dir');
+    await symlink(actual, linked, process.platform === 'win32' ? 'junction' : 'dir');
     const store = new JobStore(linked);
     stores.push(store);
     await expect(store.cleanup()).rejects.toThrow('link simbólico');
