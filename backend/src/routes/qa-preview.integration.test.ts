@@ -123,18 +123,27 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       expect(versions).toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
       expect(await creditBalance(pool, owner)).toBe(0);
 
-      const pdfResponse = await app.inject({
-        method: 'GET', url: '/api/jobs/' + jobId + '/download/requerimento-ma-v1',
-        headers: { cookie },
-      });
-      expect(pdfResponse.statusCode, pdfResponse.body.slice(0, 100)).toBe(200);
-      expect(pdfResponse.headers['content-type']).toContain('application/pdf');
-      const output = join(root, 'sample.pdf');
-      await writeFile(output, pdfResponse.rawPayload);
-      const { stdout } = await execFile('pdftotext', [output, '-'], {
-        timeout: 15_000, maxBuffer: 128_000,
-      });
-      expect(stdout).toContain('AMOSTRA - DADOS FICTICIOS - NAO UTILIZAR');
+      // Check BOTH PDF files, every page watermark, and actual filled semantic
+      // values. Merely receiving HTTP 200 is not evidence of successful filling.
+      for (const versionId of versions) {
+        const pdfResponse = await app.inject({
+          method: 'GET', url: '/api/jobs/' + jobId + '/download/' + versionId,
+          headers: { cookie },
+        });
+        expect(pdfResponse.statusCode, pdfResponse.body.slice(0, 100)).toBe(200);
+        expect(pdfResponse.headers['content-type']).toContain('application/pdf');
+        const output = join(root, versionId + '.pdf');
+        await writeFile(output, pdfResponse.rawPayload);
+        const document = await PDFDocument.load(pdfResponse.rawPayload);
+        const { stdout } = await execFile('pdftotext', [output, '-'], {
+          timeout: 15_000, maxBuffer: 128_000,
+        });
+        // One watermark footer is embedded per page and no credit is charged.
+        const markers = stdout.match(/AMOSTRA - DADOS FICTICIOS - NAO UTILIZAR/g) ?? [];
+        expect(markers.length).toBeGreaterThanOrEqual(document.getPageCount());
+        expect(stdout).toContain('MARIA DE SOUZA');
+        expect(stdout).toContain('MAR TESTE');
+      }
       expect(await creditBalance(pool, owner)).toBe(0);
     } finally {
       await app?.close();
