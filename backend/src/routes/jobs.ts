@@ -12,6 +12,7 @@ import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
+import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
 import { extractText, suggestFields, shouldExtractDocument } from '../modules/jobs/ocr.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
 import { watermarkQaSample } from '../modules/pdf/qa-watermark.js';
@@ -119,6 +120,7 @@ export function registerJobRoutes(
       uploadedRequirementIds: [...new Set(job.files.map((file) => file.requirementId))],
       fields: job.stage === 'REVIEW' || job.stage === 'GENERATED' ? job.values : {},
       sources: job.sourceNotes,
+      diagnostics: job.diagnostics,
       downloads: job.stage === 'GENERATED' ? [...job.outputs.keys()] : [],
     };
   });
@@ -173,13 +175,25 @@ export function registerJobRoutes(
     const collected: Record<string, string> = {};
     const provenance: Record<string, string> = {};
     const conflicts = new Set<string>();
+    const diagnostics: ExtractionDiagnostic[] = [];
     try {
       for (const document of job.files) {
         // Boat photos, GRU receipts and other supporting evidence are retained
         // for the checklist, but have no approved semantic extraction rules.
-        if (!shouldExtractDocument(document.requirementId)) continue;
+        if (!shouldExtractDocument(document.requirementId)) {
+          diagnostics.push({
+            requirementId: document.requirementId, outcome: 'not_analyzed', suggestionCount: 0,
+          });
+          continue;
+        }
         const text = await extractText(document, store.directory(job));
         const suggestions = suggestFields(text, document.requirementId);
+        const count = Object.keys(suggestions).length;
+        diagnostics.push({
+          requirementId: document.requirementId,
+          outcome: !text.trim() ? 'no_text' : count > 0 ? 'suggested' : 'no_supported_labels',
+          suggestionCount: count,
+        });
         for (const [fieldId, data] of Object.entries(suggestions)) {
           const prior = collected[fieldId];
           if (prior && prior !== data.value) {
@@ -194,13 +208,15 @@ export function registerJobRoutes(
       }
       job.values = collected;
       job.sourceNotes = provenance;
+      job.diagnostics = diagnostics;
       job.stage = 'REVIEW';
       return { status: job.stage, fields: job.values, sources: job.sourceNotes,
-        conflicts: [...conflicts], reviewRequired: true };
+        diagnostics: job.diagnostics, conflicts: [...conflicts], reviewRequired: true };
     } catch {
       job.stage = 'UPLOADED';
       job.values = {};
       job.sourceNotes = {};
+      job.diagnostics = [];
       return reply.status(503).send({
         error: 'ocr_failed', message: 'Não foi possível ler os documentos. Tente novamente.',
       });
