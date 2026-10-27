@@ -334,12 +334,12 @@ export function LiveFlowPage() {
             <Notice tone="info">Os formulários só serão liberados após validação oficial e revisão do preenchimento. <Link to="/preencher/servico">Conhecer demonstração</Link>.</Notice>
           ) : (
             <section className="card card--padded live-form">
-              <p className="eyebrow">{service.id === 'qa-synthetic-moto'
+              <p className="eyebrow">{service.id === 'transferencia-moto-aquatica' && service.creditCost === 0
                 ? 'Simulação técnica: sem cobrança de créditos'
                 : 'Custo: ' + service.creditCost + ' crédito por processo'}</p>
-              {service.id === 'qa-synthetic-moto' ? (
+              {service.id === 'transferencia-moto-aquatica' && service.creditCost === 0 ? (
                 <Notice tone="danger" role="alert">
-                  SOMENTE QA LOCAL: utilize documentos e fotos inteiramente fictícios.
+                  SOMENTE QA LOCAL do serviço de transferência: utilize documentos e fotos inteiramente fictícios.
                   Os PDFs gerados terão marca d’água AMOSTRA e não podem ser usados em processos oficiais.
                 </Notice>
               ) : null}
@@ -502,7 +502,7 @@ export function LiveFlowPage() {
               {step === 'download' && jobId ? (
                 <>
                   <h2>Formulários gerados</h2>
-                  <Notice tone="success">{service.id === 'qa-synthetic-moto'
+                  <Notice tone="success">{service.id === 'transferencia-moto-aquatica' && service.creditCost === 0
                     ? 'Amostras preparadas. Nenhum crédito foi cobrado. Não utilize estes PDFs oficialmente.'
                     : 'Pacote preparado. Um único crédito foi reservado no processo e será mantido após o download. Se a entrega não ocorrer, poderá ser estornado.'}</Notice>
                   {downloads.map((version) => (
