@@ -5,6 +5,35 @@ import { authenticate, getCurrentUser, issueSession, registerUser, removeSession
 import { creditBalance, creditHistory, applyCreditMovement } from '../modules/auth/credits.js';
 
 export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Database): void {
+  // Single-instance MVP throttle. Production must use a shared datastore and a
+  // validated proxy trust policy; do not trust caller-controlled forwarding headers.
+  const authAttempts = new Map<string, { count: number; resetAt: number }>();
+  app.addHook('onRequest', async (request, reply) => {
+    if (request.method !== 'POST') return;
+    const endpoint = request.url.split('?')[0];
+    const max = endpoint === '/api/auth/login' ? 30
+      : endpoint === '/api/auth/register' ? 10 : 0;
+    if (!max) return;
+    const now = Date.now();
+    const key = endpoint + ':' + request.ip;
+    const previous = authAttempts.get(key);
+    const next = !previous || previous.resetAt <= now
+      ? { count: 1, resetAt: now + 60_000 }
+      : { count: previous.count + 1, resetAt: previous.resetAt };
+    authAttempts.set(key, next);
+    if (authAttempts.size > 1024) {
+      for (const [entry, value] of authAttempts) {
+        if (value.resetAt <= now) authAttempts.delete(entry);
+      }
+    }
+    if (next.count > max) {
+      reply.header('Retry-After', String(Math.ceil((next.resetAt - now) / 1000)));
+      return reply.status(429).send({
+        error: 'rate_limited', message: 'Muitas tentativas. Aguarde antes de tentar novamente.',
+      });
+    }
+  });
+
   async function requireUser(request: FastifyRequest): Promise<{ id: string; email: string }> {
     if (!pool) throw Object.assign(new Error('Banco indisponível.'), { statusCode: 503 });
     const user = await getCurrentUser(pool, request);
