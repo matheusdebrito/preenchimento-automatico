@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Camera, FileCheck2, FileText, UploadCloud } from 'lucide-react';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { Notice } from '../../components/ui/Notice';
 import { Button } from '../../components/ui/Button';
@@ -357,29 +358,71 @@ export function LiveFlowPage() {
                     poderão ser preenchidos manualmente na próxima etapa.</p>
                   <p className="field__hint">Os arquivos escolhidos são enviados temporariamente
                     ao servidor e excluídos ao cancelar ou expirar o processo.</p>
-                  {service.documentRequirements.map((required) => (
-                    <div key={required.id} className="live-upload-field">
-                      <label className="field">
-                        <span className="field__label">{required.label} (opcional)</span>
-                        <span className="field__hint">{required.description}</span>
-                        <input className="field__input" type="file" accept=".pdf,.png,.jpg,.jpeg"
-                          disabled={uploadedRequirements.includes(required.id) || busy}
-                          onChange={(event) => selectFile(required.id, event)} />
-                      </label>
-                      <label className="field">
-                        <span className="field__hint">Ou fotografe com a câmera do celular (frente nítida, sem cortes ou reflexos)</span>
-                        <input className="field__input" type="file" accept="image/jpeg,image/png"
-                          capture="environment" aria-label={'Fotografar ' + required.label.toLowerCase()}
-                          disabled={uploadedRequirements.includes(required.id) || busy}
-                          onChange={(event) => selectFile(required.id, event)} />
-                      </label>
-                      {uploadedRequirements.includes(required.id)
-                        ? <span className="field__hint">Documento recebido pelo servidor</span>
-                        : files[required.id]
-                          ? <span className="field__hint">{files[required.id]?.name}</span>
-                          : null}
-                    </div>
-                  ))}
+                  <div className="live-upload-list">
+                    {service.documentRequirements.map((required) => {
+                      const uploaded = uploadedRequirements.includes(required.id);
+                      const selected = files[required.id];
+                      return (
+                        <div key={required.id}
+                          className={'live-upload-field' + (uploaded ? ' live-upload-field--uploaded' : '')}>
+                          <div className="live-upload-field__head">
+                            <span className="live-upload-field__icon" aria-hidden="true">
+                              <FileText />
+                            </span>
+                            <div className="live-upload-field__info">
+                              <div className="live-upload-field__name">
+                                <strong>{required.label}</strong>
+                                <span className="live-upload-field__optional">Opcional</span>
+                              </div>
+                              {required.description
+                                ? <p className="live-upload-field__description">{required.description}</p>
+                                : null}
+                            </div>
+                          </div>
+                          <div className="live-upload-actions">
+                            <input id={'upload-file-' + required.id}
+                              className="live-upload-input" type="file"
+                              accept=".pdf,.png,.jpg,.jpeg" aria-label={required.label}
+                              disabled={uploaded || busy}
+                              onChange={(event) => selectFile(required.id, event)} />
+                            <label className="live-upload-action"
+                              htmlFor={'upload-file-' + required.id}>
+                              <UploadCloud aria-hidden="true" />
+                              {selected ? 'Trocar arquivo' : 'Escolher arquivo'}
+                            </label>
+                            <input id={'upload-camera-' + required.id}
+                              className="live-upload-input" type="file"
+                              accept="image/jpeg,image/png" capture="environment"
+                              aria-label={'Fotografar ' + required.label.toLowerCase()}
+                              disabled={uploaded || busy}
+                              onChange={(event) => selectFile(required.id, event)} />
+                            <label className="live-upload-action live-upload-action--camera"
+                              htmlFor={'upload-camera-' + required.id}>
+                              <Camera aria-hidden="true" /> Usar câmera
+                            </label>
+                          </div>
+                          {uploaded ? (
+                            <div className="live-upload-file-status" role="status">
+                              <FileCheck2 aria-hidden="true" />
+                              <span>Documento recebido pelo servidor</span>
+                            </div>
+                          ) : selected ? (
+                            <div className="live-upload-file-status" role="status">
+                              <FileCheck2 aria-hidden="true" />
+                              <span className="live-upload-file-status__name">{selected.name}</span>
+                              <span className="live-upload-file-status__size">
+                                {(selected.size / 1024 / 1024).toLocaleString('pt-BR', {
+                                  maximumFractionDigits: 2,
+                                })} MB
+                              </span>
+                            </div>
+                          ) : (
+                            <p className="live-upload-field__help">PDF, JPG ou PNG · até 10 MB</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   <Button disabled={busy} onClick={() => void extract()}>
                     {busy ? 'Preparando revisão…' :
