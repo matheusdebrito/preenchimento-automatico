@@ -37,12 +37,22 @@
 1. Ler [o roteiro do QA sintético](QA_SYNTHETIC_PREVIEW.md).
 2. Em `.env` **local**: `DEV_QA_PREVIEW=true` e senha de PostgreSQL exclusiva.
 3. Executar `docker compose up -d --build` e abrir **http://127.0.0.1:8080** no mesmo computador.
-4. Criar conta de **teste**, acessar o cartão **Teste técnico com dados fictícios**, e anexar imagem/PDF inventado (exemplos de texto no roteiro).
+4. Criar conta de **teste**, entrar em **Embarcações e jet skis** (único serviço de transferência) e escolher entre **não anexar nada**, anexar só um RG fictício ou usar vários arquivos sintéticos. O usuário nunca precisa enviar todos os documentos de origem para gerar PDF.
 5. Conferir se os campos sugeridos correspondem aos rótulos; corrigir manualmente o que estiver ausente ou incorreto.
 6. Gerar e visualizar os PDFs selecionados pelo serviço real (2-A/2-B sempre e os demais conforme respostas), todos com marca **AMOSTRA**. Conferir página a página, principalmente Endereço, Cidade, Bairro e CEP no BDMOTO. Encerrar e remover o job.
 7. Desligar `DEV_QA_PREVIEW` após o teste.
 
 **Não usar dados de clientes.** A stack local vincula suas portas a `127.0.0.1`; fotografar diretamente em celular na mesma rede exigirá uma solução segura de acesso HTTPS para testes. Não abra as portas para `0.0.0.0` apenas para contornar essa restrição.
+
+### Reteste após correção de uploads opcionais (27/10/2026)
+
+- [ ] **0 anexos:** confirmar que o serviço de transferência abre a revisão sem nenhum arquivo, todos os campos são editáveis e o PDF AMOSTRA pode ser gerado após preencher os campos necessários.
+- [ ] **Somente RG fictício:** confirmar que o OCR sugere apenas dados identificados e que é possível digitar os demais manualmente, sem exigir TIE, residência, vendedor ou foto da embarcação.
+- [ ] **Entrada única:** confirmar que **Embarcações e jet skis** abre o serviço da API, sem cartão paralelo "Teste técnico" nem rota ativa da antiga demonstração.
+- [ ] **OCR em layouts variados:** registrar os tipos de documento, formato e resultado do diagnóstico. Ainda não foram analisadas as fotos enviadas pelo usuário; obter layouts sintéticos/anônimos para reproduzir a baixa extração com segurança.
+- [ ] **PDFs:** comparar os formulários 2-A/BDMOTO marcados AMOSTRA com os campos revisados, incluindo cidade/bairro/CEP e posições; os seis mapeamentos oficiais permanecem DRAFT.
+
+**Evidência automatizada:** [CI 40524621900](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40524621900) passou nos cinco jobs do commit `306f023`, incluindo integração PostgreSQL com arquivos opcionais e regressão frontend. A validação manual ainda não foi realizada nesta sessão.
 
 ## 3. Ações humanas bloqueantes — prioridade máxima
 
