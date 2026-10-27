@@ -13,9 +13,9 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Mapeamento PDF reutilizável | **135 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
-| OCR no servidor | `pdftotext` + Tesseract; sugestões conservadoras, teto de rasterização e diagnóstico por documento quando não há campo identificado | Fotos e dados ficam sujeitos a erros; revisão obrigatória, sem métricas reais de precisão |
+| OCR no servidor | OCR conservador com extração individual de endereço, número, complemento, cidade, bairro, UF e CEP rotulados, além dos campos anteriores | Ausência de rótulos/baixa legibilidade ainda exigem revisão; sem precisão comprovada com fotos reais |
 | Autenticação e créditos | PostgreSQL, sessões HttpOnly, menu conectado à sessão, logout obrigatório para trocar conta, ledger/recibos/estornos | Instância única, créditos de teste; sem pagamentos reais |
-| Fluxo React integrado | Upload/câmera, feedback de obrigatórios, OCR/revisão, geração, download e menu mobile com controle fixo e transições acessíveis | Serviço real somente homologado; QA sintético local com PDFs marcados como AMOSTRA |
+| Fluxo React integrado | Upload, revisão com máscara DD/MM/AAAA, geração, download e prévia do mesmo serviço real sob flag local de QA | Produção permanece DRAFT; prévias com AMOSTRA, sem créditos e sem documentos pessoais |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
 Consulte o [fluxo de entrega e estorno de créditos](docs/CREDIT_DELIVERY_LIFECYCLE.md), as [regras e limites do OCR](docs/OCR_EXTRACTION_RULES.md), o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
@@ -97,7 +97,13 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 
 Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e abra o cartão **Teste técnico com dados fictícios** na página inicial. Depois desative a flag e reconstrua os containers.
 
-O modo QA é recusado em produção, não consome créditos, mantém o serviço piloto `DRAFT` e gera **somente duas amostras (2-A e 2-B)** com marca d'água em todas as páginas. **Não use documentos pessoais reais**, pois os PDFs de exemplo não são homologados ou válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). Para a revisão de amanhã, leia [as pendências priorizadas de 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md), com os portões documentais e os testes ainda necessários.
+O modo QA é recusado em produção, não consome créditos e usa **o mesmo serviço `transferencia-moto-aquatica`**: perguntas, requisitos reais e as posições dos seis anexos. Os anexos 2-A e 2-B entram sempre, e 2-C/2-D/2-E/1-C entram quando suas condições são selecionadas. O catálogo de produção mantém o serviço e os mapeamentos `DRAFT`; só o ambiente local permite prévias com **AMOSTRA em todas as páginas**. **Não use documentos pessoais reais**, pois os PDFs não são homologados nem válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). Para a revisão de amanhã, leia [as pendências priorizadas de 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md), com os portões documentais e os testes ainda necessários.
+
+### Datas, OCR do BDMOTO e teste no serviço verdadeiro
+
+Os campos semânticos de data exibem `DD/MM/AAAA` automaticamente enquanto se digita; o backend continua a rejeitar datas inválidas. O OCR foi ampliado para sugerir separadamente `Cidade`, `Bairro`, `CEP`, `UF`, `Número` e `Complemento` quando os rótulos aparecem no comprovante. **Endereço é um campo distinto no PDF oficial BDMOTO** e não foi removido sem revisão visual. Campos ausentes, fotos ilegíveis e layouts desconhecidos continuam exigindo conferência manual. O backend limita sugestões aos campos da seleção atual.
+
+O roteiro atualizado está em [QA do serviço real com dados fictícios](docs/QA_SYNTHETIC_PREVIEW.md), e o estado das fases permanece no [PROJECT_TRACKER.md](PROJECT_TRACKER.md). Essas mudanças não aprovam os PDFs.
 
 ### Reteste após correções de QA em 27/10/2026
 
