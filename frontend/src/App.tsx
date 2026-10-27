@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { LoaderCircle } from 'lucide-react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { AuthProvider } from './features/auth/AuthProvider';
 
@@ -19,10 +19,6 @@ const CreditHistoryPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })),
 );
-const WizardRoute = lazy(() =>
-  import('./features/wizard/WizardRoute').then((module) => ({ default: module.WizardRoute })),
-);
-
 function RouteLoading() {
   return (
     <div className="route-loading" role="status" aria-live="polite">
@@ -43,7 +39,7 @@ export function App() {
         <Route path="/minha-conta" element={<AccountPage />} />
         <Route path="/creditos" element={<CreditsPage />} />
         <Route path="/creditos/historico" element={<CreditHistoryPage />} />
-        <Route path="/preencher/*" element={<WizardRoute />} />
+        <Route path="/preencher/*" element={<Navigate to="/" replace />} />
         <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
