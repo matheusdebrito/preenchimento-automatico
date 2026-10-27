@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { Route, Routes } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
+import { AuthProvider } from './features/auth/AuthProvider';
 
 const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
 const LiveFlowPage = lazy(() => import('./features/real/LiveFlowPage').then((module) => ({ default: module.LiveFlowPage })));
@@ -33,8 +34,9 @@ function RouteLoading() {
 
 export function App() {
   return (
-    <Suspense fallback={<RouteLoading />}>
-      <Routes>
+    <AuthProvider>
+      <Suspense fallback={<RouteLoading />}>
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/entrar" element={<AuthPage />} />
         <Route path="/preencher-real/:serviceId" element={<LiveFlowPage />} />
@@ -43,7 +45,8 @@ export function App() {
         <Route path="/creditos/historico" element={<CreditHistoryPage />} />
         <Route path="/preencher/*" element={<WizardRoute />} />
         <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+    </AuthProvider>
   );
 }
