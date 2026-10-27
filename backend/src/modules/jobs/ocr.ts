@@ -106,7 +106,7 @@ export function suggestFields(text: string, source: string): Record<string, Extr
   if (buyer || seller) {
     const role = seller ? 'seller' : 'person';
     const identity = singleLabelled(text,
-      /^\s*(?:RG|N[ºO.]?\s*DA\s*IDENTIDADE|IDENTIDADE)\s*[:-]\s*([A-Z0-9.\/-]{5,24})\s*$/gim, 24);
+      /^\s*(?:RG|N[ºO.]?\s*DA\s*IDENTIDADE|IDENTIDADE)\s*[:-]\s*([A-Z0-9./-]{5,24})\s*$/gim, 24);
     if (identity) result[role + '.identity'] = { value: identity, source, status: 'REVIEW_REQUIRED' };
 
     const issuer = singleLabelled(text,
