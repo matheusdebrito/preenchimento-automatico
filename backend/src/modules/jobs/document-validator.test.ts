@@ -144,6 +144,48 @@ describe('candidatos OCR conservadores', () => {
       .toBeUndefined();
   });
 
+  it('lê rótulos RG em linhas distintas e sem dois-pontos, sem confundir parentes', () => {
+    const photoLike = [
+      'REPUBLICA FEDERATIVA DO BRASIL',
+      'NOME',
+      'MARIA DE SOUZA',
+      'NOME DA MAE',
+      'ANA DE SOUZA',
+      'REGISTRO GERAL',
+      '12.345.678-9',
+      'ORGAO EMISSOR',
+      'SSP RJ',
+      'CPF',
+      '123.456.789-09',
+      'DATA DE EMISSAO',
+      '15/05/2024',
+    ].join('\n');
+    const candidate = suggestFields(photoLike, 'buyer-identity');
+    expect(candidate['person.fullName']?.value).toBe('MARIA DE SOUZA');
+    expect(candidate['person.identity']?.value).toBe('12.345.678-9');
+    expect(candidate['person.issuer']?.value).toBe('SSP RJ');
+    expect(candidate['person.cpf']?.value).toBe('123.456.789-09');
+    expect(candidate['person.issueDate']?.value).toBe('15/05/2024');
+    expect(candidate['seller.fullName']).toBeUndefined();
+    expect(suggestFields(photoLike, 'seller-identity')['seller.fullName']?.value)
+      .toBe('MARIA DE SOUZA');
+  });
+
+  it('não atribui nome da mãe, nome social ou linhas sem rótulo ao titular', () => {
+    for (const text of [
+      'NOME DA MÃE: ANA DE SOUZA',
+      'NOME DO PAI\nJOAO DE SOUZA',
+      'NOME SOCIAL: MARIA DE SOUZA',
+      'MARIA DE SOUZA\nCPF 123.456.789-09',
+    ]) {
+      expect(suggestFields(text, 'buyer-identity')['person.fullName']).toBeUndefined();
+    }
+    expect(suggestFields('NOME\nMARIA DE SOUZA\nNOME\nANA DE SOUZA',
+      'buyer-identity')['person.fullName']).toBeUndefined();
+    expect(suggestFields('RG\n12345\nRG\n98765', 'buyer-identity')['person.identity'])
+      .toBeUndefined();
+  });
+
   it('extrai somente os valores identificados por rótulos no TIE', () => {
     const fields = suggestFields(
       'NOME DA EMBARCAÇÃO: MARÉ TESTE\nINSCRIÇÃO: RJ123456\nHIN: BR-ABC-12345\nCPF: 123.456.789-09',
