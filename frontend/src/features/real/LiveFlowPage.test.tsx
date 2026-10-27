@@ -113,6 +113,81 @@ describe('jornada real isolada da demonstração', () => {
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(0);
   }, 25000);
 
+  it('explica documentos ausentes, OCR sem sugestões e CPF inválido sem perder o job', async () => {
+    const anotherService = {
+      ...service,
+      documentRequirements: [
+        { id: 'buyer-identity', label: 'Identidade fictícia', required: true },
+        { id: 'tie', label: 'TIE fictício', required: true },
+      ],
+      reviewFields: [
+        { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+        { id: 'person.cpf', label: 'CPF', valueKind: 'text', required: false },
+      ],
+    };
+    let reviewAttempts = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) return json({ service: anotherService });
+      if (path.endsWith('/quote')) return json({ service: anotherService });
+      if (path === '/api/jobs' && init?.method === 'POST') return json({ id: 'job-manual' }, 201);
+      if (path.includes('/documents/')) return json({ id: 'synthetic-file' }, 201);
+      if (path.endsWith('/extract')) return json({
+        fields: {}, sources: {}, diagnostics: [
+          { requirementId: 'buyer-identity', outcome: 'no_supported_labels', suggestionCount: 0 },
+          { requirementId: 'tie', outcome: 'no_text', suggestionCount: 0 },
+        ],
+      });
+      if (path.endsWith('/review')) {
+        reviewAttempts++;
+        return reviewAttempts === 1
+          ? json({ error: 'invalid_field_value', fieldId: 'person.cpf' }, 422)
+          : json({ confirmed: true });
+      }
+      if (path.endsWith('/generate')) return json({ downloads: ['requerimento-ma-v1'] });
+      if (path === '/api/jobs/job-manual') return json({ status: 'REVIEW', downloads: [] });
+      return json({ error: 'unauthorized' }, 401);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    expect(await screen.findByText(/Selecione os documentos obrigatórios antes de continuar/)).toBeTruthy();
+    expect(screen.getByText(/Identidade fictícia, TIE fictício/)).toBeTruthy();
+    expect(fetcher.mock.calls.filter(([url]) => String(url) === '/api/jobs')).toHaveLength(0);
+
+    await user.upload(screen.getByLabelText(/Identidade fictícia/) as HTMLInputElement,
+      new File(['ficticio'], 'fake.jpg', { type: 'image/jpeg' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    expect(screen.getByText(/TIE fictício\./)).toBeTruthy();
+    await user.upload(screen.getByLabelText(/TIE fictício/) as HTMLInputElement,
+      new File(['ficticio'], 'tie.pdf', { type: 'application/pdf' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+
+    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(screen.getByText(/Nenhum campo foi identificado automaticamente/)).toBeTruthy();
+    expect(screen.getByText(/texto lido, mas nenhum campo com rótulo suportado/)).toBeTruthy();
+    expect(screen.getByText(/não foi possível reconhecer texto/)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(screen.getByText(/Preencha o campo obrigatório: Nome completo/)).toBeTruthy();
+    expect(reviewAttempts).toBe(0);
+
+    await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA DE SOUZA');
+    await user.type(screen.getByLabelText(/^CPF/) as HTMLInputElement, '111.111.111-11');
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(await screen.findByText(/Confira CPF: informe um CPF válido/)).toBeTruthy();
+    expect((screen.getByLabelText(/^CPF/) as HTMLInputElement).getAttribute('aria-invalid')).toBe('true');
+    await user.clear(screen.getByLabelText(/^CPF/));
+    await user.type(screen.getByLabelText(/^CPF/), '123.456.789-09');
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
+    expect(reviewAttempts).toBe(2);
+    expect(fetcher.mock.calls.filter(([url]) => String(url) === '/api/jobs')).toHaveLength(1);
+  }, 30000);
+
   it('bloqueia acesso ao serviço ainda não homologado', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({error:'not_available'},404)));
     render(<MemoryRouter initialEntries={['/preencher-real/transferencia-moto-aquatica']}><App /></MemoryRouter>);
