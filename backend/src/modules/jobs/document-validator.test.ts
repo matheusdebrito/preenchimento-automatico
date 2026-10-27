@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PDFDocument } from 'pdf-lib';
 import { classifyDocument, validatePdfPages } from './document-validator.js';
-import { suggestFields, shouldExtractDocument, shouldRetryIdentityLayout, chooseIdentityLayout, spatialIdentityName } from './ocr.js';
+import { suggestFields, shouldExtractDocument, shouldRetryIdentityLayout, chooseIdentityLayout, spatialIdentityName, identityNameStage } from './ocr.js';
 
 describe('validação de assinatura do documento', () => {
   it('rejeita PDF falso, MIME incorreto e arquivo vazio', () => {
@@ -169,6 +169,27 @@ describe('candidatos OCR conservadores', () => {
     expect(candidate['seller.fullName']).toBeUndefined();
     expect(suggestFields(photoLike, 'seller-identity')['seller.fullName']?.value)
       .toBe('MARIA DE SOUZA');
+  });
+
+  it('separa rótulo ausente, rótulo sem valor, nome reconhecido e campo não mapeado no QA', () => {
+    const mapped = new Set(['person.cpf', 'person.fullName']);
+    const missingLabel = 'CPF: 123.456.789-09';
+    const badName = 'NOME\n---\nCPF: 123.456.789-09';
+    const uncertainLabel = 'N0ME\nMARIA DE SOUZA\nCPF: 123.456.789-09';
+    const valid = 'NOME: MARIA DE SOUZA\nCPF: 123.456.789-09';
+    expect(identityNameStage(missingLabel, 'buyer-identity',
+      suggestFields(missingLabel, 'buyer-identity'), mapped)).toBe('label_not_detected');
+    expect(identityNameStage(badName, 'buyer-identity',
+      suggestFields(badName, 'buyer-identity'), mapped)).toBe('label_seen_name_rejected');
+    expect(identityNameStage(uncertainLabel, 'buyer-identity',
+      suggestFields(uncertainLabel, 'buyer-identity'), mapped)).toBe('label_seen_name_rejected');
+    expect(identityNameStage(valid, 'buyer-identity',
+      suggestFields(valid, 'buyer-identity'), mapped)).toBe('name_recognized');
+    expect(identityNameStage(valid, 'buyer-identity',
+      suggestFields(valid, 'buyer-identity'), new Set(['person.cpf']))).toBe('name_not_mapped');
+    const parentOnly = 'NOME DA MÃE: ANA DE SOUZA\nCPF: 123.456.789-09';
+    expect(identityNameStage(parentOnly, 'buyer-identity',
+      suggestFields(parentOnly, 'buyer-identity'), mapped)).toBe('label_not_detected');
   });
 
   it('reprocessa RG mesmo quando CPF e RG foram identificados, mas nome não', () => {
