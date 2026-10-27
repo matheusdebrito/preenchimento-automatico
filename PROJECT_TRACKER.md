@@ -145,7 +145,7 @@
 - [x] Validar extração conservadora de nome rotulado em JPEG sintético, mantendo status `REVIEW_REQUIRED` e papel do comprador; CI 40441312938.
 - [x] Registrar no job temporário apenas status e número de sugestões por documento (`suggested`, `no_text`, `no_supported_labels`, `not_analyzed`), persistidos só até expiração e visíveis ao reabrir a revisão; CI 40510328039.
 - [x] Implementar sugestão individual de endereço, cidade, bairro, CEP, UF, número e complemento rotulados, sem dedução a partir de texto sem estrutura; teste unitário e regressões em 40516185481.
-- [ ] Confirmar em CI os novos rótulos de data de emissão, local de venda e atributos de motor, sem inferir valores não presentes.
+- [ ] Confirmar no CI final os rótulos de data de emissão, local de venda e atributos de motor; commit de correção dos testes `9279f26` já enviado, ainda não confirmado integralmente pelo Actions.
 - [ ] Executar Tesseract no servidor/worker isolado com tratamento de qualidade de imagem e limites reais de CPU/memória.
 - [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
@@ -579,3 +579,8 @@ Commit: [SHA, se realizado]
 - **CI comprovado até o commit de código `40bc83e`:** [GitHub Actions 40516185481](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40516185481), **cinco jobs aprovados** (frontend/backend, PostgreSQL, PDFs sintéticos, Compose). Esse CI abrange máscara, componentes de endereço, sobreposição real de QA e testes de geração. Os novos rótulos de motor/data/local, adicionados após `40bc83e`, exigem validação do CI mais recente antes de serem marcados como verificados.
 - **Pendências:** testes físicos no celular e imagens reais anonimizadas/autorizadas, precisão OCR com layouts variáveis, homologação visual das seis páginas/modelos e verificação de regras condicionais contra NORMAM. Ainda há o isolamento de Poppler/Tesseract e os critérios restantes das fases 05–09. Não confundir QA local com aprovação comercial.
 - **Instruções atualizadas:** `docs/QA_SYNTHETIC_PREVIEW.md`, `docs/OCR_EXTRACTION_RULES.md`, `README.md`. O próximo teste deve usar o serviço de transferência em QA, não o identificador `qa-synthetic-moto`.
+
+
+### Atualização do QA (27/10/2026) — novos campos OCR
+
+Os testes extras de data de emissão, local de venda e motor foram adicionados em `8e332a0`. A execução intermediária de CI [40516594903](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40516594903) falhou no lint de duas asserções que usavam quebra de linha antes de acesso por colchetes. A causa foi corrigida em `9279f26` sem relaxar extração. **A execução do último commit ainda está pendente**; não marcar estes testes extras como validados até confirmar a execução final. A base de QA do serviço real, OCR estruturado do endereço e máscara de datas passou nos cinco jobs em [40516185481](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40516185481). A avaliação manual e normativa continua necessária.
