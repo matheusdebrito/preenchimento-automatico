@@ -55,9 +55,14 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const owner = registered.json<{user:{id:string}}>().user.id;
       const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
 
+      const answers = {
+        tieSituation: 'regular', transferAuthorization: 'consta_tie',
+        sellerCommunication: 'nao', residenceProof: 'comprovante',
+        coOwner: 'nao', representative: 'nao',
+      };
       const created = await app.inject({
         method: 'POST', url: '/api/jobs', headers: { cookie },
-        payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers: {} },
+        payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers },
       });
       expect(created.statusCode, created.body).toBe(201);
       const jobId = created.json<{id:string}>().id;
@@ -94,6 +99,25 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       });
       expect(tieUpload.statusCode, tieUpload.body).toBe(201);
 
+      const residence = await fakeTextPdf([
+        'COMPROVANTE FICTICIO', 'ENDERECO: RUA DAS FLORES', 'CIDADE: NITEROI',
+        'BAIRRO: ICARAI', 'CEP: 24230-100',
+      ]);
+      for (const [requirement, bytes, mime] of [
+        ['seller-identity', Buffer.from(await fakeTextPdf([
+          'DOCUMENTO FICTICIO', 'NOME: JOAO VENDEDOR', 'RG: 12345678',
+        ])), 'application/pdf'],
+        ['residence-proof', Buffer.from(residence), 'application/pdf'],
+        ['photo-stern', png, 'image/png'],
+        ['photo-side', png, 'image/png'],
+      ] as const) {
+        const upload = await app.inject({
+          method: 'POST', url: '/api/jobs/' + jobId + '/documents/' + requirement,
+          headers: { cookie, 'content-type': mime }, payload: bytes,
+        });
+        expect(upload.statusCode, upload.body).toBe(201);
+      }
+
       const extracted = await app.inject({
         method: 'POST', url: '/api/jobs/' + jobId + '/extract',
         headers: { cookie }, payload: {},
@@ -103,6 +127,9 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       expect(fields.reviewRequired).toBe(true);
       expect(fields.fields['person.fullName']).toBe('MARIA DE SOUZA');
       expect(fields.fields['vessel.name']).toBe('MAR TESTE');
+      expect(fields.fields['person.city']).toBe('NITEROI');
+      expect(fields.fields['person.neighborhood']).toBe('ICARAI');
+      expect(fields.fields['person.postalCode']).toBe('24230-100');
       const diagnostics = extracted.json<{diagnostics:{
         requirementId:string;outcome:string;suggestionCount:number;
       }[]}>().diagnostics;
@@ -113,7 +140,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const restored = await app.inject({
         method: 'GET', url: '/api/jobs/' + jobId, headers: { cookie },
       });
-      expect(restored.json<{diagnostics:unknown[]}>().diagnostics).toHaveLength(2);
+      expect(restored.json<{diagnostics:unknown[]}>().diagnostics).toHaveLength(5);
 
       const incomplete = await app.inject({
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
@@ -122,7 +149,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       });
       expect(incomplete.statusCode).toBe(422);
       expect(incomplete.json()).toEqual({
-        error: 'missing_required_fields', fieldId: 'vessel.name',
+        error: 'missing_required_fields', fieldId: 'person.cpf',
       });
       expect(incomplete.body).not.toContain('MARIA DE SOUZA');
 
@@ -130,8 +157,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
         headers: { cookie },
         payload: { confirmed: true, values: {
-          'person.fullName': 'MARIA DE SOUZA',
-          'vessel.name': 'MAR TESTE', 'person.cpf': '111.111.111-11',
+          ...fields.fields, 'person.cpf': '111.111.111-11',
         } },
       });
       expect(invalidCpf.statusCode).toBe(422);
@@ -142,8 +168,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
         headers: { cookie },
         payload: { confirmed: true, values: {
-          'person.fullName': 'MARIA DE SOUZA',
-          'vessel.name': 'MAR TESTE', 'sale.date': '31/02/2026',
+          ...fields.fields, 'sale.date': '31/02/2026',
         } },
       });
       expect(invalidDate.statusCode).toBe(422);
@@ -157,6 +182,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         payload: { confirmed: true, values: {
           ...fields.fields, 'person.fullName': 'MARIA DE SOUZA',
           'vessel.name': 'MAR TESTE', 'person.cpf': '123.456.789-09',
+          'person.address': 'RUA DAS FLORES',
         } },
       });
       expect(reviewed.statusCode, reviewed.body).toBe(200);
