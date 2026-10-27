@@ -20,7 +20,7 @@
 - A mudança de PNG foi fundamentada na [especificação PNG (Terceira Edição), seção 11.2.1](https://www.w3.org/TR/png/#11IHDR), que determina as combinações válidas de cor/profundidade e o uso de PLTE. O conserto do teste atualiza o CRC em vez de confundir falta de paleta com checksum inválido.
 - A [orientação OWASP sobre uploads](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html) recomenda defesa em camadas, limites após descompressão e isolamento de decodificadores. Os limites de bytes adicionados são **mitigações parciais**, não constituem sandbox de OCR nem proteção completa contra arquivos maliciosos.
 - O [Node.js documenta o cálculo CRC32 integrado](https://nodejs.org/api/zlib.html#zlibcrc32data-value), utilizado apenas na fixture de regressão do PNG; nenhuma dependência externa foi adicionada.
-- **Verificação do CI nos commits mais recentes:** conferir a execução correspondente ao topo de `main` em [GitHub Actions](https://github.com/matheusdebrito/preenchimento-automatico/actions). Commits intermediários podem ter falhado enquanto a fixture de teste estava sendo corrigida; a evidência válida é o pipeline do commit final, não de versões intermediárias.
+- **CI do código final:** o commit `009cf56` passou no [pipeline 40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173), com cinco jobs aprovados: backend/frontend, PostgreSQL, renderização de PDFs fictícios e Compose. Falhas intermediárias ocorreram nas fixtures PNG modificadas sem CRC recalculado e foram corrigidas antes desse resultado. Commits documentais posteriores também disparam CI; verificar a execução mais recente ao revisar o repositório.
 
 ## Pendências ordenadas para o próximo ciclo
 
@@ -28,7 +28,7 @@
 
 - [ ] **Homologação documental da Fase 04:** conferir visualmente em cada uma das páginas dos seis PDFs oficiais as posições, acentos, textos longos, datas, condicionais, campos de representante/coproprietário e assinatura. Registrar revisor, data e parecer por `FormMapping`, em `docs/mapping-reports/` e no roteiro `docs/FASE_04_REVISAO_VISUAL.md`. Os seis continuam `DRAFT`; não convertê-los automaticamente para `APPROVED`.
 - [ ] **Aplicabilidade ao serviço piloto:** confirmar obrigações do 2-A/2-B e anexos condicionais (TIE, representante, 2-C/2-D/2-E/1-C) contra a NORMAM e orientações oficiais. Só vincular e liberar `ServiceForm` após verificação documental.
-- [ ] **CI do último commit:** verificar typecheck, lint, testes, build, integração PostgreSQL, prévias e Compose; corrigir qualquer falha antes de dar uma fase como concluída.
+- [x] **CI do último commit de código (`009cf56`):** typecheck, lint, testes, build, integração PostgreSQL, prévias e Compose aprovados em [40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173). Revalidar se novos commits alterarem o código.
 
 ### P1 — Engenharia necessária antes de usuários reais
 
@@ -48,7 +48,7 @@
 ## Para revisão do responsável amanhã
 
 1. Abrir [GitHub Actions](https://github.com/matheusdebrito/preenchimento-automatico/actions) e observar principalmente o pipeline de `main` mais recente.
-2. Ler o [PROJECT_TRACKER.md](../PROJECT_TRACKER.md): quadro geral, checklists de cada fase e registro de execução. A situação deve permanecer **parcial** para Fases 04–08 e **pendente** para 09.
+2. Ler o [PROJECT_TRACKER.md](../PROJECT_TRACKER.md): quadro geral, checklists de cada fase e registro de execução. Os novos testes de Fases 05/06/08 estão marcados como verificados, porém as fases seguem **parciais** e a Fase 09 **pendente**.
 3. Examinar os artefatos `pdf-mapping-review-synthetic` do CI e registrar revisão humana independente dos PDFs antes de qualquer alteração para `APPROVED`.
 4. Não enviar documentos pessoais reais nos testes, não abrir a stack local à internet e não ativar cobrança ou uso oficial.
 
