@@ -45,7 +45,7 @@
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — QA local usa os seis mapas reais e vínculos condicionais; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads e feedback de obrigatórios testados; fuzzing, isolamento e carga pendentes |
 | 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — endereço/cidade/bairro/CEP e outros campos rotulados ampliados; fotos reais e isolamento pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — data DD/MM/AAAA e teste do serviço real em QA local; navegador físico e homologação pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — fluxo QA real, máscara de datas e botão mobile com rótulo Menu implementados; teste físico e homologação pendentes |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
@@ -165,7 +165,8 @@
 - [x] Verificar em ambos os PDFs QA 2-A e 2-B o conteúdo de campos revisados e marca AMOSTRA em todas as páginas; CI 40441312938.
 - [x] Corrigir UX de documento obrigatório, 422 na revisão com `fieldId` e mensagens próximas aos controles; manter o job após campo inválido e não relatar sucesso silencioso sem candidatos OCR. Testes frontend/backend, CI 40510328039.
 - [x] Remover repetição de navegação no rodapé e corrigir textos sobre o fluxo real de upload temporário; CI 40510328039.
-- [x] Implementar menu mobile com botão de 44 px fixo, ícones sem texto visível e nomes acessíveis, animação CSS, Escape, fechamento por link e `prefers-reduced-motion`; comportamento React validado no CI 40513573884. Inspeção visual em aparelho real segue pendente no item abaixo.
+- [x] Implementar menu mobile com animação CSS, ícones animados, nomes acessíveis, Escape, fechamento por link e `prefers-reduced-motion`; comportamento inicial validado no CI 40513573884. Evolução visual de 27/10: adicionar rótulo persistente Menu sem alterar o estado do botão ou sua posição.
+- [ ] Confirmar no CI atual e visualmente em 320, 375 e 767 px que o botão mobile permanece com 100×44 px, mostra texto Menu nos dois estados, mantém o X animado e não sobrepõe o nome da aplicação (teste React acrescentado; revisão visual física ainda não realizada).
 - [x] Implementar máscara DD/MM/AAAA progressiva com inserção automática de barras, entrada colada, limite de 8 dígitos, e validação no backend preservada; cobertura frontend/CI 40516185481.
 - [x] Usar a mesma rota de seleção e revisão do serviço de transferência no QA local, sem serviço fictício separado; todos os formulários seguem AMOSTRA e zero crédito. CI 40516185481.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
@@ -584,3 +585,12 @@ Commit: [SHA, se realizado]
 ### Atualização do QA (27/10/2026) — novos campos OCR
 
 Os testes extras de data de emissão, local de venda e motor foram adicionados em `8e332a0`. A execução intermediária de CI [40516594903](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40516594903) falhou no lint de duas asserções que usavam quebra de linha antes de acesso por colchetes. A causa foi corrigida em `9279f26` sem relaxar extração. **A execução do último commit ainda está pendente**; não marcar estes testes extras como validados até confirmar a execução final. A base de QA do serviço real, OCR estruturado do endereço e máscara de datas passou nos cinco jobs em [40516185481](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40516185481). A avaliação manual e normativa continua necessária.
+
+
+## Registro de execução — 27/10/2026: rótulo visual do menu mobile (Fase 07)
+
+- **Solicitação:** distinguir o menu de navegação do logotipo de ondas sem perder o botão fixo nem a animação já aprovada pelo usuário.
+- **Implementado:** `frontend/src/components/layout/AppHeader.tsx` mantém os ícones hamburguer/X sobrepostos e adiciona um único texto visual persistente **Menu**. O botão continua com `aria-label="Menu"` quando fechado e `aria-label="Fechar menu"` quando aberto; o texto visual tem `aria-hidden` para não duplicar o nome acessível.
+- **Layout:** `frontend/src/styles/components.css` fixa o botão em 100×44 px, com a coluna reservada de 100 px na grade mobile e ícone/texto em células separadas. A largura não muda entre aberto/fechado, e a transição CSS e `prefers-reduced-motion` permanecem intactos.
+- **Teste criado:** `frontend/src/components/layout/AppHeader.test.tsx` verifica a persistência do mesmo botão e do texto Menu, o estado expandido, o nome de ação acessível e o fechamento por Escape/link. O README foi atualizado com a nova dimensão e roteiro de revisão.
+- **Evidência:** alteração entregue nos commits de código `5ac47b2`, `29a074f` e `57de764`. **CI dessa alteração e inspeção visual em dispositivo físico ainda aguardam comprovação**, portanto a Fase 07 permanece **PARCIAL**. Verificar principalmente 320 px e 375 px, inclusive a marca, o texto e as animações.
