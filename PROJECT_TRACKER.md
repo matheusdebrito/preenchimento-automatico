@@ -43,10 +43,10 @@
 | 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [x] |
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e seis mapas DRAFT; regras condicionais e revisão humana pendentes |
-| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — upload de PNG sintético e raízes de jobs isoladas no CI; fuzzing, isolamento e carga pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — leitura de foto fictícia e campos TIE/venda testados; isolamento do OCR e qualidade real pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — câmera e QA local ponta a ponta testados com amostras; E2E em navegador real e acessibilidade pendentes |
-| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — estornos e QA sem débito testados; crash real, falhas de banco e multi-instância pendentes |
+| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — PNG/JPEG fictícios e arquivos isolados testados; fuzzing, sandbox e carga pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — PNG/JPEG fictícios e campos TIE/venda testados; isolamento e precisão em fotos reais pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — QA 2-A/2-B, valores revisados e avisos CPF/data testados; navegador real e acessibilidade pendentes |
+| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — créditos, migrações concorrentes e QA sem débito testados; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
 | 11 | Infraestrutura de produção e deploy reproduzível | 09 e aprovação explícita | [ ] |
@@ -58,7 +58,7 @@
 | 17 | Lançamento controlado e acompanhamento | 16 e autorização explícita | [ ] |
 | 18 | Expansão incremental de serviços | 17 e decisão por serviço | [ ] |
 
-> **Estado consolidado ao final de 26/10/2026:** fases 00–03 concluídas; fases 04–08 parciais; Fase 09 pendente. Os seis PDFs oficiais estão verificados, mas seus mapeamentos e o serviço de transferência continuam `DRAFT`. O CI de créditos anterior (`a8607e3`) e o novo CI de QA (`83b7d0c`, [execução 40440558586](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40440558586)) passaram. A simulação local `qa-synthetic-moto` está desabilitada por padrão, usa apenas amostras com marca d'água, nunca habilita serviço real nem consome créditos. A integração técnica não valida precisão OCR em documentos reais nem substitui revisão humana dos mapeamentos. Sem pagamentos ou lançamento público.
+> **Estado consolidado ao final de 26/10/2026:** fases 00–03 concluídas; fases 04–08 parciais; Fase 09 pendente. Os seis PDFs oficiais estão verificados, mas seus mapeamentos e o serviço de transferência continuam `DRAFT`. O CI de créditos anterior (`a8607e3`) e o novo CI de QA (`83b7d0c`, [execução 40440558586](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40440558586)) passaram. A simulação local `qa-synthetic-moto` está desabilitada por padrão, usa apenas amostras com marca d'água, nunca habilita serviço real nem consome créditos. O [CI 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) também aprovou regressões de JPEG sintético, verificação do conteúdo dos dois PDFs, validação de CPF/data na revisão e migrations concorrentes. A integração técnica não valida precisão OCR em documentos reais nem substitui revisão humana dos mapeamentos. Sem pagamentos ou lançamento público.
 
 ## Fase 00 — Revalidar a fundação existente
 
@@ -129,6 +129,7 @@
 - [x] Testar assinatura inválida, PNG corrompido, PDF de página excessiva, requisição de outra conta, cancelamento, diretórios órfãos e concorrência.
 - [x] Validar no CI o novo preflight baseado no PNG Third Edition (IHDR, PLTE, chunks críticos) e rejeição de JPEG com dimensões zero; fixture sintética corrigida após falhas intermediárias.
 - [x] Conferir em integração PostgreSQL/Poppler o upload de foto PNG fictícia e isolamento de arquivos temporários entre instâncias de teste; CI 40440558586 (sem dados reais).
+- [x] Regressão com JPEG fictício gerado pelo Poppler, preflight e OCR Tesseract, além do PNG já testado; CI 40441312938.
 - [ ] Complementar fuzzing e isolamento de decodificadores JPEG/PNG/PDF, ensaios sob carga e recuperação de falhas súbitas antes de homologar a Fase 05.
 - **Aceite:** nenhum dado documental persistido no PostgreSQL, logs ou repositório.
 
@@ -139,6 +140,7 @@
 - [x] Verificar no CI o teto adicional de rasterização do Poppler (16 MiB por página, 48 MiB total), antes da decodificação pelo Tesseract; não equivale a limite real de CPU/RAM.
 - [x] Sugerir dados rotulados de documento fictício de venda e do TIE, somente como `REVIEW_REQUIRED`, com casos de conflito/ausência; ignorar fotos da embarcação e recibos sem regras semânticas. CI 40440558586.
 - [x] Verificar fluxo sintético foto PNG → Tesseract → revisão manual → PDF com PostgreSQL/Poppler/Tesseract; CI 40440558586.
+- [x] Validar extração conservadora de nome rotulado em JPEG sintético, mantendo status `REVIEW_REQUIRED` e papel do comprador; CI 40441312938.
 - [ ] Executar Tesseract no servidor/worker isolado com tratamento de qualidade de imagem e limites reais de CPU/memória.
 - [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
@@ -154,6 +156,8 @@
 - [x] Integrar seleção → upload → leitura → conferência → geração → download para fixtures sintéticas no CI.
 - [x] Disponibilizar captura por câmera traseira (`capture=environment`) além de upload PDF/JPG/PNG, coberta por teste React com API simulada.
 - [x] Disponibilizar QA local opt-in (`DEV_QA_PREVIEW=true`) com catálogo sintético isolado, duas amostras 2-A/2-B marcadas, revisão obrigatória e custo zero; CI de integração 40440558586.
+- [x] Validar CPF por dígitos e datas DD/MM/AAAA na API antes da geração e exibir indicação do campo inválido no frontend, com teste React e PostgreSQL; CI 40441312938.
+- [x] Verificar em ambos os PDFs QA 2-A e 2-B o conteúdo de campos revisados e marca AMOSTRA em todas as páginas; CI 40441312938.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
 - [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
 - [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
@@ -170,6 +174,7 @@
 - [x] Verificar no CI a limpeza de sessões expiradas no startup e a cada hora; preservar sessões vigentes sem alterar contas ou ledger de créditos.
 - [x] Estornar recibo não entregue quando o job expirar pelo TTL deslizante de 20 minutos, após apagar os arquivos privados; preservar pacotes entregues e usar reconciliação posterior se o banco falhar. Testes unitários e com PostgreSQL no CI 40437615191.
 - [x] Verificar que o modo QA com foto e PDFs sintéticos não cria débito ou recibo financeiro; teste PostgreSQL de saldo zero no CI 40440558586. Não se aplica a serviços oficiais.
+- [x] Serializar a inicialização do esquema PostgreSQL com bloqueio de transação advisory e testar seis conexões simultâneas; CI 40441312938. Não equivale à migração de produção multi-instância ou à proteção do fluxo financeiro em vários processos.
 - [ ] Testar falha real de processo durante o download, inconsistência de banco e execução multi-instância antes de produção.
 - **Aceite:** segurança e invariantes de saldo verificadas por testes.
 
@@ -515,3 +520,15 @@ Commit: [SHA, se realizado]
 - **Segurança/privacidade:** serviço oficial e seis `FormMapping` permanecem `DRAFT`; QA ativo somente em `NODE_ENV=development` com flag explícita; PDF marcado como AMOSTRA em toda página, sem débito e sem documentos pessoais. Não habilitar QA com dados reais nem em produção. Isolamento real de decodificadores, fuzzing, carga e revisão LGPD ainda pendentes.
 - **Bloqueios para o responsável:** revisar visualmente os seis anexos/posições, reconciliar condições documentais divergentes entre `docs/SERVICE_FORM_MATRIX.md` e `backend/src/modules/catalog/catalog.ts`, testar fotos/câmera em navegador e celular físicos. Lista priorizada e roteiro de testes: `docs/PENDENCIAS_PARA_2026-10-27.md` e `docs/QA_SYNTHETIC_PREVIEW.md`.
 - **Próxima etapa técnica:** isolamento de OCR em worker com recursos limitados, E2E real, testes de falha e carga; não marcar o MVP como homologado antes de atender a todos os aceites, e não iniciar pagamentos ou deploy público.
+
+
+## Registro de execução — validações adicionais de 26/10/2026 (Fases 05–08)
+
+**Status:** novas subtarefas técnicas concluídas e verificadas; Fases 05–08 permanecem **[ ] PARCIAIS**. Fase 09 permanece não homologada.
+
+- **OCR de fotos:** `backend/src/modules/jobs/ocr.integration.test.ts` agora gera JPEG fictício por Poppler, valida a assinatura e solicita Tesseract, verificando sugestão de nome e papel do comprador. Commit `350f10c`; não foram usadas fotos de clientes.
+- **Revisão e PDFs:** `backend/src/routes/jobs.ts` rejeita CPF inválido, data impossível e tipos semânticos incompatíveis ainda na confirmação de revisão. `frontend/src/lib/api.ts` recebe apenas o identificador do campo inválido e `frontend/src/features/real/LiveFlowPage.tsx` mostra o rótulo/hint (inclusive DD/MM/AAAA); teste `frontend/src/features/real/LiveFlowPage.test.tsx`. `backend/src/routes/qa-preview.integration.test.ts` verifica que **ambos** os arquivos 2-A e 2-B contêm os nomes fictícios revisados e marcadores de AMOSTRA em cada página. Commits `b740cc7`, `73f4028`, `97f9e1b`, `736af05`, `62bfa86`, `e3253be`.
+- **Concorrência de banco:** `backend/src/modules/auth/db.ts` agora executa os SQL 001/002 no mesmo cliente/transação após `pg_advisory_xact_lock(145902,1)`; o bloqueio evita DDL simultâneo de processos concorrentes e é automaticamente liberado na finalização da transação. Teste de seis inicializações em `backend/src/modules/auth/db.integration.test.ts`. Commits `23cab5d`, `68c149c`. Fundamentação: [PostgreSQL 17 — advisory locks](https://www.postgresql.org/docs/17/explicit-locking.html#ADVISORY-LOCKS).
+- **Validações executadas:** [GitHub Actions 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) do commit `68c149c`, **5/5 jobs concluídos com sucesso**: backend e frontend (typecheck/lint/tests/build/auditoria), integração PostgreSQL + Poppler/Tesseract, Compose e prévias dos formulários fictícios. Falhas de DDL concorrente em commits intermediários ocorreram antes do lock transacional, não no CI final. O ambiente local real e dispositivos móveis não foram testados.
+- **Documentação:** `README.md`, `docs/QA_SYNTHETIC_PREVIEW.md`, `docs/OCR_EXTRACTION_RULES.md` e `docs/PENDENCIAS_PARA_2026-10-27.md` descrevem o escopo, o QA opt-in e os bloqueios. **Segurança:** nenhum serviço oficial habilitado e nenhum dado pessoal real processado. Nenhuma cobrança, aprovação de PDF ou deploy foi autorizado/efetuado.
+- **Próxima etapa:** revisão visual/jurídica dos PDFs e condições de serviço pelo responsável; isolação de decodificadores/OCR, medições de desempenho/acurácia, E2E físico e teste de falha real antes de liberar o MVP para clientes.
