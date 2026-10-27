@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PDFDocument } from 'pdf-lib';
 import { classifyDocument, validatePdfPages } from './document-validator.js';
-import { suggestFields } from './ocr.js';
+import { suggestFields, shouldExtractDocument } from './ocr.js';
 
 describe('validação de assinatura do documento', () => {
   it('rejeita PDF falso, MIME incorreto e arquivo vazio', () => {
@@ -76,6 +76,47 @@ describe('validação de assinatura do documento', () => {
 });
 
 describe('candidatos OCR conservadores', () => {
+  it('limita OCR a documentos com campos semânticos conhecidos', () => {
+    for (const source of ['buyer-identity', 'seller-identity', 'tie',
+      'residence-proof', 'sale-document', 'source']) {
+      expect(shouldExtractDocument(source)).toBe(true);
+    }
+    for (const source of ['photo-stern', 'photo-side', 'gru-receipt',
+      'power-of-attorney', 'unrecognized']) {
+      expect(shouldExtractDocument(source)).toBe(false);
+    }
+  });
+
+  it('sugere apenas dados da venda explicitamente rotulados e não inventa valores', () => {
+    const data = suggestFields(
+      'NOTA FISCAL: NF-2026-123\nDATA DA VENDA: 15/10/2026\nVALOR DA VENDA: R$ 15.900,00',
+      'sale-document',
+    );
+    expect(data['sale.invoice']?.value).toBe('NF-2026-123');
+    expect(data['sale.date']?.value).toBe('15/10/2026');
+    expect(data['sale.price']?.value).toBe('R$ 15.900,00');
+    expect(Object.values(data).every((item) => item.status === 'REVIEW_REQUIRED')).toBe(true);
+    expect(data['person.cpf']).toBeUndefined();
+    expect(data['seller.fullName']).toBeUndefined();
+
+    const ambiguous = suggestFields(
+      'DATA DA VENDA: 15/10/2026\nDATA DA VENDA: 16/10/2026\n' +
+      'VALOR DA VENDA: R$ 2.000,00\nVALOR DA VENDA: R$ 4.000,00',
+      'sale-document',
+    );
+    expect(ambiguous['sale.date']).toBeUndefined();
+    expect(ambiguous['sale.price']).toBeUndefined();
+
+    const invalid = suggestFields(
+      'DATA DA VENDA: 31/02/2026\nVALOR: R$ 5.000,00\nDATA: 01/01/2000',
+      'sale-document',
+    );
+    expect(invalid['sale.date']).toBeUndefined();
+    expect(invalid['sale.price']).toBeUndefined();
+    expect(invalid['sale.invoice']).toBeUndefined();
+    expect(suggestFields('DATA DA VENDA: 15/10/2026', 'buyer-identity')['sale.date']).toBeUndefined();
+  });
+
   it('distingue CPF de comprador e vendedor sem sobrescrever campos', () => {
     const buyer = suggestFields('CPF 123.456.789-09', 'buyer-identity');
     const seller = suggestFields('CPF 529.982.247-25', 'seller-identity');
