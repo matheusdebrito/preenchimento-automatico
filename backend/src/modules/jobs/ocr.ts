@@ -23,7 +23,7 @@ async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
   const direct = await run('pdftotext', ['-layout', doc.path, '-'], 15_000);
   if (direct.trim().length >= 40) return direct;
   const prefix = join(tempDir, doc.id + '-page');
-  await run('pdftoppm', ['-f', '1', '-l', '3', '-r', '160', '-png', doc.path, prefix], 30_000);
+  await run('pdftoppm', ['-f', '1', '-l', '5', '-r', '160', '-png', doc.path, prefix], 30_000);
   const pages = (await readdir(tempDir)).filter((name) => name.startsWith(doc.id + '-page') && name.endsWith('.png')).sort();
   try {
     if (pages.length === 0) throw new Error('PDF não pôde ser convertido para OCR.');

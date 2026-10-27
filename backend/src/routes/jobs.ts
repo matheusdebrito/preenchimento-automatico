@@ -50,8 +50,16 @@ export function registerJobRoutes(
     if (!service) return reply.status(409).send({
       error: 'not_available', message: 'Serviço ainda não homologado.',
     });
-    const job = await store.create(userId, service.id, parsed.data.answers);
-    return reply.status(201).send({ id: job.id, status: job.stage, expiresAt: job.expiresAt });
+    if (service.formVersionIds.length === 0 ||
+      service.questions.some((question) => !parsed.data.answers[question.id])) {
+      return reply.status(422).send({ error: 'incomplete_service_selection' });
+    }
+    try {
+      const job = await store.create(userId, service.id, parsed.data.answers);
+      return reply.status(201).send({ id: job.id, status: job.stage, expiresAt: job.expiresAt });
+    } catch {
+      return reply.status(503).send({ error: 'capacity_exceeded' });
+    }
   });
 
   app.get<{Params:{id:string}}>('/api/jobs/:id', async (req, reply) => {
