@@ -81,4 +81,18 @@ describePg('PostgreSQL: autenticação e créditos', () => {
     await expect(applyCreditMovement(pool, userId, 'consume', -1, 'fixture_job_4')).rejects.toThrow('Saldo');
     expect(await creditBalance(pool, userId)).toBe(0);
   });
+
+  it('estorna um movimento de forma idempotente e rejeita reutilizar a chave para outro motivo', async () => {
+    const before = await creditBalance(pool, userId);
+    const refunded = await applyCreditMovement(pool, userId, 'refund', 1, 'fixture_refund_01');
+    expect(refunded.applied).toBe(true);
+    expect(refunded.balance).toBe(before + 1);
+    const duplicate = await applyCreditMovement(pool, userId, 'refund', 1, 'fixture_refund_01');
+    expect(duplicate.applied).toBe(false);
+    expect(await creditBalance(pool, userId)).toBe(before + 1);
+    await expect(applyCreditMovement(pool, userId, 'consume', -1, 'fixture_refund_01'))
+      .rejects.toThrow('idempotente');
+    expect(await creditBalance(pool, userId)).toBe(before + 1);
+  });
+
 });
