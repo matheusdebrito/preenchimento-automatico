@@ -37,3 +37,11 @@ Este registro complementa `PROJECT_TRACKER.md`. Não constitui auditoria de segu
 7. Falta teste completo de carga, acessibilidade real em dispositivos, documentação LGPD revisada e homologação da aplicabilidade normativa por Capitania.
 
 **Marco preservado:** arquitetura de PDF independente de serviço; crédito único por pacote; apenas dados fictícios em CI. Pagamentos reais, publicações e dados de clientes permanecem fora do escopo executado.
+
+## Retenção máxima e continuação dos testes
+
+O processo temporário agora registra `createdAt`, possui expiração deslizante de 20 minutos e teto absoluto de 60 minutos. `POST /api/jobs/:id/renew` é autenticado e só altera o prazo se a sessão ainda não expirou; o frontend informa o horário e oferece renovação explícita. A expiração de jobs é testada inclusive após criações simultâneas, OCR, downloads e cancelamento.
+
+As verificações de integração e do frontend foram ampliadas para cobre-renovação sem liberar serviço real. O mapeamento de seis PDFs permanece `DRAFT`.
+
+**Limitante:** o processo e metadados do job ainda estão em memória de uma instância; não existe continuação de job após reinício nem estorno automático quando há falha súbita entre débito e entrega. Não declarar conformidade de produção.

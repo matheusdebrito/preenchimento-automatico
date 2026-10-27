@@ -54,3 +54,7 @@ Implementados e commitados na `main`:
 **Persistem riscos:** os decodificadores de arquivos e o OCR não substituem um isolamento de segurança completo; o consumo de créditos ainda exige reconciliação/reserva persistente em falhas abruptas de processo antes de produção. Testes com carga, recuperação de falhas de infraestrutura, revisão de segurança independente e análise documental final continuam pendentes. Os seis mapeamentos seguem `DRAFT`, a transferência segue indisponível, e pagamentos/produção não foram ativados.
 
 Relatório da implementação: [hardening e verificação](SECURITY_HARDENING_2026-10-26.md).
+
+## Controle do prazo temporário
+
+Adicionado endpoint autenticado `POST /api/jobs/:id/renew`, com prazo deslizante de 20 minutos e retenção máxima de uma hora desde a criação. A interface exibe a expiração estimada e botão para renovar. A geração/streaming só estende até o limite absoluto. Testes de UI e integração com banco verificam renovação; arquivos são removidos por cancelamento ou limpeza programada. Requer nova validação em falha abrupta para habilitação de produção.

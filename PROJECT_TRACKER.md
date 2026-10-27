@@ -276,6 +276,15 @@
 
 **Bloqueadores mantidos:** PDFs `VERIFIED` mas mapeamentos `DRAFT`; revisão humana das páginas, requisitos condicionais e campos ausentes ainda pendentes. Não marcar fases 04–09 como [x] antes de fechar todos os critérios; não processar documentos reais nem cobrar usuários.
 
+### Retenção temporária — marco adicional da mesma rodada
+
+- [x] Adicionado `POST /api/jobs/:id/renew` com autorização por proprietário e resposta de expiração: a renovação é expressa, não automática no frontend.
+- [x] Prazo deslizante de 20 minutos com limite **absoluto de uma hora desde `createdAt`**, mesmo após várias renovações.
+- [x] Proteção contra renovação de processos expirados/removidos, mais testes unitários do limite absoluto e integração de API real.
+- [x] Interface informa o prazo e permite prorrogar a sessão, testada com API simulada.
+
+**Atenção:** a renovação não transfere arquivos ao banco de dados. O encerramento abrupto ainda requer testes de retenção após falhas; uma sessão ativa tem prazo máximo de uma hora, não promessa de retenção por uma hora inteira.
+
 ## Registro de execução — atualizar a cada sessão/fase
 
 | Data (Brasília) | Fase | Situação | Evidências (comandos, testes, arquivos, revisão) | Commit / bloqueio |

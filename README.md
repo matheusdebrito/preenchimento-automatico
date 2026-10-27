@@ -18,7 +18,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Fluxo real React | Perguntas, upload, leitura, revisão, geração e download | Liberado somente para serviços homologados |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
-Consulte o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md) e os [relatórios de mapeamento](docs/mapping-reports/).
+Consulte o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
 
 ## Estrutura
 
@@ -88,13 +88,13 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 - `GET /api/services`, `GET /api/services/:id` e `POST /api/services/:id/quote`: catálogo público homologado e requisitos condicionais
 - `POST /api/auth/register`, `/api/auth/login`, `/api/auth/logout`, `GET /api/auth/me`: contas e sessões
 - `GET /api/credits/balance`, `/api/credits/history`: saldo/histórico operacional
-- `POST /api/jobs`, `POST /api/jobs/:id/documents/:requirementId`, `POST /api/jobs/:id/extract`, `PATCH /api/jobs/:id/review`, `POST /api/jobs/:id/generate`, `GET /api/jobs/:id/download/:versionId`, `DELETE /api/jobs/:id`: processos temporários autenticados
+- `POST /api/jobs`, `POST /api/jobs/:id/renew`, `POST /api/jobs/:id/documents/:requirementId`, `POST /api/jobs/:id/extract`, `PATCH /api/jobs/:id/review`, `POST /api/jobs/:id/generate`, `GET /api/jobs/:id/download/:versionId`, `DELETE /api/jobs/:id`: processos temporários autenticados, com renovação de 20 minutos limitada a uma hora desde a criação
 
 A API utiliza limites de arquivos, autorização por sessão, validação de origem e tentativas, estados de job e débito idempotente por processo. A camada OCR ainda não extrai automaticamente todos os campos.
 
 ## Segurança, privacidade e limites
 
-- Dados documentais, texto OCR e PDFs preenchidos são **temporários**; contas e movimentações de créditos são persistentes.
+- Dados documentais, texto OCR e PDFs preenchidos são **temporários** (20 minutos com renovação controlada, teto de uma hora por processo); contas e movimentações de créditos são persistentes.
 - Não adicionar RG, CPF, documentos pessoais preenchidos ou arquivos de clientes ao Git.
 - Todos os mapeamentos de formulários reais seguem `DRAFT` até revisão documental independente. **Jamais mudar o piloto para `AVAILABLE` com pendências.**
 - A comprovação de assinatura, versão normativa e requisitos condicionais permanece necessária. A aprovação técnica não equivale à aprovação da Marinha.
