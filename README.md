@@ -136,6 +136,28 @@ e os PDFs permanecem com marca **AMOSTRA**, sem custos. Instruções:
 [roteiro de QA](docs/QA_SYNTHETIC_PREVIEW.md). O comportamento das fotos
 reais do usuário **não foi confirmado** sem amostras adequadas.
 
+### Diagnóstico seguro do nome no RG em QA local
+
+Quando o OCR consegue sugerir o CPF mas o nome permanece vazio, a aplicação
+mostra, em **Resultado da leitura por documento**, o motivo técnico do
+reconhecimento do nome. A API em QA local inclui `nameStage` no diagnóstico
+de cada identidade, sem retornar o nome, CPF ou texto OCR bruto:
+
+- `label_not_detected`: não encontrou um rótulo de titular reconhecível na
+  saída textual; isso não garante que a palavra estivesse ausente da foto.
+- `label_seen_name_rejected`: localizou um rótulo semelhante a NOME, mas não
+  conseguiu validar um valor de nome.
+- `name_recognized`: gerou sugestão de nome válida para revisão.
+- `name_not_mapped`: gerou nome, mas o campo não existe no PDF selecionado.
+
+O diagnóstico é exclusivo da prévia local de QA, não é enviado por serviços
+normais nem substitui a revisão humana. O relato reproduzido por meio da API
+confirmou que `person.cpf` foi devolvido, mas `person.fullName` **não**;
+o campo de nome está mapeado nos formulários 2-A e BDMOTO. Portanto, não era
+um problema de desenhar o valor na interface. O estágio exato de perda do
+nome na foto específica ainda exige reteste com dados fictícios ou leitura
+local do estado `nameStage`, sem compartilhar documentos pessoais.
+
 ### Quando a foto é enviada, mas os campos continuam vazios
 
 Uma leitura OCR pode concluir sem erro HTTP e sem sugestões, por exemplo quando
