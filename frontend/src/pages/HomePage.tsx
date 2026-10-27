@@ -13,6 +13,8 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 export function HomePage() {
   useDocumentTitle();
   const [available, setAvailable] = useState<readonly LiveService[]>([]);
+  const qaAvailable = available.filter((service) => service.id === 'qa-synthetic-moto');
+  const officialAvailable = available.filter((service) => service.id !== 'qa-synthetic-moto');
   useEffect(() => {
     if (typeof fetch !== 'function') return;
     let mounted = true;
@@ -121,7 +123,33 @@ export function HomePage() {
           </div>
         </section>
 
-        {available.length ? (
+        {qaAvailable.length ? (
+          <section className="home-section home-section--flush-top" aria-labelledby="qa-title">
+            <div className="container">
+              <div className="section-heading">
+                <p className="eyebrow">Apenas ambiente local</p>
+                <h2 id="qa-title">Teste técnico com dados fictícios</h2>
+                <p>Simulação para verificar fotos, OCR, revisão e PDFs marcados como AMOSTRA.
+                  Não use documentos reais. Este teste não é serviço homologado.</p>
+              </div>
+              <div className="category-grid">
+                {qaAvailable.map((service) => (
+                  <Link key={service.id} className="category-card category-card--link"
+                    to={"/preencher-real/" + encodeURIComponent(service.id)}>
+                    <span className="category-card__content">
+                      <strong className="category-card__title">{service.title}</strong>
+                      <span className="category-card__description">{service.description}</span>
+                      <span className="category-card__available">Testar com fotos fictícias — sem créditos</span>
+                    </span>
+                    <ChevronRight aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {officialAvailable.length ? (
           <section className="home-section home-section--flush-top" aria-labelledby="ready-title">
             <div className="container">
               <div className="section-heading">
@@ -129,7 +157,7 @@ export function HomePage() {
                 <p>Modelos oficiais verificados, com preenchimento e conferência dos dados.</p>
               </div>
               <div className="category-grid">
-                {available.map((service) => <Link key={service.id} className="category-card category-card--link"
+                {officialAvailable.map((service) => <Link key={service.id} className="category-card category-card--link"
                   to={"/preencher-real/" + encodeURIComponent(service.id)}>
                   <span className="category-card__content">
                     <strong className="category-card__title">{service.title}</strong>
