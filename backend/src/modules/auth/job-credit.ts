@@ -126,11 +126,14 @@ export async function refundUndeliveredJobCredit(pool: Database, jobId: string):
  * are gone. Refund every pending job before accepting new requests.
  * Multi-instance deployment needs a shared job state/worker before this can run.
  */
-export async function refundJobsAfterRestart(pool: Database): Promise<number> {
+export async function refundJobsAfterRestart(pool: Database, ownerId?: string): Promise<number> {
   let total = 0;
   for (;;) {
     const pending = await pool.query<{job_id:string}>(
-      `SELECT job_id FROM job_credit_receipts WHERE state='charged' LIMIT 100`,
+      ownerId
+        ? `SELECT job_id FROM job_credit_receipts WHERE state='charged' AND user_id=$1 LIMIT 100`
+        : `SELECT job_id FROM job_credit_receipts WHERE state='charged' LIMIT 100`,
+      ownerId ? [ownerId] : [],
     );
     if (pending.rows.length === 0) return total;
     for (const {job_id} of pending.rows) {

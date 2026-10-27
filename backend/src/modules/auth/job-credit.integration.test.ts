@@ -38,9 +38,9 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       const crashedJob = randomUUID();
       await chargeJobCredit(pool,id,crashedJob,Date.now());
       expect(await creditBalance(pool,id)).toBe(1);
-      expect(await refundJobsAfterRestart(pool)).toBe(1);
+      expect(await refundJobsAfterRestart(pool,id)).toBe(1);
       expect(await creditBalance(pool,id)).toBe(2);
-      expect(await refundJobsAfterRestart(pool)).toBe(0);
+      expect(await refundJobsAfterRestart(pool,id)).toBe(0);
       expect(await refundExpiredJobCredits(pool)).toBe(0);
     } finally {
       await pool.query('DELETE FROM app_users WHERE id=$1', [id]);
