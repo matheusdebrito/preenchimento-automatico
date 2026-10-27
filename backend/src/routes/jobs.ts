@@ -176,6 +176,7 @@ export function registerJobRoutes(
     const provenance: Record<string, string> = {};
     const conflicts = new Set<string>();
     const diagnostics: ExtractionDiagnostic[] = [];
+    const reviewableFields = new Set(service.reviewFields.map((field) => field.id));
     try {
       for (const document of job.files) {
         // Boat photos, GRU receipts and other supporting evidence are retained
@@ -188,13 +189,17 @@ export function registerJobRoutes(
         }
         const text = await extractText(document, store.directory(job));
         const suggestions = suggestFields(text, document.requirementId);
-        const count = Object.keys(suggestions).length;
+        // OCR rules may recognize fields absent from the selected form.
+        // Never offer or persist a field that this service cannot review.
+        const applicable = Object.entries(suggestions)
+          .filter(([fieldId]) => reviewableFields.has(fieldId));
+        const count = applicable.length;
         diagnostics.push({
           requirementId: document.requirementId,
           outcome: !text.trim() ? 'no_text' : count > 0 ? 'suggested' : 'no_supported_labels',
           suggestionCount: count,
         });
-        for (const [fieldId, data] of Object.entries(suggestions)) {
+        for (const [fieldId, data] of applicable) {
           const prior = collected[fieldId];
           if (prior && prior !== data.value) {
             conflicts.add(fieldId);
