@@ -2,6 +2,19 @@
 
 **Apenas QA local, nunca para documentos pessoais reais ou protocolo oficial.**
 
+## Escopo dos uploads
+
+O aplicativo prepara **formulários preenchidos**; não constitui um portal de
+protocolo nem uma coleta completa do dossiê oficial. Por isso, as fotografias
+da popa e do través da embarcação não constam mais nos uploads, nem são
+requisitos bloqueantes de avanço. O backend rejeita esses identificadores
+como requisitos inválidos, inclusive se forem enviados por API.
+
+Isso **não é uma declaração de dispensa** dessas fotografias quando a pessoa
+for realizar a transferência perante a autoridade competente. O rol
+documental oficial continua descrito separadamente na matriz normativa e
+exige conferência da Capitania aplicável.
+
 ## Por que não existe mais um segundo serviço fictício?
 
 O modo `DEV_QA_PREVIEW=true` passa a usar o próprio identificador
@@ -32,10 +45,12 @@ continua obrigatória antes de tornar o serviço oficial disponível.
    os anexos 2-A/2-B: TIE regular, autorização já consta no TIE, sem comunicação
    opcional do vendedor, comprovante de residência, sem coproprietário e sem
    representante.
-6. Enviar os documentos solicitados: identidade fictícia do comprador,
-   identidade fictícia do vendedor, TIE fictício e comprovante fictício de
-   residência; as fotos de popa/través devem ser **imagens inventadas**.
-   Requisitos adicionais surgem conforme as respostas.
+6. Enviar os documentos de origem solicitados para extrair dados:
+   identidade fictícia do comprador, identidade fictícia do vendedor, TIE
+   fictício (se disponível) e comprovante fictício de residência (se a
+   condição selecionada exigir). **Não é necessário enviar fotos da
+   embarcação**, pois elas não fornecem campos para o preenchimento. Outros
+   requisitos de entrada podem variar conforme as respostas.
 7. Revisar todos os campos, inclusive **cidade, bairro e CEP separadamente**.
    O OCR só sugere campos encontrados de maneira inequívoca; os demais
    precisam ser preenchidos manualmente.
