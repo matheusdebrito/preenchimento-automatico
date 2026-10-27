@@ -127,7 +127,7 @@
 - [x] Guardar arquivos em diretório temporário privado fora do webroot e do PostgreSQL, com IDs aleatórios, permissões 0700 e bloqueio de raiz genérica/symlink.
 - [x] Autorizar upload **antes** de bufferizar conteúdo; validar proprietário e requisito também no handler; aplicar limites por usuário/job, timeout, expiração, exclusão e renovação limitada a uma hora.
 - [x] Testar assinatura inválida, PNG corrompido, PDF de página excessiva, requisição de outra conta, cancelamento, diretórios órfãos e concorrência.
-- [ ] Validar no CI o novo preflight baseado no PNG Third Edition (IHDR, PLTE, chunks críticos) e rejeição de JPEG com dimensões zero; fixture sintética corrigida após falhas intermediárias.
+- [x] Validar no CI o novo preflight baseado no PNG Third Edition (IHDR, PLTE, chunks críticos) e rejeição de JPEG com dimensões zero; fixture sintética corrigida após falhas intermediárias.
 - [ ] Complementar fuzzing e isolamento de decodificadores JPEG/PNG/PDF, ensaios sob carga e recuperação de falhas súbitas antes de homologar a Fase 05.
 - **Aceite:** nenhum dado documental persistido no PostgreSQL, logs ou repositório.
 
@@ -135,7 +135,7 @@
 
 - [x] Extrair texto nativo de PDFs digitais sem OCR quando possível; confirmado com PDF sintético no CI de integração.
 - [x] Implementar conversão limitada de PDFs digitalizados com `pdftoppm`, a testar com amostras digitalizadas reais/sintéticas de qualidade variada.
-- [ ] Verificar no CI o teto adicional de rasterização do Poppler (16 MiB por página, 48 MiB total), antes da decodificação pelo Tesseract; não equivale a limite real de CPU/RAM.
+- [x] Verificar no CI o teto adicional de rasterização do Poppler (16 MiB por página, 48 MiB total), antes da decodificação pelo Tesseract; não equivale a limite real de CPU/RAM.
 - [ ] Executar Tesseract no servidor/worker com tratamento de qualidade de imagem e limites de CPU/memória.
 - [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
@@ -162,7 +162,7 @@
 - [x] Debitar **uma vez por pacote documental gerado com sucesso**, usando transação e idempotência; verificadas retentativas e concorrência no CI com PostgreSQL real.
 - [x] Testar concorrência, acesso entre usuários, estorno idempotente e falha de geração de PDF **sem consumir créditos**.
 - [x] Criar recibo persistente mínimo, com débito atômico no PostgreSQL e estorno idempotente de jobs não entregues após cancelamento, expiração ou reinício em **instância única**.
-- [ ] Verificar no CI a limpeza de sessões expiradas no startup e a cada hora; preservar sessões vigentes sem alterar contas ou ledger de créditos.
+- [x] Verificar no CI a limpeza de sessões expiradas no startup e a cada hora; preservar sessões vigentes sem alterar contas ou ledger de créditos.
 - [ ] Testar falha real de processo durante o download, inconsistência de banco e execução multi-instância antes de produção.
 - **Aceite:** segurança e invariantes de saldo verificadas por testes.
 
@@ -472,12 +472,12 @@ Commit: [SHA, se realizado]
 
 ## Registro complementar — continuidade autônoma de 26/10/2026 (Fases 05, 06 e 08)
 
-**Status:** PARCIAL em todas as fases afetadas. Os checks detalhados novos permanecem [ ] até confirmação do CI do último commit de código.
+**Status:** PARCIAL em todas as fases afetadas. Os três checks novos de regressão automatizada foram confirmados em CI; os demais critérios de aceite continuam abertos.
 
-- **Fase 05:** `backend/src/modules/jobs/document-validator.ts` e `document-validator.test.ts`; preflight de IHDR PNG com tipos e profundidades válidos, PLTE obrigatório para paleta, chunks críticos desconhecidos e JPEG sem dimensões zero. Testes sintéticos foram corrigidos para recomputar o CRC de chunks adulterados. Commits: `3e77bf6`, `a35cc90`, `ab79c9e` e `009cf56`. Os commits intermediários de testes apresentaram falha de fixture no CI; verificar a execução final antes de validar.
+- **Fase 05:** `backend/src/modules/jobs/document-validator.ts` e `document-validator.test.ts`; preflight de IHDR PNG com tipos e profundidades válidos, PLTE obrigatório para paleta, chunks críticos desconhecidos e JPEG sem dimensões zero. Testes sintéticos foram corrigidos para recomputar o CRC de chunks adulterados. Commits: `3e77bf6`, `a35cc90`, `ab79c9e` e `009cf56`. Os commits intermediários falharam por CRC incorreto das fixtures sintéticas; o teste final corrigido passou no CI 40437270173.
 - **Fase 06:** `backend/src/modules/jobs/ocr.ts` e `ocr.integration.test.ts`; limite de 16 MiB por raster, 48 MiB por PDF e teste sintético dos limites. Commits: `a235b85` e `1ad1f31`. A execução do Poppler ainda não ocorre em sandbox isolado com limite efetivo de CPU/RAM.
 - **Fase 08:** `backend/src/modules/auth/auth-service.ts`, `server.ts` e `auth.integration.test.ts`; exclusão de sessões vencidas ao iniciar e a cada hora, com teste que preserva sessões ainda válidas. Commits: `bfbf070`, `a6af348` e `04b1ea2`. O teste de crédito `a8607e3` passou no CI anterior; testes de falha abrupta real ainda pendem.
 - **Segurança:** documentos pessoais nunca foram usados nesta continuação. Fontes técnicas externas: [PNG Terceira Edição (W3C)](https://www.w3.org/TR/png/), [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html) e [Node.js zlib.crc32](https://nodejs.org/api/zlib.html#zlibcrc32data-value).
-- **Validação:** GitHub Actions executa `typecheck`, `lint`, `test`, `build`, integração PostgreSQL, testes de modelos PDF sintéticos e Compose. Consultar o resultado do pipeline do **último commit**, sem reutilizar CI verde de commits anteriores.
+- **Validação comprovada:** [CI 40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173) do commit de código `009cf56` passou nos cinco jobs: checks frontend/backend (typecheck, lint, testes, build e auditoria de dependências), integração PostgreSQL, prévias PDF sintéticas e Compose. Esse resultado inclui os testes PNG/JPEG, OCR raster e limpeza de sessões. Commits de documentação posteriores exigem checagem própria de CI; eles não alteram esse resultado de código.
 - **Pendências priorizadas:** `docs/RELATORIO_CONTINUIDADE_2026-10-26.md`; revisão humana dos seis mapas (todos `DRAFT`), isolamento/fuzzing do OCR, testes reais de crash e recuperação de créditos, E2E em navegador, carga e segurança antes de produção.
 - **Próximo passo:** revisar CI, corrigir falhas sem avançar o marcador de fase; depois atualizar esta evidência, quadro e checklists. Não liberar `AVAILABLE` nem pagamentos reais.
