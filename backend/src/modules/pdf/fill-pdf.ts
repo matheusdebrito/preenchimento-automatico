@@ -11,6 +11,9 @@ const MAX_FIELD_CHARS = 500;
  */
 function prepareValue(raw: string, fieldId: string): string {
   const value = raw.trim().normalize('NFC');
+  if (/[\r\n]/.test(value)) {
+    throw new Error('Quebra de linha não permitida: ' + fieldId);
+  }
   if (Array.from(value).length > MAX_FIELD_CHARS ||
       [...value].some((char) => {
         const cp = char.codePointAt(0)!;

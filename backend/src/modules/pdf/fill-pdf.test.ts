@@ -42,9 +42,9 @@ describe('motor determinístico de PDF', () => {
       required: true, pageIndex: 0, x: 50, y: 640, fontSize: 12, maxWidth: 400 }];
     const result = await fillPdf(input, placement, { name: 'João Gonçalves – São Luís' });
     expect((await PDFDocument.load(result)).getPages()).toHaveLength(1);
-    await expect(fillPdf(input, placement, { name: 'Maria\\u202EAnulada' }))
+    await expect(fillPdf(input, placement, { name: 'Maria' + String.fromCharCode(0x202e) + 'Anulada' }))
       .rejects.toThrow('caracteres');
-    await expect(fillPdf(input, placement, { name: 'Maria\\tTeste' }))
+    await expect(fillPdf(input, placement, { name: 'Maria' + String.fromCharCode(9) + 'Teste' }))
       .rejects.toThrow('caracteres');
     await expect(fillPdf(input, placement, { name: 'Maria 你好' }))
       .rejects.toThrow('Caractere');
