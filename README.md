@@ -15,7 +15,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
 | OCR no servidor | OCR conservador com extração individual de endereço, número, complemento, cidade, bairro, UF e CEP rotulados, além dos campos anteriores | Ausência de rótulos/baixa legibilidade ainda exigem revisão; sem precisão comprovada com fotos reais |
 | Autenticação e créditos | PostgreSQL, sessões HttpOnly, menu conectado à sessão, logout obrigatório para trocar conta, ledger/recibos/estornos | Instância única, créditos de teste; sem pagamentos reais |
-| Fluxo React integrado | Upload, revisão com máscara DD/MM/AAAA, geração, download e prévia do mesmo serviço real sob flag local de QA | Produção permanece DRAFT; prévias com AMOSTRA, sem créditos e sem documentos pessoais |
+| Fluxo React integrado | Arquivos de OCR opcionais (inclusive zero), preenchimento manual ou misto, revisão de dados, geração e download no único serviço real | Produção permanece DRAFT; prévias com AMOSTRA, sem créditos e sem documentos pessoais |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
 Consulte o [fluxo de entrega e estorno de créditos](docs/CREDIT_DELIVERY_LIFECYCLE.md), as [regras e limites do OCR](docs/OCR_EXTRACTION_RULES.md), o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
@@ -95,7 +95,7 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 
 ### Simulação local de OCR e PDFs com dados fictícios
 
-Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e abra o cartão **Teste técnico com dados fictícios** na página inicial. Depois desative a flag e reconstrua os containers.
+Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e escolha **Embarcações e jet skis** na página inicial. Agora existe um único caminho de preenchimento: a demonstração antiga foi retirada da navegação e as rotas legadas redirecionam para a página inicial. Depois desative a flag e reconstrua os containers.
 
 O modo QA é recusado em produção, não consome créditos e usa **o mesmo serviço `transferencia-moto-aquatica`**: perguntas, requisitos reais e as posições dos seis anexos. Os anexos 2-A e 2-B entram sempre, e 2-C/2-D/2-E/1-C entram quando suas condições são selecionadas. O catálogo de produção mantém o serviço e os mapeamentos `DRAFT`; só o ambiente local permite prévias com **AMOSTRA em todas as páginas**. **Não use documentos pessoais reais**, pois os PDFs não são homologados nem válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). Para a revisão de amanhã, leia [as pendências priorizadas de 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md), com os portões documentais e os testes ainda necessários.
 
@@ -109,6 +109,23 @@ A possível exigência de fotos durante a transferência oficial, descrita em
 [docs/SERVICE_FORM_MATRIX.md](docs/SERVICE_FORM_MATRIX.md), é **separada**
 deste produto, que não protocola documentos perante a Marinha.
 
+### Preenchimento sem anexos ou com apenas um RG
+
+Os uploads de identidade, TIE, residência, venda e demais documentos são
+**opcionais para a ferramenta de preenchimento**. Após responder às perguntas,
+o usuário pode seguir **sem anexos**, anexar só um RG para obter sugestões
+conservadoras do OCR ou enviar múltiplos arquivos. O backend aceita extrair
+um conjunto vazio de documentos e abre a revisão com valores em branco. A
+revisão exige apenas os **campos mapeados como obrigatórios nos PDFs
+selecionados** e verifica CPF, datas e tipos; os documentos de origem não
+são requisito de geração.
+
+No QA local há um único caminho para `transferencia-moto-aquatica`, sem a
+antiga demonstração paralela. Os testes usam dados integralmente fictícios
+e os PDFs permanecem com marca **AMOSTRA**, sem custos. Instruções:
+[roteiro de QA](docs/QA_SYNTHETIC_PREVIEW.md). O comportamento das fotos
+reais do usuário **não foi confirmado** sem amostras adequadas.
+
 ### Datas, OCR do BDMOTO e teste no serviço verdadeiro
 
 Os campos semânticos de data exibem `DD/MM/AAAA` automaticamente enquanto se digita; o backend continua a rejeitar datas inválidas. O OCR foi ampliado para sugerir separadamente `Cidade`, `Bairro`, `CEP`, `UF`, `Número` e `Complemento` quando os rótulos aparecem no comprovante. **Endereço é um campo distinto no PDF oficial BDMOTO** e não foi removido sem revisão visual. Campos ausentes, fotos ilegíveis e layouts desconhecidos continuam exigindo conferência manual. O backend limita sugestões aos campos da seleção atual.
@@ -117,7 +134,7 @@ O roteiro atualizado está em [QA do serviço real com dados fictícios](docs/QA
 
 ### Reteste após correções de QA em 27/10/2026
 
-As falhas relatadas na navegação autenticada, links repetidos no rodapé, ausência de feedback dos requisitos, OCR sem explicação e erro `422` na revisão receberam correções verificadas em [GitHub Actions 40510328039](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40510328039). Agora o frontend exibe **Entrar apenas ao visitante** e oferece **Sair** ao usuário autenticado; o backend também exige logout para alternar de conta. No wizard, os documentos obrigatórios ausentes e o campo inválido são identificados. Se o OCR não sugerir dados, a interface exibe o resultado por documento, sem inventar valores.
+As falhas relatadas na navegação autenticada, links repetidos no rodapé, ausência de feedback dos requisitos, OCR sem explicação e erro `422` na revisão receberam correções verificadas em [GitHub Actions 40510328039](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40510328039). Agora o frontend exibe **Entrar apenas ao visitante** e oferece **Sair** ao usuário autenticado; o backend também exige logout para alternar de conta. No wizard, os campos obrigatórios e valores inválidos são identificados. Nenhum anexo é obrigatório: com ou sem OCR, os demais dados podem ser informados manualmente. Se o OCR não sugerir dados, a interface exibe o resultado por documento, sem inventar valores.
 
 Para reproduzir o reteste com **documentos totalmente fictícios**, seguir [o roteiro de correções](docs/QA_CORRECOES_2026-10-27.md). O erro `422` observado pelo usuário não teve seu campo exato identificado, pois não houve acesso ao JSON da resposta original; não foi enfraquecida a validação de CPF/data. **Essas correções não homologam os mapeamentos oficiais nem comprovam precisão do OCR com fotos reais.**
 
