@@ -43,7 +43,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading',{name:'Serviço de teste'})).toBeTruthy();
     await user.click(screen.getByRole('button',{name:'Conferir documentos necessários'}));
     expect(await screen.findByRole('heading',{name:'Documentos para leitura automática (opcionais)'})).toBeTruthy();
-    const uploader = screen.getByLabelText(/Documento de teste/) as HTMLInputElement;
+    const uploader = screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement;
     const camera = screen.getByLabelText(/Fotografar documento de teste/i) as HTMLInputElement;
     expect(uploader.classList.contains('live-upload-input')).toBe(true);
     expect(document.querySelector('label[for="' + uploader.id + '"]')?.textContent)
@@ -117,7 +117,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
-    await user.upload(screen.getByLabelText(/Identidade do comprador/) as HTMLInputElement,
+    await user.upload(screen.getByLabelText(/^Identidade do comprador$/) as HTMLInputElement,
       new File(['synthetic'], 'rg-ficticio.jpg', { type: 'image/jpeg' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
@@ -195,7 +195,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
-    await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
+    await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
@@ -254,7 +254,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
     // One RG is sufficient; no TIE, residence proof, seller ID or photos
     // should be needed to reach the manual-review step.
-    await user.upload(screen.getByLabelText(/Identidade fictícia/) as HTMLInputElement,
+    await user.upload(screen.getByLabelText(/^Identidade fictícia$/) as HTMLInputElement,
       new File(['ficticio'], 'fake.jpg', { type: 'image/jpeg' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(fetcher.mock.calls.filter(([url]) =>
@@ -320,7 +320,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
-    await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
+    await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -356,7 +356,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
-    await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
+    await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['example'], 'image.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
