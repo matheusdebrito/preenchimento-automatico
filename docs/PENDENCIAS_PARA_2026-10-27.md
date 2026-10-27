@@ -16,6 +16,14 @@
 
 **CI de referência:** [execução 40440558586](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40440558586) — cinco jobs de backend/frontend, PostgreSQL, PDFs fictícios e Compose aprovados no commit `83b7d0c`. Após novos commits documentais, verificar a execução mais recente de `main` em [GitHub Actions](https://github.com/matheusdebrito/preenchimento-automatico/actions).
 
+## 1.1. Robustez adicionada após o primeiro CI verde
+
+- **JPEG do celular:** nova integração gera JPEG fictício com Poppler, valida o preflight de upload e executa Tesseract, exigindo rótulo inequívoco e `REVIEW_REQUIRED`. Isso complementa o caso PNG, **sem comprovar desempenho em fotos reais**.
+- **Revisão de dados:** a API rejeita CPF inválido e data impossível (como `31/02/2026`) antes da geração do PDF e identifica o `fieldId` sem retornar os valores privados; a interface orienta o campo e o formato DD/MM/AAAA. Testes de backend e frontend adicionados.
+- **Concorrência de migrations:** a inicialização PostgreSQL usa `pg_advisory_xact_lock` durante o schema, evitando a disputa de `CREATE TABLE IF NOT EXISTS` entre suítes paralelas. O lock é liberado no fim da transação, conforme a [documentação oficial do PostgreSQL](https://www.postgresql.org/docs/17/explicit-locking.html#ADVISORY-LOCKS). Há teste de seis inicializações concorrentes.
+- **Validação mais forte do resultado:** o teste QA passou a inspecionar **ambos** os PDFs 2-A/2-B, conferindo valores revisados e marca d'água por página, além do saldo zero.
+- **Evidência:** o CI de referência anterior (40440558586) já passou. Os testes das melhorias desta subseção devem ser confirmados pela execução do **commit mais recente de código**, antes de marcá-las como homologadas; não interpretar commits intermediários falhos como resultado final.
+
 ## 2. O que você pode testar amanhã, sem dados reais
 
 1. Ler [o roteiro do QA sintético](QA_SYNTHETIC_PREVIEW.md).
