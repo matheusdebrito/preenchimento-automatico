@@ -55,7 +55,7 @@ describe('HomePage', () => {
       description: 'Amostra local', creditCost: 0, questions: [],
       reviewFields: [], documentRequirements: [], formVersionIds: ['bdmoto-v1'],
     }]);
-    const pilot = await screen.findByRole('link', { name: /Embarcações e jet skis/ });
+    const pilot = await screen.findByRole('link', { name: /Transferência de moto aquática/ });
     expect(pilot.getAttribute('href')).toBe('/preencher-real/transferencia-moto-aquatica');
     expect(screen.getByRole('link', { name: /Começar agora/ }).getAttribute('href'))
       .toBe('/preencher-real/transferencia-moto-aquatica');
