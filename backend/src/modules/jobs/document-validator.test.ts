@@ -16,6 +16,20 @@ describe('validação de assinatura do documento', () => {
     png.writeUInt32BE(100_000, 20);
     expect(() => classifyDocument(png, 'image/png')).toThrow('grande');
   });
+  it('aceita PNG válido e rejeita CRC adulterado ou PNG incompleto', () => {
+    const valid = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==', 'base64');
+    expect(classifyDocument(valid, 'image/png')).toBe('png');
+    const tampered = Buffer.from(valid);
+    tampered[55] = tampered[55]! ^ 0x01;
+    expect(() => classifyDocument(tampered, 'image/png')).toThrow('Checksum');
+    const fake = Buffer.alloc(40);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(fake);
+    fake.write('IHDR', 12);
+    fake.writeUInt32BE(2, 16);
+    fake.writeUInt32BE(2, 20);
+    expect(() => classifyDocument(fake, 'image/png')).toThrow();
+  });
+
   it('aceita PDF sintético com assinatura e fim de arquivo', () => {
     expect(classifyDocument(Buffer.from('%PDF-1.7\n1 0 obj\nendobj\n%%EOF'), 'application/pdf')).toBe('pdf');
   });

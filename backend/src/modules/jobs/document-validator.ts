@@ -4,6 +4,66 @@ import { execFile as execFileCallback } from 'node:child_process';
 const execFile = promisify(execFileCallback);
 export type DocumentKind = 'pdf' | 'jpeg' | 'png';
 
+const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+const CRC_TABLE = Array.from({ length: 256 }, (_, i) => {
+  let crc = i;
+  for (let j = 0; j < 8; j++) {
+    crc = (crc & 1) !== 0 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+  }
+  return crc >>> 0;
+});
+
+function pngCrc(bytes: Buffer, start: number, end: number): number {
+  let crc = 0xffffffff;
+  for (let i = start; i < end; i++) {
+    crc = CRC_TABLE[(crc ^ bytes[i]!) & 0xff]! ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/** Verify the PNG chunk structure and CRC before passing bytes to image decoders. */
+function validatePng(bytes: Buffer): void {
+  if (bytes.length < 45 || !bytes.subarray(0, 8).equals(PNG_SIGNATURE)) {
+    throw new Error('PNG inválido.');
+  }
+  let offset = 8;
+  let chunkNumber = 0;
+  let hasData = false;
+  let ended = false;
+  while (offset + 12 <= bytes.length && chunkNumber++ < 4096) {
+    const length = bytes.readUInt32BE(offset);
+    if (length > bytes.length - offset - 12) throw new Error('PNG truncado.');
+    const type = bytes.toString('ascii', offset + 4, offset + 8);
+    if (!/^[A-Za-z]{4}$/.test(type)) throw new Error('Chunk PNG inválido.');
+    const crc = bytes.readUInt32BE(offset + length + 8);
+    if (chunkNumber === 1) {
+      if (type !== 'IHDR' || length !== 13) throw new Error('IHDR PNG ausente.');
+      const width = bytes.readUInt32BE(offset + 8);
+      const height = bytes.readUInt32BE(offset + 12);
+      if (!width || !height || width * height > 16_000_000) {
+        throw new Error('Imagem muito grande.');
+      }
+      if (bytes[offset + 18] !== 0 || bytes[offset + 19] !== 0 ||
+        ![0, 1].includes(bytes[offset + 20]!)) throw new Error('Formato PNG inválido.');
+    } else if (type === 'IHDR') {
+      throw new Error('IHDR PNG duplicado.');
+    }
+    if (pngCrc(bytes, offset + 4, offset + 8 + length) !== crc) {
+      throw new Error('Checksum PNG inválido.');
+    }
+    if (type === 'IDAT') hasData = true;
+    offset += length + 12;
+    if (type === 'IEND') {
+      if (length !== 0 || !hasData || offset !== bytes.length) {
+        throw new Error('PNG incompleto.');
+      }
+      ended = true;
+      break;
+    }
+  }
+  if (!ended) throw new Error('PNG sem IEND ou com chunks demais.');
+}
+
 function jpegSize(bytes: Buffer): { width: number; height: number } | null {
   let index = 2;
   while (index < bytes.length - 10) {
@@ -32,13 +92,8 @@ export function classifyDocument(bytes: Buffer, contentType: string): DocumentKi
     bytes.subarray(Math.max(0, bytes.length - 1024)).toString('latin1').includes('%%EOF')) {
     return 'pdf';
   }
-  const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-  if (kind === 'image/png' && bytes.length >= 24 &&
-    bytes.subarray(0, 8).equals(pngSignature) &&
-    bytes.subarray(12, 16).toString('ascii') === 'IHDR') {
-    const width = bytes.readUInt32BE(16);
-    const height = bytes.readUInt32BE(20);
-    if (!width || !height || width * height > 16_000_000) throw new Error('Imagem muito grande.');
+  if (kind === 'image/png') {
+    validatePng(bytes);
     return 'png';
   }
   if (kind === 'image/jpeg' && bytes.length >= 4 &&
@@ -60,6 +115,16 @@ export async function validatePdfPages(path: string): Promise<number> {
   const pages = Number(match?.[1] ?? 0);
   if (!Number.isInteger(pages) || pages < 1 || pages > 5) {
     throw new Error('PDF deve ter entre 1 e 5 páginas.');
+  }
+  if (/^JavaScript:\s+yes/im.test(stdout)) {
+    throw new Error('PDF com JavaScript embutido não suportado.');
+  }
+  const pageSize = /^Page size:\s*([\d.]+) x ([\d.]+) pts/im.exec(stdout);
+  const width = Number(pageSize?.[1]);
+  const height = Number(pageSize?.[2]);
+  if (!Number.isFinite(width) || !Number.isFinite(height) ||
+    width < 144 || height < 144 || width > 2000 || height > 2000) {
+    throw new Error('Dimensões do PDF não suportadas.');
   }
   return pages;
 }

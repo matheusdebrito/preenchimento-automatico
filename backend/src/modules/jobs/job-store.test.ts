@@ -19,11 +19,7 @@ describe('JobStore', () => {
     stores.push(store);
     const job = await store.create('user-a', 'service-a');
     expect(store.get(job.id, 'user-b')).toBeNull();
-    const png = Buffer.alloc(40);
-    Buffer.from([137,80,78,71,13,10,26,10]).copy(png);
-    png.write('IHDR', 12);
-    png.writeUInt32BE(20, 16);
-    png.writeUInt32BE(20, 20);
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==', 'base64');
     const uploaded = await store.upload(job, 'identidade', png, 'image/png');
     expect(uploaded.path).not.toContain('identidade');
     await stat(uploaded.path);
@@ -49,11 +45,7 @@ describe('JobStore', () => {
     const store = new JobStore(root);
     stores.push(store);
     const job = await store.create('alice', 's');
-    const png = Buffer.alloc(40);
-    Buffer.from([137,80,78,71,13,10,26,10]).copy(png);
-    png.write('IHDR',12);
-    png.writeUInt32BE(20,16);
-    png.writeUInt32BE(20,20);
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==', 'base64');
     const outcomes = await Promise.allSettled([
       store.upload(job, 'one', png, 'image/png'),
       store.upload(job, 'two', png, 'image/png'),
@@ -101,11 +93,7 @@ describe('JobStore', () => {
     const store = new JobStore(root);
     stores.push(store);
     const job = await store.create('alice', 'service');
-    const png = Buffer.alloc(40);
-    Buffer.from([137,80,78,71,13,10,26,10]).copy(png);
-    png.write('IHDR', 12);
-    png.writeUInt32BE(20, 16);
-    png.writeUInt32BE(20, 20);
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==', 'base64');
     await store.upload(job, 'identidade', png, 'image/png');
     await expect(store.upload(job, 'identidade', png, 'image/png')).rejects.toThrow('já enviado');
     expect(job.files).toHaveLength(1);
