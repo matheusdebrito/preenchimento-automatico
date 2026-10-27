@@ -34,7 +34,7 @@ describe('HomePage', () => {
     ).toBeTruthy();
 
     const startLink = screen.getByRole('link', { name: /Começar agora/ });
-    expect(startLink.getAttribute('href')).toBe('#categories-title');
+    expect(startLink.getAttribute('href')).toBe('/#categories-title');
   });
 
   it('mostra as três categorias e sinaliza as que ainda não estão disponíveis', () => {
