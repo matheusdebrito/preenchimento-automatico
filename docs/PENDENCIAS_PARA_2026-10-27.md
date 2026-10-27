@@ -37,7 +37,7 @@
 1. Ler [o roteiro do QA sintético](QA_SYNTHETIC_PREVIEW.md).
 2. Em `.env` **local**: `DEV_QA_PREVIEW=true` e senha de PostgreSQL exclusiva.
 3. Executar `docker compose up -d --build` e abrir **http://127.0.0.1:8080** no mesmo computador.
-4. Criar conta de **teste**, entrar em **Embarcações e jet skis** (único serviço de transferência) e escolher entre **não anexar nada**, anexar só um RG fictício ou usar vários arquivos sintéticos. O usuário nunca precisa enviar todos os documentos de origem para gerar PDF.
+4. Criar conta de **teste**, entrar em **Transferência de moto aquática** (único serviço disponível no QA local) e escolher entre **não anexar nada**, anexar só um RG fictício ou usar vários arquivos sintéticos. O usuário nunca precisa enviar todos os documentos de origem para gerar PDF.
 5. Conferir se os campos sugeridos correspondem aos rótulos; corrigir manualmente o que estiver ausente ou incorreto.
 6. Gerar e visualizar os PDFs selecionados pelo serviço real (2-A/2-B sempre e os demais conforme respostas), todos com marca **AMOSTRA**. Conferir página a página, principalmente Endereço, Cidade, Bairro e CEP no BDMOTO. Encerrar e remover o job.
 7. Desligar `DEV_QA_PREVIEW` após o teste.
