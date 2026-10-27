@@ -13,8 +13,9 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 export function HomePage() {
   useDocumentTitle();
   const [available, setAvailable] = useState<readonly LiveService[]>([]);
-  const qaAvailable = available.filter((service) => service.id === 'transferencia-moto-aquatica' && service.creditCost === 0);
-  const officialAvailable = available.filter((service) => !(service.id === 'transferencia-moto-aquatica' && service.creditCost === 0));
+  // One service per category, including its safe QA preview; no parallel demo.
+  const availableById = new Map(available.map((service) => [service.id, service]));
+  const pilot = availableById.get('transferencia-moto-aquatica');
   useEffect(() => {
     if (typeof fetch !== 'function') return;
     let mounted = true;
@@ -42,12 +43,12 @@ export function HomePage() {
               </p>
               <h1 id="hero-title">Documentos da Marinha sem complicação.</h1>
               <p className="hero__subtitle">
-                Escolha o serviço, envie as fotos dos documentos e receba os formulários
-                preenchidos.
+                Escolha o serviço, anexe os documentos que quiser ou digite os dados
+                manualmente e receba os formulários preenchidos.
               </p>
               <div className="hero__actions">
                 <Button
-                  to="/preencher/servico"
+                  to={pilot ? '/preencher-real/' + encodeURIComponent(pilot.id) : '#categories-title'}
                   variant="inverse"
                   size="lg"
                   icon={<ArrowRight aria-hidden="true" />}
@@ -82,7 +83,8 @@ export function HomePage() {
               {SERVICE_CATEGORIES.map((category) => {
                 const Icon = category.icon;
 
-                if (!category.demoAvailable) {
+                const liveService = category.serviceId ? availableById.get(category.serviceId) : undefined;
+                if (!liveService) {
                   return (
                     <article key={category.id} className="category-card category-card--soon">
                       <span className="icon-badge" aria-hidden="true">
@@ -103,7 +105,7 @@ export function HomePage() {
                   <Link
                     key={category.id}
                     className="category-card category-card--link"
-                    to="/preencher/servico"
+                    to={'/preencher-real/' + encodeURIComponent(liveService.id)}
                   >
                     <span className="icon-badge" aria-hidden="true">
                       <Icon />
@@ -112,7 +114,9 @@ export function HomePage() {
                       <h3 className="category-card__title">{category.title}</h3>
                       <p className="category-card__description">{category.description}</p>
                       <div className="category-card__meta">
-                        <span className="category-card__available">Demonstração disponível</span>
+                        <span className="category-card__available">{liveService.creditCost === 0
+                          ? 'Prévia local para revisão — sem créditos'
+                          : 'Preencher — ' + liveService.creditCost + ' crédito'}</span>
                       </div>
                     </div>
                     <ChevronRight className="category-card__chevron" aria-hidden="true" />
@@ -122,54 +126,6 @@ export function HomePage() {
             </div>
           </div>
         </section>
-
-        {qaAvailable.length ? (
-          <section className="home-section home-section--flush-top" aria-labelledby="qa-title">
-            <div className="container">
-              <div className="section-heading">
-                <p className="eyebrow">Apenas ambiente local</p>
-                <h2 id="qa-title">Teste técnico com dados fictícios</h2>
-                <p>Mesmo serviço de transferência, com perguntas e campos dos formulários originais, testado com fotos, OCR, revisão e PDFs marcados como AMOSTRA.
-                  Não use documentos reais. Este teste não é serviço homologado.</p>
-              </div>
-              <div className="category-grid">
-                {qaAvailable.map((service) => (
-                  <Link key={service.id} className="category-card category-card--link"
-                    to={"/preencher-real/" + encodeURIComponent(service.id)}>
-                    <span className="category-card__content">
-                      <strong className="category-card__title">{service.title}</strong>
-                      <span className="category-card__description">{service.description}</span>
-                      <span className="category-card__available">Testar com fotos fictícias — sem créditos</span>
-                    </span>
-                    <ChevronRight aria-hidden="true" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {officialAvailable.length ? (
-          <section className="home-section home-section--flush-top" aria-labelledby="ready-title">
-            <div className="container">
-              <div className="section-heading">
-                <h2 id="ready-title">Serviços homologados</h2>
-                <p>Modelos oficiais verificados, com preenchimento e conferência dos dados.</p>
-              </div>
-              <div className="category-grid">
-                {officialAvailable.map((service) => <Link key={service.id} className="category-card category-card--link"
-                  to={"/preencher-real/" + encodeURIComponent(service.id)}>
-                  <span className="category-card__content">
-                    <strong className="category-card__title">{service.title}</strong>
-                    <span className="category-card__description">{service.description}</span>
-                    <span className="category-card__available">Preencher — {service.creditCost} crédito</span>
-                  </span>
-                  <ChevronRight aria-hidden="true" />
-                </Link>)}
-              </div>
-            </div>
-          </section>
-        ) : null}
 
         <section className="home-section home-section--flush-top" aria-labelledby="how-title">
           <div className="container">
@@ -185,7 +141,7 @@ export function HomePage() {
                 <div>
                   <h3 className="how-item__title">Escolha o serviço</h3>
                   <p className="how-item__text">
-                    Veja os documentos necessários e o custo em créditos.
+                    Confira os formulários e o custo antes de começar.
                   </p>
                 </div>
               </li>
@@ -194,9 +150,9 @@ export function HomePage() {
                   2
                 </span>
                 <div>
-                  <h3 className="how-item__title">Envie as fotos</h3>
+                  <h3 className="how-item__title">Anexe o que desejar</h3>
                   <p className="how-item__text">
-                    Tire fotos ou escolha arquivos JPG, PNG ou PDF.
+                    Envie fotos ou PDFs para receber sugestões, ou preencha os dados manualmente.
                   </p>
                 </div>
               </li>
