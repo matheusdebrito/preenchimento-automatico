@@ -156,6 +156,26 @@ describe('candidatos OCR conservadores', () => {
     expect(fields['vessel.name']?.status).toBe('REVIEW_REQUIRED');
   });
 
+  it('extrai ano, comprimento e lotação somente de campos identificados do TIE', () => {
+    const fields = suggestFields(
+      'ANO DE CONSTRUÇÃO: 2022\nCOMPRIMENTO (M): 3,25\nLOTAÇÃO: 3\n' +
+      'ANO DE REGISTRO: 2026\nPOTÊNCIA: 130',
+      'tie',
+    );
+    expect(fields['vessel.year']?.value).toBe('2022');
+    expect(fields['vessel.length']?.value).toBe('3,25');
+    expect(fields['vessel.capacity']?.value).toBe('3');
+    expect(fields['vessel.motorPower']).toBeUndefined();
+    const conflicting = suggestFields(
+      'ANO DE CONSTRUÇÃO: 2022\nANO DE CONSTRUÇÃO: 2023\nLOTAÇÃO: 2\nLOTAÇÃO: 3',
+      'tie',
+    );
+    expect(conflicting['vessel.year']).toBeUndefined();
+    expect(conflicting['vessel.capacity']).toBeUndefined();
+    expect(suggestFields('ANO DE CONSTRUÇÃO: 2022', 'sale-document')['vessel.year'])
+      .toBeUndefined();
+  });
+
   it('recusa números de inscrição ambíguos e TIE sem rótulo da embarcação', () => {
     const fields = suggestFields(
       'INSCRIÇÃO: RJ123456\nINSCRIÇÃO: RJ987654\nNOME: MARIA TESTE',
