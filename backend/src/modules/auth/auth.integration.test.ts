@@ -64,6 +64,25 @@ describePg('PostgreSQL: autenticação e créditos', () => {
     const cookie = String(logged.headers['set-cookie']).split(';')[0]!;
     const me = await app.inject({ method: 'GET', url: '/api/auth/me', headers: { cookie } });
     expect(me.json<{user:{id:string}}>().user.id).toBe(userId);
+
+    // The server must not accept an account switch behind the React guard.
+    const blockedLogin = await app.inject({
+      method: 'POST', url: '/api/auth/login', headers: { cookie },
+      payload: { email, password },
+    });
+    expect(blockedLogin.statusCode).toBe(409);
+    expect(blockedLogin.json()).toEqual({ error: 'already_authenticated' });
+    const blockedRegister = await app.inject({
+      method: 'POST', url: '/api/auth/register', headers: { cookie },
+      payload: { email: 'other-' + randomUUID() + '@example.invalid', password },
+    });
+    expect(blockedRegister.statusCode).toBe(409);
+    expect(blockedRegister.json()).toEqual({ error: 'already_authenticated' });
+    const stillSameUser = await app.inject({
+      method: 'GET', url: '/api/auth/me', headers: { cookie },
+    });
+    expect(stillSameUser.json<{user:{id:string}}>().user.id).toBe(userId);
+
     const noCookie = await app.inject({ method: 'GET', url: '/api/auth/me' });
     expect(noCookie.statusCode).toBe(401);
   });
