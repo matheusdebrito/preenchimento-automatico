@@ -198,12 +198,44 @@ export function suggestFields(text: string, source: string): Record<string, Extr
   }
 
   if (source === 'residence-proof') {
-    const postal = singleLabelled(text, /^\s*CEP\s*[:-]\s*(\d{5}-?\d{3})\s*$/gim, 9);
-    if (postal) result['person.postalCode'] = { value: postal, source, status: 'REVIEW_REQUIRED' };
+    // Extract independently named BDMOTO fields instead of copying a complete
+    // address into City/Bairro/CEP. Never guess administrative boundaries.
+    const postal = singleLabelled(text,
+      /^\s*(?:CEP|C[ÓO]DIGO\s+POSTAL)\s*[:-]\s*(\d{5}-?\d{3})\s*$/gim, 9);
+    if (postal) result['person.postalCode'] = {
+      value: postal.length === 8 ? postal.slice(0, 5) + '-' + postal.slice(5) : postal,
+      source, status: 'REVIEW_REQUIRED',
+    };
 
     const address = singleLabelled(text,
-      /^\s*ENDERE[CÇ]O\s*[:-]\s*(\S.{5,119})\s*$/gim, 120);
+      /^\s*(?:ENDERE[CÇ]O|LOGRADOURO)\s*[:-]\s*(\S.{3,119})\s*$/gim, 120);
     if (address) result['person.address'] = { value: address, source, status: 'REVIEW_REQUIRED' };
+
+    const city = singleLabelled(text,
+      /^\s*(?:CIDADE|MUNIC[IÍ]PIO)\s*[:-]\s*([A-ZÀ-Ý][A-ZÀ-Ý '.-]{2,79})\s*$/gim, 80);
+    if (city) result['person.city'] = { value: city, source, status: 'REVIEW_REQUIRED' };
+
+    const district = singleLabelled(text,
+      /^\s*(?:BAIRRO|DISTRITO)\s*[:-]\s*([A-ZÀ-Ý][A-ZÀ-Ý '.-]{2,79})\s*$/gim, 80);
+    if (district) result['person.neighborhood'] = {
+      value: district, source, status: 'REVIEW_REQUIRED',
+    };
+
+    const state = singleLabelled(text,
+      /^\s*(?:UF|ESTADO)\s*[:-]\s*([A-Z]{2})\s*$/gim, 2);
+    if (state) result['person.state'] = { value: state, source, status: 'REVIEW_REQUIRED' };
+
+    const number = singleLabelled(text,
+      /^\s*(?:N[ÚU]MERO|N[ºO.]?\s+DO\s+ENDERE[CÇ]O)\s*[:-]\s*(\d{1,6}[A-Z]?)\s*$/gim, 7);
+    if (number) result['person.streetNumber'] = {
+      value: number, source, status: 'REVIEW_REQUIRED',
+    };
+
+    const complement = singleLabelled(text,
+      /^\s*COMPLEMENTO\s*[:-]\s*([A-ZÀ-Ý0-9 .,/\-]{1,60})\s*$/gim, 60);
+    if (complement) result['person.apartment'] = {
+      value: complement, source, status: 'REVIEW_REQUIRED',
+    };
   }
 
   if (source === 'tie' || source === 'source') {
