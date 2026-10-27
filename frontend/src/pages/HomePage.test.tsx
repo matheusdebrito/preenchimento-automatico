@@ -4,10 +4,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from './HomePage';
 import { AuthProvider } from '../features/auth/AuthProvider';
 
-function renderHome() {
+function renderHome(services: readonly object[] = []) {
   vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => new Response(
     JSON.stringify(String(url) === '/api/auth/me'
-      ? { error: 'unauthorized' } : { services: [] }),
+      ? { error: 'unauthorized' } : { services }),
     { status: String(url) === '/api/auth/me' ? 401 : 200,
       headers: { 'Content-Type': 'application/json' } },
   )));
@@ -29,12 +29,12 @@ describe('HomePage', () => {
     ).toBeTruthy();
     expect(
       screen.getByText(
-        'Escolha o serviço, envie as fotos dos documentos e receba os formulários preenchidos.',
+        /Escolha o serviço, anexe os documentos que quiser ou digite os dados/ ,
       ),
     ).toBeTruthy();
 
     const startLink = screen.getByRole('link', { name: /Começar agora/ });
-    expect(startLink.getAttribute('href')).toBe('/preencher/servico');
+    expect(startLink.getAttribute('href')).toBe('#categories-title');
   });
 
   it('mostra as três categorias e sinaliza as que ainda não estão disponíveis', () => {
@@ -45,9 +45,23 @@ describe('HomePage', () => {
     expect(screen.getByText('Arrais, Mestre e Capitão')).toBeTruthy();
     expect(screen.getByText('Aquaviários')).toBeTruthy();
 
-    const availableCategory = screen.getByRole('link', { name: /Embarcações e jet skis/ });
-    expect(availableCategory.getAttribute('href')).toBe('/preencher/servico');
-    expect(screen.getAllByText('Em breve')).toHaveLength(2);
+    expect(screen.queryByRole('link', { name: /Embarcações e jet skis/ })).toBeNull();
+    expect(screen.getAllByText('Em breve')).toHaveLength(3);
+  });
+
+  it('exibe um único serviço real em QA, sem abrir a demonstração paralela', async () => {
+    renderHome([{
+      id: 'transferencia-moto-aquatica', title: 'Transferência de moto aquática',
+      description: 'Amostra local', creditCost: 0, questions: [],
+      reviewFields: [], documentRequirements: [], formVersionIds: ['bdmoto-v1'],
+    }]);
+    const pilot = await screen.findByRole('link', { name: /Embarcações e jet skis/ });
+    expect(pilot.getAttribute('href')).toBe('/preencher-real/transferencia-moto-aquatica');
+    expect(screen.getByRole('link', { name: /Começar agora/ }).getAttribute('href'))
+      .toBe('/preencher-real/transferencia-moto-aquatica');
+    expect(screen.getAllByText(/Prévia local para revisão — sem créditos/)).toHaveLength(1);
+    expect(document.querySelectorAll('a[href="/preencher/servico"]')).toHaveLength(0);
+    expect(screen.queryByRole('heading', { name: 'Teste técnico com dados fictícios' })).toBeNull();
   });
 
   it('distingue demonstração visual e processamento temporário no servidor', () => {
