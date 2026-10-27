@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import { chmod, lstat, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { resolve, join, parse } from 'node:path';
 import { classifyDocument, validatePdfPages } from './document-validator.js';
 import type { DocumentKind } from './document-validator.js';
 
@@ -42,6 +42,13 @@ export class JobStore {
   private readonly timer: NodeJS.Timeout;
 
   constructor(private readonly root = resolve(tmpdir(), 'preenchimento-automatico-jobs')) {
+    const normalized = resolve(root);
+    const prohibited = new Set([
+      parse(normalized).root, resolve(tmpdir()), resolve(process.cwd()), resolve(process.cwd(), '..'),
+    ]);
+    if (prohibited.has(normalized) || normalized !== root) {
+      throw new Error('Diretório temporário inseguro: configure uma pasta privada exclusiva.');
+    }
     this.timer = setInterval(() => { void this.cleanup().catch(() => undefined); }, 60_000);
     this.timer.unref();
   }
@@ -151,6 +158,12 @@ export class JobStore {
 
   async cleanup(): Promise<void> {
     await mkdir(this.root, { recursive: true, mode: 0o700 });
+    const rootInfo = await lstat(this.root);
+    if (!rootInfo.isDirectory() || rootInfo.isSymbolicLink()) {
+      throw new Error('Diretório temporário não pode ser um link simbólico.');
+    }
+    // Never leave uploaded images accessible to unrelated local users.
+    await chmod(this.root, 0o700);
     const now = Date.now();
     for (const [id, job] of this.jobs.entries()) {
       if (job.expiresAt > now || this.activeJobs.has(id) || this.activeUploads.has(id)) continue;

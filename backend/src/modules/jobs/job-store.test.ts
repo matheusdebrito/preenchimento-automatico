@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -142,6 +142,19 @@ describe('JobStore', () => {
     expect(store.get(orphanId, 'alice')).toBeNull();
     await store.cleanup();
     await expect(stat(orphan)).rejects.toThrow();
+  });
+
+  it('recusa raiz genérica de temporários e não aceita symlink para documentos', async () => {
+    expect(() => new JobStore(tmpdir())).toThrow('inseguro');
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-root-'));
+    directories.push(root);
+    const actual = join(root, 'actual');
+    const linked = join(root, 'linked');
+    await mkdir(actual);
+    await symlink(actual, linked, 'dir');
+    const store = new JobStore(linked);
+    stores.push(store);
+    await expect(store.cleanup()).rejects.toThrow('link simbólico');
   });
 
 });
