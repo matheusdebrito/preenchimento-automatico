@@ -136,6 +136,25 @@ describe('JobStore', () => {
     expect(expiredIds).toEqual([job.id]);
   });
 
+  it('mantém a exclusão privada mesmo se o estorno estiver indisponível', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-expiry-db-offline-'));
+    directories.push(root);
+    const store = new JobStore(root, async () => {
+      throw new Error('Banco temporariamente indisponível.');
+    });
+    stores.push(store);
+    const job = await store.create('alice', 'service');
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const uploaded = await store.upload(job, 'source', png, 'image/png');
+    job.expiresAt = Date.now() - 1;
+    await expect(store.cleanup()).resolves.toBeUndefined();
+    expect(store.get(job.id, 'alice')).toBeNull();
+    await expect(stat(uploaded.path)).rejects.toThrow();
+  });
+
   it('limpa arquivos órfãos de um processo interrompido sem restaurar conteúdo privado', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pa-jobs-crash-'));
     directories.push(root);
