@@ -113,9 +113,9 @@ Para reproduzir o reteste com **documentos totalmente fictícios**, seguir [o ro
 
 ### Menu mobile — reteste visual
 
-Em telas de até 767 px, o botão do cabeçalho permanece no canto superior direito em tamanho fixo (44×44 px), alternando **apenas o ícone de Menu e X**, com nome acessível atualizado. O painel de links abre e fecha com transição suave; Escape, seleção de rota e logout preservam o fechamento. Em dispositivos com preferência por redução de movimento, a transição não é executada. No desktop, o menu continua horizontal.
+Em telas de até 767 px, o cabeçalho mantém o botão no canto superior direito, com tamanho fixo **100×44 px** nos dois estados, sempre exibindo o texto **Menu** ao lado do ícone. Apenas o ícone alterna entre as três linhas e X, com nome acessível de ação **Menu**/**Fechar menu** e `aria-expanded` atualizado. O painel de links abre e fecha com transição suave; Escape, seleção de rota e logout preservam o fechamento. Em dispositivos com preferência por redução de movimento, a transição não é executada. No desktop, o menu continua horizontal.
 
-**Teste manual pendente:** conferir na sua máquina com o modo responsivo do navegador em 320, 375 e 767 px, além de um celular real, abertura/fechamento, posição fixa do botão, ausência de sobreposição, links acessíveis e redução de movimento. A suíte React/JSDOM verifica estados e acessibilidade básica, mas não substitui a inspeção visual em navegador.
+**Teste manual pendente:** conferir na sua máquina com o modo responsivo do navegador em 320, 375 e 767 px, além de um celular real, abertura/fechamento, posição fixa do botão com o texto Menu ao lado do ícone sem sobrepor o nome da aplicação, links acessíveis e redução de movimento. A suíte React/JSDOM verifica estados e acessibilidade básica, mas não substitui a inspeção visual em navegador.
 
 ## Endpoints implementados
 
