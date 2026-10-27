@@ -5,6 +5,10 @@ const execFile = promisify(execFileCallback);
 export type DocumentKind = 'pdf' | 'jpeg' | 'png';
 
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+// PNG Third Edition, 11.2.1: only these color-type/bit-depth combinations are valid.
+const PNG_DEPTHS: Readonly<Record<number, readonly number[]>> = {
+  0: [1, 2, 4, 8, 16], 2: [8, 16], 3: [1, 2, 4, 8], 4: [8, 16], 6: [8, 16],
+};
 const CRC_TABLE = Array.from({ length: 256 }, (_, i) => {
   let crc = i;
   for (let j = 0; j < 8; j++) {
@@ -29,6 +33,9 @@ function validatePng(bytes: Buffer): void {
   let offset = 8;
   let chunkNumber = 0;
   let hasData = false;
+  let hasPalette = false;
+  let colorType = -1;
+  let endedData = false;
   let ended = false;
   while (offset + 12 <= bytes.length && chunkNumber++ < 4096) {
     const length = bytes.readUInt32BE(offset);
@@ -43,6 +50,11 @@ function validatePng(bytes: Buffer): void {
       if (!width || !height || width * height > 16_000_000) {
         throw new Error('Imagem muito grande.');
       }
+      const bitDepth = bytes[offset + 16]!;
+      colorType = bytes[offset + 17]!;
+      if (!PNG_DEPTHS[colorType]?.includes(bitDepth)) {
+        throw new Error('IHDR PNG inválido: profundidade ou tipo de cor incompatível.');
+      }
       if (bytes[offset + 18] !== 0 || bytes[offset + 19] !== 0 ||
         ![0, 1].includes(bytes[offset + 20]!)) throw new Error('Formato PNG inválido.');
     } else if (type === 'IHDR') {
@@ -51,7 +63,23 @@ function validatePng(bytes: Buffer): void {
     if (pngCrc(bytes, offset + 4, offset + 8 + length) !== crc) {
       throw new Error('Checksum PNG inválido.');
     }
-    if (type === 'IDAT') hasData = true;
+    if (type === 'PLTE') {
+      // Palette must precede image data; greyscale PNGs cannot have one.
+      if (hasPalette || hasData || length === 0 || length > 768 ||
+          length % 3 !== 0 || colorType === 0 || colorType === 4) {
+        throw new Error('PLTE PNG inválido.');
+      }
+      hasPalette = true;
+    } else if (type === 'IDAT') {
+      if (endedData || (colorType === 3 && !hasPalette)) {
+        throw new Error('IDAT PNG inválido ou paleta PLTE ausente.');
+      }
+      hasData = true;
+    } else if (!['IHDR', 'IEND'].includes(type) && type[0] === type[0]?.toUpperCase()) {
+      // Unknown critical chunks cannot be decoded safely by this pipeline.
+      throw new Error('Chunk crítico PNG não suportado.');
+    }
+    if (hasData && type !== 'IDAT') endedData = true;
     offset += length + 12;
     if (type === 'IEND') {
       if (length !== 0 || !hasData || offset !== bytes.length) {
@@ -100,7 +128,8 @@ export function classifyDocument(bytes: Buffer, contentType: string): DocumentKi
     bytes[0] === 0xff && bytes[1] === 0xd8 &&
     bytes[bytes.length - 2] === 0xff && bytes[bytes.length - 1] === 0xd9) {
     const size = jpegSize(bytes);
-    if (!size || size.width * size.height > 16_000_000) throw new Error('Imagem inválida ou muito grande.');
+    if (!size || size.width < 1 || size.height < 1 ||
+      size.width * size.height > 16_000_000) throw new Error('Imagem inválida ou muito grande.');
     return 'jpeg';
   }
   throw new Error('Assinatura e tipo de arquivo incompatíveis.');
