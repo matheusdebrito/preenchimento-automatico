@@ -71,6 +71,9 @@ export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Dat
 
   app.post('/api/auth/register', async (request, reply) => {
     if (!pool) return reply.status(503).send({ error: 'unavailable' });
+    if (await getCurrentUser(pool, request)) {
+      return reply.status(409).send({ error: 'already_authenticated' });
+    }
     try {
       const user = await registerUser(pool, request.body);
       await issueSession(pool, reply, user.id, env.NODE_ENV === 'production');
@@ -88,6 +91,11 @@ export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Dat
 
   app.post('/api/auth/login', async (request, reply) => {
     if (!pool) return reply.status(503).send({ error: 'unavailable' });
+    // The account switch must be an explicit logout followed by a new login.
+    // Hiding the login page in React alone is not an authorization control.
+    if (await getCurrentUser(pool, request)) {
+      return reply.status(409).send({ error: 'already_authenticated' });
+    }
     const user = await authenticate(pool, request.body);
     if (!user) return reply.status(401).send({ error: 'unauthorized', message: 'Credenciais inválidas.' });
     await issueSession(pool, reply, user.id, env.NODE_ENV === 'production');
