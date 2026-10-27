@@ -69,6 +69,38 @@ O diagnóstico do bug relatado revelou dois pontos concretos do código anterior
 
 **Referência técnica:** [Tesseract — Improving the quality of the output](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html), especialmente segmentação, escala, orientação e contraste.
 
+## Campos vazios sem erro HTTP — diagnóstico de integração (27/10/2026)
+
+Uma operação `POST /api/jobs/:id/extract` pode responder HTTP 200 e manter
+todos os campos vazios **sem erro de processamento**: a foto foi recebida, mas
+não houve sugestão segura ou nenhuma sugestão corresponde aos campos do
+formulário. Isso deve ser comunicado explicitamente e não confundido com
+um bug silencioso de renderização.
+
+**Contrato de diagnóstico por documento (sem textos pessoais):**
+
+- `no_text`: Tesseract/Poppler não retornou texto reconhecível;
+- `no_supported_labels`: houve texto, mas os candidatos validados são zero;
+- `no_applicable_fields`: o OCR detectou um dado com regra conhecida, mas
+  o campo não consta nos PDFs selecionados (ex.: RG do vendedor em 2-A/2-B);
+- `suggested`: há campos válidos aplicáveis, todos ainda sujeitos à revisão;
+- `not_analyzed`: requisito de upload não tem regra semântica de OCR.
+
+O frontend exibe um aviso destacado **Nenhum campo preenchido pelo OCR** se
+os documentos foram analisados mas zero campos foram aplicados; junto a cada
+requisito mostra o motivo. O aviso não bloqueia o preenchimento manual.
+
+**Cobertura:** teste React com API simulada comprova que
+`person.fullName`, `person.cpf`, `person.identity` retornados sob
+`buyer-identity` aparecem efetivamente nos inputs. Teste de integração
+PostgreSQL/Poppler confirma `no_applicable_fields` para um dado reconhecido
+fora do mapeamento do formulário, sem reproduzir a informação na resposta.
+
+**Limitação:** o RG do usuário não foi fornecido aqui; o diagnóstico exato
+do caso real ainda depende do resultado mostrado no navegador após atualizar
+a aplicação. Não solicitar ou publicar OCR bruto, CPF ou fotos reais em issues
+e logs; utilizar amostras com dados inventados.
+
 ## Ajuste de QA de 27/10/2026
 
 O `DEV_QA_PREVIEW=true` agora utiliza **o mesmo serviço de transferência** com perguntas, requisitos e mapeamentos reais do catálogo (somente adaptados em memória para prévias, sem homologação). Isso permite avaliar a taxa de extração campo a campo do BDMOTO, inclusive Cidade, Bairro e CEP. A API restringe os candidatos OCR aos campos efetivamente presentes no pacote selecionado; os demais não são expostos na revisão.
