@@ -43,6 +43,24 @@ async function run(command: string, args: readonly string[], timeout = 15_000): 
   return stdout;
 }
 
+/** Decides whether a second OCR layout could recover a missing legal name. */
+export function shouldRetryIdentityLayout(text: string, source: string): boolean {
+  const fields = suggestFields(text, source);
+  const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
+  return !fields[nameId] || Object.keys(fields).length < 2;
+}
+
+/** Select one internally consistent OCR reading; never concatenate two layouts. */
+export function chooseIdentityLayout(primary: string, alternative: string, source: string): string {
+  const first = suggestFields(primary, source);
+  const second = suggestFields(alternative, source);
+  const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
+  if (Boolean(first[nameId]) !== Boolean(second[nameId])) {
+    return second[nameId] ? alternative : primary;
+  }
+  return Object.keys(second).length > Object.keys(first).length ? alternative : primary;
+}
+
 /**
  * Identity cards have several disjoint blocks. Tesseract PSM 11 finds sparse
  * text; PSM 6 may still work better on a clean, uniformly arranged scan.
@@ -54,19 +72,11 @@ async function readImage(path: string, source: string): Promise<string> {
   const primary = await run('tesseract',
     [path, 'stdout', '-l', 'por', '--psm', primaryMode], 25_000);
   if (primaryMode !== '11') return primary;
-  const primaryFields = suggestFields(primary, source);
-  const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
-  // Having a CPF (and perhaps an RG) is NOT a successful name extraction.
-  // Always try the second layout if the name is missing.
-  if (primaryFields[nameId] && Object.keys(primaryFields).length >= 2) return primary;
+  // Having CPF and RG is not proof that the name was recognized.
+  if (!shouldRetryIdentityLayout(primary, source)) return primary;
   const alternative = await run('tesseract',
     [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
-  const alternativeFields = suggestFields(alternative, source);
-  const firstHasName = Boolean(primaryFields[nameId]);
-  const secondHasName = Boolean(alternativeFields[nameId]);
-  if (firstHasName !== secondHasName) return secondHasName ? alternative : primary;
-  return Object.keys(alternativeFields).length > Object.keys(primaryFields).length
-    ? alternative : primary;
+  return chooseIdentityLayout(primary, alternative, source);
 }
 
 async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
