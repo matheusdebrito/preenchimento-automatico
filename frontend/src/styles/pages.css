@@ -1238,10 +1238,84 @@
 .live-flow .card { max-width: 55rem; }
 .live-flow a.btn { width: fit-content; max-width: 100%; }
 
-/* Distinguish each uploaded document and camera option on small screens. */
-.live-upload-field { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-page); min-width: 0; }
-.live-upload-field .field { min-width: 0; }
-.live-upload-field input[type='file'] { max-width: 100%; }
+/* Accessible upload cards, consistent with the original document selection UI. */
+.live-upload-list { display: grid; gap: .875rem; min-width: 0; }
+.live-upload-field {
+  display: grid;
+  gap: .875rem;
+  min-width: 0;
+  padding: 1.125rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: .875rem;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.live-upload-field:focus-within { border-color: var(--color-teal); }
+.live-upload-field--uploaded { background: var(--color-mint); }
+.live-upload-field__head { display: flex; align-items: flex-start; gap: .875rem; min-width: 0; }
+.live-upload-field__icon {
+  width: 2.875rem; height: 2.875rem; flex: none; display: grid; place-items: center;
+  border-radius: .75rem; background: var(--color-mint); color: var(--color-teal-strong);
+}
+.live-upload-field__icon svg { width: 1.45rem; height: 1.45rem; }
+.live-upload-field__info { flex: 1; min-width: 0; display: grid; gap: .25rem; }
+.live-upload-field__name { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.live-upload-field__name strong { color: var(--color-navy); font-size: .975rem; }
+.live-upload-field__optional {
+  padding: .15rem .5rem; border-radius: 999px; background: var(--color-page);
+  color: var(--color-muted-strong); font-size: .75rem; font-weight: 650;
+}
+.live-upload-field__description, .live-upload-field__help {
+  margin: 0; color: var(--color-muted-strong); font-size: .875rem; line-height: 1.45;
+}
+.live-upload-field__help { font-size: .8125rem; }
+.live-upload-actions { display: flex; flex-wrap: wrap; gap: .625rem; min-width: 0; }
+/* Keep native file controls keyboard/screen-reader accessible but visually hidden. */
+.live-upload-input {
+  position: absolute; width: 1px; height: 1px; padding: 0;
+  opacity: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.live-upload-action {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-height: 2.875rem; padding: .6rem .875rem; border: 1.5px solid var(--color-teal);
+  border-radius: .65rem; background: var(--color-teal); color: #fff;
+  font-size: .875rem; font-weight: 700; line-height: 1.2; cursor: pointer;
+  transition: background-color var(--transition), color var(--transition),
+    border-color var(--transition), box-shadow var(--transition);
+}
+.live-upload-action svg { width: 1.125rem; height: 1.125rem; flex: none; }
+.live-upload-action:hover { background: var(--color-teal-strong); }
+.live-upload-action--camera {
+  background: var(--color-white); color: var(--color-teal-strong);
+  border-color: var(--color-border-strong);
+}
+.live-upload-action--camera:hover {
+  background: var(--color-mint); border-color: var(--color-teal);
+}
+.live-upload-input:focus-visible + .live-upload-action {
+  outline: 3px solid var(--color-focus); outline-offset: 3px;
+}
+.live-upload-input:disabled + .live-upload-action {
+  opacity: .55; pointer-events: none; cursor: not-allowed;
+}
+.live-upload-file-status {
+  display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; min-width: 0;
+  padding: .625rem .75rem; background: var(--color-mint);
+  border: 1px solid var(--color-border); border-radius: .65rem;
+  color: var(--color-teal-strong); font-size: .825rem; font-weight: 650;
+}
+.live-upload-file-status svg { width: 1.125rem; height: 1.125rem; flex: none; }
+.live-upload-file-status__name { min-width: 0; overflow-wrap: anywhere; }
+.live-upload-file-status__size { margin-left: auto; color: var(--color-muted-strong); white-space: nowrap; }
+@media (max-width: 540px) {
+  .live-upload-field { padding: .875rem; }
+  .live-upload-actions { display: grid; grid-template-columns: 1fr; }
+  .live-upload-action { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-upload-field, .live-upload-action { transition: none; }
+}
 
 /* OCR reports expose only counts and document requirement labels, never OCR text. */
 .live-ocr-report {
