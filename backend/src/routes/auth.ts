@@ -46,8 +46,25 @@ export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Dat
     if (!request.url.startsWith('/api/') ||
       !['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method)) return;
     const origin = request.headers.origin;
-    const sameOrigin = request.headers['sec-fetch-site'] === 'same-origin';
-    if ((origin && !env.CORS_ORIGINS.includes(origin)) || (!origin && !sameOrigin && env.NODE_ENV !== 'test')) {
+    const fetchSite = request.headers['sec-fetch-site'];
+    // Browsers send Origin on POST/PATCH/DELETE even for same-origin requests.
+    // The reverse proxy serves the UI on 127.0.0.1:8080, which does not need
+    // to appear in the cross-origin development CORS allow-list.
+    let sameOrigin = false;
+    if (origin && request.headers.host) {
+      try {
+        const source = new URL(origin);
+        sameOrigin = source.origin === origin &&
+          (source.protocol === 'http:' || source.protocol === 'https:') &&
+          source.host.toLowerCase() === request.headers.host.toLowerCase();
+      } catch {
+        sameOrigin = false;
+      }
+    }
+    const allowedOrigin = !!origin && (sameOrigin || env.CORS_ORIGINS.includes(origin));
+    const allowedWithoutOrigin = !origin &&
+      (fetchSite === 'same-origin' || env.NODE_ENV === 'test');
+    if (!allowedOrigin && !allowedWithoutOrigin) {
       return reply.status(403).send({ error: 'forbidden', message: 'Origem não permitida.' });
     }
   });
