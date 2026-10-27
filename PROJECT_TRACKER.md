@@ -45,7 +45,7 @@
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e seis mapas DRAFT; regras condicionais e revisão humana pendentes |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads e feedback de obrigatórios testados; fuzzing, isolamento e carga pendentes |
 | 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — diagnóstico por documento e amostras PNG/JPEG testados; precisão em fotos reais e isolamento pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — feedback de documentos/422 e menu mobile estável com transição implementados; validação física e acessibilidade pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — feedback de documentos/422 e menu mobile animado testados no CI; validação física e acessibilidade pendentes |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
@@ -162,7 +162,7 @@
 - [x] Verificar em ambos os PDFs QA 2-A e 2-B o conteúdo de campos revisados e marca AMOSTRA em todas as páginas; CI 40441312938.
 - [x] Corrigir UX de documento obrigatório, 422 na revisão com `fieldId` e mensagens próximas aos controles; manter o job após campo inválido e não relatar sucesso silencioso sem candidatos OCR. Testes frontend/backend, CI 40510328039.
 - [x] Remover repetição de navegação no rodapé e corrigir textos sobre o fluxo real de upload temporário; CI 40510328039.
-- [ ] Verificar menu mobile com botão de 44 px fixo, ícones exclusivos por estado, animação CSS, Escape, fechamento por link e `prefers-reduced-motion` em aparelho físico (implementação e testes de componentes adicionados; aguarda CI do último código).
+- [x] Implementar menu mobile com botão de 44 px fixo, ícones sem texto visível e nomes acessíveis, animação CSS, Escape, fechamento por link e `prefers-reduced-motion`; comportamento React validado no CI 40513573884. Inspeção visual em aparelho real segue pendente no item abaixo.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
 - [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
 - [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
@@ -558,5 +558,5 @@ Commit: [SHA, se realizado]
 - **Relato:** ao expandir o menu em dispositivos móveis, o botão mudava de largura ao mostrar “Fechar menu”, deslocava-se verticalmente e o menu surgia bruscamente.
 - **Causa e solução:** `AppHeader.tsx` variava o conteúdo textual e `components.css` usava `flex-wrap` no cabeçalho mobile. O botão mantém agora 44×44 px e **ícones Menu/X sobrepostos que trocam opacidade e rotação**, sem texto visível, conservando `aria-label`, `aria-controls` e `aria-expanded`. O cabeçalho usa **CSS Grid** de duas colunas para manter a marca na primeira e o botão fixo na segunda; a navegação ocupa uma segunda linha com transições de altura, opacidade e deslocamento em aproximadamente 300 ms, sem alterações no desktop. Em `prefers-reduced-motion`, as transições são desabilitadas. O fechamento por Escape, link e logout é preservado.
 - **Arquivos de código:** `frontend/src/components/layout/AppHeader.tsx`, `frontend/src/styles/components.css`; testes em `frontend/src/components/layout/AppHeader.test.tsx` verificam nome acessível, mesmo elemento DOM nos dois estados, abertura/fechamento e ausência de texto visível.
-- **Status de validação no momento do registro:** testes adicionados, aguardando execução final do CI do commit de código `515271a`. Não alegar inspeção visual em dispositivo real. A verificação física a 320px, 375px e 768px e por leitor de tela continua pendente.
+- **Validação comprovada:** [GitHub Actions 40513573884](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40513573884), commit de documentação/README `596a3a5` contendo o código e os testes do commit `515271a`: **5/5 jobs concluídos com sucesso** (frontend, backend, PostgreSQL, Compose, prévias PDF). Os testes React cobrem os estados, o nome acessível, o mesmo botão DOM, fechamento por link/Escape; a animação CSS não foi observada em navegador/celular físico nesta sessão. A verificação visual a 320px, 375px e 767px e por leitor de tela continua pendente.
 - **Portão:** Fase 07 segue parcial; aprovação do QA sintético e dos mapas oficiais não é consequência dessa melhoria visual.
