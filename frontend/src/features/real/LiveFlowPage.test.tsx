@@ -68,6 +68,38 @@ describe('jornada real isolada da demonstração', () => {
     expect(JSON.parse(reviewCall![1]!.body as string).values['person.fullName']).toBe('MARIA CONFERIDA');
   }, 25000);
 
+  it('permite gerar pela jornada manual sem anexar qualquer documento', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
+      if (path.endsWith('/quote')) return json({ service });
+      if (path === '/api/jobs' && init?.method === 'POST') return json({ id: 'job-no-files' }, 201);
+      if (path === '/api/jobs/job-no-files/extract') {
+        return json({ status: 'REVIEW', fields: {}, sources: {}, diagnostics: [] });
+      }
+      if (path.endsWith('/review')) return json({ confirmed: true });
+      if (path.endsWith('/generate')) return json({ downloads: ['requerimento-ma-v1'] });
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    expect(await screen.findByRole('heading',
+      { name: 'Documentos para leitura automática (opcionais)' })).toBeTruthy();
+    await user.click(screen.getByRole('button',
+      { name: 'Continuar sem anexos — preencher manualmente' }));
+    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(screen.getByText(/Você optou por preencher sem documentos/)).toBeTruthy();
+    await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA TESTE');
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
+    expect(fetcher.mock.calls.filter(([url]) => String(url).includes('/documents/'))).toHaveLength(0);
+    expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/extract'))).toHaveLength(1);
+    expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/review'))).toHaveLength(1);
+  }, 25000);
+
   it('explica qual data foi recusada pelo backend antes da geração', async () => {
     const serviceWithDate = {
       ...service,
