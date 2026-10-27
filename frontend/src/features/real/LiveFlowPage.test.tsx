@@ -145,7 +145,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(1);
-    expect(screen.getByRole('button', { name: /crédito já utilizado/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /sem novo débito/ })).toBeTruthy();
   }, 25000);
 
   it('restaura revisão após recarregar a aba sem gravar documentos no navegador', async () => {

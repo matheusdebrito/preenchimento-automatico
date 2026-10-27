@@ -8,7 +8,7 @@ import { publicService } from '../modules/catalog/public-catalog.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
 import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
-import { applyCreditMovement } from '../modules/auth/credits.js';
+import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
 import { extractText, suggestFields } from '../modules/jobs/ocr.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
@@ -214,6 +214,9 @@ export function registerJobRoutes(
     if (!service || service.formVersionIds.length === 0) {
       return reply.status(409).send({ error: 'service_unavailable' });
     }
+    if (service.creditCost !== 1) {
+      return reply.status(422).send({ error: 'unsupported_credit_cost' });
+    }
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     job.stage = 'GENERATING';
     const generated = new Map<string, string>();
@@ -227,7 +230,7 @@ export function registerJobRoutes(
         await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
         generated.set(id, path);
       }
-      await applyCreditMovement(pool!, userId, 'consume', -service.creditCost, 'job_' + job.id);
+      await chargeJobCredit(pool!, userId, job.id, job.createdAt);
       job.outputs = generated;
       job.stage = 'GENERATED';
       return { downloads: [...generated.keys()], reused: false };
@@ -249,10 +252,19 @@ export function registerJobRoutes(
     if (!path || !job) return reply.status(404).send({ error: 'not_found' });
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     const stream = createReadStream(path);
-    const release = () => store.endOperation(job);
-    stream.once('end', release);
-    stream.once('close', release);
-    stream.once('error', release);
+    let finished = false;
+    reply.raw.once('finish', () => {
+      finished = true;
+      // A receipt is not delivered until the HTTP response is fully written.
+      // On DB failure leave it pending, to be refunded on expiry or restart.
+      void markJobDelivered(pool!, userId, job.id)
+        .catch((error: unknown) => req.log.error({ err: error }, 'delivery_record_failed'))
+        .finally(() => store.endOperation(job));
+    });
+    reply.raw.once('close', () => {
+      if (!finished) store.endOperation(job);
+    });
+    stream.once('error', () => store.endOperation(job));
     reply.header('Content-Type', 'application/pdf');
     reply.header('Content-Disposition', 'attachment; filename="' + req.params.versionId + '.pdf"');
     return reply.send(stream);
@@ -264,9 +276,17 @@ export function registerJobRoutes(
     if (!job) return reply.status(404).send({ error: 'not_found' });
     try {
       await store.remove(job);
-      return { removed: true };
     } catch {
       return reply.status(409).send({ error: 'job_busy' });
+    }
+    try {
+      const creditRefunded = await refundUndeliveredJobCredit(pool!, job.id);
+      return { removed: true, creditRefunded, refundPending: false };
+    } catch (error) {
+      req.log.error({ err: error }, 'job_refund_pending');
+      // File deletion succeeded. Never pretend the documents remain on disk.
+      // A failed refund is retried by the periodic reconciler or on restart.
+      return { removed: true, creditRefunded: false, refundPending: true };
     }
   });
 }

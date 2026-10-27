@@ -214,6 +214,16 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
       url:'/api/jobs/'+jobId+'/download/requerimento-ma-v1',headers:{cookie}});
     expect(download.statusCode,download.body.slice(0,100)).toBe(200);
     expect(download.body.startsWith('%PDF-')).toBe(true);
+    // Delivery receipt is recorded asynchronously after HTTP finish.
+    let delivered = false;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const row = await pool.query<{state:string}>(
+        'SELECT state FROM job_credit_receipts WHERE job_id=$1', [jobId],
+      );
+      if (row.rows[0]?.state === 'delivered') { delivered = true; break; }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    expect(delivered).toBe(true);
     const noAuth=await app.inject({method:'GET',
       url:'/api/jobs/'+jobId+'/download/requerimento-ma-v1'});
     expect(noAuth.statusCode).toBe(401);

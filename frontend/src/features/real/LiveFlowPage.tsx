@@ -365,14 +365,14 @@ export function LiveFlowPage() {
                 <button type="button" className="live-text-button" disabled={busy}
                   onClick={() => void cancel()}>
                   {step === 'download'
-                    ? 'Encerrar e apagar PDFs (crédito já utilizado)'
+                    ? 'Encerrar e apagar PDFs (sem novo débito)'
                     : 'Cancelar e apagar documentos temporários'}
                 </button>
               ) : null}
               {step === 'download' && jobId ? (
                 <>
                   <h2>Formulários gerados</h2>
-                  <Notice tone="success">Pacote preparado. Um único crédito foi utilizado neste processo.</Notice>
+                  <Notice tone="success">Pacote preparado. Um único crédito foi reservado no processo e será mantido após o download. Se a entrega não ocorrer, poderá ser estornado.</Notice>
                   {downloads.map((version) => (
                     <a className="btn btn--secondary" key={version}
                       href={'/api/jobs/' + jobId + '/download/' + encodeURIComponent(version)} download>
