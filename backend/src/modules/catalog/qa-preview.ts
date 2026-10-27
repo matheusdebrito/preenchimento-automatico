@@ -1,71 +1,50 @@
-import type { CatalogDefinition, FieldPlacement, FormMapping } from './contracts.js';
+import type { CatalogDefinition, ServiceForm } from './contracts.js';
 import { catalog } from './catalog.js';
 
 /**
- * Local-development quality-assurance catalog. It NEVER mutates the official
- * DRAFT mappings or makes the real transfer service AVAILABLE.
- * The temporary APPROVED status only unblocks the existing technical PDF
- * engine for synthetic regression checks; every resulting PDF is watermarked.
+ * Local-only overlay of the REAL pilot service, never a parallel fake service.
+ * It reuses the same questions, document requirements and all six original
+ * mapping placements. This temporary override is NOT persisted or exported by
+ * the official catalog, and every output is watermarked as an unusable sample.
+ * NODE_ENV=development + DEV_QA_PREVIEW=true are required at startup.
  */
-export const QA_PREVIEW_SERVICE_ID = 'qa-synthetic-moto';
+export const QA_PREVIEW_SERVICE_ID = 'transferencia-moto-aquatica';
 
-const FORM_VERSIONS = ['requerimento-ma-v1', 'bdmoto-v1'];
-const QA_FIELDS = new Set([
-  'person.fullName', 'person.cpf', 'person.address',
-  'vessel.name', 'vessel.registration', 'vessel.hullId',
-  'sale.invoice', 'sale.date', 'sale.price', 'process.transferOwnership',
-]);
+const qaFormRelations: readonly ServiceForm[] = [
+  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'requerimento-ma-v1',
+    order: 1, fixedValues: { 'process.transferOwnership': 'X' } },
+  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'bdmoto-v1',
+    order: 2, fixedValues: { 'process.transferOwnership': 'X' } },
+  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'autorizacao-transferencia-ma-v1',
+    order: 3, conditions: [{ questionId: 'transferAuthorization', equals: 'anexo_2d' }] },
+  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'comunicacao-transferencia-ma-v1',
+    order: 4, conditions: [{ questionId: 'sellerCommunication', equals: 'sim' }] },
+  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'declaracao-perda-tie-ma-v1',
+    order: 5, conditions: [{ questionId: 'tieSituation', equals: 'extraviado' }] },
+  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'declaracao-residencia-ma-v1',
+    order: 6, conditions: [{ questionId: 'residenceProof', equals: 'declaracao_1c' }] },
+];
 
 export function qaPreviewCatalog(): CatalogDefinition {
-  const mappings: FormMapping[] = catalog.mappings.map((mapping) => {
-    if (!FORM_VERSIONS.includes(mapping.formVersionId)) return mapping;
-    const placements: FieldPlacement[] = mapping.placements
-      .filter((placement) => QA_FIELDS.has(placement.fieldId))
-      .map((placement) => ({
-        ...placement,
-        required: placement.fieldId === 'person.fullName' ||
-          placement.fieldId === 'vessel.name',
-      }));
-    return {
-      ...mapping,
-      placements,
-      status: 'APPROVED',
-      reviewer: 'QA INTERNO COM DADOS FICTICIOS - NAO HOMOLOGADO',
-      reviewedAt: '2026-10-26',
-      reportPath: 'docs/QA_SYNTHETIC_PREVIEW.md',
-    };
-  });
-
   return {
     ...catalog,
-    mappings,
-    services: [
-      ...catalog.services,
-      {
-        id: QA_PREVIEW_SERVICE_ID,
-        title: 'Simulação técnica — moto aquática (dados fictícios)',
-        description: 'Somente para testes locais com fotos/documentos inventados. ' +
-          'Gera dois formulários com marca d\'água de AMOSTRA. ' +
-          'Não é serviço homologado, não serve para protocolo.',
-        status: 'AVAILABLE',
+    mappings: catalog.mappings.map((mapping) => ({
+      ...mapping,
+      // Adapter only: the production catalog and human approval remain DRAFT.
+      status: 'APPROVED' as const,
+      reviewedAt: '2026-10-27',
+      reviewer: 'QA LOCAL SOMENTE - NAO HOMOLOGADO',
+      reportPath: 'docs/QA_SYNTHETIC_PREVIEW.md',
+    })),
+    services: catalog.services.map((service) =>
+      service.id === QA_PREVIEW_SERVICE_ID ? {
+        ...service,
+        title: service.title + ' — prévia local de QA',
+        description: 'Mesmo fluxo, perguntas e formulários do serviço piloto, somente ' +
+          'com dados inventados. PDFs marcados como AMOSTRA e não válidos para protocolo.',
+        status: 'AVAILABLE' as const,
         creditCost: 0,
-        questions: [],
-        documentRequirements: [
-          { id: 'buyer-identity', label: 'Identidade fictícia do comprador', required: true },
-          { id: 'tie', label: 'Título fictício da moto aquática', required: true },
-          { id: 'residence-proof', label: 'Comprovante fictício de residência', required: false },
-          { id: 'sale-document', label: 'Comprovante fictício da venda', required: false },
-        ],
-      },
-    ],
-    serviceForms: [
-      ...catalog.serviceForms,
-      ...FORM_VERSIONS.map((formVersionId, order) => ({
-        serviceId: QA_PREVIEW_SERVICE_ID,
-        formVersionId,
-        order: order + 1,
-        fixedValues: { 'process.transferOwnership': 'X' },
-      })),
-    ],
+      } : service),
+    serviceForms: [...catalog.serviceForms, ...qaFormRelations],
   };
 }
