@@ -10,7 +10,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | --- | --- | --- |
 | Catálogo de serviços e condições | API e frontend integrados | Só serviços aprovados ficam disponíveis |
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
-| Mapeamento PDF reutilizável | 104 posições em 6 mapeamentos | `DRAFT`; completar campos condicionais e conferência visual humana |
+| Mapeamento PDF reutilizável | **135 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
 | Upload/limpeza | Armazenamento temporário privado, quotas e TTL | Necessita mais testes de falhas/concorrência sob carga |
 | OCR no servidor | `pdftotext` + Tesseract com fotos/scans sintéticos | Candidatos conservadores; correção humana sempre obrigatória |
@@ -18,7 +18,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Fluxo real React | Perguntas, upload, leitura, revisão, geração e download | Liberado somente para serviços homologados |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
-Consulte o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
+Consulte o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
 
 ## Estrutura
 

@@ -185,3 +185,12 @@ Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exi
 - Dados extraídos do documento do vendedor **não** podem ser atribuídos automaticamente aos campos do comprador. Candidatos de OCR, mesmo com dígitos validadores corretos, são sugestões e dependem de conferência.
 - Em retentativas, reutilizar o job idempotentemente e nunca cobrar duas vezes. O registro do estado de débito para recuperação após queda do processo ainda exige solução antes de produção.
 - A API deve rejeitar qualquer campo de revisão não incluído na projeção visível do serviço e confirmar todos os obrigatórios. Não preencher silenciosamente informações que o usuário não viu.
+
+## Regras técnicas obrigatórias — fase 04 de PDFs
+
+- `FieldDefinition` e `FormMapping` devem permanecer independentes de `ServiceDefinition`; só associar `ServiceForm` após verificar que o PDF e suas condições atendem ao serviço.
+- A geração real exige `FormVersion=VERIFIED`, hash SHA-256 idêntico e exatamente um `FormMapping=APPROVED` com relatório/atesto humano. `TESTED` sozinho não autoriza distribuição.
+- Não truncar, eliminar acentos, reduzir fontes a tamanhos ilegíveis nem reconstruir PDFs oficiais. Se um campo não comportar texto legítimo, informar impedimento e solicitar revisão, não mascarar.
+- Tratar CPF, datas e escolhas sim/não como dados semânticos validados. Nunca utilizar o CPF do vendedor como se fosse do declarante ou comprador.
+- **Assinaturas, carimbos, protocolo, autenticação e reconhecimento de firma são manuais.** Não criar automação dessas áreas na Fase 04.
+- Para revisar os seis mapas, consultar `docs/FASE_04_REVISAO_VISUAL.md` e os artefatos fictícios do CI. Apenas revisores humanos podem atestar aprovação final.

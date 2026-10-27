@@ -113,9 +113,12 @@
 - [x] Separar **campo semântico** de **campo/posição do PDF**, permitindo reutilização do motor entre serviços.
 - [x] Versionar `FormVersion` (modelo oficial e hash) e `FormMapping` (revisão técnica) separadamente; preservar original e bloquear modelos não aprovados.
 - [x] Criar relatório **por formulário/versão** em `docs/mapping-reports/`, com posições, evidências sintéticas e pendências; nenhum está homologado.
-- [ ] Implementar validações de comprimento, acentos, quebras de linha, espaços para assinaturas e campos condicionais.
+- [x] Validar comprimento, acentuação, caracteres invisíveis, quebras de linha, CPF, datas, checkbox e espaços de assinatura reservados; motor interrompe geração em vez de cortar dados.
+- [x] Mapear marcações condicionais sim/não para os quatro motores e campos opcionais de coproprietário no 2-D, sem vincular serviço ainda em rascunho.
+- [ ] Conferir regras documentais e obrigatoriedade por **serviço** (coproprietário, representante, TIE), além do mapeamento independente por PDF.
 - [x] Gerar PDFs com **dados sintéticos** e renderizar todas as páginas dos seis modelos; prévias em `docs/_pdf_test_previews`. A conferência apontou lacunas registradas nos relatórios; por isso a etapa ainda não foi aprovada.
-- [ ] Executar testes automatizados de regressão por modelo, guardar evidências sintéticas sem dados reais e obter revisão humana explícita antes de marcar **FormMapping = `APPROVED`**; manter FormVersion = `VERIFIED` e bloquear versões `OUTDATED`.
+- [x] Executar testes automatizados de regressão em **todos os seis modelos**, verificar geometria/páginas, preservar original e guardar prévias fictícias no GitHub Actions (`pdf-mapping-review-synthetic`).
+- [ ] Obter revisão humana explícita e relatório de aprovação de **cada formulário** antes de marcar `FormMapping = APPROVED`; manter `FormVersion = VERIFIED` e bloquear versões `OUTDATED`.
 - **Aceite:** pacote piloto gerado corretamente com dados fictícios, modelo preservado, visual inspecionado e sem documento real.
 
 ## Fase 05 — Upload seguro e temporário
@@ -247,7 +250,7 @@
 
 **Fase 03 — CONCLUÍDA:** API `/api/services`, `/api/services/:id`, `/api/services/:id/quote` (apenas serviços `AVAILABLE`), catálogo validado, perguntas condicionais, frontend real separado da demonstração. Testes unitários/CI passaram, inclusive bloqueio do piloto `DRAFT`.
 
-**Fase 04 — PARCIAL:** motor PDF determinístico com `pdf-lib`, SHA-256, originais imutáveis, 6 FormMappings em `DRAFT`, **104 posições** em `docs/mapping-reports/`, todas as páginas renderizadas com dados fictícios em `docs/_pdf_test_previews/`. O preenchimento sintético foi executado com sucesso em CI. Falta completar vários campos condicionais/assinaturas e a revisão humana independente; proibir `APPROVED` prematuro.
+**Fase 04 — PARCIAL:** motor PDF determinístico com `pdf-lib`, SHA-256, originais imutáveis, 6 FormMappings em `DRAFT`, **135 posições** em `docs/mapping-reports/`, todas as páginas renderizadas com dados fictícios em `docs/_pdf_test_previews/` e artefatos de QA do CI. Foram incluídos coproprietário, motores 2–4, identidade do declarante e campos adicionais; faltam regras condicionais por serviço e revisão humana independente. Proibir `APPROVED` prematuro.
 
 **Fase 05 — PARCIAL:** upload protegido por autenticação, IDs aleatórios, assinatura/MIME, até 10 MB/arquivo e 30 MB/job, limites de páginas/dimensões, armazenamento em temp privado e TTL 20 min. Foram adicionados testes de limitação de jobs e uploads simultâneos; ainda faltam ensaios amplos de falhas, image bombs completas, expiração em processamento e carga.
 
@@ -284,6 +287,16 @@
 - [x] Interface informa o prazo e permite prorrogar a sessão, testada com API simulada.
 
 **Atenção:** a renovação não transfere arquivos ao banco de dados. O encerramento abrupto ainda requer testes de retenção após falhas; uma sessão ativa tem prazo máximo de uma hora, não promessa de retenção por uma hora inteira.
+
+## Fase 04 — Auditoria técnica aprofundada (26/10/2026, horário de Brasília)
+
+- **Escopo executado:** alteração do motor de preenchimento, validações semânticas, expansão de mapeamento, relatórios por formulário e regressão automatizada. A etapa de publicação/homologação não foi autorizada como substituição da conferência humana.
+- **Motor:** controle do tamanho físico do campo e caracteres especiais, NFC, bloqueio de bidi/controle, página girada/CropBox, texto verdadeiro em AcroForm e marcadores sim/não declarativos. CPF/datas validados pelo backend para versões aprovadas.
+- **Mapeamentos independentes:** seis modelos `DRAFT`, **135 posições**, declarações de campos essenciais, co-proprietário e até quatro motores, documento do declarante separado do vendedor. Não existe formulário duplicado por serviço.
+- **Visual:** exemplos fictícios com marca “AMOSTRA”, duas rodadas de correção de checkbox de motor e complemento de endereço; relatório [FASE_04_REVISAO_VISUAL.md](docs/FASE_04_REVISAO_VISUAL.md) e relatórios individuais.
+- **Regressão:** integridade SHA-256, testes de cada PDF com valores fictícios, requisitos por formulário, texto longo bloqueado e imagens PNG de todas as páginas disponíveis no artefato de CI `pdf-mapping-review-synthetic`.
+- **Riscos e bloqueios:** campos de assinatura/firma manual, regras por serviço ainda não homologadas, impressão real e revisão humana independente pendentes. **Fase 04 não marcada como concluída**, piloto `DRAFT`, nenhum PDF liberado a usuário final.
+- **Resultados do CI:** a execução [40431641525](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40431641525) passou nos cinco jobs de backend, frontend, PostgreSQL, Compose e revisão PDF. Conferir a execução do último commit para registrar validação final.
 
 ## Registro de execução — atualizar a cada sessão/fase
 

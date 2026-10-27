@@ -11,7 +11,7 @@ OpenCode entregou as fases 00–02 e seis PDFs NORMAM-212/DPC 2026 oficiais vers
 | API Fastify de catálogo | `backend/src/routes/catalog.ts`, `public-catalog.ts`, testes unitários | Implementado e testado com fixtures |
 | Modelos oficiais | `backend/templates/*/v1/original.pdf` | 6 PDFs `VERIFIED` pela Fase 02 |
 | Motor de preenchimento | `backend/src/modules/pdf/` | Testado com dados sintéticos; aprovação real bloqueada |
-| Mapeamento independente | `backend/src/modules/catalog/draft-mappings.ts` | 104 posições `DRAFT`, relatórios e prévias sintéticas por versão |
+| Mapeamento independente | `backend/src/modules/catalog/draft-mappings.ts` | 135 posições `DRAFT`, relatórios por versão, prévias sintéticas e CI com artefatos de revisão visual |
 | Upload seguro/TTL | `backend/src/modules/jobs/`, `routes/jobs.ts` | Implementado; QA de falhas incompleto |
 | OCR texto e Tesseract | `backend/src/modules/jobs/ocr.ts` | PDF nativo e imagens/PDFs digitalizados sintéticos testados; OCR sujeito a falhas de reconhecimento |
 | Login, sessão e ledger | `backend/src/modules/auth/`, migration SQL | PostgreSQL real testado, rate limit local implementado e testado |
@@ -58,3 +58,11 @@ Relatório da implementação: [hardening e verificação](SECURITY_HARDENING_20
 ## Controle do prazo temporário
 
 Adicionado endpoint autenticado `POST /api/jobs/:id/renew`, com prazo deslizante de 20 minutos e retenção máxima de uma hora desde a criação. A interface exibe a expiração estimada e botão para renovar. A geração/streaming só estende até o limite absoluto. Testes de UI e integração com banco verificam renovação; arquivos são removidos por cancelamento ou limpeza programada. Requer nova validação em falha abrupta para habilitação de produção.
+
+## Fase 04 — Motor PDF e mapeamentos (continuação)
+
+**Implementação técnica atual:** seis `FormMapping` independentes, **135 posições** distribuídas entre anexos 2-A, 2-B, 2-C, 2-D, 2-E e 1-C. Motor pdf-lib distingue campos AcroForm e posições estáticas, suporta seleções condicionais `markWhen`, rejeita textos que ultrapassam o campo, caracteres invisíveis ou não suportados, datas inválidas e CPFs com dígito verificador inválido. A origem/identidade do **declarante** no 2-C é diferente da do vendedor; os dados de coproprietário e motores 2–4 foram acrescentados no 2-D; tipos/datas de identidade e complementos foram acrescentados no 2-E; local/data incluído no 2-A.
+
+O CI executa regressões **para cada PDF oficial** com dados fictícios, preservação do modelo e testes de erro, além de gerar o artefato `pdf-mapping-review-synthetic` (PDF e PNG de todas as páginas). As prévias atuais no GitHub foram inspecionadas e corrigidas onde marcas e complementos sobrepunham rótulos.
+
+**Não homologado:** assinaturas, reconhecimento de firma, carimbos e protocolo permanecem manuais; necessidade/obrigatoriedade de campos condicionais por serviço, nomes longos e impressões reais ainda exigem revisão. `FormMapping` segue `DRAFT` e `ServiceDefinition` segue `DRAFT`. Procedimento de revisão: [FASE_04_REVISAO_VISUAL.md](FASE_04_REVISAO_VISUAL.md).
