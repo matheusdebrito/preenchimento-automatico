@@ -43,10 +43,10 @@
 | 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [x] |
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e seis mapas DRAFT; regras condicionais e revisão humana pendentes |
-| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — PNG/JPEG fictícios e arquivos isolados testados; fuzzing, sandbox e carga pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — PNG/JPEG fictícios e campos TIE/venda testados; isolamento e precisão em fotos reais pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — QA 2-A/2-B, valores revisados e avisos CPF/data testados; navegador real e acessibilidade pendentes |
-| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — créditos, migrações concorrentes e QA sem débito testados; crash real e multi-instância pendentes |
+| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads e feedback de obrigatórios testados; fuzzing, isolamento e carga pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — diagnóstico por documento e amostras PNG/JPEG testados; precisão em fotos reais e isolamento pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — feedback de documentos e 422 corrigido, rodapé simplificado; navegador real e acessibilidade pendentes |
+| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
 | 11 | Infraestrutura de produção e deploy reproduzível | 09 e aprovação explícita | [ ] |
@@ -130,6 +130,7 @@
 - [x] Validar no CI o novo preflight baseado no PNG Third Edition (IHDR, PLTE, chunks críticos) e rejeição de JPEG com dimensões zero; fixture sintética corrigida após falhas intermediárias.
 - [x] Conferir em integração PostgreSQL/Poppler o upload de foto PNG fictícia e isolamento de arquivos temporários entre instâncias de teste; CI 40440558586 (sem dados reais).
 - [x] Regressão com JPEG fictício gerado pelo Poppler, preflight e OCR Tesseract, além do PNG já testado; CI 40441312938.
+- [x] Exibir identificação de requisitos de upload obrigatórios ausentes na API/UI sem enviar documentos desnecessários; teste React e CI 40510328039.
 - [ ] Complementar fuzzing e isolamento de decodificadores JPEG/PNG/PDF, ensaios sob carga e recuperação de falhas súbitas antes de homologar a Fase 05.
 - **Aceite:** nenhum dado documental persistido no PostgreSQL, logs ou repositório.
 
@@ -141,6 +142,7 @@
 - [x] Sugerir dados rotulados de documento fictício de venda e do TIE, somente como `REVIEW_REQUIRED`, com casos de conflito/ausência; ignorar fotos da embarcação e recibos sem regras semânticas. CI 40440558586.
 - [x] Verificar fluxo sintético foto PNG → Tesseract → revisão manual → PDF com PostgreSQL/Poppler/Tesseract; CI 40440558586.
 - [x] Validar extração conservadora de nome rotulado em JPEG sintético, mantendo status `REVIEW_REQUIRED` e papel do comprador; CI 40441312938.
+- [x] Registrar no job temporário apenas status e número de sugestões por documento (`suggested`, `no_text`, `no_supported_labels`, `not_analyzed`), persistidos só até expiração e visíveis ao reabrir a revisão; CI 40510328039.
 - [ ] Executar Tesseract no servidor/worker isolado com tratamento de qualidade de imagem e limites reais de CPU/memória.
 - [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
@@ -158,6 +160,8 @@
 - [x] Disponibilizar QA local opt-in (`DEV_QA_PREVIEW=true`) com catálogo sintético isolado, duas amostras 2-A/2-B marcadas, revisão obrigatória e custo zero; CI de integração 40440558586.
 - [x] Validar CPF por dígitos e datas DD/MM/AAAA na API antes da geração e exibir indicação do campo inválido no frontend, com teste React e PostgreSQL; CI 40441312938.
 - [x] Verificar em ambos os PDFs QA 2-A e 2-B o conteúdo de campos revisados e marca AMOSTRA em todas as páginas; CI 40441312938.
+- [x] Corrigir UX de documento obrigatório, 422 na revisão com `fieldId` e mensagens próximas aos controles; manter o job após campo inválido e não relatar sucesso silencioso sem candidatos OCR. Testes frontend/backend, CI 40510328039.
+- [x] Remover repetição de navegação no rodapé e corrigir textos sobre o fluxo real de upload temporário; CI 40510328039.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
 - [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
 - [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
@@ -175,6 +179,7 @@
 - [x] Estornar recibo não entregue quando o job expirar pelo TTL deslizante de 20 minutos, após apagar os arquivos privados; preservar pacotes entregues e usar reconciliação posterior se o banco falhar. Testes unitários e com PostgreSQL no CI 40437615191.
 - [x] Verificar que o modo QA com foto e PDFs sintéticos não cria débito ou recibo financeiro; teste PostgreSQL de saldo zero no CI 40440558586. Não se aplica a serviços oficiais.
 - [x] Serializar a inicialização do esquema PostgreSQL com bloqueio de transação advisory e testar seis conexões simultâneas; CI 40441312938. Não equivale à migração de produção multi-instância ou à proteção do fluxo financeiro em vários processos.
+- [x] Sincronizar menu, login, logout e estado de sessão no frontend, impedindo tela de entrar autenticado; recusar login/cadastro por API quando sessão válida (`409 already_authenticated`), preservando usuário atual. Testes de frontend e PostgreSQL, CI 40510328039.
 - [ ] Testar falha real de processo durante o download, inconsistência de banco e execução multi-instância antes de produção.
 - **Aceite:** segurança e invariantes de saldo verificadas por testes.
 
@@ -532,3 +537,16 @@ Commit: [SHA, se realizado]
 - **Validações executadas:** [GitHub Actions 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) do commit `68c149c`, **5/5 jobs concluídos com sucesso**: backend e frontend (typecheck/lint/tests/build/auditoria), integração PostgreSQL + Poppler/Tesseract, Compose e prévias dos formulários fictícios. Falhas de DDL concorrente em commits intermediários ocorreram antes do lock transacional, não no CI final. O ambiente local real e dispositivos móveis não foram testados.
 - **Documentação:** `README.md`, `docs/QA_SYNTHETIC_PREVIEW.md`, `docs/OCR_EXTRACTION_RULES.md` e `docs/PENDENCIAS_PARA_2026-10-27.md` descrevem o escopo, o QA opt-in e os bloqueios. **Segurança:** nenhum serviço oficial habilitado e nenhum dado pessoal real processado. Nenhuma cobrança, aprovação de PDF ou deploy foi autorizado/efetuado.
 - **Próxima etapa:** revisão visual/jurídica dos PDFs e condições de serviço pelo responsável; isolação de decodificadores/OCR, medições de desempenho/acurácia, E2E físico e teste de falha real antes de liberar o MVP para clientes.
+
+## Registro de execução — correção dos testes manuais em 27/10/2026 (Fases 05–08)
+
+**Estado:** correções implementadas e testes de regressão automatizados aprovados; Fases 05–08 permanecem **PARCIAIS**, Fase 09 **PENDENTE**. Os seis mapeamentos oficiais seguem `DRAFT`.
+
+- **Relato do teste:** cabeçalho expunha Entrar mesmo autenticado, rodapé duplicava links, requisito obrigatório sem feedback visível, zero sugestões OCR, `PATCH /api/jobs/:id/review` devolveu HTTP 422 sem indicar campo na interface.
+- **Causa observável:** menus independentes do estado de sessão; rodapé desatualizado; feedback de documentos e 422 ficava distante/sem identificação da causa; regras OCR conservadoras retornavam vazio sem relatório do motivo. **A causa exata do 422 original e do OCR vazio não pode ser determinada sem o JSON de resposta e a amostra, que não foram fornecidos.** Nenhuma validação foi desativada.
+- **Backend:** `backend/src/routes/auth.ts` impede login/cadastro com cookie já autenticado; `backend/src/routes/jobs.ts` retorna identificador público de campo/requisito em 422 e diagnóstico de OCR sem conteúdo dos documentos; `backend/src/modules/jobs/job-store.ts` mantém somente contagens/resultados técnicos temporários. Testes em `backend/src/modules/auth/auth.integration.test.ts` e `backend/src/routes/qa-preview.integration.test.ts`.
+- **Frontend:** `frontend/src/features/auth/AuthProvider.tsx` concentra consulta de sessão, login e logout; `AppHeader.tsx` e `AuthPage.tsx` bloqueiam navegação de login autenticado, `AppFooter.tsx` elimina links duplicados, `HomePage.tsx` corrige texto de privacidade; `LiveFlowPage.tsx` explica obrigatórios, OCR sem sugestões e o erro no campo exato; `lib/api.ts` preserva apenas IDs/códigos seguros. Testes de página, sessão, rodapé e fluxo real foram adicionados/atualizados, incluindo `HomePage.test.tsx`, `LiveFlowPage.test.tsx`, `AuthPage.test.tsx` e `AppHeader.test.tsx`.
+- **CI verificado:** [GitHub Actions 40510328039](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40510328039), commit de código `af800ef`, **5/5 jobs aprovados** (`checks backend`, `checks frontend`, `postgres-integration`, `pdf-mapping-visual`, `compose-smoke`). Comandos via workflow: typecheck, lint, tests, build, integração PostgreSQL e geração de PDFs sintéticos. Runs intermediários falharam devido à adaptação de testes de navegação/cópia e foram resolvidos antes do CI verde.
+- **Evidências e próximo teste:** `docs/QA_CORRECOES_2026-10-27.md` descreve causa, escopo e roteiro de reteste manual. Testar em navegador após `docker compose up -d --build` com documentos **inteiramente fictícios**, iniciar novo job e confirmar os quatro pontos.
+- **Risco remanescente:** não houve acesso às fotos reais, nem medição de precisão OCR por layout/qualidade. Testes automatizados não substituem confirmação manual de UX, revisão de segurança de OCR, homologação dos seis PDFs e validação normativa. Nenhum serviço oficial, cobrança ou publicação foi liberado.
+
