@@ -170,7 +170,7 @@ Pendências e riscos residuais:
 Próxima menor etapa recomendada:
 ```
 
-**Não executar tarefas futuras por iniciativa própria. Não mascarar erros, não pular validações e não declarar o MVP pronto para produção sem revisão de segurança, privacidade e conformidade documental.**
+**Autorização específica de 26/10/2026:** continuar consecutivamente as tarefas técnicas das fases 00–09 do MVP sem novas autorizações de fase, respeitando bloqueios de segurança e homologação. Não iniciar pagamentos reais, publicação ou tratamento de documentos reais antes da revisão e das autorizações correspondentes. Não mascarar erros, não pular validações e não declarar o MVP pronto para produção sem revisão de segurança, privacidade e conformidade documental.**
 
 
 ## Continuidade até produção

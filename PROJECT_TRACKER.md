@@ -14,7 +14,7 @@
 4. Rodar os comandos de verificação aplicáveis dos pacotes afetados (`typecheck`, `lint`, `test`, `build`), além dos testes específicos da fase. Se não puder executar, registrar **não verificado**, nunca marcar como aprovado.
 5. **Marcar [x] apenas após evidência verificável**. Adicionar na seção "Registro de execução": data, fase, arquivos alterados, comandos e resultados, validações manuais, riscos e commit. Uma fase parcialmente feita permanece [ ].
 6. Se faltar decisão do usuário, modelo oficial, dado normativo, ferramenta necessária ou acesso, registrar **BLOQUEADO** e fazer uma pergunta objetiva com os arquivos/instruções necessários. Não inventar PDFs, fontes oficiais, versões, campos nem obrigações legais.
-7. Fazer uma fase por vez; após concluir, **parar e informar o resultado**, inclusive pendências. Não avançar automaticamente.
+7. Após concluir uma fase, registrar e informar o resultado. **Autorização de 26/10/2026:** o usuário permitiu executar de forma consecutiva as fases técnicas 00–09 do MVP sem pedir nova autorização por fase. Isso não equivale a revisão humana de modelo oficial, validação jurídica, autorização de produção ou cobrança. Quando houver bloqueador comprovado, registrar e prosseguir somente com tarefas independentes e seguras.
 8. Não editar marcadores de fases futuras, não simular testes, não usar documentos pessoais reais em testes, não lançar código inseguro para "desbloquear".
 9. Manter o frontend demonstrativo funcionando até haver integração real validada; separar explicitamente fluxos `demo` e `real`.
 10. Sempre revisar segurança (autenticação, autorização, validação de entradas, uploads, logs, temporários, consumo de créditos), desempenho (medir antes de otimizar) e LGPD.
@@ -41,7 +41,7 @@
 | 00 | Revalidar fundação existente | — | [x] |
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] |
 | 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [x] |
-| 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [ ] |
+| 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] |
 | 06 | OCR/extração estruturada no servidor | 05 | [ ] |
@@ -101,20 +101,20 @@
 
 ## Fase 03 — API de catálogo e contratos
 
-- [ ] Utilizar `validateCatalog` e conferir serviços, formulários, versões, mapeamentos e `ServiceForm` muitos-para-muitos por **FormVersion**, inclusive perguntas e condições enumeradas.
-- [ ] Expor endpoints públicos **apenas de serviços realmente disponíveis**; rascunhos são internos e não liberam geração. O piloto só muda para `AVAILABLE` **depois** de modelos verificados e mapeamentos aprovados na Fase 04.
-- [ ] Migrar seleção/checklist do frontend de dados hardcoded para a API sem remover a demonstração.
-- [ ] Testar relações inexistentes, versões inativas, condições e restrição de disponibilidade.
+- [x] Utilizar `validateCatalog` e conferir serviços, formulários, versões, mapeamentos e `ServiceForm` muitos-para-muitos por **FormVersion**, inclusive perguntas e condições enumeradas.
+- [x] Expor endpoints públicos **apenas de serviços realmente disponíveis**; rascunhos são internos e não liberam geração. O piloto só muda para `AVAILABLE` **depois** de modelos verificados e mapeamentos aprovados na Fase 04.
+- [x] Criar fluxo real com seleção e checklist obtidos da API, preservando o frontend demonstrativo claramente separado.
+- [x] Testar relações inexistentes, versões inativas, condições e restrição de disponibilidade com fixtures sintéticas.
 - **Aceite:** API e interface mostram o mesmo catálogo validado; nenhuma exigência inventada é exposta como oficial.
 
 ## Fase 04 — Motor genérico de PDFs
 
-- [ ] Detectar campos AcroForm; para PDFs estáticos, definir coordenadas por página, unidades e fontes.
-- [ ] Separar **campo semântico** de **campo/posição do PDF**, permitindo reutilização do motor entre serviços.
-- [ ] Versionar `FormVersion` (modelo oficial e hash) e `FormMapping` (revisão técnica) separadamente. Nunca modificar o PDF original nem recriar seu layout.
-- [ ] Criar um relatório **por formulário/versão** usando `docs/FORM_MAPPING_REPORT_TEMPLATE.md`, identificando campos automáticos, revisados e pendentes, páginas, geometria, casos de teste e resultados.
+- [x] Detectar campos AcroForm; os seis PDFs oficiais são estáticos e receberam coordenadas preliminares com páginas e fontes.
+- [x] Separar **campo semântico** de **campo/posição do PDF**, permitindo reutilização do motor entre serviços.
+- [x] Versionar `FormVersion` (modelo oficial e hash) e `FormMapping` (revisão técnica) separadamente; preservar original e bloquear modelos não aprovados.
+- [x] Criar relatório **por formulário/versão** em `docs/mapping-reports/`, com posições, evidências sintéticas e pendências; nenhum está homologado.
 - [ ] Implementar validações de comprimento, acentos, quebras de linha, espaços para assinaturas e campos condicionais.
-- [ ] Gerar PDFs com **dados sintéticos**, renderizar **todas as páginas** e conferir visualmente texto cortado, sobreposição e paginação.
+- [x] Gerar PDFs com **dados sintéticos** e renderizar todas as páginas dos seis modelos; prévias em `docs/_pdf_test_previews`. A conferência apontou lacunas registradas nos relatórios; por isso a etapa ainda não foi aprovada.
 - [ ] Executar testes automatizados de regressão por modelo, guardar evidências sintéticas sem dados reais e obter revisão humana explícita antes de marcar **FormMapping = `APPROVED`**; manter FormVersion = `VERIFIED` e bloquear versões `OUTDATED`.
 - **Aceite:** pacote piloto gerado corretamente com dados fictícios, modelo preservado, visual inspecionado e sem documento real.
 
@@ -128,11 +128,11 @@
 
 ## Fase 06 — PDF textual, OCR e extração estruturada
 
-- [ ] Extrair texto nativo de PDFs digitais sem OCR quando possível.
-- [ ] Converter páginas de PDFs digitalizados para imagens sob limites de recursos.
+- [x] Extrair texto nativo de PDFs digitais sem OCR quando possível; confirmado com PDF sintético no CI de integração.
+- [x] Implementar conversão limitada de PDFs digitalizados com `pdftoppm`, a testar com amostras digitalizadas reais/sintéticas de qualidade variada.
 - [ ] Executar Tesseract no servidor/worker com tratamento de qualidade de imagem e limites de CPU/memória.
 - [ ] Mapear texto para IDs semânticos reutilizáveis; registrar origem/confiança somente no job temporário.
-- [ ] Detectar conflitos e ausências; nunca completar valores por suposição.
+- [x] Detectar conflitos e ausências; nunca completar valores por suposição.
 - [ ] Testar fotos/PDFs **sintéticos**, com qualidade variada e campos ambíguos.
 - **Aceite:** extração rastreável, falhas tratadas e nenhuma confiança excessiva em OCR.
 
@@ -147,10 +147,10 @@
 
 ## Fase 08 — Autenticação e créditos de teste
 
-- [ ] Criar persistência mínima para usuários e ledger de créditos; não armazenar dados de clientes ou embarcações.
+- [x] Criar persistência mínima para usuários e ledger de créditos; não armazenar dados de clientes ou embarcações.
 - [ ] Implementar autenticação, autorização por operação, proteção de sessão e limitação de taxa.
-- [ ] Conceder créditos de **teste** por mecanismo interno seguro; não integrar cobrança real nesta fase.
-- [ ] Debitar **uma vez por pacote documental gerado com sucesso**, usando transação e idempotência; retentativas, ajustes ou falhas não geram débito duplicado.
+- [x] Conceder créditos de **teste** por mecanismo interno seguro; não integrar cobrança real nesta fase.
+- [x] Debitar **uma vez por pacote documental gerado com sucesso**, usando transação e idempotência; verificadas retentativas e concorrência no CI com PostgreSQL real.
 - [ ] Testar concorrência, acesso entre usuários, estorno e recuperação de falha.
 - **Aceite:** segurança e invariantes de saldo verificadas por testes.
 
@@ -240,6 +240,26 @@
 - [ ] Analisar métricas agregadas e feedback sem reter conteúdo documental; melhorar OCR somente mediante testes comparativos.
 - [ ] Considerar equipes/contas empresariais e assinaturas **apenas se houver nova decisão explícita**.
 - **Aceite:** cada ampliação passa por sua própria revisão, testes, autorização e registro de lançamento.
+
+## Auditoria e implementação técnica — 26/10/2026
+
+**Escopo autorizado:** fases técnicas do MVP 00–09, sem autorização para pagamentos reais, publicação ou processamento de documentos pessoais de clientes.
+
+**Fase 03 — CONCLUÍDA:** API `/api/services`, `/api/services/:id`, `/api/services/:id/quote` (apenas serviços `AVAILABLE`), catálogo validado, perguntas condicionais, frontend real separado da demonstração. Testes unitários/CI passaram, inclusive bloqueio do piloto `DRAFT`.
+
+**Fase 04 — PARCIAL:** motor PDF determinístico com `pdf-lib`, SHA-256, originais imutáveis, 6 FormMappings em `DRAFT`, **104 posições** em `docs/mapping-reports/`, todas as páginas renderizadas com dados fictícios em `docs/_pdf_test_previews/`. O preenchimento sintético foi executado com sucesso em CI. Falta completar vários campos condicionais/assinaturas e a revisão humana independente; proibir `APPROVED` prematuro.
+
+**Fase 05 — PARCIAL:** upload protegido por autenticação, IDs aleatórios, assinatura/MIME, até 10 MB/arquivo e 40 MB/job, limites de páginas/dimensões, armazenamento em temp privado e TTL 20 min. Falta teste abrangente de PDF corrompido, imagem-bomba completa, expirados e concorrência de jobs.
+
+**Fase 06 — PARCIAL:** `pdftotext`, `pdftoppm`, Tesseract português no contêiner, extração conservadora CPF/HIN e conflitos; ainda sem bateria de testes de OCR em fotos digitalizadas variadas e sem motor de extração amplo por tipo de documento.
+
+**Fase 07 — PARCIAL:** fluxo React autenticado separado do demo: perguntas, upload, extração, revisão, PDF e download. Teste E2E **de API** com catálogo sintético e documentos falsos passou; falta homologação do serviço real, teste E2E no navegador e casos de recuperação/expiração.
+
+**Fase 08 — PARCIAL:** PostgreSQL persistente, scrypt, cookies HttpOnly/SameSite, saldo/ledger idempotente, crédito de teste restrito a desenvolvimento. Integração real de cadastro, sessão, três débitos concorrentes e geração de dois PDFs com débito único passou em CI. Falta limitação de taxa e testes de estorno/falhas de subprocessos.
+
+**Fase 09 — NÃO CONCLUÍDA:** npm typecheck/lint/test/build/audit, testes reais PostgreSQL e pipeline E2E sintético passaram na CI [40423956171](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40423956171). O primeiro Docker Compose smoke [40424130637](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40424130637) revelou segredo opcional vazio, corrigido. Novo smoke test ainda precisa ser confirmado. Falta segurança/carga, retenção, acessibilidade e aprovação documental.
+
+**Bloqueador de homologação:** os seis PDFs reais permanecem `VERIFIED`, os `FormMapping` permanecem `DRAFT`, o piloto `DRAFT`, e `ServiceForm` não libera uso real. Não alterar para `APPROVED`/`AVAILABLE` sem fechar relatório e revisão documental humana. A autorização para seguir desenvolvendo **não** é revisão humana dos campos do documento.
 
 ## Registro de execução — atualizar a cada sessão/fase
 
