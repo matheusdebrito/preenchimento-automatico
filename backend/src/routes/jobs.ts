@@ -156,17 +156,13 @@ export function registerJobRoutes(
     const userId = await actor(req);
     const job = store.get(req.params.id, userId);
     if (!job) return reply.status(404).send({ error: 'not_found' });
-    if (job.stage !== 'UPLOADED') return reply.status(409).send({ error: 'invalid_state' });
+    // A job with no files can transition straight from CREATED to REVIEW.
+    // Uploaded documents are an optional OCR aid, not a condition of service.
+    if (job.stage !== 'CREATED' && job.stage !== 'UPLOADED') {
+      return reply.status(409).send({ error: 'invalid_state' });
+    }
     const service = publicService(definitions, job.serviceId, job.answers);
     if (!service) return reply.status(409).send({ error: 'service_unavailable' });
-    const required = service.documentRequirements.filter((doc) => doc.required);
-    const missingDocument = required.find((doc) =>
-      !job.files.some((file) => file.requirementId === doc.id));
-    if (missingDocument) {
-      return reply.status(422).send({
-        error: 'missing_document', requirementId: missingDocument.id,
-      });
-    }
 
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     job.stage = 'PROCESSING';
@@ -179,8 +175,8 @@ export function registerJobRoutes(
     const reviewableFields = new Set(service.reviewFields.map((field) => field.id));
     try {
       for (const document of job.files) {
-        // Boat photos, GRU receipts and other supporting evidence are retained
-        // for the checklist, but have no approved semantic extraction rules.
+        // Supporting documents without semantic rules are ignored by OCR.
+        // No files means zero suggestions and immediate manual review.
         if (!shouldExtractDocument(document.requirementId)) {
           diagnostics.push({
             requirementId: document.requirementId, outcome: 'not_analyzed', suggestionCount: 0,
