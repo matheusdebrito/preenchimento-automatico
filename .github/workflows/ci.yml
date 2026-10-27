@@ -67,5 +67,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
         working-directory: backend
+      - name: Install Poppler for PDF integration test
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - run: npm test
         working-directory: backend

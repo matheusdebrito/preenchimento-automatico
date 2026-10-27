@@ -8,10 +8,13 @@ import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerJobRoutes } from './routes/jobs.js';
 import type { Database } from './modules/auth/db.js';
+import type { CatalogDefinition } from './modules/catalog/contracts.js';
 
 interface BuildAppOptions {
   env?: AppEnv;
   pool?: Database;
+  /** Test-only override. Production always uses the verified default catalog. */
+  catalogOverride?: CatalogDefinition;
 }
 
 const REDACTED_LOG_PATHS = [
@@ -57,9 +60,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
 
   registerHealthRoutes(app);
-  registerCatalogRoutes(app);
+  registerCatalogRoutes(app, options.catalogOverride);
   registerAuthRoutes(app, env, options.pool);
-  registerJobRoutes(app, options.pool);
+  registerJobRoutes(app, options.pool, options.catalogOverride);
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({
