@@ -92,6 +92,20 @@ describePoppler('preflight PDF com Poppler', () => {
     }
   });
 
+  it('recusa PDF cujo tamanho perigoso ocorre somente na segunda página', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-pdf-page2-'));
+    try {
+      const pdf = await PDFDocument.create();
+      pdf.addPage([595, 842]);
+      pdf.addPage([3500, 3500]);
+      const file = join(root, 'mixed-page-sizes.pdf');
+      await writeFile(file, await pdf.save());
+      await expect(validatePdfPages(file)).rejects.toThrow('página 2');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('aceita PDF sintético com página A4 e recusa mais de cinco páginas', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pa-pdf-pages-'));
     try {

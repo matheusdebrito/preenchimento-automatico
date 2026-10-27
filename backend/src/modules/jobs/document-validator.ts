@@ -120,12 +120,26 @@ export async function validatePdfPages(path: string): Promise<number> {
   if (/^JavaScript:\s+yes/im.test(stdout)) {
     throw new Error('PDF com JavaScript embutido não suportado.');
   }
-  const pageSize = /^Page size:\s*([\d.]+) x ([\d.]+) pts/im.exec(stdout);
-  const width = Number(pageSize?.[1]);
-  const height = Number(pageSize?.[2]);
-  if (!Number.isFinite(width) || !Number.isFinite(height) ||
-    width < 144 || height < 144 || width > 2000 || height > 2000) {
-    throw new Error('Dimensões do PDF não suportadas.');
+  // pdfinfo without -f/-l reports only page 1 geometry. A second oversized
+  // page could exhaust the rasterizer even when the first page is normal.
+  const { stdout: detailed } = await execFile('pdfinfo', [
+    '-f', '1', '-l', String(pages), path,
+  ], {
+    timeout: 8000, maxBuffer: 20_000,
+    env: { PATH: process.env.PATH ?? '/usr/bin:/bin', LC_ALL: 'C' },
+  });
+  const found = [...detailed.matchAll(
+    /^Page\s+(\d+)\s+size:\s*([\d.]+) x ([\d.]+) pts/gim,
+  )];
+  if (found.length !== pages) throw new Error('Dimensões de páginas PDF incompletas.');
+  for (let index = 0; index < pages; index++) {
+    const page = found[index]!;
+    const width = Number(page[2]);
+    const height = Number(page[3]);
+    if (Number(page[1]) !== index + 1 || !Number.isFinite(width) || !Number.isFinite(height) ||
+      width < 144 || height < 144 || width > 2000 || height > 2000) {
+      throw new Error('Dimensões do PDF não suportadas na página ' + (index + 1) + '.');
+    }
   }
   return pages;
 }
