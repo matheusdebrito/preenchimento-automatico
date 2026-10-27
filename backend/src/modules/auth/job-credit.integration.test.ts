@@ -69,4 +69,39 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       await pool.end();
     }
   }, 30000);
+
+  it('impede confirmação de entrega por outra conta e estorna apenas o recibo vencido', async () => {
+    const pool = await connectDatabase(url!);
+    const owner = randomUUID();
+    const stranger = randomUUID();
+    const expiredJob = randomUUID();
+    const deliveredJob = randomUUID();
+    try {
+      for (const id of [owner, stranger]) {
+        await pool.query('INSERT INTO app_users(id,email,password_hash) VALUES($1,$2,$3)',
+          [id, 'receipt-owner-' + id + '@example.invalid', await hashPassword('test-only-password-123')]);
+      }
+      await applyCreditMovement(pool, owner, 'test_grant', 3, 'expiry_grant');
+      await chargeJobCredit(pool, owner, expiredJob, Date.now());
+      await chargeJobCredit(pool, owner, deliveredJob, Date.now());
+
+      expect(await markJobDelivered(pool, stranger, deliveredJob)).toBe(false);
+      expect(await markJobDelivered(pool, owner, deliveredJob)).toBe(true);
+      expect(await creditBalance(pool, owner)).toBe(1);
+
+      // Simulate a receipt reaching its stored deadline; no clock sleeping needed.
+      await pool.query(
+        'UPDATE job_credit_receipts SET expires_at=now()-interval \'1 second\' WHERE job_id=$1',
+        [expiredJob],
+      );
+      expect(await refundExpiredJobCredits(pool)).toBe(1);
+      expect(await refundExpiredJobCredits(pool)).toBe(0);
+      expect(await creditBalance(pool, owner)).toBe(2);
+      expect(await refundUndeliveredJobCredit(pool, deliveredJob)).toBe(false);
+    } finally {
+      await pool.query('DELETE FROM app_users WHERE id = ANY($1::uuid[])', [[owner, stranger]]);
+      await pool.end();
+    }
+  }, 30000);
+
 });
