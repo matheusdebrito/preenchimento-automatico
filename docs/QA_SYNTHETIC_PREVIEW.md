@@ -1,74 +1,98 @@
-# Simulação local de ponta a ponta — fotos fictícias → OCR → PDFs de AMOSTRA
+# Prévia local do serviço real — transferência de moto aquática
 
-## Finalidade e limites
+**Apenas QA local, nunca para documentos pessoais reais ou protocolo oficial.**
 
-Este é um **ambiente de QA local**, desligado por padrão, para testar a jornada real do frontend, backend Fastify, Tesseract, revisão humana e o motor `pdf-lib`. O serviço `qa-synthetic-moto` é **fictício**, separado de `transferencia-moto-aquatica`.
+## Por que não existe mais um segundo serviço fictício?
 
-**Não use RG, CPF, fotos, TIE ou comprovantes reais nesta simulação.** A prévia usa temporariamente apenas os mapeamentos reduzidos dos anexos **2-A e 2-B**. Os seis `FormMapping` originais continuam `DRAFT`; este teste não vale como revisão humana ou homologação perante a Marinha. Os dois PDFs da amostra têm marca d'água visível **AMOSTRA - DADOS FICTICIOS - NAO UTILIZAR** em cada página.
+O modo `DEV_QA_PREVIEW=true` passa a usar o próprio identificador
+`transferencia-moto-aquatica`, com **as mesmas perguntas, requisitos de upload,
+regras de seleção e posições de todos os seis mapas** do catálogo oficial.
+Assim, o que for corrigido ou testado no serviço de transferência se aplica ao
+mesmo fluxo usado futuramente. Não há duplicação de mapeamentos ou campos só
+para o QA.
 
-- Somente habilitado em `NODE_ENV=development` e mediante configuração explícita `DEV_QA_PREVIEW=true`. A configuração é recusada em produção.
-- O modo QA aparece separado dos "Serviços homologados" na página inicial e não libera o serviço oficial de transferência.
-- Não cobra créditos (`creditCost=0`) e não registra recibo financeiro, sem afetar o saldo da conta.
-- Os arquivos e campos seguem temporários no servidor: TTL deslizante de 20 minutos, teto de uma hora por job, com limpeza.
-- Nunca exponha os containers locais diretamente à internet; o Compose vincula API e frontend a `127.0.0.1`.
+A camada de desenvolvimento adapta os status `DRAFT` *somente em memória*
+para permitir gerar prévias, preservando o catálogo original sem aprovação.
+A aplicação continua obrigatoriamente com `DRAFT` em produção. A flag só é
+aceita em `NODE_ENV=development`, as prévias têm marca d'água em **todas as
+páginas**, e nenhum crédito é debitado. A validação normativa e visual humana
+continua obrigatória antes de tornar o serviço oficial disponível.
 
-## Como iniciar na sua máquina
+## Preparação
 
-Pré-requisitos: Docker Compose e um arquivo `.env` privado a partir do `.env.example` (senha local do PostgreSQL preenchida).
+1. Fazer `git status --short` e preservar alterações locais, depois
+   `git pull --ff-only` na `main`.
+2. No `.env` local, definir `DEV_QA_PREVIEW=true`, com senha forte de
+   PostgreSQL. Não enviar o `.env` ao GitHub.
+3. Executar `docker compose up -d --build` e abrir
+   `http://127.0.0.1:8080` no próprio computador.
+4. Entrar com conta sintética e selecionar **Transferência de moto aquática —
+   prévia local de QA**, no bloco de testes técnicos.
+5. Responder **todas as perguntas reais**. Uma combinação simples para testar
+   os anexos 2-A/2-B: TIE regular, autorização já consta no TIE, sem comunicação
+   opcional do vendedor, comprovante de residência, sem coproprietário e sem
+   representante.
+6. Enviar os documentos solicitados: identidade fictícia do comprador,
+   identidade fictícia do vendedor, TIE fictício e comprovante fictício de
+   residência; as fotos de popa/través devem ser **imagens inventadas**.
+   Requisitos adicionais surgem conforme as respostas.
+7. Revisar todos os campos, inclusive **cidade, bairro e CEP separadamente**.
+   O OCR só sugere campos encontrados de maneira inequívoca; os demais
+   precisam ser preenchidos manualmente.
+8. Gerar as prévias condicionais, baixar cada PDF e conferir campo por campo,
+   posição, acentos, texto cortado, assinaturas vazias e marca AMOSTRA em todas
+   as páginas. Os anexos 2-A/2-B são selecionados por padrão; 2-C, 2-D,
+   2-E e 1-C aparecem somente se as respostas exigirem seus vínculos de QA.
+9. Desligar `DEV_QA_PREVIEW` após os testes e reconstruir os containers.
 
-1. Edite o `.env` e defina `DEV_QA_PREVIEW=true` (não versionar nem enviar o `.env`).
-2. Na raiz do projeto execute `docker compose up -d --build`.
-3. Acesse **http://127.0.0.1:8080**, crie uma conta de **teste** em `/entrar` e volte à página inicial.
-4. Abra o bloco **Teste técnico com dados fictícios** e selecione **Simulação técnica — moto aquática**.
-5. Anexe uma **foto fictícia** de identidade (PNG/JPEG) e um **PDF/foto fictícia de TIE**; opcionalmente anexe documento fictício de venda e endereço.
-6. Confira as sugestões do OCR e **corrija manualmente** qualquer campo ausente ou errado. Complete pelo menos nome fictício do comprador e nome fictício da moto aquática.
-7. Clique em gerar. O fluxo de QA deve produzir os dois PDFs **2-A e 2-B**, obrigatoriamente marcados como AMOSTRA; teste o download e depois encerre/apague o job.
-8. Ao terminar o QA, volte `DEV_QA_PREVIEW=false` no `.env` e execute `docker compose up -d --build` para desabilitar a simulação.
+## OCR e endereço
 
-### Exemplo de textos totalmente inventados
+No BDMOTO há campos distintos **Endereço, Cidade, Bairro e CEP**. A fonte
+oficial apresenta estas quatro áreas; portanto **não remova Endereço do
+mapeamento apenas porque o OCR ainda não sabe separá-lo**. Agora o comprovante
+pode sugerir `person.address`, `person.city`,
+`person.neighborhood`, `person.postalCode`, `person.state`,
+`person.streetNumber` e `person.apartment`, quando cada informação está
+explicitamente rotulada. A regra evita deduzir cidade/bairro de uma linha de
+endereço sem estrutura. Todos os valores continuam sujeitos a revisão.
 
-Crie em editor de texto um PDF de teste com fonte grande, salve e, se quiser testar fotos, fotografe uma **impressão fictícia** (nunca um documento de pessoa real):
+Os campos de data no assistente possuem máscara `DD/MM/AAAA`: as barras
+aparecem durante a digitação. Datas impossíveis permanecem rejeitadas pela API.
 
-**Identidade fictícia do comprador:**
+## Limitações e próxima revisão
+
+Este fluxo utiliza o serviço e os mapeamentos reais, mas o status de QA é um
+**desbloqueio técnico temporário**, não homologação. As regras condicionais de
+transferência ainda precisam ser confrontadas com a norma vigente, e as seis
+versões PDF precisam de revisão humana de todas as páginas, incluindo o
+alinhamento de Endereço/Cidade/Bairro/CEP no BDMOTO.
+
+O processamento OCR ainda não reconhece com confiança todo layout de RG,
+CNH, TIE ou comprovante. Sem exemplos controlados de layout e qualidade de
+imagem, **não é possível prometer extração de todos os campos**: dados que não
+estão no documento ou não possuem rótulos verificáveis não devem ser
+inventados. Testes devem usar somente imagens/PDFs sintéticos.
+
+Amostras sintéticas para o OCR:
 
 ```text
-DOCUMENTO FICTICIO - APENAS TESTE
+DOCUMENTO FICTICIO DO COMPRADOR
 NOME: MARIA DE SOUZA
 CPF: 123.456.789-09
-```
 
-**TIE fictício:**
-
-```text
-TITULO FICTICIO - NAO EXISTE
+TITULO FICTICIO DE MOTO AQUATICA
 NOME DA EMBARCACAO: MAR TESTE
 INSCRICAO: RJ123456
 HIN: BR-TESTE-123456
-ANO DE CONSTRUCAO: 2022
-COMPRIMENTO (M): 3,25
-LOTACAO: 3
+
+COMPROVANTE FICTICIO DE ENDERECO
+ENDERECO: RUA DAS FLORES
+NUMERO: 120
+COMPLEMENTO: APTO 302
+CIDADE: NITEROI
+BAIRRO: ICARAI
+CEP: 24230-100
+UF: RJ
 ```
 
-**Documento de venda fictício (opcional):**
-
-```text
-NOTA FISCAL: NF-2026-123
-DATA DA VENDA: 15/10/2026
-VALOR DA VENDA: R$ 15.900,00
-```
-
-Os números e nomes acima são **exemplos sintéticos**, não cadastros oficiais. Mesmo se o OCR sugerir valores, todos exigem revisão humana; CPFs sintáticos não comprovam identidade.
-
-## Evidências automatizadas e critérios
-
-- `backend/src/modules/catalog/qa-preview.test.ts`: catálogo QA coerente e nenhum status oficial alterado.
-- `backend/src/routes/qa-preview.integration.test.ts`: gera foto PNG sintética a partir de PDF, faz OCR, revisão, download de PDF com marca AMOSTRA e confere consumo **zero** de créditos, em PostgreSQL real.
-- `backend/src/config/env.test.ts`: a opção QA é desativada por padrão e não pode rodar em produção.
-- `frontend/src/features/real/LiveFlowPage.test.tsx`: testa opção de câmera traseira e fluxo de revisão.
-- `GitHub Actions` executa testes de backend/frontend e integração com ferramentas Poppler/Tesseract. O resultado deve ser confirmado para o último commit; não presumir CI verde com base em commits anteriores.
-
-## Pendências de homologação
-
-Este modo serve para você **experimentar tecnicamente** o fluxo com documentos inventados. **Não é MVP pronto para clientes reais**. Ainda faltam: atesto humano dos seis PDFs oficiais, regras condicionais confirmadas por serviço, testes reais de imagem em múltiplos aparelhos, isolamento do OCR, revisão LGPD e hardening, E2E em navegador real, além de revisão formal da política de créditos.
-
-Leia também `PROJECT_TRACKER.md` e o relatório de pendências destinado à revisão do próximo dia.
+Leia também `PROJECT_TRACKER.md` e `docs/PENDENCIAS_PARA_2026-10-27.md`.
