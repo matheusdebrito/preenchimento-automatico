@@ -12,6 +12,7 @@ import type { AppEnv } from '../config/env.js';
 import { connectDatabase } from '../modules/auth/db.js';
 import { creditBalance } from '../modules/auth/credits.js';
 import { qaPreviewCatalog, QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
+import { classifyDocument } from '../modules/jobs/document-validator.js';
 
 const execFile = promisify(execFileCallback);
 const databaseUrl = process.env.DATABASE_TEST_URL;
@@ -73,6 +74,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         '-f', '1', '-l', '1', '-singlefile', '-r', '180', '-png', buyer, prefix,
       ], { timeout: 30_000, maxBuffer: 64_000 });
       const png = await readFile(prefix + '.png');
+      expect(classifyDocument(png, 'image/png')).toBe('png');
       const buyerUpload = await app.inject({
         method: 'POST', url: '/api/jobs/' + jobId + '/documents/buyer-identity',
         headers: { cookie, 'content-type': 'image/png' }, payload: png,
