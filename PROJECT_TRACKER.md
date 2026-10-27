@@ -44,8 +44,8 @@
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — QA local usa os seis mapas reais e vínculos condicionais; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — todos os uploads opcionais, inclusive zero, com limites mantidos; fuzzing e isolamento pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — diagnóstico diferencia OCR sem texto, sem campos reconhecidos e campos não mapeados; RG real e métricas pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — alerta explícito se OCR retornar zero campos e contrato nome/CPF/RG testado; validação em celular real pendente |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — segunda leitura depende também do nome civil ausente; fotos reais e métricas de acurácia pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — cartões de upload com arquivo/câmera e estado selecionado; revisão visual mobile real pendente |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
@@ -150,6 +150,7 @@
 - [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
 - [x] Tratar RG com layout não uniforme: OCR com `--psm 11` e fallback `--psm 6` limitado a uma tentativa quando houver poucos candidatos; parser aceita rótulos de nome/RG/emissor/data acima do valor e rejeita filiação/nome social/ambiguidade. Testes unitários e JPEG sintético real via Tesseract, [CI 40529677699](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40529677699), **cinco jobs aprovados**.
 - [x] Distinguir `no_applicable_fields` de `no_text`/`no_supported_labels` por documento, sem expor OCR bruto; teste de integração com RG fictício e campo não mapeado, CI 40533322688 (5/5 jobs aprovados).
+- [ ] Confirmar no CI final a regressão do OCR para CPF/RG presentes com nome ausente, fallback condicionado a nome civil e novos rótulos explícitos (`NOME / NAME`, `NOME E SOBRENOME`) sem confundir filiação. Teste unitário criado; requer CI da última alteração.
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
 - [x] Detectar conflitos e ausências; nunca completar valores por suposição.
 - [x] Testar candidatos sintéticos ambíguos, divergências de CPF, registros de TIE e comprovantes com múltiplos CEPs; nenhum desses casos gera preenchimento por suposição.
@@ -175,6 +176,7 @@
 - [x] Aceitar zero arquivos de origem: job CREATED → extract sem OCR → REVIEW → campos manualmente preenchidos → PDF, com CI 40524621900. Permitir também somente um RG e completar os demais campos por digitação, sem bloqueio de upload; teste PostgreSQL e React no mesmo CI.
 - [x] Exibir somente um serviço acessível no cartão de categoria do catálogo; remover CTA da demonstração antiga e redirecionar `/preencher/*` para início, com teste de regressão CI 40524621900.
 - [x] Garantir que resposta da API com nome, CPF e RG populate efetivamente os três inputs de revisão e aviso destacado seja exibido quando OCR retorna zero campos; teste React/API simulada, CI 40533199079 (5/5 jobs aprovados). Reconhecimento do RG real continua não comprovado.
+- [ ] Confirmar no CI final a reformulação dos uploads como cartões com dois controles nativos acessíveis (arquivo/câmera), status de selecionado/enviado, ícones, nome/tamanho e ajustes mobile. Teste React criado; falta inspeção visual real em 320/375px.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
 - [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
 - [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
@@ -636,3 +638,13 @@ Os testes extras de data de emissão, local de venda e motor foram adicionados e
 - **CI verificado de código:** [40533199079](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40533199079) para `f6749a5`, **5/5 jobs aprovados**; [40533322688](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40533322688) para `d6ad02b`, **5/5 jobs aprovados**. A última alteração de texto do frontend (`b7d4954`) também passou integralmente: [GitHub Actions 40533669767](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40533669767), **5/5 jobs aprovados**.
 - **Pendência principal:** a ausência de sugestões na foto particular não foi reproduzida e não está corrigida de forma comprovada. Após reconstruir e iniciar **novo job** com amostra fictícia do layout, solicitar apenas `outcome` e contagem exibidos na seção `Resultado da leitura por documento`. Sem expor RG/CPF, fotos verdadeiras ou texto bruto, medir onde ocorre a perda: imagem, OCR, parser, mapeamento ou frontend.
 - **Portão:** Fases 06 e 07 permanecem parciais; os seis mapeamentos oficiais seguem DRAFT em produção e as amostras QA não autorizam protocolo.
+
+
+## Registro de execução — 27/10/2026: OCR do nome em RG e aparência dos uploads (Fases 06–07)
+
+- **Relato:** OCR da foto de RG reconheceu o CPF, mas não mostrou o nome; campos de upload nativos ficaram visualmente piores que os cartões anteriores.
+- **Causa técnica concreta:** em `backend/src/modules/jobs/ocr.ts`, uma leitura `--psm 11` com dois campos (ex.: CPF e RG) não tentava `--psm 6`, mesmo sem nome do titular. A lógica agora verifica `person.fullName`/`seller.fullName` explicitamente, compara duas leituras de forma conservadora e admite rótulos como `NOME / NAME` e `NOME E SOBRENOME`, sem inferir nome pela presença de CPF. Testes unitários verificam seleção de layout mesmo após CPF/RG e exclusão de filiação; a foto real do usuário não está disponível e o resultado nela permanece **não comprovado**.
+- **UX:** `frontend/src/features/real/LiveFlowPage.tsx` e `frontend/src/styles/pages.css` substituem a exposição visual dos inputs nativos por cartões consistentes com a identidade existente: ações `Escolher arquivo` e `Usar câmera`, ícones, formatos, estados de arquivo escolhido/enviado, responsividade mobile e foco de teclado. O input nativo permanece acessível no DOM; nenhuma dependência nova nem upload obrigatório foi adicionado.
+- **Regressões:** `backend/src/modules/jobs/document-validator.test.ts` cobre reprocessamento quando nome falta; `frontend/src/features/real/LiveFlowPage.test.tsx` cobre ações acessíveis, câmera e retorno visual de seleção. Foram corrigidos os testes de rótulo exato e de assinatura da função de comparação antes de concluir CI.
+- **Validação nesta etapa:** o CI `40540332546` do CSS passou; o CI intermediário `40540458835` do backend falhou no typecheck de um teste com número incorreto de argumentos, corrigido em `1afefc9`. **Aguardando confirmação dos cinco jobs da execução do código corrigido**; não declarar homologação visual de dispositivos nem sucesso na imagem verdadeira.
+- **Próximo teste manual:** reconstruir containers; carregar apenas um RG fictício similar ao layout, verificar separadamente Nome e CPF no formulário; testar cartões em 320/375px, teclado e câmera; comparar com prévia do documento. O serviço oficial permanece DRAFT, os PDFs de QA seguem AMOSTRA.
