@@ -45,10 +45,18 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading',{name:'Documentos para leitura automática (opcionais)'})).toBeTruthy();
     const uploader = screen.getByLabelText(/Documento de teste/) as HTMLInputElement;
     const camera = screen.getByLabelText(/Fotografar documento de teste/i) as HTMLInputElement;
+    expect(uploader.classList.contains('live-upload-input')).toBe(true);
+    expect(document.querySelector('label[for="' + uploader.id + '"]')?.textContent)
+      .toContain('Escolher arquivo');
+    expect(document.querySelector('label[for="' + camera.id + '"]')?.textContent)
+      .toContain('Usar câmera');
+    expect(screen.getByText('PDF, JPG ou PNG · até 10 MB')).toBeTruthy();
     expect(camera.getAttribute('capture')).toBe('environment');
     expect(camera.getAttribute('accept')).toBe('image/jpeg,image/png');
     await user.upload(camera, new File(['fake-content'], 'foto.png', {type:'image/png'}));
     expect(screen.getByText('foto.png')).toBeTruthy();
+    expect(screen.getByText('Trocar arquivo')).toBeTruthy();
+    expect(screen.getByText(/0 MB/)).toBeTruthy();
     expect(uploader.disabled).toBe(false);
     await user.click(screen.getByRole('button',{name:'Analisar documentos e revisar campos'}));
     expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
