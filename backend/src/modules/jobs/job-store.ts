@@ -41,7 +41,10 @@ export class JobStore {
   private readonly pendingCreates = new Map<string, string>();
   private readonly timer: NodeJS.Timeout;
 
-  constructor(private readonly root = resolve(tmpdir(), 'preenchimento-automatico-jobs')) {
+  constructor(
+    private readonly root = resolve(tmpdir(), 'preenchimento-automatico-jobs'),
+    private readonly onExpired?: (jobId: string) => Promise<void>,
+  ) {
     const normalized = resolve(root);
     const prohibited = new Set([
       parse(normalized).root, resolve(tmpdir()), resolve(process.cwd()), resolve(process.cwd(), '..'),
@@ -169,6 +172,16 @@ export class JobStore {
       if (job.expiresAt > now || this.activeJobs.has(id) || this.activeUploads.has(id)) continue;
       this.jobs.delete(id);
       await rm(join(this.root, id), { recursive: true, force: true });
+      // Refund only after private files have been removed. The callback handles
+      // undelivered receipts idempotently; a database failure is reconciled later.
+      if (this.onExpired) {
+        try {
+          await this.onExpired(id);
+        } catch {
+          // Never retain personal documents just because PostgreSQL is offline.
+          // The persistent expiry/restart reconciler remains the fallback.
+        }
+      }
     }
     // Orphaned directories from interrupted processes are not reusable.
     const dirs = await readdir(this.root, { withFileTypes: true });
