@@ -12,9 +12,9 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
 | Mapeamento PDF reutilizável | **135 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
-| Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL e verificação por página PDF | Exige fuzzing/isolamento de decodificadores e testes de carga |
-| OCR no servidor | `pdftotext` + Tesseract; rótulos do TIE, identidade e comprovante | Sugestões conservadoras; conferir todos os campos e qualidade de imagem |
-| Autenticação e créditos | PostgreSQL, sessões HttpOnly, ledger e recibos de entrega | Instância única, créditos de teste; sem pagamentos reais |
+| Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
+| OCR no servidor | `pdftotext` + Tesseract; rótulos do TIE, identidade e comprovante, mais limite de bytes de rasterização | Sugestões conservadoras; faltam limites de CPU/RAM por worker e validação de qualidade |
+| Autenticação e créditos | PostgreSQL, sessões HttpOnly com limpeza de expiradas, ledger e recibos de entrega | Instância única, créditos de teste; sem pagamentos reais |
 | Fluxo real React | Perguntas, upload, revisão, geração, download e recuperação na mesma aba | Liberado somente para serviços homologados |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
@@ -89,7 +89,7 @@ npm run build
 
 O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de dependências de produção, integração com PostgreSQL real e smoke test Docker Compose. Os testes usam dados sintéticos, inclusive PDFs oficiais preenchidos só para QA.
 
-**Validação incremental:** foi adicionado um cenário de teste para autorização de entrega entre contas e estorno idempotente de crédito após expiração (`backend/src/modules/auth/job-credit.integration.test.ts`, commit `a8607e3`). A execução desse novo teste e do CI **ainda não foi verificada**; portanto, essa alteração não comprova homologação adicional. O histórico detalhado de cada avanço e seus resultados fica no [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md).
+**Validação incremental:** o teste de autorização entre contas e estorno por expiração (`a8607e3`) foi aprovado no [CI com PostgreSQL e Compose](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40435783780). Também foram adicionados controles de consistência para PNG/JPEG, limite de bytes dos arquivos rasterizados do OCR e limpeza de sessões expiradas no PostgreSQL, com regressões sintéticas. **As novas alterações precisam ser confirmadas no CI do último commit** e não substituem fuzzing, sandbox de OCR, homologação documental nem testes de carga. O histórico detalhado fica no [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md), e as pendências em [`docs/RELATORIO_CONTINUIDADE_2026-10-26.md`](docs/RELATORIO_CONTINUIDADE_2026-10-26.md).
 
 ## Endpoints implementados
 
