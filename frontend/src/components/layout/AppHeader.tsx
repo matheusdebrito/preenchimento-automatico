@@ -67,6 +67,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
         >
           <Menu className="menu-toggle__menu-icon" aria-hidden="true" />
           <X className="menu-toggle__close-icon" aria-hidden="true" />
+          <span className="menu-toggle__label" aria-hidden="true">Menu</span>
         </button>
 
         <nav
