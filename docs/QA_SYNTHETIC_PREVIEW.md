@@ -39,7 +39,7 @@ continua obrigatória antes de tornar o serviço oficial disponível.
    PostgreSQL. Não enviar o `.env` ao GitHub.
 3. Executar `docker compose up -d --build` e abrir
    `http://127.0.0.1:8080` no próprio computador.
-4. Entrar com conta sintética e selecionar **Embarcações e jet skis**.
+4. Entrar com conta sintética e selecionar **Transferência de moto aquática**.
    Esse é o único acesso ao serviço de transferência; a demonstração paralela
    foi retirada da navegação. A interface exibirá o aviso de QA local.
 5. Responder **todas as perguntas reais**. Uma combinação simples para testar
