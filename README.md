@@ -1,172 +1,107 @@
-# Preenchimento Automático — MVP
+# Preenchimento Automático — SaaS de formulários náuticos
 
-Aplicação web mobile-first para preenchimento assistido de formulários náuticos da Marinha do Brasil. O usuário escolhe um serviço, envia documentos de origem, revisa os dados extraídos e recebe os formulários oficiais preenchidos.
+Aplicação mobile-first que auxilia usuários a enviar documentos, revisar informações extraídas e gerar **modelos oficiais de formulários náuticos**, preservando o PDF original. Plataforma privada, independente da Marinha do Brasil: **não realiza protocolo oficial nem garante aceitação do documento**.
 
-> **Estado atual:** fundação técnica, protótipo de interface, pesquisa normativa (Fase 01) e Fase 02 concluída com seis PDFs oficiais verificados e confirmados. O serviço continua `DRAFT` até o mapeamento da Fase 04. O fluxo do frontend é uma demonstração claramente identificada: nenhum arquivo real é enviado, nenhum OCR é executado, nenhum pagamento é processado e nenhum PDF oficial é gerado.
+> **Status em 26/10/2026:** Fases 00–03 concluídas. O núcleo das fases 04–08 foi implementado e testado com dados **sintéticos**, mas **a homologação do MVP está pendente**. Os seis PDFs oficiais estão verificados; seus mapeamentos estão em `DRAFT`, e o serviço de transferência de moto aquática permanece `DRAFT` (não liberado). Nenhum cliente real, pagamento ou aprovação oficial foi processado.
+
+## Estado do desenvolvimento
+
+| Componente | Implementado | Restrições |
+| --- | --- | --- |
+| Catálogo de serviços e condições | API e frontend integrados | Só serviços aprovados ficam disponíveis |
+| Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
+| Mapeamento PDF reutilizável | 104 posições em 6 mapeamentos | `DRAFT`; completar campos condicionais e conferência visual humana |
+| Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
+| Upload/limpeza | Armazenamento temporário privado, quotas e TTL | Necessita mais testes de falhas/concorrência sob carga |
+| OCR no servidor | `pdftotext` + Tesseract com fotos/scans sintéticos | Candidatos conservadores; correção humana sempre obrigatória |
+| Autenticação e créditos | PostgreSQL, sessões HttpOnly, ledger idempotente | Créditos de teste somente; sem pagamentos reais |
+| Fluxo real React | Perguntas, upload, leitura, revisão, geração e download | Liberado somente para serviços homologados |
+| Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
+
+Consulte o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md) e os [relatórios de mapeamento](docs/mapping-reports/).
 
 ## Estrutura
 
 ```text
-preenchimento-automatico/
-├── .github/workflows/ci.yml  Typecheck, lint, testes, build e audit
-├── backend/          API Node.js + TypeScript + Fastify
-│   └── templates/    PDFs oficiais por formulário/revisão (6 anexos verificados)
-├── frontend/         React + TypeScript + Vite
-├── docs/             Catálogo, matriz de serviços e modelo de relatório
-├── compose.yaml      API, PostgreSQL e frontend
-├── .env.example      Variáveis do ambiente local
-├── AGENTS.md         Regras de segurança e engenharia
-├── MVP_PLAN.md       Plano de implementação
-├── PROJECT_TRACKER.md Fases, evidências e próximos passos
-└── UI_DESIGN_GUIDE.md Referência visual
+backend/
+  src/modules/catalog/        # FormDefinition, FormVersion, FormMapping e ServiceForm
+  src/modules/pdf/            # Motor de preenchimento e integridade do original
+  src/modules/jobs/           # Validação de uploads, TTL e OCR
+  src/modules/auth/           # PostgreSQL, credenciais e créditos
+  src/routes/                 # /health, /api/services, /api/auth, /api/jobs
+  templates/<form-id>/<revisao-interna>/original.pdf
+  migrations/001_initial.sql
+frontend/
+  src/features/wizard/        # Demonstração sem upload ao servidor
+  src/features/real/          # Jornada real bloqueada até homologação
+  src/pages/
+  nginx/default.conf         # Proxy same-origin /api e cabeçalhos de proteção
+docs/
+  FORM_CATALOG.md
+  SERVICE_FORM_MATRIX.md
+  mapping-reports/
+  _pdf_test_previews/         # Imagens de PDFs com dados fictícios
 ```
 
-## Requisitos
+Formulários são versionados e mapeados **independentemente dos serviços**, depois associados via `ServiceForm`. Não duplicar arquivos por serviço.
 
-- Node.js 24 LTS
-- npm 11+
-- Docker 29+ com Docker Compose v2 (para o ambiente completo)
+## Ambiente local
 
-## Subir o ambiente completo
+Pré-requisitos: Node.js 24 LTS, npm compatível e Docker Compose.
 
-1. Crie o arquivo de ambiente e troque a senha:
-
-   ```powershell
-   Copy-Item .env.example .env
-   ```
-
-   Edite `POSTGRES_PASSWORD` no `.env`. Use uma senha longa e exclusiva deste ambiente. O `.env` é ignorado pelo Git.
-
-2. Construa e suba os containers:
-
-   ```powershell
-   docker compose up --build
-   ```
-
-3. Acesse:
-
-   - Frontend: <http://127.0.0.1:8080>
-   - Saúde da API: <http://127.0.0.1:3000/health>
-   - Saúde do frontend: <http://127.0.0.1:8080/healthz>
-
-4. Encerrar:
-
-   ```powershell
-   docker compose down
-   ```
-
-   Para remover também o volume do PostgreSQL (dados locais):
-
-   ```powershell
-   docker compose down -v
-   ```
-
-As portas são publicadas apenas em `127.0.0.1`. O PostgreSQL não publica porta e só é acessível pela rede interna do Compose.
-
-## Desenvolvimento local
-
-### Frontend
+Copie `.env.example` para `.env` e defina uma senha PostgreSQL forte e exclusiva para o ambiente local:
 
 ```powershell
-cd frontend
-npm install
-npm run dev
+Copy-Item .env.example .env
+docker compose up -d --build
+docker compose ps
 ```
 
-O Vite abre em <http://127.0.0.1:5173>.
+- Frontend: http://127.0.0.1:8080
+- API (liveness): http://127.0.0.1:3000/health
+- Catálogo público: http://127.0.0.1:8080/api/services — retorna lista vazia até haver serviço aprovado
+- Demonstração: http://127.0.0.1:8080/preencher/servico — não envia documentos ao servidor
+- Conta: http://127.0.0.1:8080/entrar
+- Jornada real: `/preencher-real/:serviceId` — somente para catálogo homologado
 
-### Backend
+O Compose usa PostgreSQL privado na rede Docker, API e frontend vinculados a `127.0.0.1` e Nginx como proxy de `/api`. Não exponha a stack local publicamente, pois não há TLS nem os controles completos de produção. Para desligar: `docker compose down`. **`docker compose down -v` apaga os dados locais persistentes do PostgreSQL.**
 
-```powershell
-cd backend
-npm install
-npm run dev
-```
+O segredo `DEV_GRANT_SECRET` é opcional, restrito a ambiente de desenvolvimento e necessário para acionar o endpoint interno de concessão de três créditos **de teste**; não há cobrança real.
 
-A API abre em <http://127.0.0.1:3000>. O backend lê as variáveis do processo e não carrega `.env` automaticamente. Em desenvolvimento, os padrões seguros já permitem subir a API sem arquivo adicional; para alterar porta, CORS ou log, defina as variáveis no terminal antes de executar.
+### Comandos de validação
 
-## Endpoints disponíveis
-
-| Método | Rota      | Descrição                                      |
-| ------ | --------- | ---------------------------------------------- |
-| GET    | `/health` | Liveness da API, sem dados sensíveis           |
-| GET    | `/healthz`| Liveness do container do frontend (Nginx)      |
-
-Não existem endpoints de catálogo, upload, OCR, créditos, pagamentos ou PDF nesta etapa. A API não se conecta ao PostgreSQL ainda; o serviço de banco está preparado para a próxima etapa.
-
-## Validação
-
-Frontend:
+Em cada pasta `backend/` e `frontend/`:
 
 ```powershell
-cd frontend
+npm ci
 npm run typecheck
 npm run lint
 npm test
 npm run build
 ```
 
-Backend:
+O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de dependências de produção, integração com PostgreSQL real e smoke test Docker Compose. Os testes usam dados sintéticos, inclusive PDFs oficiais preenchidos só para QA.
 
-```powershell
-cd backend
-npm run typecheck
-npm run lint
-npm test
-npm run build
-```
+## Endpoints implementados
 
-## Segurança e privacidade nesta etapa
+- `GET /health`: liveness
+- `GET /api/services`, `GET /api/services/:id` e `POST /api/services/:id/quote`: catálogo público homologado e requisitos condicionais
+- `POST /api/auth/register`, `/api/auth/login`, `/api/auth/logout`, `GET /api/auth/me`: contas e sessões
+- `GET /api/credits/balance`, `/api/credits/history`: saldo/histórico operacional
+- `POST /api/jobs`, `POST /api/jobs/:id/documents/:requirementId`, `POST /api/jobs/:id/extract`, `PATCH /api/jobs/:id/review`, `POST /api/jobs/:id/generate`, `GET /api/jobs/:id/download/:versionId`, `DELETE /api/jobs/:id`: processos temporários autenticados
 
-- Nenhum documento real deve ser usado no protótipo.
-- O frontend não envia arquivos; as prévias usam `URL.createObjectURL` em memória e são revogadas ao sair do fluxo.
-- O backend não persiste dados, não grava corpos de requisição e mascara cabeçalhos sensíveis e endereços de origem nos logs.
-- CORS aceita apenas as origens configuradas; o curinga `*` é rejeitado.
-- Erros 500 retornam mensagem genérica e não expõem detalhes internos.
-- A API e o frontend rodam como usuários não privilegiados nos containers, com `read_only`, `cap_drop: ALL` e `no-new-privileges` quando aplicável.
-- O Nginx aplica CSP, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` e `Permissions-Policy`.
-- O log de acesso do Nginx não registra IP do cliente nem query string.
+A API utiliza limites de arquivos, autorização por sessão, validação de origem e tentativas, estados de job e débito idempotente por processo. A camada OCR ainda não extrai automaticamente todos os campos.
 
-### Limitações conhecidas
+## Segurança, privacidade e limites
 
-- A CSP do frontend usa `connect-src 'self'`. Quando o frontend passar a chamar a API, será necessário usar um proxy same-origin no Nginx ou atualizar a política com a origem explícita da API.
-- O `/health` da API é apenas liveness. A verificação de prontidão do banco será adicionada junto com a camada de persistência.
-- O CI atual valida Node.js, testes e builds; o build das imagens Docker foi validado localmente na Fase 00 e ainda não faz parte do workflow.
-- Não há HTTPS no Compose local. Em ambiente público, use um proxy reverso com TLS e não exponha as portas diretamente.
-- As credenciais do PostgreSQL são passadas por variáveis de ambiente no Compose local. Em produção, use um gerenciador de segredos.
-- O volume do PostgreSQL não possui rotina de backup nesta etapa.
+- Dados documentais, texto OCR e PDFs preenchidos são **temporários**; contas e movimentações de créditos são persistentes.
+- Não adicionar RG, CPF, documentos pessoais preenchidos ou arquivos de clientes ao Git.
+- Todos os mapeamentos de formulários reais seguem `DRAFT` até revisão documental independente. **Jamais mudar o piloto para `AVAILABLE` com pendências.**
+- A comprovação de assinatura, versão normativa e requisitos condicionais permanece necessária. A aprovação técnica não equivale à aprovação da Marinha.
+- Não há HTTPS, pagamento real, backup/restauração de produção, monitoramento ou proteção dimensionada para usuários públicos.
+- O OCR pode interpretar dados incorretamente; cada campo deve ser conferido pelo usuário.
+- Novos serviços e versões oficiais devem passar novamente pela conferência de fonte, mapeamento e QA.
 
-## Próximas etapas
+## Planejamento e expansão
 
-O acompanhamento executável está em [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md).
-A fundação e os contratos do catálogo já existem, mas o serviço piloto continua `DRAFT`.
-
-1. **Fase 00 concluída em 26/10/2026:** fundação local, testes, builds e Docker Compose validados; evidências no `PROJECT_TRACKER.md`.
-2. **Fase 01 concluída em 26/10/2026:** NORMAM-212/DPC 2026 conferida; NORMAM-101/DPC e NORMAM-211/DPC conferidas e descartadas para MA (a 211 exclui expressamente moto aquática e motonauta); formulários 2-A, 2-B, 2-D, 2-E, 2-C e 1-C identificados e separados dos documentos de origem; catálogo e matriz atualizados.
-3. **Fase 02 concluída em 26/10/2026:** seis PDFs oficiais obtidos, verificados e confirmados pelo usuário (2-A, 2-B, 2-C e 1-C standalone 2026; 2-D e 2-E extraídos da NORMAM-212/DPC 2026); seis `FormVersion` `VERIFIED`/`STATIC` registradas. Nenhum `FormMapping` ou `ServiceForm` foi criado.
-4. **Fase 03 (próxima, não iniciada):** completar a API de catálogo. Depois, motor PDF por formulário, upload temporário e OCR seguro.
-5. Integrar a revisão humana, o download, a autenticação e os créditos de teste.
-6. Homologar o MVP; pagamentos reais e implantação comercial ficam para fases posteriores, sujeitas a aprovação.
-
-Consulte `MVP_PLAN.md` para o escopo completo e `UI_DESIGN_GUIDE.md` para a identidade visual.
-
-
-## Catálogo reutilizável de formulários (fundação)
-
-- Contratos, catálogo conservador e validador de referências/versões: `backend/src/modules/catalog/`.
-- Os formulários oficiais são organizados por identidade e revisão: `backend/templates/<form-id>/<revisao-interna>/original.pdf`. Não usar pastas por serviço.
-- Inventário e processo de homologação: `docs/FORM_CATALOG.md`.
-- Relação serviços × versões de formulários: `docs/SERVICE_FORM_MATRIX.md`.
-- Relatório de revisão por formulário e versão: `docs/FORM_MAPPING_REPORT_TEMPLATE.md`.
-- O piloto permanece `DRAFT`; os seis PDFs oficiais foram obtidos e verificados na Fase 02 e registrados como `FormVersion` `VERIFIED`/`STATIC`, mas ainda não há `FormMapping` aprovado, geração real ou `ServiceForm`.
-- A interface demonstrativa continua isolada no frontend, sem enviar documentos ao servidor.
-- Próximo passo: iniciar a Fase 03 (API de catálogo), mediante nova autorização. A geração de PDF e o mapeamento ficam para a Fase 04.
-
-## Acompanhamento do desenvolvimento
-
-O progresso incremental do OpenCode, critérios de aceite e o ponto obrigatório de solicitação dos PDFs oficiais estão em [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md). Leia o plano antes de iniciar outra fase; arquivos `.md` não substituem validação de testes nem conferência oficial dos formulários.
-
-
-## Producao e expansao
-
-O `PROJECT_TRACKER.md` tambem descreve as fases de pagamento por creditos, seguranca, LGPD, infraestrutura, monitoramento, capacidade, homologacao, lancamento e expansao. A conclusao do MVP tecnico nao autoriza ativar producao nem pagamentos. Consulte os pontos de aprovacao no tracker.
+O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a preparação comercial/produção (10–17) e a expansão (18). Apenas o trabalho técnico do MVP foi autorizado para execução contínua; pagamentos reais, infraestrutura externa e lançamento público requerem novas decisões. **Sem assinaturas ou planos empresariais nesta versão.**
