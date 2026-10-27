@@ -119,6 +119,23 @@ describe('JobStore', () => {
     expect(store.renew(job)).toBeNull();
   });
 
+  it('notifica uma única vez o vencimento de job após remover seus arquivos privados', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-expiry-'));
+    directories.push(root);
+    const expiredIds: string[] = [];
+    const store = new JobStore(root, async (jobId) => {
+      // Private files must already be gone when refund processing begins.
+      await expect(stat(join(root, jobId))).rejects.toThrow();
+      expiredIds.push(jobId);
+    });
+    stores.push(store);
+    const job = await store.create('alice', 'service');
+    job.expiresAt = Date.now() - 1;
+    await store.cleanup();
+    await store.cleanup();
+    expect(expiredIds).toEqual([job.id]);
+  });
+
   it('limpa arquivos órfãos de um processo interrompido sem restaurar conteúdo privado', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pa-jobs-crash-'));
     directories.push(root);
