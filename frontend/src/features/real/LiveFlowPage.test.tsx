@@ -48,6 +48,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button',{name:'Enviar e analisar documentos'}));
     expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA EXEMPLO');
+    expect(screen.getByText(/Sugestão de Documento de teste/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Prorrogar sessão temporária' }));
     expect(fetcher.mock.calls.some(([url]) => String(url).endsWith('/renew'))).toBe(true);
     await user.clear(screen.getByLabelText(/Nome completo/));

@@ -72,8 +72,9 @@ export interface ExtractionCandidate {
  */
 function singleLabelled(text: string, pattern: RegExp, maxLength: number): string | null {
   const candidates = [...text.matchAll(pattern)]
-    .map((match) => match[1]?.trim().replace(/\s+/g, ' ') ?? '')
-    .filter((value) => value.length > 0 && value.length <= maxLength);
+    .map((match) => match[1]?.trim().replace(/\s+/g, ' ') ?? '');
+  if (candidates.length === 0 || candidates.some((value) =>
+    value.length === 0 || value.length > maxLength)) return null;
   const unique = [...new Set(candidates.map((value) => value.normalize('NFC').toUpperCase()))];
   return unique.length === 1 ? candidates[0]! : null;
 }

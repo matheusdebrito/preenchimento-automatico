@@ -102,6 +102,8 @@ describe('candidatos OCR conservadores', () => {
     expect(fields['person.address']?.value).toBe('RUA SÃO JOSÉ 100');
     expect(fields['person.postalCode']?.value).toBe('22000-000');
     expect(fields['person.fullName']).toBeUndefined();
+    const ambiguous = suggestFields('CEP: 22000-000\nCEP: 24000-000', 'residence-proof');
+    expect(ambiguous['person.postalCode']).toBeUndefined();
   });
 
   it('retorna somente CPF e casco encontrados, sempre para revisão', () => {
