@@ -33,7 +33,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(preview?.formVersionIds).toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
     expect(preview?.questions).toEqual(catalog.services[0]?.questions);
     expect(preview?.documentRequirements).toContainEqual(expect.objectContaining({
-      id: 'seller-identity', required: true,
+      id: 'seller-identity', required: false,
     }));
     // Photos may be relevant to official filing, but not to filling form fields.
     expect(preview?.documentRequirements.some((document) =>
@@ -41,6 +41,8 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(catalog.services[0]?.documentRequirements.some((document) =>
       document.id === 'photo-stern' || document.id === 'photo-side')).toBe(false);
 
+    expect(preview?.documentRequirements.every((document) => document.required === false))
+      .toBe(true);
     expect(preview?.reviewFields.some((field) => field.id === 'person.city')).toBe(true);
     expect(preview?.reviewFields.some((field) => field.id === 'person.neighborhood')).toBe(true);
     expect(preview?.reviewFields.some((field) => field.id === 'person.postalCode')).toBe(true);
