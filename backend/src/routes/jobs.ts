@@ -192,7 +192,10 @@ export function registerJobRoutes(
         const count = applicable.length;
         diagnostics.push({
           requirementId: document.requirementId,
-          outcome: !text.trim() ? 'no_text' : count > 0 ? 'suggested' : 'no_supported_labels',
+          outcome: !text.trim() ? 'no_text'
+            : count > 0 ? 'suggested'
+              : Object.keys(suggestions).length > 0 ? 'no_applicable_fields'
+                : 'no_supported_labels',
           suggestionCount: count,
         });
         for (const [fieldId, data] of applicable) {
