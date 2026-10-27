@@ -226,10 +226,10 @@ describe('candidatos OCR conservadores', () => {
       'buyer-identity',
     );
     expect(identity['person.issueDate']?.value).toBe('12/01/2024');
-    expect(suggestFields('DATA DE EMISSÃO: 31/02/2024', 'buyer-identity')
-      ['person.issueDate']).toBeUndefined();
-    expect(suggestFields('DATA DE EMISSÃO: 12/01/2024', 'seller-identity')
-      ['seller.issueDate']?.value).toBe('12/01/2024');
+    expect(suggestFields('DATA DE EMISSÃO: 31/02/2024', 'buyer-identity')['person.issueDate'])
+      .toBeUndefined();
+    expect(suggestFields('DATA DE EMISSÃO: 12/01/2024', 'seller-identity')['seller.issueDate']?.value)
+      .toBe('12/01/2024');
 
     const vessel = suggestFields(
       'MARCA DO MOTOR: YAMAHA\nPOTÊNCIA DO MOTOR: 130 HP\n' +
