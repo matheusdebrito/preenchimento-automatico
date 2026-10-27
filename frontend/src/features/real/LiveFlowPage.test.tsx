@@ -12,7 +12,7 @@ function json(body: unknown, status = 200): Response {
 const service = {
   id: 'ci-only-service', title: 'Serviço de teste', description: 'Dados fictícios',
   creditCost: 1, questions: [], documentRequirements: [
-    { id: 'source', label: 'Documento de teste', required: true },
+    { id: 'source', label: 'Documento de teste', required: false },
   ],
   formVersionIds: ['requerimento-ma-v1'],
   reviewFields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text' }],
@@ -50,7 +50,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(camera, new File(['fake-content'], 'foto.png', {type:'image/png'}));
     expect(screen.getByText('foto.png')).toBeTruthy();
     expect(uploader.disabled).toBe(false);
-    await user.click(screen.getByRole('button',{name:'Enviar e analisar documentos'}));
+    await user.click(screen.getByRole('button',{name:'Analisar documentos e revisar campos'}));
     expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA EXEMPLO');
     expect(screen.getByText(/Sugestão de Documento de teste/)).toBeTruthy();
@@ -103,7 +103,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
     await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
-    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
     const date = screen.getByLabelText(/Data da venda/) as HTMLInputElement;
     expect(date.placeholder).toBe('DD/MM/AAAA');
@@ -117,12 +117,12 @@ describe('jornada real isolada da demonstração', () => {
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(0);
   }, 25000);
 
-  it('explica documentos ausentes, OCR sem sugestões e CPF inválido sem perder o job', async () => {
+  it('permite somente um RG, OCR sem sugestões e CPF corrigido no mesmo job', async () => {
     const anotherService = {
       ...service,
       documentRequirements: [
-        { id: 'buyer-identity', label: 'Identidade fictícia', required: true },
-        { id: 'tie', label: 'TIE fictício', required: true },
+        { id: 'buyer-identity', label: 'Identidade fictícia', required: false },
+        { id: 'tie', label: 'TIE fictício', required: false },
       ],
       reviewFields: [
         { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
@@ -158,18 +158,13 @@ describe('jornada real isolada da demonstração', () => {
 
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
-    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
-    expect(await screen.findByText(/Selecione os documentos obrigatórios antes de continuar/)).toBeTruthy();
-    expect(screen.getByText(/Identidade fictícia, TIE fictício/)).toBeTruthy();
-    expect(fetcher.mock.calls.filter(([url]) => String(url) === '/api/jobs')).toHaveLength(0);
-
+    // One RG is sufficient; no TIE, residence proof, seller ID or photos
+    // should be needed to reach the manual-review step.
     await user.upload(screen.getByLabelText(/Identidade fictícia/) as HTMLInputElement,
       new File(['ficticio'], 'fake.jpg', { type: 'image/jpeg' }));
-    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
-    expect(screen.getByText(/TIE fictício\./)).toBeTruthy();
-    await user.upload(screen.getByLabelText(/TIE fictício/) as HTMLInputElement,
-      new File(['ficticio'], 'tie.pdf', { type: 'application/pdf' }));
-    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(fetcher.mock.calls.filter(([url]) =>
+      String(url).includes('/documents/tie'))).toHaveLength(0);
 
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
     expect(screen.getByText(/Nenhum campo foi identificado automaticamente/)).toBeTruthy();
@@ -233,9 +228,9 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
     await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
-    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
     expect(jobsCreated).toBe(1);
     expect(uploadsAttempted).toBe(2);
@@ -269,7 +264,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
     await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
       new File(['example'], 'image.png', { type: 'image/png' }));
-    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
