@@ -191,12 +191,9 @@ describe('candidatos OCR conservadores', () => {
   });
 
   it('aceita NOME E SOBRENOME sem dois-pontos, mas não interpreta nome dos pais', () => {
-    expect(suggestFields('NOME E SOBRENOME\nMARIA DE SOUZA', 'buyer-identity')
-      ['person.fullName']?.value).toBe('MARIA DE SOUZA');
-    expect(suggestFields('NOME MARIA DE SOUZA', 'buyer-identity')
-      ['person.fullName']?.value).toBe('MARIA DE SOUZA');
-    expect(suggestFields('NOME DA GENITORA\nMARIA DE SOUZA', 'buyer-identity')
-      ['person.fullName']).toBeUndefined();
+    expect(suggestFields('NOME E SOBRENOME\nMARIA DE SOUZA', 'buyer-identity')['person.fullName']?.value).toBe('MARIA DE SOUZA');
+    expect(suggestFields('NOME MARIA DE SOUZA', 'buyer-identity')['person.fullName']?.value).toBe('MARIA DE SOUZA');
+    expect(suggestFields('NOME DA GENITORA\nMARIA DE SOUZA', 'buyer-identity')['person.fullName']).toBeUndefined();
   });
 
   it('não atribui nome da mãe, nome social ou linhas sem rótulo ao titular', () => {
