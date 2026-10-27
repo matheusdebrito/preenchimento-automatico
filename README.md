@@ -109,6 +109,16 @@ A possível exigência de fotos durante a transferência oficial, descrita em
 [docs/SERVICE_FORM_MATRIX.md](docs/SERVICE_FORM_MATRIX.md), é **separada**
 deste produto, que não protocola documentos perante a Marinha.
 
+### Uploads de documentos mais claros
+
+Na etapa de anexos opcionais, cada documento possui um cartão com ações
+**Escolher arquivo** e **Usar câmera**, ícones de identificação, orientação
+de formato/tamanho e confirmação visível do nome do arquivo selecionado.
+O design utiliza as cores existentes do produto e mantém o `input[type=file]`
+acessível por teclado e leitor de tela. No celular, as duas ações ficam
+empilhadas e têm área de toque confortável. A seleção de arquivos continua
+opcional; dados não reconhecidos podem ser digitados manualmente.
+
 ### Preenchimento sem anexos ou com apenas um RG
 
 Os uploads de identidade, TIE, residência, venda e demais documentos são
@@ -148,7 +158,7 @@ versão mais recente, iniciar job novo e verificar o estado exibido por arquivo.
 
 O OCR de identidade agora utiliza segmentação de texto disperso para fotos de
 RG (Tesseract `--psm 11`), com uma tentativa limitada de outro modo quando
-poucos campos válidos são detectados. Reconhece rótulos como `NOME`,
+**o nome do titular estiver ausente**, mesmo que CPF e RG já tenham sido detectados. Reconhece rótulos como `NOME`,
 `REGISTRO GERAL`, `CPF` e órgão emissor quando o valor está na mesma linha
 ou logo abaixo, sem copiar nome da mãe ou do pai como titular. **Todas as
 sugestões exigem conferência do usuário**. Testes com RG fictício renderizado
