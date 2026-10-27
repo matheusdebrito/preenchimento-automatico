@@ -42,12 +42,12 @@
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] |
 | 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [x] |
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] |
-| 05 | Upload seguro e retenção temporária | 00 | [ ] |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] |
-| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] |
-| 09 | Hardening e homologação ponta a ponta | 08 | [ ] |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e seis mapas DRAFT; regras condicionais e revisão humana pendentes |
+| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — fluxo implementado; fuzzing, isolamento e carga pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — extração conservadora implementada; qualidade e limites de recursos pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — interface integrada; E2E em navegador real e acessibilidade pendentes |
+| 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — ledger/recibos e testes sintéticos; novo teste de expiração/autorização sem CI verificado, falhas abruptas pendentes |
+| 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
 | 11 | Infraestrutura de produção e deploy reproduzível | 09 e aprovação explícita | [ ] |
 | 12 | Segurança de produção e gestão de segredos | 11 | [ ] |
@@ -58,7 +58,7 @@
 | 17 | Lançamento controlado e acompanhamento | 16 e autorização explícita | [ ] |
 | 18 | Expansão incremental de serviços | 17 e decisão por serviço | [ ] |
 
-> **Estado conhecido em 26/10/2026:** frontend demonstrativo, API Fastify com healthcheck, Compose/PostgreSQL e contratos preliminares de catálogo foram adicionados ao repositório. Esses fatos **não significam** aprovação de build/testes nem homologação dos PDFs. A Fase 00 foi executada localmente e registrada abaixo em 26/10/2026; a Fase 01 também foi registrada na mesma data, com pesquisa normativa concluída. Na Fase 02, seis PDFs oficiais foram obtidos e verificados tecnicamente; o portão humano foi confirmado pelo usuário em 26/10/2026 e a fase foi encerrada. O registro contém as evidências verificáveis.
+> **Estado consolidado em 26/10/2026:** fases 00–03 concluídas; fases 04–08 tecnicamente avançadas, mas ainda parciais pelos critérios de aceite; fase 09 pendente. Os seis PDFs oficiais foram verificados, porém os mapeamentos e o serviço piloto seguem `DRAFT`. A nova cobertura de testes de créditos (commit `a8607e3`) foi adicionada, mas sua execução no CI ainda não foi verificada. Os detalhes, evidências e bloqueios permanecem nas seções das fases e no registro de execução. Não há homologação para usuários reais nem cobrança.
 
 ## Fase 00 — Revalidar a fundação existente
 
