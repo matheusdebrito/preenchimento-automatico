@@ -6,6 +6,7 @@ import { connectDatabase } from './db.js';
 import type { Database } from './db.js';
 import { applyCreditMovement, creditBalance } from './credits.js';
 import { hashPassword, verifyPassword } from './crypto.js';
+import { pruneExpiredSessions } from './auth-service.js';
 import type { AppEnv } from '../../config/env.js';
 
 const url = process.env.DATABASE_TEST_URL;
@@ -65,6 +66,38 @@ describePg('PostgreSQL: autenticação e créditos', () => {
     expect(me.json<{user:{id:string}}>().user.id).toBe(userId);
     const noCookie = await app.inject({ method: 'GET', url: '/api/auth/me' });
     expect(noCookie.statusCode).toBe(401);
+  });
+
+  it('remove sessões vencidas e mantém sessões ainda válidas', async () => {
+    const owner = randomUUID();
+    const expiredToken = randomUUID().replaceAll('-', '').repeat(2);
+    const activeToken = randomUUID().replaceAll('-', '').repeat(2);
+    try {
+      await pool.query('INSERT INTO app_users(id,email,password_hash) VALUES($1,$2,$3)',
+        [owner, 'session-cleanup-' + owner + '@example.invalid', await hashPassword(password)]);
+      await pool.query(
+        "INSERT INTO app_sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()-interval '1 second')",
+        [expiredToken, owner],
+      );
+      await pool.query(
+        "INSERT INTO app_sessions(token_hash,user_id,expires_at) VALUES($1,$2,now()+interval '1 hour')",
+        [activeToken, owner],
+      );
+
+      expect(await pruneExpiredSessions(pool)).toBeGreaterThanOrEqual(1);
+      const result = await pool.query<{token_hash:string}>(
+        'SELECT token_hash FROM app_sessions WHERE user_id=$1', [owner],
+      );
+      expect(result.rows.map((row) => row.token_hash.trim())).toEqual([activeToken]);
+      // Repeated cleanup must not remove an active session.
+      await pruneExpiredSessions(pool);
+      const stillActive = await pool.query(
+        'SELECT 1 FROM app_sessions WHERE token_hash=$1', [activeToken],
+      );
+      expect(stillActive.rowCount).toBe(1);
+    } finally {
+      await pool.query('DELETE FROM app_users WHERE id=$1', [owner]);
+    }
   });
 
   it('garante saldo atomicamente e idempotência em requisições concorrentes', async () => {
