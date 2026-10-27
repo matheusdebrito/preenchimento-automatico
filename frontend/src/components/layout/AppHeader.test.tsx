@@ -69,9 +69,14 @@ describe('AppHeader', () => {
     const user = userEvent.setup();
     renderHeader();
     const openButton = screen.getByRole('button', { name: 'Menu' });
+    const visibleLabel = screen.getByText('Menu', { selector: '.menu-toggle__label' });
+    expect(visibleLabel.closest('button')).toBe(openButton);
+    expect(visibleLabel.getAttribute('aria-hidden')).toBe('true');
     expect(openButton.getAttribute('aria-expanded')).toBe('false');
     await user.click(openButton);
     const closeButton = screen.getByRole('button', { name: 'Fechar menu' });
+    // The text stays "Menu", but assistive tech is informed that the action closes it.
+    expect(screen.getByText('Menu', { selector: '.menu-toggle__label' })).toBe(visibleLabel);
     expect(closeButton).toBe(openButton);
     expect(closeButton.getAttribute('aria-expanded')).toBe('true');
     expect(closeButton.classList.contains('menu-toggle--open')).toBe(true);
@@ -81,6 +86,7 @@ describe('AppHeader', () => {
     expect(navigation.classList.contains('site-nav--open')).toBe(true);
     await user.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: 'Menu' })).toBe(openButton);
+    expect(screen.getByText('Menu', { selector: '.menu-toggle__label' })).toBe(visibleLabel);
     expect(openButton.getAttribute('aria-expanded')).toBe('false');
     expect(navigation.classList.contains('site-nav--open')).toBe(false);
   });
