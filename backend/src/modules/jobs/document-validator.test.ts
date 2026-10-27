@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { crc32 } from 'node:zlib';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -41,12 +42,17 @@ describe('validação de assinatura do documento', () => {
       'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==',
       'base64',
     );
-    const incompatible = Buffer.from(valid);
-    incompatible[24] = 1; // 1-bit RGB is invalid per PNG Third Edition 11.2.1.
+    const changeIhdr = (offset: number, value: number): Buffer => {
+      const modified = Buffer.from(valid);
+      modified[offset] = value;
+      // A malformed header with a bad CRC would test only checksum rejection.
+      modified.writeUInt32BE(crc32(modified.subarray(12, 29)), 29);
+      return modified;
+    };
+    const incompatible = changeIhdr(24, 1); // 1-bit RGB is invalid per PNG Third Edition 11.2.1.
     expect(() => classifyDocument(incompatible, 'image/png')).toThrow('IHDR PNG inválido');
 
-    const indexedWithoutPalette = Buffer.from(valid);
-    indexedWithoutPalette[25] = 3; // Indexed color must have PLTE before IDAT.
+    const indexedWithoutPalette = changeIhdr(25, 3); // Indexed color requires PLTE before IDAT.
     expect(() => classifyDocument(indexedWithoutPalette, 'image/png')).toThrow('PLTE ausente');
 
     const critical = Buffer.from(valid);
