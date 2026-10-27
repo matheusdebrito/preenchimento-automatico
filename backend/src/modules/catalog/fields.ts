@@ -54,6 +54,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'declarant.mobile', label: 'Celular do declarante', valueKind: 'text' },
   { id: 'declarant.email', label: 'E-mail do declarante', valueKind: 'text' },
   { id: 'vessel.authority', label: 'CP/DL/AG do registro', valueKind: 'text' },
+  { id: 'person.identityType', label: 'Tipo do documento de identidade', valueKind: 'text' },
   { id: 'seller.identityType', label: 'Tipo da identidade do vendedor', valueKind: 'text' },
   { id: 'seller.issueDate', label: 'Data de expedição da identidade do vendedor', valueKind: 'text' },
   { id: 'seller.apartment', label: 'Complemento de endereço do vendedor', valueKind: 'text' },
