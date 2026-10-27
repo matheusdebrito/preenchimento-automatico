@@ -13,8 +13,8 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 export function HomePage() {
   useDocumentTitle();
   const [available, setAvailable] = useState<readonly LiveService[]>([]);
-  const qaAvailable = available.filter((service) => service.id === 'qa-synthetic-moto');
-  const officialAvailable = available.filter((service) => service.id !== 'qa-synthetic-moto');
+  const qaAvailable = available.filter((service) => service.id === 'transferencia-moto-aquatica' && service.creditCost === 0);
+  const officialAvailable = available.filter((service) => !(service.id === 'transferencia-moto-aquatica' && service.creditCost === 0));
   useEffect(() => {
     if (typeof fetch !== 'function') return;
     let mounted = true;
@@ -129,7 +129,7 @@ export function HomePage() {
               <div className="section-heading">
                 <p className="eyebrow">Apenas ambiente local</p>
                 <h2 id="qa-title">Teste técnico com dados fictícios</h2>
-                <p>Simulação para verificar fotos, OCR, revisão e PDFs marcados como AMOSTRA.
+                <p>Mesmo serviço de transferência, com perguntas e campos dos formulários originais, testado com fotos, OCR, revisão e PDFs marcados como AMOSTRA.
                   Não use documentos reais. Este teste não é serviço homologado.</p>
               </div>
               <div className="category-grid">
