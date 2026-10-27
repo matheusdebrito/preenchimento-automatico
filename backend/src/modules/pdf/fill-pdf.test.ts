@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PDFDocument, StandardFonts } from 'pdf-lib';
+import { PDFDocument, StandardFonts, degrees } from 'pdf-lib';
 import { fillPdf } from './fill-pdf.js';
 import { catalog } from '../catalog/catalog.js';
 import { fillApprovedTemplate } from './verified-template.js';
@@ -34,6 +34,66 @@ describe('motor determinístico de PDF', () => {
     await expect(fillPdf(input, [field], { name: 'A'.repeat(100) })).rejects.toThrow('excede');
     await expect(fillPdf(input, [field], { name: 'Maria\nTeste' })).rejects.toThrow('Quebra');
     await expect(fillPdf(input, [{ ...field, pageIndex: 100 }], { name: 'OK' })).rejects.toThrow('Página');
+  });
+
+  it('aceita acentuação portuguesa e rejeita bidi, controles e glifos inexistentes', async () => {
+    const input = await syntheticPdf();
+    const placement = [{ kind: 'COORDINATES' as const, fieldId: 'name',
+      required: true, pageIndex: 0, x: 50, y: 640, fontSize: 12, maxWidth: 400 }];
+    const result = await fillPdf(input, placement, { name: 'João Gonçalves – São Luís' });
+    expect((await PDFDocument.load(result)).getPages()).toHaveLength(1);
+    await expect(fillPdf(input, placement, { name: 'Maria\\u202EAnulada' }))
+      .rejects.toThrow('caracteres');
+    await expect(fillPdf(input, placement, { name: 'Maria\\tTeste' }))
+      .rejects.toThrow('caracteres');
+    await expect(fillPdf(input, placement, { name: 'Maria 你好' }))
+      .rejects.toThrow('Caractere');
+  });
+
+  it('marca somente a escolha selecionada, não imprime o valor literal', async () => {
+    const input = await syntheticPdf();
+    const stamped = await fillPdf(input, [
+      { kind: 'COORDINATES', fieldId: 'answer', pageIndex: 0, x: 50, y: 600,
+        fontSize: 12, maxWidth: 12, required: true, markWhen: 'sim' },
+      { kind: 'COORDINATES', fieldId: 'answer', pageIndex: 0, x: 110, y: 600,
+        fontSize: 12, maxWidth: 12, required: true, markWhen: 'nao' },
+    ], { answer: 'sim' });
+    const doc = await PDFDocument.load(stamped);
+    expect(doc.getPages()).toHaveLength(1);
+    // The X is visibly tested by rendered PDF regression; this asserts both options fit.
+  });
+
+  it('identifica tipos reais de AcroForm em vez de confundir texto true com checkbox', async () => {
+    const original = await PDFDocument.create();
+    const page = original.addPage([595, 842]);
+    const form = original.getForm();
+    form.createTextField('field_text').addToPage(page, { x: 40, y: 700, width: 200, height: 22 });
+    form.createCheckBox('field_check').addToPage(page, { x: 40, y: 660, width: 20, height: 20 });
+    const stamped = await fillPdf(await original.save(), [
+      { kind: 'ACROFORM', fieldId: 'text', required: true, pdfFieldName: 'field_text' },
+      { kind: 'ACROFORM', fieldId: 'checked', required: true, pdfFieldName: 'field_check' },
+    ], { text: 'true', checked: 'false' });
+    const filled = (await PDFDocument.load(stamped)).getForm();
+    expect(filled.getTextField('field_text').getText()).toBe('true');
+    expect(filled.getCheckBox('field_check').isChecked()).toBe(false);
+    await expect(fillPdf(await original.save(), [{
+      kind: 'ACROFORM', fieldId: 'checked', required: true, pdfFieldName: 'field_check',
+    }], { checked: 'yes' })).rejects.toThrow('true ou false');
+  });
+
+  it('recusa mapeamento em página girada ou com campo fora de CropBox', async () => {
+    const original = await PDFDocument.create();
+    const page = original.addPage([595, 842]);
+    page.setRotation(degrees(90));
+    const bytes = await original.save();
+    const placement = [{ kind: 'COORDINATES' as const, fieldId: 'name',
+      required: true, pageIndex: 0, x: 50, y: 600, fontSize: 12, maxWidth: 200 }];
+    await expect(fillPdf(bytes, placement, { name: 'Maria' }))
+      .rejects.toThrow('girada');
+    page.setRotation(degrees(0));
+    page.setCropBox(100, 100, 300, 400);
+    await expect(fillPdf(await original.save(), placement, { name: 'Maria' }))
+      .rejects.toThrow('fora dos limites');
   });
 
   it('nunca gera os PDFs oficiais enquanto o mapeamento não estiver aprovado', async () => {

@@ -52,6 +52,8 @@ export interface CoordinatePlacement {
   y: number;
   fontSize: number;
   maxWidth: number;
+  /** Optional fixed-choice value; selected coordinates receive X, others stay blank. */
+  markWhen?: string;
 }
 
 export type FieldPlacement = AcroFormPlacement | CoordinatePlacement;

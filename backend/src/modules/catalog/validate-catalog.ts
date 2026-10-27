@@ -134,6 +134,10 @@ export function validateCatalog(data: CatalogDefinition): string[] {
         if (locations.has(locator)) issues.push('mapeamento ' + mapping.id + ': posição repetida: ' + locator);
         locations.add(locator);
       } else {
+        if (placement.markWhen !== undefined &&
+          (placement.markWhen.trim() === '' || placement.markWhen.length > 32)) {
+          issues.push('mapeamento ' + mapping.id + ': opção de marcação inválida');
+        }
         const values = [placement.pageIndex, placement.x, placement.y, placement.fontSize, placement.maxWidth];
         if (values.some((value) => !Number.isFinite(value)) ||
           !Number.isInteger(placement.pageIndex) || placement.pageIndex < 0 ||
