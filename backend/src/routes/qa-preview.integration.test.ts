@@ -280,6 +280,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         requirementId: 'seller-identity',
         outcome: 'no_applicable_fields',
         suggestionCount: 0,
+        nameStage: 'label_not_detected',
       }]);
       expect(extracted.body).not.toContain('12345678');
     } finally {
