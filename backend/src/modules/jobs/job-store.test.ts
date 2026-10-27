@@ -1,4 +1,5 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -116,6 +117,31 @@ describe('JobStore', () => {
     expect(store.renew(job)).toBeNull();
     job.expiresAt = Date.now() - 1;
     expect(store.renew(job)).toBeNull();
+  });
+
+  it('limpa arquivos órfãos de um processo interrompido sem restaurar conteúdo privado', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-crash-'));
+    directories.push(root);
+    const orphan = join(root, randomUUID());
+    await mkdir(orphan, { mode: 0o700 });
+    await writeFile(join(orphan, 'sample.pdf'), Buffer.from('DOCUMENTO FICTICIO'));
+    const store = new JobStore(root);
+    stores.push(store);
+    await store.cleanup();
+    await expect(stat(orphan)).rejects.toThrow();
+  });
+
+  it('não permite acessar arquivos de uma pasta órfã como se fossem um job recuperável', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-orphan-auth-'));
+    directories.push(root);
+    const orphanId = randomUUID();
+    const orphan = join(root, orphanId);
+    await mkdir(orphan, { mode: 0o700 });
+    const store = new JobStore(root);
+    stores.push(store);
+    expect(store.get(orphanId, 'alice')).toBeNull();
+    await store.cleanup();
+    await expect(stat(orphan)).rejects.toThrow();
   });
 
 });
