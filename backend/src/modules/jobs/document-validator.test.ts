@@ -69,7 +69,7 @@ describe('candidatos OCR conservadores', () => {
   });
 
   it('retorna somente CPF e casco encontrados, sempre para revisão', () => {
-    const found = suggestFields('CPF 123.456.789-09\nHIN BR-ABC-123456', 'documento de teste');
+    const found = suggestFields('CPF 123.456.789-09\nHIN BR-ABC-123456', 'buyer-identity');
     expect(found['person.cpf']?.status).toBe('REVIEW_REQUIRED');
     expect(found['vessel.hullId']?.value).toBe('BR-ABC-123456');
     expect(found['person.fullName']).toBeUndefined();
