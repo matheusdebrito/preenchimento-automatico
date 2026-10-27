@@ -44,8 +44,8 @@
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — QA local usa os seis mapas reais e vínculos condicionais; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — todos os uploads opcionais, inclusive zero, com limites mantidos; fuzzing e isolamento pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — RG sintético com layout de foto e rótulos em linhas distintas testado; fotos reais e métricas de acurácia pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — um só serviço, OCR opcional ou preenchimento 100% manual validado no CI; teste físico/homologação pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — diagnóstico diferencia OCR sem texto, sem campos reconhecidos e campos não mapeados; RG real e métricas pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — alerta explícito se OCR retornar zero campos e contrato nome/CPF/RG testado; validação em celular real pendente |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
@@ -149,6 +149,7 @@
 - [ ] Executar Tesseract no servidor/worker isolado com tratamento de qualidade de imagem e limites reais de CPU/memória.
 - [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
 - [x] Tratar RG com layout não uniforme: OCR com `--psm 11` e fallback `--psm 6` limitado a uma tentativa quando houver poucos candidatos; parser aceita rótulos de nome/RG/emissor/data acima do valor e rejeita filiação/nome social/ambiguidade. Testes unitários e JPEG sintético real via Tesseract, [CI 40529677699](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40529677699), **cinco jobs aprovados**.
+- [x] Distinguir `no_applicable_fields` de `no_text`/`no_supported_labels` por documento, sem expor OCR bruto; teste de integração com RG fictício e campo não mapeado, CI 40533322688 (5/5 jobs aprovados).
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
 - [x] Detectar conflitos e ausências; nunca completar valores por suposição.
 - [x] Testar candidatos sintéticos ambíguos, divergências de CPF, registros de TIE e comprovantes com múltiplos CEPs; nenhum desses casos gera preenchimento por suposição.
@@ -173,6 +174,7 @@
 - [x] Usar a mesma rota de seleção e revisão do serviço de transferência no QA local, sem serviço fictício separado; todos os formulários seguem AMOSTRA e zero crédito. CI 40516185481.
 - [x] Aceitar zero arquivos de origem: job CREATED → extract sem OCR → REVIEW → campos manualmente preenchidos → PDF, com CI 40524621900. Permitir também somente um RG e completar os demais campos por digitação, sem bloqueio de upload; teste PostgreSQL e React no mesmo CI.
 - [x] Exibir somente um serviço acessível no cartão de categoria do catálogo; remover CTA da demonstração antiga e redirecionar `/preencher/*` para início, com teste de regressão CI 40524621900.
+- [x] Garantir que resposta da API com nome, CPF e RG populate efetivamente os três inputs de revisão e aviso destacado seja exibido quando OCR retorna zero campos; teste React/API simulada, CI 40533199079 (5/5 jobs aprovados). Reconhecimento do RG real continua não comprovado.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
 - [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
 - [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
@@ -623,3 +625,14 @@ Os testes extras de data de emissão, local de venda e motor foram adicionados e
 - **Riscos pendentes:** orientação/iluminação/corte/qualidade de fotografia real, variantes do layout RG e CIN, tempo adicional de tentativa alternativa, decodificador sem isolamento por processo, critérios mensuráveis de acurácia e eventual texto legível cujo rótulo não seja suportado. Os documentos reais do usuário não devem entrar em fixtures, commits ou logs.
 - **Reteste seguro:** reconstruir containers, iniciar novo job, anexar somente um RG **fictício** e ler o diagnóstico por documento; confirmar sugestões editáveis, campos não reconhecidos manuais e geração AMOSTRA. Para diagnosticar o caso específico sem expor identidade, solicitar apenas descrição do layout/resultado no diagnóstico e imagem substituída por dados inventados.
 
+
+
+## Registro de execução — 27/10/2026: RG sem preenchimento e sem erro visível (Fases 06 e 07)
+
+- **Relato:** o usuário anexou foto do RG e nenhum texto apareceu nos campos da revisão, sem erro HTTP aparente. A foto original e o corpo da resposta privada do job não estão acessíveis nesta sessão.
+- **Diagnóstico comprovado no código:** o endpoint `/api/jobs/:id/extract` pode retornar HTTP 200 com `fields: {}` quando a imagem não produziu candidatos validados (ou quando estes não pertencem aos campos selecionados); essa condição **não gerava um erro HTTP**, embora o usuário esperasse autofill. O frontend já possuía aviso discreto, e testes anteriores mostravam preenchimento quando a API de fato devolvia `fields` corretos.
+- **Implementado:** `backend/src/modules/jobs/job-store.ts` e `backend/src/routes/jobs.ts` diferenciam `no_applicable_fields` (OCR identificou dado sem campo correspondente) de `no_supported_labels` e `no_text`. `frontend/src/features/real/LiveFlowPage.tsx` exibe aviso destacado `Nenhum campo preenchido pelo OCR`, explicação do resultado por documento, dicas de captura e alternativa manual sem perder processo. Nenhuma resposta/log contém texto OCR bruto ou valores privados nesses diagnósticos.
+- **Regressões:** `frontend/src/features/real/LiveFlowPage.test.tsx` comprova preenchimento de nome, CPF e RG quando a API devolve candidatos aplicáveis e alerta quando zero; `backend/src/routes/qa-preview.integration.test.ts` comprova diagnóstico de campo não mapeado com RG fictício, sem retornar o dado. Não foram usadas fotos reais.
+- **CI verificado de código:** [40533199079](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40533199079) para `f6749a5`, **5/5 jobs aprovados**; [40533322688](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40533322688) para `d6ad02b`, **5/5 jobs aprovados**. A pequena alteração de texto `b7d4954` aguarda validação no CI mais recente; não afirmar que esse commit já passou antes da execução.
+- **Pendência principal:** a ausência de sugestões na foto particular não foi reproduzida e não está corrigida de forma comprovada. Após reconstruir e iniciar **novo job** com amostra fictícia do layout, solicitar apenas `outcome` e contagem exibidos na seção `Resultado da leitura por documento`. Sem expor RG/CPF, fotos verdadeiras ou texto bruto, medir onde ocorre a perda: imagem, OCR, parser, mapeamento ou frontend.
+- **Portão:** Fases 06 e 07 permanecem parciais; os seis mapeamentos oficiais seguem DRAFT em produção e as amostras QA não autorizam protocolo.
