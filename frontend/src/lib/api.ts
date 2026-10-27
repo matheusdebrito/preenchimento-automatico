@@ -3,6 +3,8 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly fieldId?: string,
+    public readonly errorCode?: string,
+    public readonly requirementId?: string,
   ) { super(message); }
 }
 
@@ -15,16 +17,29 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   if (!response.ok) {
+    // The API supplies error codes and public catalog identifiers, never OCR
+    // text or personal values. Parse defensively if a proxy returns HTML.
     const detail: unknown = await response.json().catch(() => null);
-    const invalidField = detail && typeof detail === 'object' &&
-      'error' in detail && detail.error === 'invalid_field_value' &&
-      'fieldId' in detail && typeof detail.fieldId === 'string'
-        ? detail.fieldId : undefined;
-    throw new ApiError(response.status,
-      response.status === 401 ? 'Entre na sua conta para continuar.' :
-      response.status === 409 ? 'Serviço ainda não disponível ou sessão expirada.' :
-      response.status === 422 ? 'Confira os documentos e campos obrigatórios.' :
-      'Não foi possível concluir a solicitação.', invalidField);
+    const body = detail && typeof detail === 'object' ? detail as Record<string, unknown> : {};
+    const code = typeof body.error === 'string' ? body.error : undefined;
+    const safeIdentifier = (value: unknown): string | undefined =>
+      typeof value === 'string' && /^[A-Za-z0-9._-]{1,100}$/.test(value)
+        ? value : undefined;
+    const fieldId = safeIdentifier(body.fieldId);
+    const requirementId = safeIdentifier(body.requirementId);
+    const message = response.status === 401 ? 'Entre na sua conta para continuar.'
+      : code === 'missing_required_fields' ? 'Há um campo obrigatório sem preencher.'
+      : code === 'invalid_field_value' ? 'Um campo contém um valor inválido.'
+      : code === 'missing_document' ? 'Ainda falta um documento obrigatório.'
+      : code === 'ocr_failed' ? 'A leitura não foi concluída. Tente novamente.'
+      : code === 'generation_failed' ? 'Não foi possível gerar o PDF. Confira os dados e tente novamente.'
+      : code === 'invalid_document' ? 'Arquivo não aceito. Confira formato, integridade e tamanho.'
+      : response.status === 413 ? 'Arquivo excede o limite de 10 MB.'
+      : response.status === 409 ? 'O processo está indisponível, ocupado ou expirou.'
+      : response.status === 422 ? 'Revise os documentos e valores informados.'
+      : response.status === 429 ? 'Muitas tentativas. Aguarde antes de continuar.'
+      : 'Não foi possível concluir a solicitação. Tente novamente.';
+    throw new ApiError(response.status, message, fieldId, code, requirementId);
   }
   return response.json() as Promise<T>;
 }
