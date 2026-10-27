@@ -43,9 +43,28 @@ async function run(command: string, args: readonly string[], timeout = 15_000): 
   return stdout;
 }
 
+/**
+ * Identity cards have several disjoint blocks. Tesseract PSM 11 finds sparse
+ * text; PSM 6 may still work better on a clean, uniformly arranged scan.
+ * Retry at most once and retain the version with MORE validated, role-bound
+ * fields. Never concatenate conflicting OCR readings or expose OCR raw text.
+ */
+async function readImage(path: string, source: string): Promise<string> {
+  const primaryMode = source === 'buyer-identity' || source === 'seller-identity' ? '11' : '6';
+  const primary = await run('tesseract',
+    [path, 'stdout', '-l', 'por', '--psm', primaryMode], 25_000);
+  if (primaryMode !== '11') return primary;
+  const primaryScore = Object.keys(suggestFields(primary, source)).length;
+  if (primaryScore >= 2) return primary;
+  const alternative = await run('tesseract',
+    [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
+  const alternativeScore = Object.keys(suggestFields(alternative, source)).length;
+  return alternativeScore > primaryScore ? alternative : primary;
+}
+
 async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
   if (doc.kind !== 'pdf') {
-    return run('tesseract', [doc.path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
+    return readImage(doc.path, doc.requirementId);
   }
   const direct = await run('pdftotext', ['-layout', doc.path, '-'], 15_000);
   if (direct.trim().length >= 40) return direct;
@@ -59,8 +78,9 @@ async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
     const pageStats = await Promise.all(pages.map((page) => stat(join(tempDir, page))));
     validateRasterBudget(pageStats.map((page) => page.size));
     const texts: string[] = [];
-    for (const page of pages) texts.push(await run('tesseract',
-      [join(tempDir, page), 'stdout', '-l', 'por', '--psm', '6'], 25_000));
+    for (const page of pages) {
+      texts.push(await readImage(join(tempDir, page), doc.requirementId));
+    }
     return texts.join('\n');
   } finally {
     // Clean partial page images even when pdftoppm fails or times out.
@@ -116,6 +136,29 @@ function singleLabelled(text: string, pattern: RegExp, maxLength: number): strin
   return unique.length === 1 ? candidates[0]! : null;
 }
 
+/**
+ * RG/CNH photographs often show the LABEL on one line and the VALUE below,
+ * without a colon. Only accept a known, whole-line identity label and a
+ * structurally valid candidate directly next to it. Never scan arbitrary
+ * unlabelled lines for a person's identity.
+ */
+function identityLabelledValue(
+  text: string,
+  label: RegExp,
+  isCandidate: (value: string) => boolean,
+): string | null {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const found: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const match = label.exec(lines[i]!);
+    if (!match) continue;
+    const candidate = (match[1]?.trim() || lines[i + 1] || '').replace(/\s+/g, ' ').trim();
+    if (isCandidate(candidate)) found.push(candidate);
+  }
+  const unique = [...new Set(found.map((value) => value.normalize('NFC').toUpperCase()))];
+  return unique.length === 1 ? found[0]! : null;
+}
+
 /** Label-anchored hints only: all results require explicit human review. */
 export function suggestFields(text: string, source: string): Record<string, ExtractionCandidate> {
   const result: Record<string, ExtractionCandidate> = {};
@@ -130,29 +173,34 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     result[id] = { value: cpfs[0]!, source, status: 'REVIEW_REQUIRED' };
   }
   if (buyer || seller) {
-    // Avoid guessing a name from unrelated OCR lines, dates or surrounding labels.
-    const nameLines = [...text.matchAll(
-      /^(?:NOME(?:\s+COMPLETO)?|NOME\s+DO\s+TITULAR)\s*[:-]\s*([A-ZÀ-Ý][A-ZÀ-Ý' .-]{5,100})\s*$/gim,
-    )].map((match) => match[1]!.trim());
-    const uniqueNames = [...new Set(nameLines.map((name) => name.toUpperCase()))];
-    if (uniqueNames.length === 1 && uniqueNames[0]!.split(/\s+/).length >= 2) {
+    // Reject labels for parents and social name: these must never fill the
+    // applicant's legal name. RG layouts often separate label from value.
+    const name = identityLabelledValue(text,
+      /^NOME(?:\s+(?:COMPLETO|CIVIL|DO\s+TITULAR))?(?!\s+(?:DA\s+M[ÃA]E|DO\s+PAI|SOCIAL))\s*(?:[:\-–]\s*)?(.*)$/i,
+      (value) => /^[A-ZÀ-Ý][A-ZÀ-Ý' .-]{5,99}$/i.test(value) &&
+        value.split(/\s+/).length >= 2,
+    );
+    if (name) {
       result[seller ? 'seller.fullName' : 'person.fullName'] = {
-        value: nameLines[0]!, source, status: 'REVIEW_REQUIRED',
+        value: name, source, status: 'REVIEW_REQUIRED',
       };
     }
   }
   if (buyer || seller) {
     const role = seller ? 'seller' : 'person';
-    const identity = singleLabelled(text,
-      /^\s*(?:RG|N[ºO.]?\s*DA\s*IDENTIDADE|IDENTIDADE)\s*[:-]\s*([A-Z0-9./-]{5,24})\s*$/gim, 24);
+    const identity = identityLabelledValue(text,
+      /^(?:RG|REG(?:ISTRO)?[. ]+GERAL|N[ºO.]?\s*DA\s*IDENTIDADE|IDENTIDADE)\s*(?:[:\-–]\s*)?(.*)$/i,
+      (value) => /^[A-Z0-9./-]{5,24}$/i.test(value) && /\d/.test(value));
     if (identity) result[role + '.identity'] = { value: identity, source, status: 'REVIEW_REQUIRED' };
 
-    const issuer = singleLabelled(text,
-      /^\s*(?:[ÓO]RG[AÃ]O\s+(?:EMISSOR|EXPEDIDOR)|EMISSOR)\s*[:-]\s*([A-ZÀ-Ý0-9 ./-]{2,32})\s*$/gim, 32);
+    const issuer = identityLabelledValue(text,
+      /^(?:[ÓO]RG[AÃ]O\s+(?:EMISSOR|EXPEDIDOR)|EMISSOR)\s*(?:[:\-–]\s*)?(.*)$/i,
+      (value) => /^[A-ZÀ-Ý0-9 ./-]{2,32}$/i.test(value));
     if (issuer) result[role + '.issuer'] = { value: issuer, source, status: 'REVIEW_REQUIRED' };
 
-    const issueDate = singleLabelled(text,
-      /^\s*DATA\s+(?:DE\s+)?(?:EMISS[AÃ]O|EXPEDI[CÇ][AÃ]O)(?:\s+DA\s+IDENTIDADE)?\s*[:-]\s*(\d{2}\/\d{2}\/\d{4})\s*$/gim, 10);
+    const issueDate = identityLabelledValue(text,
+      /^DATA\s+(?:DE\s+)?(?:EMISS[AÃ]O|EXPEDI[CÇ][AÃ]O)(?:\s+DA\s+IDENTIDADE)?\s*(?:[:\-–]\s*)?(.*)$/i,
+      (value) => isValidBrazilianDate(value));
     if (issueDate && isValidBrazilianDate(issueDate)) result[role + '.issueDate'] = {
       value: issueDate, source, status: 'REVIEW_REQUIRED',
     };
