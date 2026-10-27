@@ -89,6 +89,8 @@ npm run build
 
 O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de dependências de produção, integração com PostgreSQL real e smoke test Docker Compose. Os testes usam dados sintéticos, inclusive PDFs oficiais preenchidos só para QA.
 
+**Validação incremental:** foi adicionado um cenário de teste para autorização de entrega entre contas e estorno idempotente de crédito após expiração (`backend/src/modules/auth/job-credit.integration.test.ts`, commit `a8607e3`). A execução desse novo teste e do CI **ainda não foi verificada**; portanto, essa alteração não comprova homologação adicional. O histórico detalhado de cada avanço e seus resultados fica no [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md).
+
 ## Endpoints implementados
 
 - `GET /health`: liveness
