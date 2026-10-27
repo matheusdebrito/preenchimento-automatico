@@ -241,4 +241,40 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const notFound=await app.inject({method:'GET',url:'/api/jobs/'+jobId,headers:{cookie}});
     expect(notFound.statusCode).toBe(404);
   });
+  it('estorna na API ao cancelar pacote gerado que ainda não foi baixado', async () => {
+    const initialBalance = await creditBalance(pool, userId);
+    const created = await app.inject({ method:'POST', url:'/api/jobs',
+      headers:{cookie}, payload:{serviceId:'ci-only-service',answers:{}} });
+    expect(created.statusCode).toBe(201);
+    const id = created.json<{id:string}>().id;
+    const input = await PDFDocument.create();
+    input.addPage([595,842]).drawText(
+      'DOCUMENTO FICTICIO DE TESTE PARA VALIDACAO DE CANCELAMENTO ANTES DO DOWNLOAD',
+      {x:50,y:750,size:12},
+    );
+    const pdfBytes = Buffer.from(await input.save());
+    const upload = await app.inject({ method:'POST',
+      url:'/api/jobs/'+id+'/documents/source',
+      headers:{cookie,'content-type':'application/pdf'}, payload:pdfBytes });
+    expect(upload.statusCode,upload.body).toBe(201);
+    const extracted = await app.inject({method:'POST',url:'/api/jobs/'+id+'/extract',
+      headers:{cookie},payload:{}});
+    expect(extracted.statusCode,extracted.body).toBe(200);
+    const reviewed = await app.inject({method:'PATCH',url:'/api/jobs/'+id+'/review',
+      headers:{cookie},payload:{confirmed:true,values:{'person.fullName':'ANA FICTICIA'}}});
+    expect(reviewed.statusCode,reviewed.body).toBe(200);
+    const generated = await app.inject({method:'POST',url:'/api/jobs/'+id+'/generate',
+      headers:{cookie},payload:{}});
+    expect(generated.statusCode,generated.body).toBe(200);
+    expect(await creditBalance(pool,userId)).toBe(initialBalance - 1);
+    const cancelled = await app.inject({method:'DELETE',url:'/api/jobs/'+id,
+      headers:{cookie}});
+    expect(cancelled.statusCode,cancelled.body).toBe(200);
+    expect(cancelled.json<{creditRefunded:boolean}>().creditRefunded).toBe(true);
+    expect(await creditBalance(pool,userId)).toBe(initialBalance);
+    const receipt = await pool.query<{state:string}>(
+      'SELECT state FROM job_credit_receipts WHERE job_id=$1',[id]);
+    expect(receipt.rows[0]?.state).toBe('refunded');
+  });
+
 });
