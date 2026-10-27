@@ -61,13 +61,29 @@ O diagnóstico do bug relatado revelou dois pontos concretos do código anterior
 1. Imagens de identidade eram lidas somente com `tesseract --psm 6`, modo que pressupõe um bloco uniforme de texto. RGs fotografados frequentemente distribuem nome, CPF, número do registro e emissor em áreas separadas.
 2. O parser aceitava nomes e RG principalmente quando seguiam o formato **`NOME: VALOR`** ou **`RG: VALOR`** na mesma linha. Layouts como `NOME\nMARIA DE SOUZA` e `REGISTRO GERAL\n12.345.678-9` não geravam candidatos.
 
-**Ajuste implementado:** para `buyer-identity`/`seller-identity` em imagens ou PDF rasterizado, usar primeiro segmentação de texto esparso `--psm 11`, com uma única tentativa alternativa `--psm 6` quando menos de dois campos válidos forem encontrados; selecionar o resultado com mais candidatos válidos em vez de concatenar as versões. O parser entende rótulo e valor na mesma linha ou em linhas consecutivas, exige formato reconhecível, rejeita nomes da mãe/pai e nomes sociais como nome civil, não mistura comprador/vendedor e não preenche valores em caso de conflito. Tudo continua sujeito a **revisão humana**.
+**Ajuste implementado:** para `buyer-identity`/`seller-identity` em imagens ou PDF rasterizado, usar primeiro segmentação de texto esparso `--psm 11`, com uma única tentativa alternativa `--psm 6` **também quando o nome civil do titular estiver ausente, mesmo que CPF e RG tenham sido encontrados**. A escolha prefere a leitura que consegue identificar o nome com rótulo explícito; em empate, usa a com mais candidatos válidos. As leituras não são concatenadas. O parser entende rótulo e valor na mesma linha ou em linhas consecutivas, exige formato reconhecível, rejeita nomes da mãe/pai e nomes sociais como nome civil, não mistura comprador/vendedor e não preenche valores em caso de conflito. Tudo continua sujeito a **revisão humana**.
 
 **Evidência sintética:** teste unitário com rótulos separados e rejeição de ambiguidades (`document-validator.test.ts`); teste real de foto JPEG sintética gerada com Poppler e lida por Tesseract (`ocr.integration.test.ts`). [CI do código e dos testes](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40529677699) verificou backend, integração PostgreSQL, frontend e Compose; conferir a conclusão geral antes de marcar todos os jobs como aprovados.
 
 **Limite:** nenhum RG real do usuário foi examinado aqui; o teste com documento fictício não demonstra acurácia em fotos com reflexos, cortes, inclinação, modelos diferentes ou OCR com caracteres confundidos. Não armazenar imagens, texto bruto ou dados de pessoas reais nos logs do servidor nem no repositório. O frontend exibe apenas o estado da análise e os campos sugeridos, não o conteúdo bruto do OCR.
 
 **Referência técnica:** [Tesseract — Improving the quality of the output](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html), especialmente segmentação, escala, orientação e contraste.
+
+## RG com CPF identificado e nome ausente — regressão de 27/10/2026
+
+O critério anterior de fallback era apenas **quantidade de candidatos OCR**.
+Ao reconhecer CPF e RG, o backend não executava a segunda segmentação, ainda
+que o nome do titular estivesse vazio. O critério agora verifica explicitamente
+`person.fullName` ou `seller.fullName`. Rótulos `NOME / NAME`, `NOME E
+SOBRENOME` e `NOME MARIA DE SOUZA` são reconhecidos apenas quando o nome
+candidato é plausível; rótulos de filiação/genitores continuam excluídos.
+
+**Teste sem dados pessoais:** `backend/src/modules/jobs/document-validator.test.ts`
+exercita CPF+RG reconhecidos sem nome, a escolha de outra leitura contendo nome,
+e a não substituição do nome válido por muitos números. A leitura de imagens
+continua limitada a duas tentativas, sem mistura de textos divergentes e com
+revisão humana obrigatória. Não afirmar sucesso com a foto real do usuário
+sem um novo teste controlado.
 
 ## Campos vazios sem erro HTTP — diagnóstico de integração (27/10/2026)
 
