@@ -67,6 +67,13 @@ export function LiveFlowPage() {
     setError('');
   };
 
+  const showReview = (fields: Record<string, string>, originNotes: Record<string, string>) => {
+    const visible = new Set(service?.reviewFields.map((field) => field.id) ?? []);
+    setValues(Object.fromEntries(Object.entries(fields).filter(([key]) => visible.has(key))));
+    setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
+    setStep('review');
+  };
+
   const extract = async () => {
     if (!service) return;
     if (service.documentRequirements.some((required) => required.required && !files[required.id])) {
@@ -80,9 +87,19 @@ export function LiveFlowPage() {
       const present = new Set(uploadedRequirements);
       if (currentJob) {
         // Recover when an upload was stored but the browser lost the response.
-        const status = await api<{status:string;uploadedRequirementIds:string[]}>(
-          '/api/jobs/' + currentJob,
-        );
+        const status = await api<{
+          status: string; uploadedRequirementIds: string[];
+          fields?: Record<string,string>; sources?: Record<string,string>; downloads?: string[];
+        }>('/api/jobs/' + currentJob);
+        if (status.status === 'REVIEW') {
+          showReview(status.fields ?? {}, status.sources ?? {});
+          return;
+        }
+        if (status.status === 'GENERATED') {
+          setDownloads(status.downloads ?? []);
+          setStep('download');
+          return;
+        }
         for (const requirement of status.uploadedRequirementIds) present.add(requirement);
         setUploadedRequirements([...present]);
         if (status.status !== 'CREATED' && status.status !== 'UPLOADED') {
@@ -106,11 +123,8 @@ export function LiveFlowPage() {
       const read = await api<{fields:Record<string,string>;sources:Record<string,string>}>(
         '/api/jobs/' + currentJob + '/extract', { method:'POST', body:JSON.stringify({}) },
       );
-      // Present and send only mapped fields that users can visibly review.
-      const visible = new Set(service.reviewFields.map((field) => field.id));
-      setValues(Object.fromEntries(Object.entries(read.fields).filter(([key]) => visible.has(key))));
-      setSources(Object.fromEntries(Object.entries(read.sources).filter(([key]) => visible.has(key))));
-      setStep('review');
+      // Present and send only fields that the user can visibly review.
+      showReview(read.fields, read.sources);
     } catch (issue) {
       if (issue instanceof ApiError && issue.status === 404) {
         setJobId(null);
@@ -166,6 +180,18 @@ export function LiveFlowPage() {
       setDownloads(result.downloads);
       setStep('download');
     } catch (issue) {
+      // The server can finish the debit/generation while the response is lost.
+      // Recover the already generated package rather than attempting another debit.
+      try {
+        const current = await api<{status:string;downloads:string[]}>('/api/jobs/' + jobId);
+        if (current.status === 'GENERATED') {
+          setDownloads(current.downloads);
+          setStep('download');
+          return;
+        }
+      } catch {
+        // An expired or unavailable job is reported by the original error.
+      }
       setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
     } finally { setBusy(false); }
   };
@@ -240,7 +266,9 @@ export function LiveFlowPage() {
               {(step === 'files' || step === 'review' || step === 'download') ? (
                 <button type="button" className="live-text-button" disabled={busy}
                   onClick={() => void cancel()}>
-                  Cancelar e apagar documentos temporários
+                  {step === 'download'
+                    ? 'Encerrar e apagar PDFs (crédito já utilizado)'
+                    : 'Cancelar e apagar documentos temporários'}
                 </button>
               ) : null}
               {step === 'download' && jobId ? (
