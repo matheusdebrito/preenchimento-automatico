@@ -455,3 +455,14 @@ Commit: [SHA, se realizado]
 - **Prontidão para produção:** fases 10–16 com [x], checklist GO/NO-GO e autorizações de custo, dados reais e cobrança.
 - **Lançamento:** fase 17 com [x], publicação aprovada e acompanhamento inicial.
 - **Expansão:** fase 18 é recorrente por serviço; nunca considerar todo o catálogo da Marinha concluído de uma vez.
+
+## Registro complementar — 26/10/2026, Fase 08 (créditos de teste)
+
+**Status:** PARCIAL; a Fase 08 permanece [ ] e a Fase 09 não foi homologada.
+
+- **Alteração:** acrescentado teste de integração em `backend/src/modules/auth/job-credit.integration.test.ts` para impedir confirmação de entrega por outra conta e verificar estorno único de recibo vencido, preservando recibo já entregue.
+- **Commit de código:** `a8607e305207dddf69e68e3deb28d4734d272867` na branch `main`.
+- **Verificação executada:** releitura do arquivo alterado no GitHub, confirmando a presença do teste. **Não executados:** `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, teste com PostgreSQL e CI para este commit; resultado permanece **NÃO VERIFICADO**.
+- **Segurança e privacidade:** testes usam UUIDs e contas sintéticas, sem dados pessoais reais; nenhum formulário foi aprovado nem foi ativada cobrança real.
+- **Riscos e próximo passo:** executar o pipeline completo com PostgreSQL, investigar qualquer falha e continuar os testes de falhas abruptas/infraestrutura. Não marcar a fase como concluída antes das evidências.
+
