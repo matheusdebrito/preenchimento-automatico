@@ -42,10 +42,10 @@
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] |
 | 02 | **Solicitar PDFs oficiais e verificar versões (sem aprovação do mapeamento)** | 01 | [x] |
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e seis mapas DRAFT; regras condicionais e revisão humana pendentes |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — QA local usa os seis mapas reais e vínculos condicionais; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads e feedback de obrigatórios testados; fuzzing, isolamento e carga pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — diagnóstico por documento e amostras PNG/JPEG testados; precisão em fotos reais e isolamento pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — feedback de documentos/422 e menu mobile animado testados no CI; validação física e acessibilidade pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — endereço/cidade/bairro/CEP e outros campos rotulados ampliados; fotos reais e isolamento pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — data DD/MM/AAAA e teste do serviço real em QA local; navegador físico e homologação pendentes |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais por créditos, em sandbox e liberação controlada | 09 e aprovação explícita | [ ] |
@@ -115,6 +115,7 @@
 - [x] Criar relatório **por formulário/versão** em `docs/mapping-reports/`, com posições, evidências sintéticas e pendências; nenhum está homologado.
 - [x] Validar comprimento, acentuação, caracteres invisíveis, quebras de linha, CPF, datas, checkbox e espaços de assinatura reservados; motor interrompe geração em vez de cortar dados.
 - [x] Mapear marcações condicionais sim/não para os quatro motores e campos opcionais de coproprietário no 2-D, sem vincular serviço ainda em rascunho.
+- [x] Sobreposição local de QA usa as seis versões, posições originais e perguntas reais, sem habilitação em produção; CI 40516185481.
 - [ ] Conferir regras documentais e obrigatoriedade por **serviço** (coproprietário, representante, TIE), além do mapeamento independente por PDF.
 - [x] Gerar PDFs com **dados sintéticos** e renderizar todas as páginas dos seis modelos; prévias em `docs/_pdf_test_previews`. A conferência apontou lacunas registradas nos relatórios; por isso a etapa ainda não foi aprovada.
 - [x] Executar testes automatizados de regressão em **todos os seis modelos**, verificar geometria/páginas, preservar original e guardar prévias fictícias no GitHub Actions (`pdf-mapping-review-synthetic`).
@@ -143,6 +144,8 @@
 - [x] Verificar fluxo sintético foto PNG → Tesseract → revisão manual → PDF com PostgreSQL/Poppler/Tesseract; CI 40440558586.
 - [x] Validar extração conservadora de nome rotulado em JPEG sintético, mantendo status `REVIEW_REQUIRED` e papel do comprador; CI 40441312938.
 - [x] Registrar no job temporário apenas status e número de sugestões por documento (`suggested`, `no_text`, `no_supported_labels`, `not_analyzed`), persistidos só até expiração e visíveis ao reabrir a revisão; CI 40510328039.
+- [x] Implementar sugestão individual de endereço, cidade, bairro, CEP, UF, número e complemento rotulados, sem dedução a partir de texto sem estrutura; teste unitário e regressões em 40516185481.
+- [ ] Confirmar em CI os novos rótulos de data de emissão, local de venda e atributos de motor, sem inferir valores não presentes.
 - [ ] Executar Tesseract no servidor/worker isolado com tratamento de qualidade de imagem e limites reais de CPU/memória.
 - [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
@@ -163,6 +166,8 @@
 - [x] Corrigir UX de documento obrigatório, 422 na revisão com `fieldId` e mensagens próximas aos controles; manter o job após campo inválido e não relatar sucesso silencioso sem candidatos OCR. Testes frontend/backend, CI 40510328039.
 - [x] Remover repetição de navegação no rodapé e corrigir textos sobre o fluxo real de upload temporário; CI 40510328039.
 - [x] Implementar menu mobile com botão de 44 px fixo, ícones sem texto visível e nomes acessíveis, animação CSS, Escape, fechamento por link e `prefers-reduced-motion`; comportamento React validado no CI 40513573884. Inspeção visual em aparelho real segue pendente no item abaixo.
+- [x] Implementar máscara DD/MM/AAAA progressiva com inserção automática de barras, entrada colada, limite de 8 dígitos, e validação no backend preservada; cobertura frontend/CI 40516185481.
+- [x] Usar a mesma rota de seleção e revisão do serviço de transferência no QA local, sem serviço fictício separado; todos os formulários seguem AMOSTRA e zero crédito. CI 40516185481.
 - [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
 - [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
 - [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
@@ -560,3 +565,17 @@ Commit: [SHA, se realizado]
 - **Arquivos de código:** `frontend/src/components/layout/AppHeader.tsx`, `frontend/src/styles/components.css`; testes em `frontend/src/components/layout/AppHeader.test.tsx` verificam nome acessível, mesmo elemento DOM nos dois estados, abertura/fechamento e ausência de texto visível.
 - **Validação comprovada:** [GitHub Actions 40513573884](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40513573884), commit de documentação/README `596a3a5` contendo o código e os testes do commit `515271a`: **5/5 jobs concluídos com sucesso** (frontend, backend, PostgreSQL, Compose, prévias PDF). Os testes React cobrem os estados, o nome acessível, o mesmo botão DOM, fechamento por link/Escape; a animação CSS não foi observada em navegador/celular físico nesta sessão. A verificação visual a 320px, 375px e 767px e por leitor de tela continua pendente.
 - **Portão:** Fase 07 segue parcial; aprovação do QA sintético e dos mapas oficiais não é consequência dessa melhoria visual.
+
+
+## Registro de execução — 27/10/2026: máscara de datas, campos BDMOTO e QA do serviço real (Fases 04, 06, 07)
+
+**Status:** PARCIAL. Alterações de código efetuadas na `main`; sem habilitar produção, sem homologação visual ou uso de dados pessoais reais.
+
+- **Decisão de arquitetura:** o antigo `qa-synthetic-moto` foi substituído pela prévia local do **mesmo serviço `transferencia-moto-aquatica`**. `backend/src/modules/catalog/qa-preview.ts` reutiliza perguntas/requisitos e todos os mapas originais, com vínculos condicionais dos seis PDFs. Os statuses `APPROVED` e `AVAILABLE` aplicam-se **somente à sobreposição em memória** ativada por `NODE_ENV=development` + `DEV_QA_PREVIEW=true`. O catálogo oficial em produção permanece `DRAFT`. PDFs QA são marcados AMOSTRA, crédito é zero. Testes `qa-preview.test.ts` e `qa-preview.integration.test.ts`.
+- **Máscara de data:** `frontend/src/lib/date-mask.ts`, `date-mask.test.ts` e `features/real/LiveFlowPage.tsx`: digitação de até 8 dígitos, separadores DD/MM/AAAA automáticos, entrada colada, revisão continua sujeita a verificação de data real no backend; teste React acrescentado.
+- **OCR BDMOTO:** `backend/src/modules/jobs/ocr.ts` passou a mapear `person.city`, `person.neighborhood`, `person.postalCode`, `person.state`, `person.streetNumber`, `person.apartment` separadamente de `person.address`, somente quando rotulados; testes em `document-validator.test.ts`. Outros candidatos conservadores adicionados para data de emissão, local de venda e campos de motor, com regressões sintéticas pendentes de CI final.
+- **Coerência da API:** `backend/src/routes/jobs.ts` filtra dados OCR para os campos efetivamente revisáveis na seleção, não expondo sugestões de campos externos ao pacote. A prévia real inclui vendedor, comprador, residência, TIE e fotos sintéticas, seguindo os requisitos reais.
+- **Endereço do BDMOTO:** a fonte oficial exibe uma linha de Endereço separada dos campos Cidade, Bairro e CEP. Portanto, o mapeamento do endereço **não foi eliminado sem conferência humana da página**, mesmo após a observação do usuário; verificar coordenadas/posições no PDF sintético e documentar divergências no relatório 2-B.
+- **CI comprovado até o commit de código `40bc83e`:** [GitHub Actions 40516185481](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40516185481), **cinco jobs aprovados** (frontend/backend, PostgreSQL, PDFs sintéticos, Compose). Esse CI abrange máscara, componentes de endereço, sobreposição real de QA e testes de geração. Os novos rótulos de motor/data/local, adicionados após `40bc83e`, exigem validação do CI mais recente antes de serem marcados como verificados.
+- **Pendências:** testes físicos no celular e imagens reais anonimizadas/autorizadas, precisão OCR com layouts variáveis, homologação visual das seis páginas/modelos e verificação de regras condicionais contra NORMAM. Ainda há o isolamento de Poppler/Tesseract e os critérios restantes das fases 05–09. Não confundir QA local com aprovação comercial.
+- **Instruções atualizadas:** `docs/QA_SYNTHETIC_PREVIEW.md`, `docs/OCR_EXTRACTION_RULES.md`, `README.md`. O próximo teste deve usar o serviço de transferência em QA, não o identificador `qa-synthetic-moto`.
