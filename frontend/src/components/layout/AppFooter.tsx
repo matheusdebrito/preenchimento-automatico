@@ -1,5 +1,4 @@
 import { Waves } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export function AppFooter() {
   return (
@@ -13,29 +12,14 @@ export function AppFooter() {
             <span>Preenchimento Automático</span>
           </div>
           <p className="site-footer__disclaimer">
-            Ferramenta privada e independente. Não representa a Marinha do Brasil, não realiza
-            protocolo oficial e não garante aprovação dos documentos.
+            Ferramenta privada e independente da Marinha do Brasil.
+            Não realiza protocolo oficial nem garante aprovação dos documentos.
           </p>
         </div>
-
-        <nav aria-label="Navegação do rodapé" className="site-footer__nav">
-          <Link className="site-footer__link" to="/">
-            Início
-          </Link>
-          <Link className="site-footer__link" to="/minha-conta">
-            Minha conta
-          </Link>
-          <Link className="site-footer__link" to="/creditos">
-            Créditos
-          </Link>
-          <Link className="site-footer__link" to="/creditos/historico">
-            Histórico
-          </Link>
-        </nav>
-
         <p className="site-footer__disclaimer">
-          Protótipo em desenvolvimento. Nesta demonstração, os arquivos escolhidos permanecem no
-          navegador e não são enviados a nenhum servidor.
+          No preenchimento assistido, imagens e PDFs são enviados temporariamente ao servidor
+          para leitura e geração, com exclusão ao encerrar ou expirar o processo.
+          Confira seus dados antes de gerar.
         </p>
       </div>
     </footer>
