@@ -69,6 +69,37 @@ O diagnóstico do bug relatado revelou dois pontos concretos do código anterior
 
 **Referência técnica:** [Tesseract — Improving the quality of the output](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html), especialmente segmentação, escala, orientação e contraste.
 
+## Nome ausente apesar do CPF: associação visual por coordenadas (27/10/2026)
+
+Um RG fotografado pode produzir CPF legível e não gerar o nome no formulário,
+mesmo após testar os modos `--psm 11` e `--psm 6`. O texto retornado pelo
+Tesseract não garante que a ordem das linhas represente a posição visual dos
+campos, principalmente em RG com colunas/blocos independentes.
+
+**Implementação em `ocr.ts`:** somente para identidade de comprador/vendedor,
+quando as duas segmentações não recuperam nome, executar **uma terceira
+tentativa limitada** com saída TSV do Tesseract (coordenadas de palavras).
+Agrupar palavras em linhas pela hierarquia página/bloco/parágrafo/linha,
+localizar o rótulo integral `NOME` ou variações explícitas e considerar
+apenas a primeira linha visual abaixo do rótulo dentro de limites de distância
+vertical e coluna. Se estiver ilegível, não houver rótulo, aparecer filiação
+entre rótulo/valor ou houver nomes conflitantes, **não preencher**. Outros
+campos não são inventados; a revisão manual segue obrigatória.
+
+O TSV e o texto bruto são usados apenas na memória do processo e **não
+aparecem em mensagens, métricas ou logs**. Saída limitada, timeouts e
+concorrência controlada continuam vigentes. Pode aumentar o tempo de leitura
+quando o nome ainda estiver ausente.
+
+**Testes:** `document-validator.test.ts` verifica ordenação visual,
+colunas intercaladas, filiação e conflitos com TSV sintético. O teste de
+integração com Tesseract/Poppler usa um RG JPEG completamente fictício e
+confere o formato TSV real. Esses testes **não validam a fotografia do RG do
+usuário** sem uma amostra segura com a mesma disposição e qualidade.
+
+**Referência:** [documentação oficial do Tesseract — TSV](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html#tsv-output)
+e [qualidade de OCR](https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html).
+
 ## RG com CPF identificado e nome ausente — regressão de 27/10/2026
 
 O critério anterior de fallback era apenas **quantidade de candidatos OCR**.
