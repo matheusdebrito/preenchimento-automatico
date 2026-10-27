@@ -14,7 +14,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
 | OCR no servidor | `pdftotext` + Tesseract; rótulos do TIE, identidade e comprovante, mais limite de bytes de rasterização | Sugestões conservadoras; faltam limites de CPU/RAM por worker e validação de qualidade |
-| Autenticação e créditos | PostgreSQL, sessões HttpOnly com limpeza de expiradas, ledger e recibos de entrega | Instância única, créditos de teste; sem pagamentos reais |
+| Autenticação e créditos | PostgreSQL, sessões HttpOnly com limpeza de expiradas, ledger, recibos e estorno antecipado de jobs vencidos | Instância única, créditos de teste; sem pagamentos reais |
 | Fluxo real React | Perguntas, upload, revisão, geração, download e recuperação na mesma aba | Liberado somente para serviços homologados |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
@@ -99,7 +99,7 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 - `GET /api/credits/balance`, `/api/credits/history`: saldo/histórico operacional
 - `POST /api/jobs`, `POST /api/jobs/:id/renew`, `POST /api/jobs/:id/documents/:requirementId`, `POST /api/jobs/:id/extract`, `PATCH /api/jobs/:id/review`, `POST /api/jobs/:id/generate`, `GET /api/jobs/:id/download/:versionId`, `DELETE /api/jobs/:id`: processos temporários autenticados, com renovação de 20 minutos limitada a uma hora desde a criação
 
-A API utiliza limites de arquivos, autorização por sessão, validação de origem e tentativas, estados de job e débito idempotente por processo. A camada OCR ainda não extrai automaticamente todos os campos.
+A API utiliza limites de arquivos, autorização por sessão, validação de origem e tentativas, estados de job e débito idempotente por processo. Quando um job expira pelo TTL deslizante sem entrega, a API tenta estornar o crédito após remover os arquivos privados; se o banco falhar, a reconciliação persistente continua como fallback. Ver [ciclo de crédito/entrega](docs/CREDIT_DELIVERY_LIFECYCLE.md). A camada OCR ainda não extrai automaticamente todos os campos.
 
 ## Segurança, privacidade e limites
 
