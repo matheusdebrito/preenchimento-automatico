@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
-import { extractText, suggestFields, validateRasterBudget } from './ocr.js';
+import { extractText, suggestFields, validateRasterBudget, spatialIdentityName } from './ocr.js';
 import { classifyDocument } from './document-validator.js';
 import type { StoredDocument } from './job-store.js';
 
@@ -108,6 +108,12 @@ describeOcr('OCR real no Linux com ferramentas instaladas', () => {
       const suggestions = suggestFields(recognized, 'buyer-identity');
       expect(suggestions['person.fullName']?.value).toBe('MARIA DE SOUZA');
       expect(suggestions['person.cpf']?.value).toBe('123.456.789-09');
+      // Independently confirm the actual Tesseract TSV coordinate format,
+      // not just a manually assembled unit-test fixture.
+      const {stdout: tsv} = await execFile('tesseract',
+        [file, 'stdout', '-l', 'por', '--psm', '11', 'tsv'],
+        {timeout: 30_000, maxBuffer: 256 * 1024});
+      expect(spatialIdentityName(tsv, 'buyer-identity')).toBe('MARIA DE SOUZA');
       expect(suggestions['seller.fullName']).toBeUndefined();
     } finally {
       await rm(root, { recursive: true, force: true });
