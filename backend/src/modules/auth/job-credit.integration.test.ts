@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { connectDatabase } from './db.js';
 import { hashPassword } from './crypto.js';
+import { JobStore } from '../jobs/job-store.js';
 import { applyCreditMovement, creditBalance } from './credits.js';
 import { chargeJobCredit, markJobDelivered, refundExpiredJobCredits,
   refundJobsAfterRestart, refundUndeliveredJobCredit } from './job-credit.js';
@@ -44,6 +48,42 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       expect(await refundExpiredJobCredits(pool)).toBe(0);
     } finally {
       await pool.query('DELETE FROM app_users WHERE id=$1', [id]);
+      await pool.end();
+    }
+  }, 30000);
+
+  it('estorna no TTL deslizante do job e preserva crédito de pacote entregue', async () => {
+    const pool = await connectDatabase(url!);
+    const root = await mkdtemp(join(tmpdir(), 'pa-refund-ttl-'));
+    const user = randomUUID();
+    const store = new JobStore(root, async (id) => {
+      await refundUndeliveredJobCredit(pool, id);
+    });
+    try {
+      await pool.query('INSERT INTO app_users(id,email,password_hash) VALUES($1,$2,$3)',
+        [user, 'ttl-refund-' + user + '@example.invalid', await hashPassword('test-only-password-123')]);
+      await applyCreditMovement(pool, user, 'test_grant', 2, 'ttl_grant');
+
+      const abandoned = await store.create(user, 'fixture-service');
+      await chargeJobCredit(pool, user, abandoned.id, abandoned.createdAt);
+      expect(await creditBalance(pool, user)).toBe(1);
+      abandoned.expiresAt = Date.now() - 1;
+      await store.cleanup();
+      expect(store.get(abandoned.id, user)).toBeNull();
+      expect(await creditBalance(pool, user)).toBe(2);
+      expect(await refundUndeliveredJobCredit(pool, abandoned.id)).toBe(false);
+
+      const delivered = await store.create(user, 'fixture-service');
+      await chargeJobCredit(pool, user, delivered.id, delivered.createdAt);
+      expect(await markJobDelivered(pool, user, delivered.id)).toBe(true);
+      delivered.expiresAt = Date.now() - 1;
+      await store.cleanup();
+      expect(await creditBalance(pool, user)).toBe(1);
+      expect(await refundUndeliveredJobCredit(pool, delivered.id)).toBe(false);
+    } finally {
+      await store.close();
+      await rm(root, { recursive: true, force: true });
+      await pool.query('DELETE FROM app_users WHERE id=$1', [user]);
       await pool.end();
     }
   }, 30000);
