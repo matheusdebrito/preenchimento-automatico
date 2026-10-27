@@ -10,6 +10,7 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
   DATABASE_URL: z.string().trim().min(1).optional(),
   DEV_GRANT_SECRET: z.preprocess((value) => value === '' ? undefined : value, z.string().min(24).optional()),
+  DEV_QA_PREVIEW: z.enum(['true', 'false']).default('false'),
 });
 
 export type NodeEnvironment = z.infer<typeof envSchema>['NODE_ENV'];
@@ -23,6 +24,7 @@ export interface AppEnv {
   LOG_LEVEL: LogLevel;
   DATABASE_URL?: string;
   DEV_GRANT_SECRET?: string;
+  DEV_QA_PREVIEW?: boolean;
 }
 
 function normalizeOrigin(value: string): string {
@@ -73,6 +75,10 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     throw new Error('CORS_ORIGINS deve conter ao menos uma origem permitida.');
   }
 
+  if (result.data.DEV_QA_PREVIEW === 'true' && result.data.NODE_ENV !== 'development') {
+    throw new Error('DEV_QA_PREVIEW só pode ser habilitado em desenvolvimento.');
+  }
+
   const env: AppEnv = {
     NODE_ENV: result.data.NODE_ENV,
     API_HOST: result.data.API_HOST,
@@ -84,6 +90,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   if (result.data.DATABASE_URL) {
     env.DATABASE_URL = result.data.DATABASE_URL;
   }
+  if (result.data.DEV_QA_PREVIEW === 'true') env.DEV_QA_PREVIEW = true;
   if (result.data.DEV_GRANT_SECRET && result.data.NODE_ENV !== 'production') {
     env.DEV_GRANT_SECRET = result.data.DEV_GRANT_SECRET;
   }
