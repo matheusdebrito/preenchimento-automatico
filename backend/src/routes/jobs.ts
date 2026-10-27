@@ -147,9 +147,15 @@ export function registerJobRoutes(
     if (job.stage !== 'REVIEW') return reply.status(409).send({ error: 'invalid_state' });
     const parsed = reviewSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
-    const allowedFields = new Set(definitions.fields.map((field) => field.id));
+    const service = publicService(definitions, job.serviceId, job.answers);
+    if (!service) return reply.status(409).send({ error: 'service_unavailable' });
+    const allowedFields = new Set(service.reviewFields.map((field) => field.id));
     if (Object.keys(parsed.data.values).some((field) => !allowedFields.has(field))) {
       return reply.status(400).send({ error: 'invalid_field' });
+    }
+    if (service.reviewFields.some((field) => field.required &&
+      !parsed.data.values[field.id]?.trim())) {
+      return reply.status(422).send({ error: 'missing_required_fields' });
     }
     job.values = { ...parsed.data.values };
     job.reviewConfirmed = true;

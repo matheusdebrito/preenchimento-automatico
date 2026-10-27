@@ -96,6 +96,16 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const beforeReview=await app.inject({method:'POST',url:'/api/jobs/'+jobId+'/generate',
       headers:{cookie},payload:{}});
     expect(beforeReview.statusCode).toBe(409);
+    const incomplete = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
+      headers:{cookie},payload:{confirmed:true,values:{'person.cpf':'000.000.000-00'}}});
+    expect(incomplete.statusCode).toBe(422);
+
+    const unexpectedField = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
+      headers:{cookie},payload:{confirmed:true,values:{
+        'person.fullName':'MARIA TESTE', 'seller.fullName':'CAMPO OCULTO',
+      }}});
+    expect(unexpectedField.statusCode).toBe(400);
+
     const review = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
       headers:{cookie},payload:{confirmed:true, values:{
         'person.fullName':'MARIA TESTE','vessel.name':'MA TESTE',

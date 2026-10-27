@@ -9,7 +9,7 @@ export interface PublicService {
   documentRequirements: readonly DocumentRequirement[];
   /** Only IDs, never paths or internal approval metadata. */
   formVersionIds: readonly string[];
-  reviewFields: readonly { id: string; label: string; valueKind: string }[];
+  reviewFields: readonly { id: string; label: string; valueKind: string; required: boolean }[];
 }
 
 function matches(
@@ -50,9 +50,12 @@ export function publicService(
     .filter((relation) => matches(relation.conditions, answers))
     .sort((a, b) => a.order - b.order)
     .map((relation) => relation.formVersionId);
-  const mappedFields = new Set(catalog.mappings
+  const placements = catalog.mappings
     .filter((mapping) => mapping.status === 'APPROVED' && versionIds.includes(mapping.formVersionId))
-    .flatMap((mapping) => mapping.placements.map((p) => p.fieldId)));
+    .flatMap((mapping) => mapping.placements);
+  const mappedFields = new Set(placements.map((placement) => placement.fieldId));
+  const requiredFields = new Set(placements
+    .filter((placement) => placement.required).map((placement) => placement.fieldId));
 
   return {
     id: service.id,
@@ -65,7 +68,7 @@ export function publicService(
     formVersionIds: versionIds,
     reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
       .filter((field) => !field.id.startsWith('process.'))
-      .map(({ id, label, valueKind }) => ({ id, label, valueKind })),
+      .map(({ id, label, valueKind }) => ({ id, label, valueKind, required: requiredFields.has(id) })),
   };
 }
 

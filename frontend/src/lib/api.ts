@@ -27,6 +27,6 @@ export interface LiveService {
   creditCost: number;
   questions: readonly {id:string;label:string;options:readonly string[]}[];
   documentRequirements: readonly {id:string;label:string;description?:string;required:boolean}[];
-  reviewFields: readonly {id:string;label:string;valueKind:string}[];
+  reviewFields: readonly {id:string;label:string;valueKind:string;required:boolean}[];
   formVersionIds: readonly string[];
 }

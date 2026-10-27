@@ -82,8 +82,10 @@ export function LiveFlowPage() {
       const read = await api<{fields:Record<string,string>;sources:Record<string,string>}>(
         '/api/jobs/' + job.id + '/extract', { method:'POST', body:JSON.stringify({}) },
       );
-      setValues(read.fields);
-      setSources(read.sources);
+      // Present and send only mapped fields that users can visibly review.
+      const visible = new Set(service.reviewFields.map((field) => field.id));
+      setValues(Object.fromEntries(Object.entries(read.fields).filter(([key]) => visible.has(key))));
+      setSources(Object.fromEntries(Object.entries(read.sources).filter(([key]) => visible.has(key))));
       setStep('review');
     } catch (issue) {
       setError(issue instanceof ApiError ? issue.message : 'Falha na leitura. Tente novamente.');
@@ -94,6 +96,10 @@ export function LiveFlowPage() {
     if (!jobId) return;
     setBusy(true); setError('');
     try {
+      if (service?.reviewFields.some((field) => field.required && !values[field.id]?.trim())) {
+        setError('Preencha os campos obrigatórios antes de gerar.');
+        return;
+      }
       await api<{confirmed:boolean}>('/api/jobs/' + jobId + '/review',
         {method:'PATCH', body:JSON.stringify({confirmed:true,values})});
       const result = await api<{downloads:string[]}>('/api/jobs/' + jobId + '/generate',
@@ -161,8 +167,8 @@ export function LiveFlowPage() {
                   <p>As sugestões do OCR podem estar incorretas. Corrija e confirme os valores antes de gerar.</p>
                   {service.reviewFields.map((field) => (
                     <label key={field.id} className="field">
-                      <span className="field__label">{field.label}</span>
-                      <input className="field__input" value={values[field.id] ?? ''}
+                      <span className="field__label">{field.label}{field.required ? ' *' : ''}</span>
+                      <input className="field__input" required={field.required} value={values[field.id] ?? ''}
                         onChange={(event) => setValues((prev) => ({ ...prev, [field.id]:event.target.value }))} />
                       <span className="field__hint">{sources[field.id] ? 'Origem: ' + sources[field.id] : 'Preenchimento manual necessário'}</span>
                     </label>
