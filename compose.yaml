@@ -30,6 +30,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL: postgresql://${POSTGRES_USER:-preenchimento}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:-preenchimento}
       DEV_GRANT_SECRET: ${DEV_GRANT_SECRET:-}
+      DEV_QA_PREVIEW: ${DEV_QA_PREVIEW:-false}
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     depends_on:
