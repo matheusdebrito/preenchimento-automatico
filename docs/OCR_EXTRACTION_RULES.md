@@ -2,6 +2,11 @@
 
 **Estado:** regras implementadas e submetidas a testes com texto/imagens **sintéticos**. Não existe homologação de precisão, uso de dados pessoais reais ou confiança suficiente para gerar um documento sem revisão.
 
+**Escopo revisado:** fotografias da embarcação (popa/través) não
+devem ser enviadas ao serviço de preenchimento: não geram sugestões de
+campos. Se forem exigidas no protocolo oficial, essa obrigação é externa
+à geração automática dos formulários.
+
 ## Identificação pelo requisito do serviço
 
 O backend chama `suggestFields(text, requirementId)` após extrair texto nativo ou executar Tesseract. O `requirementId` vem do catálogo público, nunca do nome fornecido pelo arquivo. Cada resultado tem `status: REVIEW_REQUIRED` e indica qual documento originou a sugestão. O servidor salva candidatos **somente no job temporário**, não no PostgreSQL.
@@ -14,7 +19,7 @@ O backend chama `suggestFields(text, requirementId)` após extrair texto nativo 
 | `residence-proof` | `person.address`, `person.streetNumber`, `person.apartment`, `person.city`, `person.neighborhood`, `person.state`, `person.postalCode` | Cada componente somente com seu rótulo (`ENDEREÇO`, `NÚMERO`, `COMPLEMENTO`, `CIDADE`, `BAIRRO`, `UF`, `CEP`); nunca deduz cidade/bairro de endereço não estruturado |
 | `sale-document` | `sale.invoice`, `sale.date`, `sale.place`, `sale.price` | Número, data válida (DD/MM/AAAA), local e valor rotulados de forma inequívoca; nenhum comprador/vendedor inferido |
 | `source` (somente fixture de CI) | `vessel.hullId` | Rótulo HIN/CIN/casco |
-| fotos da popa/través, GRU, procuração e requisitos desconhecidos | não são enviados ao OCR | Sem heurística semântica confiável neste escopo; permanecem documentos de checklist |
+| GRU, procuração e requisitos sem extração estruturada | não são enviados ao OCR | Sem heurística semântica confiável; avaliar futuramente se precisam ser uploads neste produto |
 | outros requisitos | nenhum campo novo específico | Não há heurística arbitrária |
 
 Cada regra recusa múltiplos valores diferentes para o mesmo campo. Valores presentes são **sugestões**, não dados comprovados. A interface exibe o nome do documento de origem, e o usuário precisa conferir/corrigir tudo.
