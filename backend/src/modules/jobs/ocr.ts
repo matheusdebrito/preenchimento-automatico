@@ -149,6 +149,12 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     const issuer = singleLabelled(text,
       /^\s*(?:[ÓO]RG[AÃ]O\s+(?:EMISSOR|EXPEDIDOR)|EMISSOR)\s*[:-]\s*([A-ZÀ-Ý0-9 ./-]{2,32})\s*$/gim, 32);
     if (issuer) result[role + '.issuer'] = { value: issuer, source, status: 'REVIEW_REQUIRED' };
+
+    const issueDate = singleLabelled(text,
+      /^\s*DATA\s+(?:DE\s+)?(?:EMISS[AÃ]O|EXPEDI[CÇ][AÃ]O)(?:\s+DA\s+IDENTIDADE)?\s*[:-]\s*(\d{2}\/\d{2}\/\d{4})\s*$/gim, 10);
+    if (issueDate && isValidBrazilianDate(issueDate)) result[role + '.issueDate'] = {
+      value: issueDate, source, status: 'REVIEW_REQUIRED',
+    };
   }
 
   if (source === 'tie') {
@@ -177,6 +183,24 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     const capacity = singleLabelled(text,
       /^\s*(?:LOTA[CÇ][AÃ]O|CAPACIDADE\s+DE\s+PESSOAS)\s*[:-]\s*(\d{1,2})\s*$/gim, 2);
     if (capacity) result['vessel.capacity'] = { value: capacity, source, status: 'REVIEW_REQUIRED' };
+
+    // No inference from the vessel manufacturer: motor values are only used
+    // when their own unambiguous labels appear in the source.
+    const motorBrand = singleLabelled(text,
+      /^\s*(?:MARCA\s+DO\s+MOTOR|MOTOR\s*\/\s*MARCA)\s*[:-]\s*([A-ZÀ-Ý0-9 .-]{2,60})\s*$/gim, 60);
+    if (motorBrand) result['vessel.motorBrand'] = {
+      value: motorBrand, source, status: 'REVIEW_REQUIRED',
+    };
+    const motorPower = singleLabelled(text,
+      /^\s*POT[EÊ]NCIA\s+(?:DO\s+)?MOTOR\s*[:-]\s*([0-9., ]{1,16}(?:HP|CV)?)\s*$/gim, 18);
+    if (motorPower) result['vessel.motorPower'] = {
+      value: motorPower, source, status: 'REVIEW_REQUIRED',
+    };
+    const motorSerial = singleLabelled(text,
+      /^\s*(?:N[ÚU]MERO\s+DE\s+S[EÉ]RIE\s+DO\s+MOTOR|S[EÉ]RIE\s+DO\s+MOTOR)\s*[:-]\s*([A-Z0-9./-]{4,40})\s*$/gim, 40);
+    if (motorSerial) result['vessel.motorSerial'] = {
+      value: motorSerial, source, status: 'REVIEW_REQUIRED',
+    };
   }
 
   if (source === 'sale-document') {
@@ -195,6 +219,10 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     const price = singleLabelled(text,
       /^\s*(?:VALOR\s+(?:DA\s+VENDA|TOTAL\s+DA\s+VENDA)|PRE[CÇ]O\s+DA\s+VENDA)\s*[:-]\s*((?:R\$\s*)?[\d.]+,\d{2})\s*$/gim, 32);
     if (price) result['sale.price'] = { value: price, source, status: 'REVIEW_REQUIRED' };
+
+    const place = singleLabelled(text,
+      /^\s*LOCAL\s+DA\s+VENDA\s*[:-]\s*([A-ZÀ-Ý][A-ZÀ-Ý '.-]{2,79})\s*$/gim, 80);
+    if (place) result['sale.place'] = { value: place, source, status: 'REVIEW_REQUIRED' };
   }
 
   if (source === 'residence-proof') {
