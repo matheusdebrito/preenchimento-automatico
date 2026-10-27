@@ -61,6 +61,80 @@ export function chooseIdentityLayout(primary: string, alternative: string, sourc
   return Object.keys(second).length > Object.keys(first).length ? alternative : primary;
 }
 
+type OcrLine = {
+  page: number; left: number; top: number; width: number; height: number; text: string;
+};
+
+/**
+ * Tesseract TSV exposes the image coordinates of each word. A printed RG may
+ * place NOME above the holder while PSM 11's plain-text reading order intermixes
+ * columns and other boxes. Consider ONLY the nearest line underneath an exact
+ * NOME heading; never search the whole image for a plausible-looking name.
+ * The TSV and any intermediate names stay in memory and are never logged.
+ */
+export function spatialIdentityName(tsv: string, source: string): string | null {
+  if (source !== 'buyer-identity' && source !== 'seller-identity') return null;
+  const rows = tsv.split(/\r?\n/);
+  if (rows.length < 2 || rows[0]?.trim().split('\t')[0] !== 'level') return null;
+
+  const grouped = new Map<string, {
+    page:number; left:number; top:number; right:number; bottom:number;
+    words:Array<{left:number; text:string}>;
+  }>();
+  let pageWidth = 0;
+  for (const row of rows.slice(1, 3000)) {
+    const columns = row.split('\t');
+    if (columns.length < 12) continue;
+    const [level, page, block, paragraph, line, word, left, top, width, height, confidence] =
+      columns.slice(0, 11).map(Number);
+    if (![level, page, block, paragraph, line, word, left, top, width, height, confidence]
+      .every(Number.isFinite)) continue;
+    if (level === 1) { pageWidth = Math.max(pageWidth, width!); continue; }
+    if (level !== 5 || confidence! < 25 || width! <= 0 || height! <= 0) continue;
+    const value = columns.slice(11).join(' ').trim();
+    if (!value || value.length > 80) continue;
+    const key = [page, block, paragraph, line].join(':');
+    const previous = grouped.get(key);
+    if (previous) {
+      previous.left = Math.min(previous.left, left!);
+      previous.top = Math.min(previous.top, top!);
+      previous.right = Math.max(previous.right, left! + width!);
+      previous.bottom = Math.max(previous.bottom, top! + height!);
+      previous.words.push({left: left!, text: value});
+    } else {
+      grouped.set(key, {
+        page:page!, left:left!, top:top!, right:left! + width!,
+        bottom:top! + height!, words:[{left:left!, text:value}],
+      });
+    }
+  }
+  const lines: OcrLine[] = Array.from(grouped.values()).map((line) => ({
+    page:line.page, left:line.left, top:line.top,
+    width:line.right-line.left, height:line.bottom-line.top,
+    text:line.words.sort((a,b) => a.left-b.left).map((word) => word.text).join(' '),
+  }));
+  const isNameLabel = (value: string) =>
+    /^NOME(?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|E\s+SOBRENOME))?\s*[:\-–]?\s*$/i
+      .test(value.trim());
+  const matches: string[] = [];
+  for (const label of lines.filter((line) => isNameLabel(line.text))) {
+    const nearby = lines.filter((line) =>
+      line.page === label.page && line.top > label.top &&
+      line.top - (label.top+label.height) <= Math.max(75, label.height*5) &&
+      Math.abs(line.left-label.left) <= Math.max(80, pageWidth*0.14))
+      .sort((a,b) => a.top-b.top);
+    // The first spatial line is authoritative. Never skip over a different
+    // heading (e.g. FILIAÇÃO) to pick a relative's name further down.
+    const nearest = nearby[0];
+    if (!nearest) continue;
+    const result = suggestFields('NOME: ' + nearest.text, source);
+    const found = result[source === 'buyer-identity' ? 'person.fullName' : 'seller.fullName'];
+    if (found) matches.push(found.value);
+  }
+  const distinct = [...new Set(matches.map((value) => value.normalize('NFC').toUpperCase()))];
+  return distinct.length === 1 ? matches[0]! : null;
+}
+
 /**
  * Identity cards have several disjoint blocks. Tesseract PSM 11 finds sparse
  * text; PSM 6 may still work better on a clean, uniformly arranged scan.
@@ -76,7 +150,16 @@ async function readImage(path: string, source: string): Promise<string> {
   if (!shouldRetryIdentityLayout(primary, source)) return primary;
   const alternative = await run('tesseract',
     [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
-  return chooseIdentityLayout(primary, alternative, source);
+  const best = chooseIdentityLayout(primary, alternative, source);
+  const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
+  if (suggestFields(best, source)[nameId]) return best;
+
+  // Last bounded attempt: use actual word positions instead of Tesseract's
+  // reading order. Only an explicit NOME heading adjacent to the name qualifies.
+  const tsv = await run('tesseract',
+    [path, 'stdout', '-l', 'por', '--psm', '11', 'tsv'], 25_000);
+  const spatialName = spatialIdentityName(tsv, source);
+  return spatialName ? best + '\nNOME: ' + spatialName : best;
 }
 
 async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
