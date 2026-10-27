@@ -232,7 +232,7 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     };
 
     const complement = singleLabelled(text,
-      /^\s*COMPLEMENTO\s*[:-]\s*([A-ZÀ-Ý0-9 .,/\-]{1,60})\s*$/gim, 60);
+      /^\s*COMPLEMENTO\s*[:-]\s*([A-ZÀ-Ý0-9 .,/-]{1,60})\s*$/gim, 60);
     if (complement) result['person.apartment'] = {
       value: complement, source, status: 'REVIEW_REQUIRED',
     };
