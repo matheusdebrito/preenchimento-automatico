@@ -48,6 +48,9 @@ describe('candidatos OCR conservadores', () => {
     expect(buyer['seller.cpf']).toBeUndefined();
     expect(seller['seller.cpf']?.value).toBe('529.982.247-25');
     expect(seller['person.cpf']).toBeUndefined();
+    const unrelated = suggestFields('CPF 123.456.789-09', 'residence-proof');
+    expect(unrelated['person.cpf']).toBeUndefined();
+    expect(unrelated['seller.cpf']).toBeUndefined();
   });
 
   it('não sugere CPF com dígito verificador inválido nem múltiplos números conflitantes', () => {

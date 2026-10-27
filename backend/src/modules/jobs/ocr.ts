@@ -86,7 +86,7 @@ export function suggestFields(text: string, source: string): Record<string, Extr
   const cpfs = [...text.matchAll(/(?:^|\D)(\d{3}[. ]?\d{3}[. ]?\d{3}[- ]?\d{2})(?!\d)/gm)]
     .map((match) => match[1]!).filter(validCpf);
   const uniqueCpf = [...new Set(cpfs.map((cpf) => cpf.replace(/\D/g, '')))];
-  if (uniqueCpf.length === 1) {
+  if (uniqueCpf.length === 1 && (seller || buyer)) {
     const id = seller ? 'seller.cpf' : 'person.cpf';
     result[id] = { value: cpfs[0]!, source, status: 'REVIEW_REQUIRED' };
   }
