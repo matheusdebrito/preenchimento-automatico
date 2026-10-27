@@ -307,17 +307,27 @@ export function LiveFlowPage() {
                   <h2>Documentos necessários</h2>
                   <p>Os arquivos serão enviados ao servidor temporariamente e excluídos após a sessão expirar.</p>
                   {service.documentRequirements.map((required) => (
-                    <label key={required.id} className="field">
-                      <span className="field__label">{required.label}{required.required ? ' *' : ' (opcional)'}</span>
-                      <span className="field__hint">{required.description}</span>
-                      <input className="field__input" type="file" accept=".pdf,.png,.jpg,.jpeg"
-                        onChange={(event) => selectFile(required.id, event)} />
+                    <div key={required.id} className="live-upload-field">
+                      <label className="field">
+                        <span className="field__label">{required.label}{required.required ? ' *' : ' (opcional)'}</span>
+                        <span className="field__hint">{required.description}</span>
+                        <input className="field__input" type="file" accept=".pdf,.png,.jpg,.jpeg"
+                          disabled={uploadedRequirements.includes(required.id) || busy}
+                          onChange={(event) => selectFile(required.id, event)} />
+                      </label>
+                      <label className="field">
+                        <span className="field__hint">Ou fotografe com a câmera do celular (frente nítida, sem cortes ou reflexos)</span>
+                        <input className="field__input" type="file" accept="image/jpeg,image/png"
+                          capture="environment" aria-label={'Fotografar ' + required.label.toLowerCase()}
+                          disabled={uploadedRequirements.includes(required.id) || busy}
+                          onChange={(event) => selectFile(required.id, event)} />
+                      </label>
                       {uploadedRequirements.includes(required.id)
                         ? <span className="field__hint">Documento recebido pelo servidor</span>
                         : files[required.id]
                           ? <span className="field__hint">{files[required.id]?.name}</span>
                           : null}
-                    </label>
+                    </div>
                   ))}
                   <Button disabled={busy} onClick={() => void extract()}>
                     {busy ? 'Lendo documentos…' : 'Enviar e analisar documentos'}
