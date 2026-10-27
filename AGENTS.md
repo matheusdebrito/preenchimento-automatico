@@ -194,3 +194,11 @@ Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exi
 - Tratar CPF, datas e escolhas sim/não como dados semânticos validados. Nunca utilizar o CPF do vendedor como se fosse do declarante ou comprador.
 - **Assinaturas, carimbos, protocolo, autenticação e reconhecimento de firma são manuais.** Não criar automação dessas áreas na Fase 04.
 - Para revisar os seis mapas, consultar `docs/FASE_04_REVISAO_VISUAL.md` e os artefatos fictícios do CI. Apenas revisores humanos podem atestar aprovação final.
+
+## Exigências adicionais de segurança e QA — uploads e retomada
+
+- Para arquivos acima de bytes pequenos, autorizar o dono e o requisito no hook `onRequest` antes de bufferizar; repetir a autorização na operação efetiva. Não confiar apenas em validação de MIME/tamanho.
+- PDF digitalizado multipágina deve passar pela verificação de **cada página** antes da rasterização. Um PDF com primeira página A4 e segunda gigante deve ser recusado.
+- O diretório de arquivos privados não pode ser uma raiz genérica nem symlink, não pode entrar em backups/webroot e precisa de permissões restritivas. Testar cenários de restos órfãos após interrupções.
+- Estado de sessão retomável do wizard: usar apenas UUID opaco no `sessionStorage` da aba. **Nunca armazenar CPF, OCR, campos digitados, nomes de documentos ou PDF no navegador.** Conferir propriedade/expiração no servidor a cada restauração.
+- Ao estender testes E2E, verificar que um usuário não pode ler, subir ou excluir documentos do outro e que falha de emissão não desconta créditos. A recuperação após crash com ledger persistente ainda não está implementada.

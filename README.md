@@ -12,10 +12,10 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
 | Mapeamento PDF reutilizável | **135 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
-| Upload/limpeza | Armazenamento temporário privado, quotas e TTL | Necessita mais testes de falhas/concorrência sob carga |
+| Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL e verificação por página PDF | Exige fuzzing/isolamento de decodificadores e testes de carga |
 | OCR no servidor | `pdftotext` + Tesseract com fotos/scans sintéticos | Candidatos conservadores; correção humana sempre obrigatória |
 | Autenticação e créditos | PostgreSQL, sessões HttpOnly, ledger idempotente | Créditos de teste somente; sem pagamentos reais |
-| Fluxo real React | Perguntas, upload, leitura, revisão, geração e download | Liberado somente para serviços homologados |
+| Fluxo real React | Perguntas, upload, revisão, geração, download e recuperação na mesma aba | Liberado somente para serviços homologados |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
 Consulte o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
@@ -44,6 +44,12 @@ docs/
 ```
 
 Formulários são versionados e mapeados **independentemente dos serviços**, depois associados via `ServiceForm`. Não duplicar arquivos por serviço.
+
+### Retomada segura de processos
+
+Enquanto a sessão temporária estiver válida, atualizar a mesma aba permite recuperar o job e continuar a conferência ou o download. A aba mantém **somente o UUID aleatório do job em `sessionStorage`**; os PDFs, dados pessoais, OCR e conteúdo digitado permanecem privados no servidor e não são copiados para o armazenamento do navegador. Ao encerrar e apagar o job, o identificador também é descartado. A recuperação não é garantida depois de fechar a aba/navegador, expirar a sessão, reiniciar a instância ou trocar de conta.
+
+**Armazenamento temporário:** quando configurar `TEMP_DOCUMENT_ROOT` manualmente, use uma pasta absoluta, exclusiva e privada, nunca uma raiz genérica (`/tmp`, `/`, a raiz do repositório) nem um link simbólico. A aplicação deve falhar em caso de configuração insegura.
 
 ## Ambiente local
 

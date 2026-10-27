@@ -123,10 +123,11 @@
 
 ## Fase 05 — Upload seguro e temporário
 
-- [ ] Implementar upload JPG/JPEG/PNG/PDF com validação de conteúdo real, limites de tamanho/páginas/dimensões e proteção contra arquivos maliciosos.
-- [ ] Armazenar apenas em volume privado temporário, isolado do webroot e backups; gerar IDs aleatórios, sem nome do cliente no path.
-- [ ] Exigir acesso autorizado ao job; impor quotas, limites de concorrência, timeout e limpeza após encerramento/expiração/falha.
-- [ ] Testar upload inválido, truncado, grande, PDF malformado e cancelamento.
+- [x] Validar assinatura/MIME de JPG/JPEG/PNG/PDF, chunks/CRC de PNG, tamanho de arquivo, número de páginas e **dimensões de todas as páginas** PDF via Poppler.
+- [x] Guardar arquivos em diretório temporário privado fora do webroot e do PostgreSQL, com IDs aleatórios, permissões 0700 e bloqueio de raiz genérica/symlink.
+- [x] Autorizar upload **antes** de bufferizar conteúdo; validar proprietário e requisito também no handler; aplicar limites por usuário/job, timeout, expiração, exclusão e renovação limitada a uma hora.
+- [x] Testar assinatura inválida, PNG corrompido, PDF de página excessiva, requisição de outra conta, cancelamento, diretórios órfãos e concorrência.
+- [ ] Complementar fuzzing e isolamento de decodificadores JPEG/PNG/PDF, ensaios sob carga e recuperação de falhas súbitas antes de homologar a Fase 05.
 - **Aceite:** nenhum dado documental persistido no PostgreSQL, logs ou repositório.
 
 ## Fase 06 — PDF textual, OCR e extração estruturada
@@ -141,20 +142,22 @@
 
 ## Fase 07 — Revisão e integração do wizard
 
-- [ ] Substituir o fluxo fictício por API real com separação clara entre demonstração e produção.
-- [ ] Permitir corrigir todos os campos necessários e confirmar explicitamente dados antes da geração.
-- [ ] Integrar seleção → upload → leitura → conferência → geração → download.
-- [ ] Preservar UX mobile-first, paleta, ícones e acessibilidade estabelecidos.
-- [ ] Testar fechamento do navegador, falha de rede, retorno à sessão temporária, download e expiração.
+- [x] Manter demonstração claramente separada da jornada real da API, liberada só para serviços `AVAILABLE`.
+- [x] Expor todos os campos visíveis para correção e confirmação explícita; impedir geração antes de verificar obrigatórios.
+- [x] Integrar seleção → upload → leitura → conferência → geração → download para fixtures sintéticas no CI.
+- [ ] Validar UX mobile-first e acessibilidade em dispositivos/navegadores reais.
+- [x] Testar perda de resposta, retomada de uploads, recuperação de revisão/download após **recarregar a mesma aba**, cancelamento e expiração em testes React/API.
+- [ ] Testar navegação E2E em navegador real, abertura de nova aba e múltiplos dispositivos; `sessionStorage` guarda só o UUID do job, não arquivos nem campos.
 - **Aceite:** fluxo funcional com documentos sintéticos, mensagens corretas e nenhuma geração sem revisão.
 
 ## Fase 08 — Autenticação e créditos de teste
 
 - [x] Criar persistência mínima para usuários e ledger de créditos; não armazenar dados de clientes ou embarcações.
-- [ ] Implementar autenticação, autorização por operação, proteção de sessão e limitação de taxa.
+- [x] Implementar autenticação por sessão HttpOnly, autorização por proprietário (incluindo preflight de upload), proteção de origem e limitação básica de taxa para login/cadastro.
 - [x] Conceder créditos de **teste** por mecanismo interno seguro; não integrar cobrança real nesta fase.
 - [x] Debitar **uma vez por pacote documental gerado com sucesso**, usando transação e idempotência; verificadas retentativas e concorrência no CI com PostgreSQL real.
-- [ ] Testar concorrência, acesso entre usuários, estorno e recuperação de falha.
+- [x] Testar concorrência, acesso entre usuários, estorno idempotente e falha de geração de PDF **sem consumir créditos**.
+- [ ] Implementar reconciliação durável após crash entre débito e disponibilidade de arquivo; ainda não há garantia de estorno/retomada após reinício.
 - **Aceite:** segurança e invariantes de saldo verificadas por testes.
 
 ## Fase 09 — Segurança, desempenho e homologação
@@ -297,6 +300,20 @@
 - **Regressão:** integridade SHA-256, testes de cada PDF com valores fictícios, requisitos por formulário, texto longo bloqueado e imagens PNG de todas as páginas disponíveis no artefato de CI `pdf-mapping-review-synthetic`.
 - **Riscos e bloqueios:** campos de assinatura/firma manual, regras por serviço ainda não homologadas, impressão real e revisão humana independente pendentes. **Fase 04 não marcada como concluída**, piloto `DRAFT`, nenhum PDF liberado a usuário final.
 - **Resultados do CI:** a execução [40431641525](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40431641525) passou nos cinco jobs de backend, frontend, PostgreSQL, Compose e revisão PDF. Conferir a execução do último commit para registrar validação final.
+
+## Continuação técnica do MVP — 26/10/2026 (fases 05, 07 e 08)
+
+**Mudanças commitadas e verificadas em CI com dados fictícios:**
+- Upload de PDF agora verifica as dimensões **de cada página**, não só a primeira, e o teste regressivo cria um PDF com página 1 A4 e página 2 acima do limite.
+- O hook `onRequest` autentica e autoriza a propriedade do job **antes de ler o corpo** de `POST /api/jobs/:id/documents/:requirementId`; o handler mantém a segunda verificação para evitar confiar em uma etapa só.
+- O armazenamento temporário recusa diretórios genéricos e links simbólicos, reforça permissões privadas e testa remoção de diretórios órfãos. Testes de junction no Windows usam variante compatível.
+- O endpoint autenticado `GET /api/jobs/:id` retorna respostas enumeradas do serviço, sem caminho de arquivo nem OCR completo além dos campos que o proprietário pode consultar.
+- O React recupera um job válido após atualização da mesma aba: guarda somente o UUID opaco em `sessionStorage`, revalida sessão e disponibilidade com a API e reconstrói requisitos, estado de upload, revisão ou download.
+- Testes sintéticos de API tentam consultar, enviar e apagar arquivos com **outra conta**, e simulam geração inválida antes de uma geração válida para verificar que não houve débito.
+- Testes asseguram que diretórios órfãos da instância anterior são excluídos, sem retomar documentos pessoais armazenados no disco.
+- **Evidências:** [CI 40433692288](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433692288) e [CI 40433826699](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433826699), ambos com cinco jobs aprovados. Conferir execução do commit final para validação consolidada.
+
+**Ainda bloqueado:** 1) seis mapeamentos em `DRAFT` e piloto indisponível; 2) testes E2E reais de navegador, dispositivos e carga; 3) isolamento mais forte de decodificadores; 4) conciliação persistente de crédito após crash; 5) validação de requisitos condicionais/assinaturas e aprovação humana. Não iniciar cobrança real nem publicar.
 
 ## Registro de execução — atualizar a cada sessão/fase
 

@@ -66,3 +66,13 @@ Adicionado endpoint autenticado `POST /api/jobs/:id/renew`, com prazo deslizante
 O CI executa regressões **para cada PDF oficial** com dados fictícios, preservação do modelo e testes de erro, além de gerar o artefato `pdf-mapping-review-synthetic` (PDF e PNG de todas as páginas). As prévias atuais no GitHub foram inspecionadas e corrigidas onde marcas e complementos sobrepunham rótulos.
 
 **Não homologado:** assinaturas, reconhecimento de firma, carimbos e protocolo permanecem manuais; necessidade/obrigatoriedade de campos condicionais por serviço, nomes longos e impressões reais ainda exigem revisão. `FormMapping` segue `DRAFT` e `ServiceDefinition` segue `DRAFT`. Procedimento de revisão: [FASE_04_REVISAO_VISUAL.md](FASE_04_REVISAO_VISUAL.md).
+
+## Continuação de 26/10/2026 — uploads, retomada e isolamento
+
+A Fase 05 agora possui preflight autorizado antes de armazenar o upload em memória, verificação de todas as dimensões das páginas PDF e proteção contra diretório temporário inseguro/symlink. Testes em CI cobrem PDF com segunda página de dimensão excessiva, requisições de outra conta, limpeza de diretórios órfãos e geração inválida sem débito.
+
+Na Fase 07, a interface restaura o job após recarregar a mesma aba, desde que não tenha expirado e pertença à sessão autenticada. **Somente o UUID aleatório é salvo no `sessionStorage`**, nunca nomes, CPF, OCR, anexos ou PDF; o servidor continua sendo autoridade para recuperar os dados.
+
+Na Fase 08, o teste sintético demonstra a autorização por proprietário e o ledger sem desconto quando a emissão falha. Ainda não há reconciliação confiável após crash entre débito e disponibilização do arquivo. E2E em navegador real e verificações de carga são pendências.
+
+Referências: [CI 40433692288](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433692288), [CI 40433826699](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433826699). Os serviços oficiais permanecem bloqueados em `DRAFT` até homologação.
