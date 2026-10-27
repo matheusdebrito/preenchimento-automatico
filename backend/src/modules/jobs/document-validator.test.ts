@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { classifyDocument } from './document-validator.js';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { PDFDocument } from 'pdf-lib';
+import { classifyDocument, validatePdfPages } from './document-validator.js';
 import { suggestFields } from './ocr.js';
 
 describe('validação de assinatura do documento', () => {
@@ -66,5 +70,41 @@ describe('candidatos OCR conservadores', () => {
     expect(found['person.cpf']?.status).toBe('REVIEW_REQUIRED');
     expect(found['vessel.hullId']?.value).toBe('BR-ABC-123456');
     expect(found['person.fullName']).toBeUndefined();
+  });
+});
+
+const describePoppler = process.env.DATABASE_TEST_URL ? describe : describe.skip;
+
+describePoppler('preflight PDF com Poppler', () => {
+  it('rejeita páginas sintéticas de dimensões excessivas', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-pdf-dimensions-'));
+    try {
+      const pdf = await PDFDocument.create();
+      pdf.addPage([3000, 3000]);
+      const file = join(root, 'oversized.pdf');
+      await writeFile(file, await pdf.save());
+      await expect(validatePdfPages(file)).rejects.toThrow('Dimensões');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('aceita PDF sintético com página A4 e recusa mais de cinco páginas', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-pdf-pages-'));
+    try {
+      const valid = await PDFDocument.create();
+      valid.addPage([595, 842]);
+      const validFile = join(root, 'valid.pdf');
+      await writeFile(validFile, await valid.save());
+      expect(await validatePdfPages(validFile)).toBe(1);
+
+      const tooMany = await PDFDocument.create();
+      for (let i = 0; i < 6; i++) tooMany.addPage([595, 842]);
+      const invalidFile = join(root, 'too-many.pdf');
+      await writeFile(invalidFile, await tooMany.save());
+      await expect(validatePdfPages(invalidFile)).rejects.toThrow('entre 1 e 5');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
