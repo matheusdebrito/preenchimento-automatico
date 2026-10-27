@@ -113,9 +113,42 @@ export function spatialIdentityName(tsv: string, source: string): string | null 
     width:line.right-line.left, height:line.bottom-line.top,
     text:line.words.sort((a,b) => a.left-b.left).map((word) => word.text).join(' '),
   }));
+
   const isNameLabel = (value: string) =>
     /^NOME(?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|E\s+SOBRENOME))?\s*[:\-–]?\s*$/i
       .test(value.trim());
+
+  // ------- NOVO: verifica se o layout de RG está presente (rótulos conhecidos na
+  // mesma coluna/posição esperada). Isso permite recuperar o nome quando o Tesseract
+  // não consegue ler o rótulo "NOME" (ex.: holograma, fonte incompatível, rotação),
+  // mas consegue ler o resto do formulário. O nome extraído segue sempre para
+  // REVIEW_REQUIRED — nunca preenche sem revisão humana.
+  const rglabels = ['DATA', 'ESTADO', 'CPF', 'NATURALIDADE'];
+  const layoutPresent = rglabels.some(label => {
+    // Procura uma linha cujo texto normalizado contenha este rótulo,
+    // com left na faixa 260±40 (coluna de rótulos do RG) e top na região superior
+    // (antes da linha do CPF, aproximadamente top < 1100).
+    return lines.some(l => {
+      const lhs = l.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z]/g, '').toUpperCase();
+      return lhs.includes(label) && l.left >= 260 && l.left <= 320 && l.top < 1100;
+    });
+  });
+
+  const nameAreaLines = layoutPresent
+    ? lines.filter(l => l.left >= 260 && l.left <= 320 && l.top >= 580 && l.top <= 700)
+    : [];
+
+  const extractNameFromArea = (areaLines: OcrLine[]): string | null => {
+    // Junta todo o texto da área e tenta sugerir um nome via suggestFields.
+    // O suggestFields já valida padrões de nome (mínimo 2 palavras, sem data/CPF/RG).
+    const combined = areaLines.map(l => l.text).join(' ');
+    const suggested = suggestFields(combined, source);
+    const nameKey = source === 'buyer-identity' ? 'person.fullName' : 'seller.fullName';
+    const candidate = suggested[nameKey];
+    if (candidate && candidate.status === 'REVIEW_REQUIRED') return candidate.value;
+    return null;
+  };
+
   const matches: string[] = [];
   for (const label of lines.filter((line) => isNameLabel(line.text))) {
     const nearby = lines.filter((line) =>
@@ -131,6 +164,19 @@ export function spatialIdentityName(tsv: string, source: string): string | null 
     const found = result[source === 'buyer-identity' ? 'person.fullName' : 'seller.fullName'];
     if (found) matches.push(found.value);
   }
+
+  // Fallback: se o caminho principal não encontrou nada, tenta recuperar o nome
+  // pela presença do layout de RG conhecido + tokens na área esperada do nome.
+  if (matches.length === 0 && layoutPresent && nameAreaLines.length > 0) {
+    const fallbackName = extractNameFromArea(nameAreaLines);
+    if (fallbackName) {
+      // Retorna o nome sugerido pelo motor, marcado como REVIEW_REQUIRED.
+      // O chamador (QA interface / routes/jobs) tratará como name_stage =
+      // 'label_seen_name_rejected' ou similar, exigindo confirmação humana.
+      return fallbackName;
+    }
+  }
+
   const distinct = [...new Set(matches.map((value) => value.normalize('NFC').toUpperCase()))];
   return distinct.length === 1 ? matches[0]! : null;
 }
