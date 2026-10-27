@@ -1237,3 +1237,8 @@
 .live-text-button { border: 0; background: transparent; color: var(--color-teal-strong); font: inherit; cursor: pointer; padding: .4rem 0; text-align: left; }
 .live-flow .card { max-width: 55rem; }
 .live-flow a.btn { width: fit-content; max-width: 100%; }
+
+/* Distinguish each uploaded document and camera option on small screens. */
+.live-upload-field { display: grid; gap: .75rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-page); min-width: 0; }
+.live-upload-field .field { min-width: 0; }
+.live-upload-field input[type='file'] { max-width: 100%; }
