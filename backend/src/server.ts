@@ -1,10 +1,13 @@
 import { buildApp } from './app.js';
 import { loadEnv } from './config/env.js';
 import { connectDatabase } from './modules/auth/db.js';
+import { pruneExpiredSessions } from './modules/auth/auth-service.js';
 import { refundExpiredJobCredits, refundJobsAfterRestart } from './modules/auth/job-credit.js';
 
 const env = loadEnv();
 const pool = env.DATABASE_URL ? await connectDatabase(env.DATABASE_URL) : undefined;
+// Only opaque tokens are persisted; purge expired sessions on every restart.
+if (pool) await pruneExpiredSessions(pool);
 // The MVP is intentionally single-instance. Ephemeral jobs disappear on restart.
 // Refund unfinished package charges before accepting requests.
 const recovered = pool ? await refundJobsAfterRestart(pool) : 0;
@@ -16,8 +19,15 @@ const creditSweep = pool ? setInterval(() => {
   });
 }, 60_000) : undefined;
 creditSweep?.unref();
+const sessionSweep = pool ? setInterval(() => {
+  void pruneExpiredSessions(pool).catch((error: unknown) => {
+    app.log.error({ err: error }, 'expired_session_cleanup_failed');
+  });
+}, 60 * 60_000) : undefined;
+sessionSweep?.unref();
 app.addHook('onClose', async () => {
   if (creditSweep) clearInterval(creditSweep);
+  if (sessionSweep) clearInterval(sessionSweep);
   await pool?.end();
 });
 let shuttingDown = false;
