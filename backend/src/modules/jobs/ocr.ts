@@ -4,6 +4,7 @@ import { readdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { StoredDocument } from './job-store.js';
 import { isValidCpf, isValidBrazilianDate } from '../catalog/field-validation.js';
+import { parseIdentityTsv, readIdentityImage, selectSpatialIdentityName } from './identity-ocr.js';
 
 const execFile = promisify(execFileCallback);
 let active = 0;
@@ -32,7 +33,7 @@ export function validateRasterBudget(pageSizes: readonly number[]): void {
 async function run(command: string, args: readonly string[], timeout = 15_000): Promise<string> {
   const { stdout } = await execFile(command, [...args], {
     timeout, maxBuffer: 256 * 1024,
-    // Only the variables required by Poppler/Tesseract. Never pass DB credentials
+    // Only the variables required by document decoders. Never pass DB credentials
     // or application tokens into document-processing subprocesses.
     env: {
       PATH: process.env.PATH ?? '/usr/bin:/bin',
@@ -43,14 +44,14 @@ async function run(command: string, args: readonly string[], timeout = 15_000): 
   return stdout;
 }
 
-/** Decides whether a second OCR layout could recover a missing legal name. */
+/** Plain-text compatibility helper; image extraction uses TSV evidence. */
 export function shouldRetryIdentityLayout(text: string, source: string): boolean {
   const fields = suggestFields(text, source);
   const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
   return !fields[nameId] || Object.keys(fields).length < 2;
 }
 
-/** Select one internally consistent OCR reading; never concatenate two layouts. */
+/** Plain-text compatibility helper; not used to rank image-name candidates. */
 export function chooseIdentityLayout(primary: string, alternative: string, source: string): string {
   const first = suggestFields(primary, source);
   const second = suggestFields(alternative, source);
@@ -61,156 +62,23 @@ export function chooseIdentityLayout(primary: string, alternative: string, sourc
   return Object.keys(second).length > Object.keys(first).length ? alternative : primary;
 }
 
-type OcrLine = {
-  page: number; left: number; top: number; width: number; height: number; text: string;
-};
-
-/**
- * Tesseract TSV exposes the image coordinates of each word. A printed RG may
- * place NOME above the holder while PSM 11's plain-text reading order intermixes
- * columns and other boxes. Consider ONLY the nearest line underneath an exact
- * NOME heading; never search the whole image for a plausible-looking name.
- * The TSV and any intermediate names stay in memory and are never logged.
- */
+/** Name recovery uses relative geometry, never fixed pixel regions. */
 export function spatialIdentityName(tsv: string, source: string): string | null {
-  if (source !== 'buyer-identity' && source !== 'seller-identity') return null;
-  const rows = tsv.split(/\r?\n/);
-  if (rows.length < 2 || rows[0]?.trim().split('\t')[0] !== 'level') return null;
-
-  const grouped = new Map<string, {
-    page:number; left:number; top:number; right:number; bottom:number;
-    words:Array<{left:number; text:string}>;
-  }>();
-  let pageWidth = 0;
-  for (const row of rows.slice(1, 3000)) {
-    const columns = row.split('\t');
-    if (columns.length < 12) continue;
-    const [level, page, block, paragraph, line, word, left, top, width, height, confidence] =
-      columns.slice(0, 11).map(Number);
-    if (![level, page, block, paragraph, line, word, left, top, width, height, confidence]
-      .every(Number.isFinite)) continue;
-    if (level === 1) { pageWidth = Math.max(pageWidth, width!); continue; }
-    if (level !== 5 || confidence! < 25 || width! <= 0 || height! <= 0) continue;
-    const value = columns.slice(11).join(' ').trim();
-    if (!value || value.length > 80) continue;
-    const key = [page, block, paragraph, line].join(':');
-    const previous = grouped.get(key);
-    if (previous) {
-      previous.left = Math.min(previous.left, left!);
-      previous.top = Math.min(previous.top, top!);
-      previous.right = Math.max(previous.right, left! + width!);
-      previous.bottom = Math.max(previous.bottom, top! + height!);
-      previous.words.push({left: left!, text: value});
-    } else {
-      grouped.set(key, {
-        page:page!, left:left!, top:top!, right:left! + width!,
-        bottom:top! + height!, words:[{left:left!, text:value}],
-      });
-    }
-  }
-  const lines: OcrLine[] = Array.from(grouped.values()).map((line) => ({
-    page:line.page, left:line.left, top:line.top,
-    width:line.right-line.left, height:line.bottom-line.top,
-    text:line.words.sort((a,b) => a.left-b.left).map((word) => word.text).join(' '),
-  }));
-
-  const isNameLabel = (value: string) =>
-    /^NOME(?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|E\s+SOBRENOME))?\s*[:\-–]?\s*$/i
-      .test(value.trim());
-
-  // ------- NOVO: verifica se o layout de RG está presente (rótulos conhecidos na
-  // mesma coluna/posição esperada). Isso permite recuperar o nome quando o Tesseract
-  // não consegue ler o rótulo "NOME" (ex.: holograma, fonte incompatível, rotação),
-  // mas consegue ler o resto do formulário. O nome extraído segue sempre para
-  // REVIEW_REQUIRED — nunca preenche sem revisão humana.
-  const rglabels = ['DATA', 'ESTADO', 'CPF', 'NATURALIDADE'];
-  const layoutPresent = rglabels.some(label => {
-    // Procura uma linha cujo texto normalizado contenha este rótulo,
-    // com left na faixa 260±40 (coluna de rótulos do RG) e top na região superior
-    // (antes da linha do CPF, aproximadamente top < 1100).
-    return lines.some(l => {
-      const lhs = l.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z]/g, '').toUpperCase();
-      return lhs.includes(label) && l.left >= 260 && l.left <= 320 && l.top < 1100;
-    });
-  });
-
-  const nameAreaLines = layoutPresent
-    ? lines.filter(l => l.left >= 260 && l.left <= 320 && l.top >= 580 && l.top <= 700)
-    : [];
-
-  const extractNameFromArea = (areaLines: OcrLine[]): string | null => {
-    // Junta todo o texto da área e tenta sugerir um nome via suggestFields.
-    // O suggestFields já valida padrões de nome (mínimo 2 palavras, sem data/CPF/RG).
-    const combined = areaLines.map(l => l.text).join(' ');
-    const suggested = suggestFields(combined, source);
-    const nameKey = source === 'buyer-identity' ? 'person.fullName' : 'seller.fullName';
-    const candidate = suggested[nameKey];
-    if (candidate && candidate.status === 'REVIEW_REQUIRED') return candidate.value;
-    return null;
-  };
-
-  const matches: string[] = [];
-  for (const label of lines.filter((line) => isNameLabel(line.text))) {
-    const nearby = lines.filter((line) =>
-      line.page === label.page && line.top > label.top &&
-      line.top - (label.top+label.height) <= Math.max(75, label.height*5) &&
-      Math.abs(line.left-label.left) <= Math.max(80, pageWidth*0.14))
-      .sort((a,b) => a.top-b.top);
-    // The first spatial line is authoritative. Never skip over a different
-    // heading (e.g. FILIAÇÃO) to pick a relative's name further down.
-    const nearest = nearby[0];
-    if (!nearest) continue;
-    const result = suggestFields('NOME: ' + nearest.text, source);
-    const found = result[source === 'buyer-identity' ? 'person.fullName' : 'seller.fullName'];
-    if (found) matches.push(found.value);
-  }
-
-  // Fallback: se o caminho principal não encontrou nada, tenta recuperar o nome
-  // pela presença do layout de RG conhecido + tokens na área esperada do nome.
-  if (matches.length === 0 && layoutPresent && nameAreaLines.length > 0) {
-    const fallbackName = extractNameFromArea(nameAreaLines);
-    if (fallbackName) {
-      // Retorna o nome sugerido pelo motor, marcado como REVIEW_REQUIRED.
-      // O chamador (QA interface / routes/jobs) tratará como name_stage =
-      // 'label_seen_name_rejected' ou similar, exigindo confirmação humana.
-      return fallbackName;
-    }
-  }
-
-  const distinct = [...new Set(matches.map((value) => value.normalize('NFC').toUpperCase()))];
-  return distinct.length === 1 ? matches[0]! : null;
+  return selectSpatialIdentityName([parseIdentityTsv(tsv)], suggestFields, source);
 }
 
-/**
- * Identity cards have several disjoint blocks. Tesseract PSM 11 finds sparse
- * text; PSM 6 may still work better on a clean, uniformly arranged scan.
- * Retry at most once and retain the version with MORE validated, role-bound
- * fields. Never concatenate conflicting OCR readings or expose OCR raw text.
- */
-async function readImage(path: string, source: string): Promise<string> {
-  const primaryMode = source === 'buyer-identity' || source === 'seller-identity' ? '11' : '6';
-  const primary = await run('tesseract',
-    [path, 'stdout', '-l', 'por', '--psm', primaryMode], 25_000);
-  if (primaryMode !== '11') return primary;
-  // Having CPF and RG is not proof that the name was recognized.
-  if (!shouldRetryIdentityLayout(primary, source)) return primary;
-  const alternative = await run('tesseract',
-    [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
-  const best = chooseIdentityLayout(primary, alternative, source);
-  const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
-  if (suggestFields(best, source)[nameId]) return best;
-
-  // Last bounded attempt: use actual word positions instead of Tesseract's
-  // reading order. Only an explicit NOME heading adjacent to the name qualifies.
-  const tsv = await run('tesseract',
-    [path, 'stdout', '-l', 'por', '--psm', '11', 'tsv'], 25_000);
-  const spatialName = spatialIdentityName(tsv, source);
-  return spatialName ? best + '\nNOME: ' + spatialName : best;
+async function readImage(
+  path: string, source: string, tempDir: string, kind: 'png' | 'jpeg',
+): Promise<string> {
+  if (source === 'buyer-identity' || source === 'seller-identity') {
+    return readIdentityImage(path, kind, source, tempDir, suggestFields, run);
+  }
+  return run('tesseract', [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
 }
 
 async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
   if (doc.kind !== 'pdf') {
-    return readImage(doc.path, doc.requirementId);
+    return readImage(doc.path, doc.requirementId, tempDir, doc.kind);
   }
   const direct = await run('pdftotext', ['-layout', doc.path, '-'], 15_000);
   if (direct.trim().length >= 40) return direct;
@@ -225,7 +93,7 @@ async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
     validateRasterBudget(pageStats.map((page) => page.size));
     const texts: string[] = [];
     for (const page of pages) {
-      texts.push(await readImage(join(tempDir, page), doc.requirementId));
+      texts.push(await readImage(join(tempDir, page), doc.requirementId, tempDir, 'png'));
     }
     return texts.join('\n');
   } finally {
@@ -348,7 +216,7 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     // Reject labels for parents and social name: these must never fill the
     // applicant's legal name. RG layouts often separate label from value.
     const name = identityLabelledValue(text,
-      /^NOME(?:\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME)|\s*\/\s*NAME)?(?!\s+(?:DA\s+M[ÃA]E|DO\s+PAI|SOCIAL|DA\s+GENITORA|DO\s+GENITOR))\s*(?:[:\-–]\s*)?(.*)$/i,
+      /^NOME\b(?:\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME)|\s*\/\s*NAME)?(?!\s+(?:DA\s+M[ÃA]E|DO\s+PAI|SOCIAL|DA\s+GENITORA|DO\s+GENITOR))\s*(?:[:\-–]\s*)?(.*)$/i,
       (value) => /^[A-ZÀ-Ý][A-ZÀ-Ý' .-]{5,99}$/i.test(value) &&
         value.split(/\s+/).length >= 2 &&
         !/^(?:DATA|FILIA[CÇ][AÃ]O|NASCIMENTO|DOCUMENTO|REP[ÚU]BLICA|CPF|RG)\b/i.test(value),
