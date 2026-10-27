@@ -39,3 +39,18 @@ A inspeção automática/visual do agente revelou sobreposições de rótulos, q
 ## Validação integrada adicional
 
 A execução [CI 40425506645](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40425506645) passou com backend, frontend, PostgreSQL real e Docker Compose, incluindo autenticação, controle de créditos, PDFs sintéticos, Tesseract e testes de fluxo React. Foram corrigidos durante a execução: segredo opcional vazio no Compose, expectativas excessivas do OCR, seleção de inputs no teste do React e posicionamento de testes de concorrência. O armazenamento temporário passou a limitar processos ativos e uploads concorrentes, com 30 MB por job. **Isso comprova a infraestrutura técnica testada, não a aptidão dos modelos para usuários reais.**
+
+## Continuação de segurança e UX — 26/10/2026
+
+Implementados e commitados na `main`:
+- Requisições de frontend pelo proxy same-origin corrigidas e testadas contra tentativas cross-site.
+- Proteção de jobs durante OCR/geração/download e limites concorrentes de criação e upload; limpeza e TTL testados.
+- Confirmação de campos visíveis e obrigatórios; rejeição de valores estranhos ao formulário.
+- Retentativa de uploads sem recriar jobs; recuperação após perda de resposta na geração e exclusão explícita pelo usuário.
+- Preflight reforçado para PNG (estrutura e checksum) e PDFs (número/tamanho de páginas), mais testes reais Poppler.
+- OCR conservador diferencia comprador e vendedor, valida CPF e não repassa segredos para subprocessos.
+- Testes de rollback de créditos e CI com smoke de acesso de login pelo proxy.
+
+**Persistem riscos:** os decodificadores de arquivos e o OCR não substituem um isolamento de segurança completo; o consumo de créditos ainda exige reconciliação/reserva persistente em falhas abruptas de processo antes de produção. Testes com carga, recuperação de falhas de infraestrutura, revisão de segurança independente e análise documental final continuam pendentes. Os seis mapeamentos seguem `DRAFT`, a transferência segue indisponível, e pagamentos/produção não foram ativados.
+
+Relatório da implementação: [hardening e verificação](SECURITY_HARDENING_2026-10-26.md).

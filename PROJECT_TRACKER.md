@@ -261,6 +261,21 @@
 
 **Bloqueador de homologação:** os seis PDFs reais permanecem `VERIFIED`, os `FormMapping` permanecem `DRAFT`, o piloto `DRAFT`, e `ServiceForm` não libera uso real. Não alterar para `APPROVED`/`AVAILABLE` sem fechar relatório e revisão documental humana. A autorização para seguir desenvolvendo **não** é revisão humana dos campos do documento.
 
+## Segurança e resiliência incremental — continuação de 26/10/2026
+
+**Situação:** melhorias efetivamente implementadas; fases 04–09 permanecem **parciais** e o piloto permanece `DRAFT`.
+
+- **Sessões e origem:** corrigida aceitação de `Origin` legitimamente igual ao `Host` do frontend Nginx, sem permitir domínios externos arbitrários. Testes verificam mesma origem, origem não autorizada, `Origin: null` e frontend de desenvolvimento.
+- **Processamento e privacidade:** `JobStore` protege OCR, geração e downloads de exclusão simultânea por expiração/cancelamento; renova TTL após operação, aplica quotas de criações concorrentes, um arquivo por requisito e limite global do processo. Testes de concorrência, exclusão, prazos e duplicidade.
+- **Formulários e revisão:** só campos visíveis e vinculados ao mapeamento podem ser confirmados pelo usuário; campos obrigatórios são validados no servidor e na interface. Não utilizar valores OCR ocultos no PDF.
+- **Retomada e descarte:** React recupera uploads após falhas, consulta status de job para retomar revisão/download após respostas perdidas e fornece cancelamento autenticado com exclusão dos dados temporários. Após a geração, alerta que excluir o PDF não estorna o crédito.
+- **Uploads:** validação estrutural de chunks e CRC de PNG, MIME/assinatura, dimensões de imagem, número de páginas e geometria do PDF (via Poppler). Isso **não substitui** verificação de segurança completa dos decodificadores.
+- **OCR:** campos de comprador/vendedor separados, checksum de CPF, inferência restrita a nomes acompanhados de rótulo, eliminação de imagens intermediárias após falha e subprocessos sem credenciais de banco/segredo da aplicação.
+- **Créditos:** testes de estorno idempotente e rejeição de reaproveitamento inconsistente de chave; **ainda não há reconciliação persistente com um job interrompido por crash**.
+- **CI:** executadas baterias TypeScript, lint, testes unitários, integração PostgreSQL + Poppler/Tesseract, build e Docker Compose com testes de origem real pelo proxy. Resultados precisam ser acompanhados no GitHub Actions a cada commit; nenhuma evidência substitui homologação documental.
+
+**Bloqueadores mantidos:** PDFs `VERIFIED` mas mapeamentos `DRAFT`; revisão humana das páginas, requisitos condicionais e campos ausentes ainda pendentes. Não marcar fases 04–09 como [x] antes de fechar todos os critérios; não processar documentos reais nem cobrar usuários.
+
 ## Registro de execução — atualizar a cada sessão/fase
 
 | Data (Brasília) | Fase | Situação | Evidências (comandos, testes, arquivos, revisão) | Commit / bloqueio |

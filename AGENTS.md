@@ -176,3 +176,12 @@ Próxima menor etapa recomendada:
 ## Continuidade até produção
 
 Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exija aprovação explícita antes de contratar infraestrutura, publicar o sistema, aceitar documentos reais ou ativar cobranças. Verifique segurança, LGPD, backups e restauração, monitoramento, carga, rollback e decisão de lançamento. A expansão de cada serviço exige nova verificação de formulários e homologação. Planos empresariais e assinaturas continuam fora do escopo aprovado.
+
+## Regras adicionais para retentativas, documentos e autenticação
+
+- Não presumir que `CORS_ORIGINS` equivale a requisições **same-origin**. Uma chamada POST feita pelo navegador ao próprio frontend atrás do proxy deve ser permitida, mas `Origin` externo não autorizado deve ser recusado. Testar o fluxo no Nginx e no Fastify.
+- Nunca apagar um job enquanto OCR, geração ou streaming de download estiverem ativos. Implementar limites de concorrência e prazo temporário, documentar exceções de fechamento e monitorar discos e memória.
+- Validar assinaturas/estrutura de arquivo antes de utilizar decodificadores; limites de tamanho, páginas e geometria não são substitutos de sandbox ou atualização de dependências.
+- Dados extraídos do documento do vendedor **não** podem ser atribuídos automaticamente aos campos do comprador. Candidatos de OCR, mesmo com dígitos validadores corretos, são sugestões e dependem de conferência.
+- Em retentativas, reutilizar o job idempotentemente e nunca cobrar duas vezes. O registro do estado de débito para recuperação após queda do processo ainda exige solução antes de produção.
+- A API deve rejeitar qualquer campo de revisão não incluído na projeção visível do serviço e confirmar todos os obrigatórios. Não preencher silenciosamente informações que o usuário não viu.
