@@ -54,12 +54,19 @@ async function readImage(path: string, source: string): Promise<string> {
   const primary = await run('tesseract',
     [path, 'stdout', '-l', 'por', '--psm', primaryMode], 25_000);
   if (primaryMode !== '11') return primary;
-  const primaryScore = Object.keys(suggestFields(primary, source)).length;
-  if (primaryScore >= 2) return primary;
+  const primaryFields = suggestFields(primary, source);
+  const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
+  // Having a CPF (and perhaps an RG) is NOT a successful name extraction.
+  // Always try the second layout if the name is missing.
+  if (primaryFields[nameId] && Object.keys(primaryFields).length >= 2) return primary;
   const alternative = await run('tesseract',
     [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
-  const alternativeScore = Object.keys(suggestFields(alternative, source)).length;
-  return alternativeScore > primaryScore ? alternative : primary;
+  const alternativeFields = suggestFields(alternative, source);
+  const firstHasName = Boolean(primaryFields[nameId]);
+  const secondHasName = Boolean(alternativeFields[nameId]);
+  if (firstHasName !== secondHasName) return secondHasName ? alternative : primary;
+  return Object.keys(alternativeFields).length > Object.keys(primaryFields).length
+    ? alternative : primary;
 }
 
 async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
@@ -176,9 +183,10 @@ export function suggestFields(text: string, source: string): Record<string, Extr
     // Reject labels for parents and social name: these must never fill the
     // applicant's legal name. RG layouts often separate label from value.
     const name = identityLabelledValue(text,
-      /^NOME(?:\s+(?:COMPLETO|CIVIL|DO\s+TITULAR))?(?!\s+(?:DA\s+M[ÃA]E|DO\s+PAI|SOCIAL))\s*(?:[:\-–]\s*)?(.*)$/i,
+      /^NOME(?:\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME)|\s*\/\s*NAME)?(?!\s+(?:DA\s+M[ÃA]E|DO\s+PAI|SOCIAL|DA\s+GENITORA|DO\s+GENITOR))\s*(?:[:\-–]\s*)?(.*)$/i,
       (value) => /^[A-ZÀ-Ý][A-ZÀ-Ý' .-]{5,99}$/i.test(value) &&
-        value.split(/\s+/).length >= 2,
+        value.split(/\s+/).length >= 2 &&
+        !/^(?:DATA|FILIA[CÇ][AÃ]O|NASCIMENTO|DOCUMENTO|REP[ÚU]BLICA|CPF|RG)\b/i.test(value),
     );
     if (name) {
       result[seller ? 'seller.fullName' : 'person.fullName'] = {
