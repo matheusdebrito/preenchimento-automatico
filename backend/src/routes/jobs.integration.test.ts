@@ -144,8 +144,17 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const noAuth=await app.inject({method:'GET',
       url:'/api/jobs/'+jobId+'/download/requerimento-ma-v1'});
     expect(noAuth.statusCode).toBe(401);
-    const deleted=await app.inject({method:'DELETE',url:'/api/jobs/'+jobId,headers:{cookie}});
-    expect(deleted.statusCode).toBe(200);
+    // A download stream may still be closing its file descriptor after the
+    // injected HTTP response is complete; deletion must be blocked until then.
+    let deletedStatus = 409;
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const result = await app.inject({method:'DELETE',url:'/api/jobs/'+jobId,headers:{cookie}});
+      deletedStatus = result.statusCode;
+      if (deletedStatus === 200) break;
+      expect(deletedStatus).toBe(409);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(deletedStatus).toBe(200);
     const notFound=await app.inject({method:'GET',url:'/api/jobs/'+jobId,headers:{cookie}});
     expect(notFound.statusCode).toBe(404);
   });
