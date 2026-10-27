@@ -171,7 +171,8 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
         headers: { cookie },
         payload: { confirmed: true, values: {
-          ...fields.fields, 'sale.date': '31/02/2026',
+          ...fields.fields, 'person.cpf': '123.456.789-09',
+          'sale.date': '31/02/2026',
         } },
       });
       expect(invalidDate.statusCode).toBe(422);
