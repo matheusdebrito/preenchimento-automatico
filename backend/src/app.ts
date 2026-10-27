@@ -1,4 +1,7 @@
 import Fastify from 'fastify';
+import { randomUUID } from 'node:crypto';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import { loadEnv } from './config/env.js';
@@ -70,7 +73,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerHealthRoutes(app);
   registerCatalogRoutes(app, options.catalogOverride);
   registerAuthRoutes(app, env, options.pool);
-  registerJobRoutes(app, options.pool, options.catalogOverride, options.qaPreview === true);
+  // Vitest executes API suites in parallel. Give each test app a unique
+  // private root so orphan cleanup cannot erase another suite's live job.
+  const testRoot = isTest ? resolve(tmpdir(), 'pa-test-app-' + randomUUID()) : undefined;
+  registerJobRoutes(app, options.pool, options.catalogOverride, options.qaPreview === true, testRoot);
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({
