@@ -42,7 +42,7 @@ describe('jornada real isolada da demonstração', () => {
 
     expect(await screen.findByRole('heading',{name:'Serviço de teste'})).toBeTruthy();
     await user.click(screen.getByRole('button',{name:'Conferir documentos necessários'}));
-    expect(await screen.findByRole('heading',{name:'Documentos necessários'})).toBeTruthy();
+    expect(await screen.findByRole('heading',{name:'Documentos para leitura automática (opcionais)'})).toBeTruthy();
     const uploader = screen.getByLabelText(/Documento de teste/) as HTMLInputElement;
     const camera = screen.getByLabelText(/Fotografar documento de teste/i) as HTMLInputElement;
     expect(camera.getAttribute('capture')).toBe('environment');
