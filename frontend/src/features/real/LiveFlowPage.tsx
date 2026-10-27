@@ -266,7 +266,18 @@ export function LiveFlowPage() {
       } catch {
         // An expired or unavailable job is reported by the original error.
       }
-      setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
+      if (issue instanceof ApiError && issue.fieldId) {
+        const invalidField = service?.reviewFields.find((field) => field.id === issue.fieldId);
+        const name = invalidField?.label ?? 'o campo informado';
+        const tip = invalidField?.valueKind === 'date'
+          ? 'use uma data válida no formato DD/MM/AAAA.'
+          : issue.fieldId.endsWith('.cpf')
+            ? 'informe um CPF válido com os dígitos verificadores.'
+            : 'verifique o formato e o valor antes de confirmar.';
+        setError('Confira ' + name + ': ' + tip);
+      } else {
+        setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
+      }
     } finally { setBusy(false); }
   };
 
@@ -350,6 +361,8 @@ export function LiveFlowPage() {
                     <label key={field.id} className="field">
                       <span className="field__label">{field.label}{field.required ? ' *' : ''}</span>
                       <input className="field__input" required={field.required} value={values[field.id] ?? ''}
+                        inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
+                        placeholder={field.valueKind === 'date' ? 'DD/MM/AAAA' : undefined}
                         onChange={(event) => setValues((prev) => ({ ...prev, [field.id]:event.target.value }))} />
                       <span className="field__hint">
                         {sources[field.id]
