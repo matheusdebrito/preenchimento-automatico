@@ -156,13 +156,16 @@ versão mais recente, iniciar job novo e verificar o estado exibido por arquivo.
 
 ### Reconhecimento de RG fotografado
 
-O OCR de identidade agora utiliza segmentação de texto disperso para fotos de
-RG (Tesseract `--psm 11`), com uma tentativa limitada de outro modo quando
-**o nome do titular estiver ausente**, mesmo que CPF e RG já tenham sido detectados. Reconhece rótulos como `NOME`,
+O OCR de identidade utiliza segmentação de texto disperso para fotos de
+RG (Tesseract `--psm 11`) e uma segunda leitura quando o nome civil estiver
+ausente, mesmo que CPF e RG já tenham sido detectados. Se ambas falharem,
+o processamento pode usar as coordenadas TSV de uma terceira leitura limitada
+para associar o nome ao rótulo impresso, sem se basear na ordem textual das
+colunas ou inferir nomes de filiação. Reconhece rótulos como `NOME`,
 `REGISTRO GERAL`, `CPF` e órgão emissor quando o valor está na mesma linha
 ou logo abaixo, sem copiar nome da mãe ou do pai como titular. **Todas as
 sugestões exigem conferência do usuário**. Testes com RG fictício renderizado
-em JPEG passam pelo Tesseract real; isso **não comprova** leitura de fotos reais
+em JPEG e coordenadas TSV passam pelo Tesseract real; isso **não comprova** leitura de fotos reais
 com qualidade/layout variáveis. Ver
 [regras e limitações do OCR](docs/OCR_EXTRACTION_RULES.md).
 
