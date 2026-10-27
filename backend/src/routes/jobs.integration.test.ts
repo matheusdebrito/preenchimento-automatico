@@ -23,7 +23,11 @@ function fixture(): CatalogDefinition {
     .map((map) => ({
       ...map,
       placements: map.placements.filter((placement) =>
-        ['person.fullName', 'vessel.name', 'person.cpf', 'process.transferOwnership'].includes(placement.fieldId)),
+        ['person.fullName', 'vessel.name', 'person.cpf', 'process.transferOwnership'].includes(placement.fieldId))
+        .map((placement) => ({
+          ...placement,
+          required: placement.fieldId === 'person.fullName',
+        })),
       status: 'APPROVED' as const,
       reviewedAt: '2026-10-26', reviewer: 'EXCLUSIVAMENTE TESTE CI (NAO HOMOLOGA)',
       reportPath: 'backend/src/routes/jobs.integration.test.ts',
