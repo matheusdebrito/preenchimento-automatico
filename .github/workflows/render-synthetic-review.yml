@@ -1,4 +1,4 @@
-name: One-time mapping review previews
+name: One-time mapping review previews (alignment pass 2)
 on:
   push:
     branches: [main]

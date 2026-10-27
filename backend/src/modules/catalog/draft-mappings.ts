@@ -106,14 +106,14 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("person.placeDate", 219, 758, 512, 7, 0),
 
       // Motor 1-4: both choices are declared explicitly and stamped only if selected.
-      coordinate("vessel.motor1Choice", 264, 243, 12, 7, 0, false, "sim"),
-      coordinate("vessel.motor1Choice", 311, 243, 12, 7, 0, false, "nao"),
-      coordinate("vessel.motor2Choice", 585, 243, 12, 7, 0, false, "sim"),
-      coordinate("vessel.motor2Choice", 633, 243, 12, 7, 0, false, "nao"),
-      coordinate("vessel.motor3Choice", 264, 344, 12, 7, 0, false, "sim"),
-      coordinate("vessel.motor3Choice", 311, 344, 12, 7, 0, false, "nao"),
-      coordinate("vessel.motor4Choice", 585, 344, 12, 7, 0, false, "sim"),
-      coordinate("vessel.motor4Choice", 633, 344, 12, 7, 0, false, "nao"),
+      coordinate("vessel.motor1Choice", 264, 243, 12, 7, 0, true, "sim"),
+      coordinate("vessel.motor1Choice", 321, 243, 12, 7, 0, true, "nao"),
+      coordinate("vessel.motor2Choice", 585, 243, 12, 7, 0, true, "sim"),
+      coordinate("vessel.motor2Choice", 643, 243, 12, 7, 0, true, "nao"),
+      coordinate("vessel.motor3Choice", 264, 344, 12, 7, 0, true, "sim"),
+      coordinate("vessel.motor3Choice", 321, 344, 12, 7, 0, true, "nao"),
+      coordinate("vessel.motor4Choice", 585, 344, 12, 7, 0, true, "sim"),
+      coordinate("vessel.motor4Choice", 643, 344, 12, 7, 0, true, "nao"),
 
       // Independent optional motors; positions are distinct from motor 1.
       coordinate("vessel.motor2Brand", 507, 264, 251, 7, 0),
@@ -164,10 +164,10 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("vessel.authority", 211, 292, 537, 6.8, 0),
       coordinate("seller.identityType", 451, 381, 294, 6.2, 0),
       coordinate("seller.issueDate", 557, 403, 187, 6.1, 0),
-      coordinate("seller.apartment", 182, 468, 217, 6.4, 0),
+      coordinate("seller.apartment", 265, 468, 134, 6.4, 0),
       coordinate("person.identityType", 451, 616, 295, 6.2, 0),
       coordinate("person.issueDate", 557, 638, 188, 6.1, 0),
-      coordinate("person.apartment", 182, 699, 203, 6.3, 0),
+      coordinate("person.apartment", 265, 699, 120, 6.3, 0),
     ],
   },
   {
