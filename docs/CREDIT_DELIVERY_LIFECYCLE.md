@@ -7,8 +7,8 @@
 1. A geração é concluída em armazenamento temporário privado.
 2. O backend cria `credit_ledger` com débito de **1 crédito por processo**, e `job_credit_receipts` com estado `charged`, na **mesma transação**. Uma falha da transação desfaz ambas as operações.
 3. No primeiro download com resposta HTTP finalizada, o recibo passa a `delivered`, não cobrando novamente pelos demais PDFs do pacote.
-4. Antes da entrega, `DELETE` do job, expiração do limite absoluto de 60 minutos ou reinício do processo pode estornar o débito. O estorno cria apenas uma movimentação positiva no ledger e marca `refunded` atomicamente.
-5. O startup de instância única estorna recibos pendentes do processo anterior antes de aceitar solicitações. Um sweep a cada 60 segundos verifica recibos vencidos.
+4. Antes da entrega, `DELETE` do job, fim do **TTL deslizante de 20 minutos** (após a exclusão dos arquivos temporários), expiração do limite absoluto de 60 minutos ou reinício do processo podem estornar o débito. O estorno cria apenas uma movimentação positiva no ledger e marca `refunded` atomicamente. Um job já entregue não é reembolsado.
+5. O startup de instância única estorna recibos pendentes do processo anterior antes de aceitar solicitações. Um sweep a cada 60 segundos verifica recibos vencidos pelo limite absoluto; quando o estorno antecipado pelo TTL falha por indisponibilidade de banco, o recibo continua pendente para reconciliação posterior.
 
 A tabela contém somente UUID de usuário/job e horários/estado. Não contém nome, CPF, OCR, original enviado ou PDFs preenchidos. Os documentos seguem sendo apagados pelo armazenamento temporário.
 
@@ -19,9 +19,10 @@ A tabela contém somente UUID de usuário/job e horários/estado. Não contém n
 - `backend/src/modules/auth/job-credit.integration.test.ts`
 - `backend/src/routes/jobs.ts`
 - `backend/src/routes/jobs.integration.test.ts`
+- `backend/src/modules/jobs/job-store.ts` e `job-store.test.ts`
 - `backend/src/server.ts`
 
-As ações são idempotentes, com bloqueio transacional da linha do usuário. Os testes PostgreSQL verificam geração, concorrência, estorno, reinício simulado e entrega.
+As ações são idempotentes, com bloqueio transacional da linha do usuário. Os testes PostgreSQL verificam geração, concorrência, estorno, reinício simulado, entrega e estorno antecipado pelo TTL do job. O teste de armazenamento verifica que arquivos privados são excluídos mesmo quando o callback de estorno falha; a tentativa será recuperada pelo reconciliador persistente.
 
 ## Limitações bloqueantes
 
