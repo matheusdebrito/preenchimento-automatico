@@ -46,9 +46,9 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(uploader, new File(['fake-content'], 'foto.png', {type:'image/png'}));
     await user.click(screen.getByRole('button',{name:'Enviar e analisar documentos'}));
     expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
-    expect((screen.getByLabelText('Nome completo') as HTMLInputElement).value).toBe('MARIA EXEMPLO');
-    await user.clear(screen.getByLabelText('Nome completo'));
-    await user.type(screen.getByLabelText('Nome completo'), 'MARIA CONFERIDA');
+    expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA EXEMPLO');
+    await user.clear(screen.getByLabelText(/Nome completo/));
+    await user.type(screen.getByLabelText(/Nome completo/), 'MARIA CONFERIDA');
     await user.click(screen.getByRole('button',{name:'Confirmar e gerar formulários'}));
     expect(await screen.findByRole('heading',{name:'Formulários gerados'})).toBeTruthy();
     expect(screen.getByRole('link',{name:'Baixar PDF — requerimento-ma-v1'})
