@@ -59,13 +59,14 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
 
         <button
           type="button"
-          className="menu-toggle"
+          className={cx('menu-toggle', menuOpen && 'menu-toggle--open')}
+          aria-label={menuOpen ? 'Fechar menu' : 'Menu'}
           aria-expanded={menuOpen}
           aria-controls={navId}
           onClick={() => setMenuOpen((value) => !value)}
         >
-          {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-          <span>{menuOpen ? 'Fechar menu' : 'Menu'}</span>
+          <Menu className="menu-toggle__menu-icon" aria-hidden="true" />
+          <X className="menu-toggle__close-icon" aria-hidden="true" />
         </button>
 
         <nav
