@@ -22,7 +22,7 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — correção de orientação/nome testada no núcleo; CI completo atual, corpus amplo e homologação pendentes |
+| 06 | OCR e extração estruturada | 05 | [ ] Parcial — correção de orientação/nome e CI completo aprovados; corpus amplo e homologação pendentes |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — fluxo técnico existente; E2E/browser/mobile real pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
@@ -36,7 +36,7 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
 | 18 | Expansão de serviços | 17 e decisão | [ ] Pendente |
 
-**Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**, mesmo com o caso específico de nome agora recuperado. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
+**Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**, mesmo com o caso específico de nome agora recuperado e o CI de código aprovado. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
 ## 2. Checklists preservados das outras fases
 
@@ -56,9 +56,9 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Rejeitar candidatos fortes conflitantes, rótulos de filiação/social e pistas contraditórias entre leituras; preservar papéis comprador/vendedor e REVIEW_REQUIRED.
 - [x] Executar localmente 18 testes de associação/limites e 3 integrações com Tesseract e imagens sintéticas: 21 aprovados.
 - [x] Reproduzir o caso fornecido nas quatro rotações ortogonais; nome completo conferido contra referência visual privada, CPF retornado, diagnóstico name_recognized e limpeza de temporários confirmados.
-- [x] Verificar TypeScript estrito dos módulos alterados em isolamento; não confundir isso com typecheck completo do pacote.
+- [x] Verificar TypeScript estrito dos módulos alterados em isolamento; posteriormente confirmar typecheck completo no CI de Node 24.
 - [x] Configurar dependências de orientação/rasterização em Docker e CI; adicionar testes de integração sem fixture pessoal.
-- [ ] Confirmar o CI completo do último commit: backend, frontend, PostgreSQL, Compose e PDF.
+- [x] Confirmar o CI completo do commit de código `401f3da`: backend, frontend, PostgreSQL, Compose e PDF aprovados na execução [40584518041](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40584518041).
 - [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário; iniciar novo job para não reutilizar sugestões antigas.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
@@ -69,7 +69,7 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 
 ## 4. Registro de execução — 27/10/2026, correção do nome
 
-**Base:** commit `17d65bfbb26ef6348a2bf69b95563124894b93d7`; branch de implementação `fix/ocr-nome-orientacao`.
+**Base:** commit `17d65bfbb26ef6348a2bf69b95563124894b93d7`; branch `fix/ocr-nome-orientacao`; implementação `401f3da3b9c73c4f2ff2980ef01945d4a127fc2b`, [PR 2](https://github.com/matheusdebrito/preenchimento-automatico/pull/2).
 
 **Arquivos:** `backend/src/modules/jobs/identity-ocr.ts`, `ocr.ts`, dois novos arquivos de testes, `backend/Dockerfile`, `.github/workflows/ci.yml`, esta consolidação do tracker e `docs/OCR_IDENTITY_FIX_2026-10-27.md`. O tracker anterior foi preservado integralmente no arquivo histórico da raiz, mantendo seus links relativos. Nenhuma migração, alteração de dependência npm/lockfile, mudança de formulário ou publicação de material pessoal.
 
@@ -77,8 +77,10 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 
 **Testado localmente:** Linux, Node 22.16.0, Tesseract 5.5.0. TypeScript estrito isolado. Testes transpilados, usando adaptador de runner Vitest → node:test apenas para execução local: 21/21 aprovados. O núcleo foi também executado na imagem fornecida em quatro rotações: nome correto, CPF retornado e nenhum temporário remanescente. Resultados compartilhados omitem valores pessoais.
 
-**Não verificado neste registro:** npm ci/lint/typecheck/build completos com Node 24; GitHub Actions do novo commit; imagem Docker construída e navegador local. O CI está configurado para verificá-los; somente uma execução efetivamente concluída pode atualizar esses itens. Não há homologação de produção ou afirmação de precisão universal.
+**CI confirmado:** execução [40584518041](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40584518041), commit `401f3da`, status completed/success. Os cinco jobs passaram: checks backend, checks frontend, postgres-integration, compose-smoke e pdf-mapping-visual. Backend executou npm ci, auditoria, typecheck, lint, testes e build com Node 24; o job de integração executou os testes com PostgreSQL e as ferramentas OCR reais. O Compose construiu e iniciou a stack e validou saúde/proxy/autorização. O job de PDF gerou e verificou amostras, sem aprovar visualmente os formulários.
 
-**Riscos/próximo passo:** conferir todos os jobs do PR e corrigir falhas antes de integrar; reconstruir a imagem da API uma vez pelas novas ferramentas; depois usar o testador que importa TypeScript local sem rebuild a cada alteração. Avaliar nomes multilinha e corpus amplo. Limites de cache do ImageMagick não equivalem a sandbox de processo.
+**Ainda não verificado:** navegador e Windows/Docker da máquina do usuário, precisão de corpus amplo, isolamento/carga e homologação. A conclusão do CI não comprova esses itens. A atualização posterior deste registro é somente documental, sem modificar os arquivos de código validados.
+
+**Riscos/próximo passo:** revisar/integrar o PR; reconstruir a imagem da API uma vez pelas novas ferramentas; depois usar o testador que importa TypeScript local sem rebuild a cada alteração. Avaliar nomes multilinha e corpus amplo. Limites de cache do ImageMagick não equivalem a sandbox de processo.
 
 **Documento técnico vigente:** [correção de OCR de identidade](docs/OCR_IDENTITY_FIX_2026-10-27.md). As descrições do caminho antigo no README e no histórico de OCR devem ser interpretadas como anteriores a esta correção.
