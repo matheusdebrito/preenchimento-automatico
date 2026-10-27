@@ -20,6 +20,7 @@ export function LiveFlowPage() {
   const [values, setValues] = useState<Record<string,string>>({});
   const [sources, setSources] = useState<Record<string,string>>({});
   const [jobId, setJobId] = useState<string | null>(null);
+  const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -53,6 +54,10 @@ export function LiveFlowPage() {
   const selectFile = (id: string, event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (jobId) {
+      setError('Para substituir um documento, cancele e reinicie o processo temporário.');
+      return;
+    }
     if (file.size === 0 || file.size > 10 * 1024 * 1024 ||
       !['application/pdf','image/png','image/jpeg'].includes(file.type)) {
       setError('Escolha JPG, PNG ou PDF com até 10 MB.');
@@ -68,19 +73,38 @@ export function LiveFlowPage() {
       setError('Adicione os documentos obrigatórios antes de continuar.');
       return;
     }
-    setBusy(true); setError('');
+    setBusy(true);
+    setError('');
     try {
-      const job = await api<{id:string}>('/api/jobs',
-        { method:'POST', body:JSON.stringify({serviceId:service.id,answers}) });
-      setJobId(job.id);
+      let currentJob = jobId;
+      const present = new Set(uploadedRequirements);
+      if (currentJob) {
+        // Recover when an upload was stored but the browser lost the response.
+        const status = await api<{status:string;uploadedRequirementIds:string[]}>(
+          '/api/jobs/' + currentJob,
+        );
+        for (const requirement of status.uploadedRequirementIds) present.add(requirement);
+        setUploadedRequirements([...present]);
+        if (status.status !== 'CREATED' && status.status !== 'UPLOADED') {
+          throw new ApiError(409, 'Este processo não aceita novos documentos.');
+        }
+      } else {
+        const job = await api<{id:string}>('/api/jobs',
+          { method:'POST', body:JSON.stringify({serviceId:service.id,answers}) });
+        currentJob = job.id;
+        setJobId(job.id);
+      }
       for (const [requirementId, file] of Object.entries(files)) {
+        if (present.has(requirementId)) continue;
         await api<{id:string}>(
-          '/api/jobs/' + job.id + '/documents/' + encodeURIComponent(requirementId),
+          '/api/jobs/' + currentJob + '/documents/' + encodeURIComponent(requirementId),
           { method:'POST', body:file, headers:{ 'Content-Type':file.type } },
         );
+        present.add(requirementId);
+        setUploadedRequirements([...present]);
       }
       const read = await api<{fields:Record<string,string>;sources:Record<string,string>}>(
-        '/api/jobs/' + job.id + '/extract', { method:'POST', body:JSON.stringify({}) },
+        '/api/jobs/' + currentJob + '/extract', { method:'POST', body:JSON.stringify({}) },
       );
       // Present and send only mapped fields that users can visibly review.
       const visible = new Set(service.reviewFields.map((field) => field.id));
@@ -88,8 +112,43 @@ export function LiveFlowPage() {
       setSources(Object.fromEntries(Object.entries(read.sources).filter(([key]) => visible.has(key))));
       setStep('review');
     } catch (issue) {
-      setError(issue instanceof ApiError ? issue.message : 'Falha na leitura. Tente novamente.');
-    } finally { setBusy(false); }
+      if (issue instanceof ApiError && issue.status === 404) {
+        setJobId(null);
+        setUploadedRequirements([]);
+        setError('O processo expirou. Tente enviar novamente os documentos.');
+      } else {
+        setError(issue instanceof ApiError ? issue.message : 'Falha na leitura. Tente novamente.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const cancel = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      if (jobId) {
+        try {
+          await api<{removed:boolean}>('/api/jobs/' + jobId, { method:'DELETE' });
+        } catch (issue) {
+          // A 404 means the private files have already expired.
+          if (!(issue instanceof ApiError && issue.status === 404)) throw issue;
+        }
+      }
+      setJobId(null);
+      setUploadedRequirements([]);
+      setFiles({});
+      setValues({});
+      setSources({});
+      setDownloads([]);
+      setStep('questions');
+    } catch {
+      setError('Não foi possível excluir este processo agora. Tente novamente antes de sair.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const generate = async () => {
@@ -177,6 +236,12 @@ export function LiveFlowPage() {
                     {busy ? 'Gerando…' : 'Confirmar e gerar formulários'}
                   </Button>
                 </>
+              ) : null}
+              {(step === 'files' || step === 'review' || step === 'download') ? (
+                <button type="button" className="live-text-button" disabled={busy}
+                  onClick={() => void cancel()}>
+                  Cancelar e apagar documentos temporários
+                </button>
               ) : null}
               {step === 'download' && jobId ? (
                 <>

@@ -99,6 +99,9 @@ export class JobStore {
     this.activeUploads.add(job.id);
     try {
       if (job.files.length >= DOCUMENT_LIMIT) throw new Error('Limite de documentos atingido.');
+      if (job.files.some((file) => file.requirementId === requirementId)) {
+        throw new Error('Documento já enviado para este requisito.');
+      }
       if (job.stage !== 'CREATED' && job.stage !== 'UPLOADED') {
         throw new Error('Envio não permitido neste estágio.');
       }

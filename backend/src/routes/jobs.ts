@@ -69,6 +69,7 @@ export function registerJobRoutes(
     return {
       id: job.id, status: job.stage, expiresAt: job.expiresAt,
       documentCount: job.files.length,
+      uploadedRequirementIds: [...new Set(job.files.map((file) => file.requirementId))],
       fields: job.stage === 'REVIEW' || job.stage === 'GENERATED' ? job.values : {},
       sources: job.sourceNotes,
       downloads: job.stage === 'GENERATED' ? [...job.outputs.keys()] : [],
