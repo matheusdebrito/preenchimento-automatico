@@ -135,9 +135,11 @@
 - [x] Extrair texto nativo de PDFs digitais sem OCR quando possível; confirmado com PDF sintético no CI de integração.
 - [x] Implementar conversão limitada de PDFs digitalizados com `pdftoppm`, a testar com amostras digitalizadas reais/sintéticas de qualidade variada.
 - [ ] Executar Tesseract no servidor/worker com tratamento de qualidade de imagem e limites de CPU/memória.
-- [ ] Mapear texto para IDs semânticos reutilizáveis; registrar origem/confiança somente no job temporário.
+- [x] Criar sugestões a partir de rótulos explícitos para IDs semânticos reutilizáveis (CPF/nome/RG/emissor, TIE, endereço/CEP), mantendo a origem dentro do job e exigindo revisão humana.
+- [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
 - [x] Detectar conflitos e ausências; nunca completar valores por suposição.
-- [ ] Testar fotos/PDFs **sintéticos**, com qualidade variada e campos ambíguos.
+- [x] Testar candidatos sintéticos ambíguos, divergências de CPF, registros de TIE e comprovantes com múltiplos CEPs; nenhum desses casos gera preenchimento por suposição.
+- [ ] Testar fotos/PDFs com **qualidade de imagem variada** (perspectiva, rotação, sombras, baixa resolução) e identificar limites do Tesseract.
 - **Aceite:** extração rastreável, falhas tratadas e nenhuma confiança excessiva em OCR.
 
 ## Fase 07 — Revisão e integração do wizard
@@ -314,6 +316,14 @@
 - **Evidências:** [CI 40433692288](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433692288) e [CI 40433826699](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433826699), ambos com cinco jobs aprovados. Conferir execução do commit final para validação consolidada.
 
 **Ainda bloqueado:** 1) seis mapeamentos em `DRAFT` e piloto indisponível; 2) testes E2E reais de navegador, dispositivos e carga; 3) isolamento mais forte de decodificadores; 4) conciliação persistente de crédito após crash; 5) validação de requisitos condicionais/assinaturas e aprovação humana. Não iniciar cobrança real nem publicar.
+
+## Continuação da Fase 06 — extração conservadora por documento (26/10/2026)
+
+- `suggestFields(text, requirementId)` agora aplica regras **específicas para a origem**: comprador/vendedor não são misturados; TIE só informa a embarcação; comprovante de residência fornece endereço/CEP apenas quando rotulados explicitamente.
+- CPF válido exige dígitos verificadores e apenas um valor não ambíguo. Nomes, RG e órgão emissor exigem rótulos. Campos com valores divergentes/ambíguos não são escolhidos automaticamente.
+- O frontend apresenta o **nome amigável do documento de origem** e lembra que cada sugestão requer conferência antes de gerar PDFs.
+- Testes sintéticos de várias origens e ambiguidades estão em `backend/src/modules/jobs/document-validator.test.ts`; testes do wizard em `frontend/src/features/real/LiveFlowPage.test.tsx`.
+- **Não concluído:** OCR com documentos reais ou digitalizações de qualidade variada; medição de confiança e acurácia, correções de perspectiva e avaliação de imagens ruins. Nenhum dado de cliente usado.
 
 ## Registro de execução — atualizar a cada sessão/fase
 

@@ -202,3 +202,11 @@ Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exi
 - O diretório de arquivos privados não pode ser uma raiz genérica nem symlink, não pode entrar em backups/webroot e precisa de permissões restritivas. Testar cenários de restos órfãos após interrupções.
 - Estado de sessão retomável do wizard: usar apenas UUID opaco no `sessionStorage` da aba. **Nunca armazenar CPF, OCR, campos digitados, nomes de documentos ou PDF no navegador.** Conferir propriedade/expiração no servidor a cada restauração.
 - Ao estender testes E2E, verificar que um usuário não pode ler, subir ou excluir documentos do outro e que falha de emissão não desconta créditos. A recuperação após crash com ledger persistente ainda não está implementada.
+
+## Regras adicionais de extração OCR — Fase 06
+
+- Somente sugerir valores documentais quando o tipo de documento e o rótulo identificarem o campo semântico com baixa ambiguidade. TIE não fornece automaticamente CPF do comprador; identidade do vendedor não preenche o comprador.
+- CPF com dígito verificador correto **não comprova identidade**; sugestões continuam em `REVIEW_REQUIRED`.
+- Se houver dois valores diferentes que encaixem na mesma regra, não selecionar nenhum. Campos ausentes permanecem vazios para preenchimento manual.
+- Nunca anunciar porcentagem de confiança sem evidências reais do OCR. Investigar imagem rotacionada, perspectiva, sombras e leituras inconsistentes antes de abrir para público.
+- Verificar e atualizar `docs/OCR_EXTRACTION_RULES.md` e testes unitários sempre que acrescentar padrões.

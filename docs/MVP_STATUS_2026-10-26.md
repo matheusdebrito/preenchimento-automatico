@@ -76,3 +76,9 @@ Na Fase 07, a interface restaura o job após recarregar a mesma aba, desde que n
 Na Fase 08, o teste sintético demonstra a autorização por proprietário e o ledger sem desconto quando a emissão falha. Ainda não há reconciliação confiável após crash entre débito e disponibilização do arquivo. E2E em navegador real e verificações de carga são pendências.
 
 Referências: [CI 40433692288](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433692288), [CI 40433826699](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40433826699). Os serviços oficiais permanecem bloqueados em `DRAFT` até homologação.
+
+## Extração semântica adicional — 26/10/2026
+
+Regras de OCR foram estendidas conservadoramente para TIE (`vessel.name`, `vessel.registration`, `vessel.hullId`), identidades distintas do comprador/vendedor (CPF, nome, RG/identidade, emissor) e comprovantes de residência (`person.address`, `person.postalCode`). Exigem rótulos claros e resultados não ambíguos; todo candidato é `REVIEW_REQUIRED`. A interface mostra a origem em linguagem compreensível. Não inferir titulares do TIE como compradores.
+
+O pipeline e os testes usam exclusivamente amostras fictícias. **Faltam** testes reais com imagens difíceis, medição de confiança, confiabilidade por tipo de documento e suporte a situações documentais variáveis. Referência: [regras técnicas de extração](OCR_EXTRACTION_RULES.md).
