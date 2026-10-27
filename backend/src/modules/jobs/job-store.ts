@@ -17,6 +17,9 @@ export interface ExtractionDiagnostic {
   requirementId: string;
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
+  /** QA only: status of the holder-name recognition, never the name itself. */
+  nameStage?: 'name_recognized' | 'name_not_mapped' |
+    'label_seen_name_rejected' | 'label_not_detected';
 }
 
 export interface DocumentJob {
