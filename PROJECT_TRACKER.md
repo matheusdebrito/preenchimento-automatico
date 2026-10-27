@@ -44,7 +44,7 @@
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — QA local usa os seis mapas reais e vínculos condicionais; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — todos os uploads opcionais, inclusive zero, com limites mantidos; fuzzing e isolamento pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — segunda leitura depende também do nome civil ausente; fotos reais e métricas de acurácia pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — nome do RG com busca espacial por coordenadas TSV após falha textual; reteste com layout real e acurácia pendentes |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — cartões de upload com arquivo/câmera e estado selecionado; revisão visual mobile real pendente |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
@@ -151,6 +151,7 @@
 - [x] Tratar RG com layout não uniforme: OCR com `--psm 11` e fallback `--psm 6` limitado a uma tentativa quando houver poucos candidatos; parser aceita rótulos de nome/RG/emissor/data acima do valor e rejeita filiação/nome social/ambiguidade. Testes unitários e JPEG sintético real via Tesseract, [CI 40529677699](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40529677699), **cinco jobs aprovados**.
 - [x] Distinguir `no_applicable_fields` de `no_text`/`no_supported_labels` por documento, sem expor OCR bruto; teste de integração com RG fictício e campo não mapeado, CI 40533322688 (5/5 jobs aprovados).
 - [x] Validar no CI backend a regressão para CPF/RG presentes com nome civil ausente: segunda leitura passa a ser disparada pelo nome, rótulos explícitos `NOME / NAME` e `NOME E SOBRENOME` reconhecidos sem usar dados de filiação; [CI de código 40541505169](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40541505169), checks backend aprovado. Acurácia em RG real ainda pendente.
+- [x] Recuperar nome civil a partir das coordenadas TSV do Tesseract somente quando as duas leituras textuais não tiverem nome e houver rótulo explícito próximo, evitando associação a filiação ou múltiplos titulares; testes unitários de colunas/ambiguidade e teste de JPEG sintético com TSV real; [CI 40543428667](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40543428667) com frontend/backend/PostgreSQL/Compose aprovados, PDF visual em execução na última verificação. Sem comprovação no RG específico do usuário.
 - [ ] Medir e registrar confiança do OCR por campo a partir de evidência real, sem inventar percentuais ou usar precisão de checksum como prova de identidade.
 - [x] Detectar conflitos e ausências; nunca completar valores por suposição.
 - [x] Testar candidatos sintéticos ambíguos, divergências de CPF, registros de TIE e comprovantes com múltiplos CEPs; nenhum desses casos gera preenchimento por suposição.
@@ -648,3 +649,18 @@ Os testes extras de data de emissão, local de venda e motor foram adicionados e
 - **Regressões:** `backend/src/modules/jobs/document-validator.test.ts` cobre reprocessamento quando nome falta; `frontend/src/features/real/LiveFlowPage.test.tsx` cobre ações acessíveis, câmera e retorno visual de seleção. Foram corrigidos os testes de rótulo exato e de assinatura da função de comparação antes de concluir CI.
 - **Validação nesta etapa:** o CI `40540332546` do CSS passou; o CI intermediário `40540458835` do backend falhou no typecheck de um teste com número incorreto de argumentos, corrigido em `1afefc9`. **CI completo comprovado:** [GitHub Actions 40541891502](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40541891502), commit `f5af9dc` (documentação após código `b181bd7`), **5/5 jobs com `success`**: checks backend/frontend, postgres-integration, compose-smoke e pdf-mapping-visual. Isso valida as regressões de código e a geração sintética, mas **não é inspeção visual em celular nem prova de reconhecimento da foto verdadeira**.
 - **Próximo teste manual:** reconstruir containers; carregar apenas um RG fictício similar ao layout, verificar separadamente Nome e CPF no formulário; testar cartões em 320/375px, teclado e câmera; comparar com prévia do documento. O serviço oficial permanece DRAFT, os PDFs de QA seguem AMOSTRA.
+
+
+## Registro de execução — 27/10/2026: 3ª tentativa de nome do RG por posição gráfica (Fase 06)
+
+**Solicitação:** CPF identificado repetidamente, mas nome do titular segue vazio no RG do usuário mesmo após regex e segundo modo de segmentação. O usuário não forneceu a imagem ao chat; o caso concreto ainda não é reproduzível.
+
+**Inspeção de causa:** `backend/src/modules/jobs/ocr.ts` só examinava o texto linear dos modos Tesseract `--psm 11` e `--psm 6`. Em documentos com diversos blocos, a saída textual não garante proximidade entre o rótulo NOME e seu valor, portanto um CPF reconhecido pode coexistir com nome ausente. A associação visual por coordenadas é uma tentativa adicional justificada, **não prova de que a causa exata da foto original seja esta**.
+
+**Implementação:** função `spatialIdentityName` lê TSV de palavras (página/bloco/parágrafo/linha, left/top/width/height, confiança), agrupa por linha, procura rótulos NOME inteiros e usa apenas a primeira linha visual inferior dentro de limites horizontal/vertical; não ignora rótulos de filiação, não inventa valor, rejeita múltiplos nomes discordantes. `readImage` faz a consulta TSV só quando `--psm 11` e `--psm 6` falham em encontrar nome. Não persiste nem retorna dados OCR brutos. Mantidos timeouts, máximo de buffers e controle de concorrência. Há custo adicional de OCR somente neste caminho.
+
+**Testes:** `backend/src/modules/jobs/document-validator.test.ts` inclui TSV sintético fora de ordem (coluna do CPF antes do nome), filiação e conflitos; `backend/src/modules/jobs/ocr.integration.test.ts` gera JPEG de identidade inteiramente fictícia, executa Tesseract `tsv` e confere nome recuperado. `docs/OCR_EXTRACTION_RULES.md` e `README.md` atualizados.
+
+**Resultado:** [CI 40543428667](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40543428667), commit de código `1ee98c9`: checks frontend/backend, postgres-integration (Tesseract real) e compose-smoke com `success`; job pdf-mapping-visual ainda rodava na última consulta. **Não marcar teste em foto real/homologação como aprovado.**
+
+**Pendências:** dados fictícios com o **mesmo layout do RG que falhou** para medir cobertura, fotos inclinadas/baixa nitidez, revisão visual de PDF oficial, sanitização de exemplos, confiabilidade por campo e tempo máximo de OCR. Se a falha persistir, identificar se o rótulo NOME é reconhecido e qual tipo de RG/CIN, sem enviar RG real.
