@@ -259,6 +259,32 @@ function identityLabelledValue(
   return unique.length === 1 ? found[0]! : null;
 }
 
+/**
+ * QA-only, privacy-preserving identity-name diagnostic.
+ * Reports neither the recognised words nor the person's name; it only helps
+ * distinguish OCR label detection from semantic candidate rejection.
+ * A missing label does not prove the printed name was absent or unreadable.
+ */
+export function identityNameStage(
+  text: string,
+  source: string,
+  suggested: Readonly<Record<string, ExtractionCandidate>>,
+  mappedFields: ReadonlySet<string>,
+): 'name_recognized' | 'name_not_mapped' | 'label_seen_name_rejected' | 'label_not_detected' {
+  const fieldId = source === 'buyer-identity' ? 'person.fullName'
+    : source === 'seller-identity' ? 'seller.fullName' : '';
+  if (!fieldId) return 'label_not_detected';
+  if (suggested[fieldId]) {
+    return mappedFields.has(fieldId) ? 'name_recognized' : 'name_not_mapped';
+  }
+  // A tolerant pattern is diagnostic only; it never creates an OCR candidate.
+  // Exclude parental and social name labels so they cannot imply a holder name.
+  const labelLike = text.split(/\r?\n/).some((line) =>
+    /^\s*N[O0]M[E3](?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME))?\s*(?::|[-–]|$|\s+(?!DA\s+M[ÃA]E|DO\s+PAI|SOCIAL|DA\s+GENITORA|DO\s+GENITOR))/i
+      .test(line));
+  return labelLike ? 'label_seen_name_rejected' : 'label_not_detected';
+}
+
 /** Label-anchored hints only: all results require explicit human review. */
 export function suggestFields(text: string, source: string): Record<string, ExtractionCandidate> {
   const result: Record<string, ExtractionCandidate> = {};
