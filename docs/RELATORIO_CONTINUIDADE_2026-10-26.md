@@ -13,6 +13,7 @@
 | Fase 05 — regressões | Casos sintéticos malformados; fixture de IHDR teve CRC corrigido após falha do primeiro CI | `a35cc90`, `ab79c9e` |
 | Fase 08 — sessões | Limpeza de sessões expiradas no PostgreSQL ao iniciar a API e a cada hora, mantendo sessões válidas e sem excluir contas/créditos | `bfbf070`, `a6af348`, `04b1ea2` |
 | Fase 06 — OCR | Limites defensivos de saída intermediária do Poppler: até 16 MiB por página e 48 MiB por PDF antes de enviar ao Tesseract; teste desses limites com valores sintéticos | `a235b85`, `1ad1f31` |
+| Fase 08 — estorno por expiração | Job expirado tenta estorno logo após excluir os arquivos privados; callback idempotente, com teste de falha de banco simulada sem reter documentos e integração real PostgreSQL | `a6948bc`, `4b4417d`, `51d4aea`, `dc137e7`, `8e88717` |
 
 ### Evidências técnicas e critérios de confiança
 
@@ -20,7 +21,7 @@
 - A mudança de PNG foi fundamentada na [especificação PNG (Terceira Edição), seção 11.2.1](https://www.w3.org/TR/png/#11IHDR), que determina as combinações válidas de cor/profundidade e o uso de PLTE. O conserto do teste atualiza o CRC em vez de confundir falta de paleta com checksum inválido.
 - A [orientação OWASP sobre uploads](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html) recomenda defesa em camadas, limites após descompressão e isolamento de decodificadores. Os limites de bytes adicionados são **mitigações parciais**, não constituem sandbox de OCR nem proteção completa contra arquivos maliciosos.
 - O [Node.js documenta o cálculo CRC32 integrado](https://nodejs.org/api/zlib.html#zlibcrc32data-value), utilizado apenas na fixture de regressão do PNG; nenhuma dependência externa foi adicionada.
-- **CI do código final:** o commit `009cf56` passou no [pipeline 40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173), com cinco jobs aprovados: backend/frontend, PostgreSQL, renderização de PDFs fictícios e Compose. Falhas intermediárias ocorreram nas fixtures PNG modificadas sem CRC recalculado e foram corrigidas antes desse resultado. Commits documentais posteriores também disparam CI; verificar a execução mais recente ao revisar o repositório.
+- **CI dos commits finais de código:** `009cf56` passou no [pipeline 40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173), e `8e88717` passou no [pipeline 40437615191](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437615191), ambos com cinco jobs aprovados: backend/frontend, PostgreSQL, PDFs sintéticos e Compose. Falhas intermediárias das fixtures PNG sem CRC recalculado foram corrigidas antes dessas execuções. Commits documentais posteriores também disparam CI; conferir a execução mais recente ao revisar o repositório.
 
 ## Pendências ordenadas para o próximo ciclo
 
@@ -28,7 +29,7 @@
 
 - [ ] **Homologação documental da Fase 04:** conferir visualmente em cada uma das páginas dos seis PDFs oficiais as posições, acentos, textos longos, datas, condicionais, campos de representante/coproprietário e assinatura. Registrar revisor, data e parecer por `FormMapping`, em `docs/mapping-reports/` e no roteiro `docs/FASE_04_REVISAO_VISUAL.md`. Os seis continuam `DRAFT`; não convertê-los automaticamente para `APPROVED`.
 - [ ] **Aplicabilidade ao serviço piloto:** confirmar obrigações do 2-A/2-B e anexos condicionais (TIE, representante, 2-C/2-D/2-E/1-C) contra a NORMAM e orientações oficiais. Só vincular e liberar `ServiceForm` após verificação documental.
-- [x] **CI do último commit de código (`009cf56`):** typecheck, lint, testes, build, integração PostgreSQL, prévias e Compose aprovados em [40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173). Revalidar se novos commits alterarem o código.
+- [x] **CI dos commits de código (`009cf56` e `8e88717`):** typecheck, lint, testes, build, integração PostgreSQL, prévias e Compose aprovados em [40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173) e [40437615191](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437615191). Revalidar se novos commits alterarem o código.
 
 ### P1 — Engenharia necessária antes de usuários reais
 
@@ -36,7 +37,7 @@
 - [ ] **Fuzzing e testes de carga de upload:** documentos malformados JPEG/PNG/PDF, políglotas, páginas com alta complexidade, interrupção de upload, baixa capacidade de disco e várias requisições simultâneas. Medir resultados com limites reproduzíveis.
 - [ ] **OCR de qualidade variada:** fotos rotacionadas, perspectiva, sombras, pouca resolução e múltiplos documentos; avaliar por campo com evidências, sem prometer confiança sem dados.
 - [ ] **Créditos e entrega:** crash real antes/durante/depois da confirmação de download, falha de PostgreSQL, recuperação de temporários e garantia de estorno. A implementação atual é **somente instância única**. `HTTP finish` não comprova que o usuário salvou o documento.
-- [ ] **Retenção:** verificar a janela entre o fim do TTL deslizante do job e o vencimento absoluto do recibo financeiro; avaliar estorno antecipado de pacotes não entregues quando o job for apagado por limpeza.
+- [x] **Estorno ao vencer o TTL:** implementado o estorno antecipado após a exclusão dos documentos temporários, com testes de isolamento/estorno em PostgreSQL e callback que não atrasa a exclusão se houver falha do banco. CI [40437615191](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437615191). **Permanece pendente:** teste de falha real da infraestrutura e política de reconciliação em produção.
 - [ ] **Navegador real:** E2E do wizard, recarga, duas abas, logout, volta de sessão, links de download e acessibilidade mobile (teclado, leitores de tela, contraste, celulares modestos).
 - [ ] **Fase 09:** revisão OWASP completa, medição CPU/RAM/latência e concorrência, limpeza de dados temporários e LGPD, testes de recuperação e checklist de GO/NO-GO.
 
@@ -48,7 +49,7 @@
 ## Para revisão do responsável amanhã
 
 1. Abrir [GitHub Actions](https://github.com/matheusdebrito/preenchimento-automatico/actions) e observar principalmente o pipeline de `main` mais recente.
-2. Ler o [PROJECT_TRACKER.md](../PROJECT_TRACKER.md): quadro geral, checklists de cada fase e registro de execução. Os novos testes de Fases 05/06/08 estão marcados como verificados, porém as fases seguem **parciais** e a Fase 09 **pendente**.
+2. Ler o [PROJECT_TRACKER.md](../PROJECT_TRACKER.md): quadro geral, checklists de cada fase e registro de execução. Os testes de Fases 05/06/08 e o estorno no TTL estão marcados como verificados, porém as fases seguem **parciais** e a Fase 09 **pendente**.
 3. Examinar os artefatos `pdf-mapping-review-synthetic` do CI e registrar revisão humana independente dos PDFs antes de qualquer alteração para `APPROVED`.
 4. Não enviar documentos pessoais reais nos testes, não abrir a stack local à internet e não ativar cobrança ou uso oficial.
 
