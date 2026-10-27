@@ -10,7 +10,7 @@ import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
-import { extractText, suggestFields } from '../modules/jobs/ocr.js';
+import { extractText, suggestFields, shouldExtractDocument } from '../modules/jobs/ocr.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
 
 const createSchema = z.object({ serviceId: z.string().max(100),
@@ -154,35 +154,43 @@ export function registerJobRoutes(
     }
 
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
-    try {
     job.stage = 'PROCESSING';
+    // Do not publish partial OCR results when one document fails. The job can be
+    // retried from its uploaded files after an interrupted Tesseract process.
+    const collected: Record<string, string> = {};
+    const provenance: Record<string, string> = {};
     const conflicts = new Set<string>();
-    for (const document of job.files) {
-      let text: string;
-      try {
-        text = await extractText(document, store.directory(job));
-      } catch {
-        job.stage = 'UPLOADED';
-        job.values = {};
-        job.sourceNotes = {};
-        return reply.status(503).send({ error: 'ocr_failed', message: 'Não foi possível ler o documento.' });
-      }
-      const suggestions = suggestFields(text, document.requirementId);
-      for (const [fieldId, data] of Object.entries(suggestions)) {
-        const prior = job.values[fieldId];
-        if (prior && prior !== data.value) {
-          conflicts.add(fieldId);
-          delete job.values[fieldId];
-          job.sourceNotes[fieldId] = 'Divergência entre documentos: revisar manualmente.';
-        } else if (!conflicts.has(fieldId)) {
-          job.values[fieldId] = data.value;
-          job.sourceNotes[fieldId] = data.source;
+    try {
+      for (const document of job.files) {
+        // Boat photos, GRU receipts and other supporting evidence are retained
+        // for the checklist, but have no approved semantic extraction rules.
+        if (!shouldExtractDocument(document.requirementId)) continue;
+        const text = await extractText(document, store.directory(job));
+        const suggestions = suggestFields(text, document.requirementId);
+        for (const [fieldId, data] of Object.entries(suggestions)) {
+          const prior = collected[fieldId];
+          if (prior && prior !== data.value) {
+            conflicts.add(fieldId);
+            delete collected[fieldId];
+            provenance[fieldId] = 'Divergência entre documentos: revisar manualmente.';
+          } else if (!conflicts.has(fieldId)) {
+            collected[fieldId] = data.value;
+            provenance[fieldId] = data.source;
+          }
         }
       }
-    }
-    job.stage = 'REVIEW';
-    return { status: job.stage, fields: job.values, sources: job.sourceNotes,
-      conflicts: [...conflicts], reviewRequired: true };
+      job.values = collected;
+      job.sourceNotes = provenance;
+      job.stage = 'REVIEW';
+      return { status: job.stage, fields: job.values, sources: job.sourceNotes,
+        conflicts: [...conflicts], reviewRequired: true };
+    } catch {
+      job.stage = 'UPLOADED';
+      job.values = {};
+      job.sourceNotes = {};
+      return reply.status(503).send({
+        error: 'ocr_failed', message: 'Não foi possível ler os documentos. Tente novamente.',
+      });
     } finally {
       store.endOperation(job);
     }
