@@ -68,6 +68,51 @@ describe('jornada real isolada da demonstração', () => {
     expect(JSON.parse(reviewCall![1]!.body as string).values['person.fullName']).toBe('MARIA CONFERIDA');
   }, 25000);
 
+  it('explica qual data foi recusada pelo backend antes da geração', async () => {
+    const serviceWithDate = {
+      ...service,
+      reviewFields: [
+        ...service.reviewFields,
+        { id: 'sale.date', label: 'Data da venda', valueKind: 'date', required: false },
+      ],
+    };
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) {
+        return json({ service: serviceWithDate });
+      }
+      if (path.endsWith('/quote')) return json({ service: serviceWithDate });
+      if (path === '/api/jobs' && init?.method === 'POST') return json({ id: 'job-invalid-date' }, 201);
+      if (path.endsWith('/documents/source')) return json({ id: 'source-id' }, 201);
+      if (path.endsWith('/extract')) return json({
+        fields: { 'person.fullName': 'MARIA EXEMPLO' },
+        sources: { 'person.fullName': 'source' },
+      });
+      if (path.endsWith('/review')) {
+        return json({ error: 'invalid_field_value', fieldId: 'sale.date' }, 422);
+      }
+      if (path === '/api/jobs/job-invalid-date' && !init?.method) {
+        return json({ status: 'REVIEW', downloads: [] });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.upload(screen.getByLabelText(/Documento de teste/) as HTMLInputElement,
+      new File(['fixture'], 'fake.png', { type: 'image/png' }));
+    await user.click(screen.getByRole('button', { name: 'Enviar e analisar documentos' }));
+    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    const date = screen.getByLabelText(/Data da venda/) as HTMLInputElement;
+    expect(date.placeholder).toBe('DD/MM/AAAA');
+    await user.type(date, '31/02/2026');
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(await screen.findByText(/Confira Data da venda: use uma data válida/i)).toBeTruthy();
+    expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(0);
+  }, 25000);
+
   it('bloqueia acesso ao serviço ainda não homologado', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({error:'not_available'},404)));
     render(<MemoryRouter initialEntries={['/preencher-real/transferencia-moto-aquatica']}><App /></MemoryRouter>);
