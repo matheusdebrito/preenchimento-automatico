@@ -15,8 +15,10 @@ export async function connectDatabase(databaseUrl: string): Promise<Database> {
     application_name: 'preenchimento-api',
   });
   try {
-    const sql = await readFile(resolve(process.cwd(), 'migrations/001_initial.sql'), 'utf8');
-    await pool.query(sql);
+    for (const filename of ['001_initial.sql', '002_job_credit_receipts.sql']) {
+      const sql = await readFile(resolve(process.cwd(), 'migrations', filename), 'utf8');
+      await pool.query(sql);
+    }
     await pool.query('SELECT 1');
     return pool;
   } catch (error) {
