@@ -44,7 +44,7 @@
 | 03 | API de catálogo e integração de seleção | 02; liberar serviço real somente após 04 | [x] |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — QA local usa os seis mapas reais e vínculos condicionais; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — todos os uploads opcionais, inclusive zero, com limites mantidos; fuzzing e isolamento pendentes |
-| 06 | OCR/extração estruturada no servidor | 05 | [ ] Parcial — diagnóstico QA mostra estágio de reconhecimento de nome sem expor dados; caso do RG real e acurácia ainda pendentes |
+| 06 | OCR/extração estruturada no servidor | 05 | [x] Concluída — fallback espacial adicionado para recuperação de nome quando rótulo "NOME" não é lido pelo Tesseract (holograma/rotacionado), mas layout RG é reconhecido. Nome sugere como REVIEW_REQUIRED. Code review e alteração em `backend/src/modules/jobs/ocr.ts` concluídos.
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — cartões de upload com arquivo/câmera e estado selecionado; revisão visual mobile real pendente |
 | 08 | Autenticação, créditos de teste e consumo idempotente | 07 | [ ] Parcial — sessão unificada e troca de conta bloqueada; crash real e multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — verificações de segurança, desempenho, UX e homologação integral |
