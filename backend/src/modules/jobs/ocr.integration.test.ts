@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { extractText, suggestFields, validateRasterBudget } from './ocr.js';
+import { classifyDocument } from './document-validator.js';
 import type { StoredDocument } from './job-store.js';
 
 const execFile = promisify(execCallback);
@@ -73,4 +74,35 @@ describeOcr('OCR real no Linux com ferramentas instaladas', () => {
       await rm(root, { recursive: true, force: true });
     }
   }, 90_000);
+  it('aceita foto JPEG sintética e extrai nome rotulado sem presumir identidade', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-ocr-jpeg-'));
+    try {
+      const original = await PDFDocument.create();
+      const page = original.addPage([595, 842]);
+      const font = await original.embedFont(StandardFonts.Helvetica);
+      page.drawText('DOCUMENTO FICTICIO PARA TESTES', { x: 60, y: 700, font, size: 20 });
+      page.drawText('NOME: MARIA DE SOUZA', { x: 60, y: 640, font, size: 24 });
+      const source = join(root, 'source.pdf');
+      await writeFile(source, await original.save());
+      const prefix = join(root, 'camera-jpeg');
+      await execFile('pdftoppm',
+        ['-f', '1', '-l', '1', '-singlefile', '-r', '180', '-jpeg', source, prefix],
+        { timeout: 30_000, maxBuffer: 10_000 });
+      const file = prefix + '.jpg';
+      const bytes = await readFile(file);
+      expect(classifyDocument(bytes, 'image/jpeg')).toBe('jpeg');
+      const jpeg: StoredDocument = {
+        id: 'camera-jpeg', requirementId: 'buyer-identity',
+        path: file, kind: 'jpeg', size: bytes.byteLength,
+      };
+      const extracted = await extractText(jpeg, root);
+      const suggestions = suggestFields(extracted, 'buyer-identity');
+      expect(suggestions['person.fullName']?.value).toBe('MARIA DE SOUZA');
+      expect(suggestions['person.fullName']?.status).toBe('REVIEW_REQUIRED');
+      expect(suggestions['seller.fullName']).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 45000);
+
 });
