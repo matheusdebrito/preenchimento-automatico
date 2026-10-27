@@ -13,7 +13,7 @@ import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './te
 type Step = 'questions' | 'files' | 'review' | 'download';
 type ExtractionDiagnostic = {
   requirementId: string;
-  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'not_analyzed';
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
 };
 
@@ -405,10 +405,11 @@ export function LiveFlowPage() {
                       Os demais podem ser preenchidos manualmente.
                     </Notice>
                   ) : (
-                    <Notice tone="info" role="status">
-                      Nenhum campo foi identificado automaticamente. Isso pode ocorrer quando a
-                      imagem está pouco legível ou o texto não contém os rótulos reconhecidos.
-                      Confira os arquivos e preencha os campos manualmente; não foram inventados valores.
+                    <Notice tone="danger" role="alert" title="Nenhum campo preenchido pelo OCR">
+                      A foto foi recebida, mas não foi possível aproveitar dados dela para os
+                      formulários selecionados. Confira o resultado da leitura por documento abaixo.
+                      Se necessário, refaça a foto com o documento inteiro, bem iluminado, sem
+                      reflexos e com o texto nítido. Você pode continuar preenchendo manualmente.
                     </Notice>
                   )}
                   {diagnostics.length > 0 ? (
@@ -421,9 +422,11 @@ export function LiveFlowPage() {
                               doc.id === item.requirementId)?.label ?? 'Documento enviado'}:
                             {' ' + (item.outcome === 'suggested'
                               ? item.suggestionCount + ' sugestão(ões) encontrada(s), sujeitas à revisão'
-                              : item.outcome === 'no_text' ? 'não foi possível reconhecer texto'
+                              : item.outcome === 'no_text' ? 'nenhum texto legível identificado na imagem'
                                 : item.outcome === 'not_analyzed' ? 'não há extração automática configurada'
-                                  : 'texto lido, mas nenhum campo com rótulo suportado')}
+                                  : item.outcome === 'no_applicable_fields'
+                                    ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
+                                    : 'texto detectado, mas nome/CPF/RG não foram identificados com segurança')}
                           </li>
                         ))}
                       </ul>
