@@ -63,7 +63,7 @@ export function qaPreviewCatalog(): CatalogDefinition {
       ...FORM_VERSIONS.map((formVersionId, order) => ({
         serviceId: QA_PREVIEW_SERVICE_ID,
         formVersionId,
-        order,
+        order: order + 1,
         fixedValues: { 'process.transferOwnership': 'X' },
       })),
     ],
