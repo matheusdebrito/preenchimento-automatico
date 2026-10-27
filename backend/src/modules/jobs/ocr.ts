@@ -85,8 +85,9 @@ export async function extractText(doc: StoredDocument, tempDir: string): Promise
 
 /**
  * Only source documents with known, role-specific semantic fields need OCR.
- * Photos of the vessel and payment receipts are still uploaded for the
- * official checklist, but OCR on them adds latency and false positives.
+ * Inspection photos of the vessel are not accepted by this form-filling
+ * service. Other supporting uploads are excluded from OCR until they have
+ * explicit, reviewable semantic extraction rules.
  */
 const SEMANTIC_SOURCES = new Set([
   'buyer-identity', 'seller-identity', 'tie', 'residence-proof', 'sale-document',
