@@ -61,6 +61,9 @@ Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custo
 - PDFs de QA são **sempre marcados AMOSTRA em todas as páginas**, não debitam créditos, não são válidos para protocolo e só podem usar dados inteiramente fictícios.
 - Quando usuário questionar campo de PDF, conferir separadamente **rótulo impresso, área de preenchimento, identificador semântico, coordenadas e extração OCR**; não alterar/remover um campo normativo com base em suposição. Registrar divergência em `docs/mapping-reports/` e aguardar o portão de revisão visual.
 - Ao ampliar OCR, aceitar somente pistas consistentes por requisito/documento e gerar sugestões para campos presentes na seleção. Não prometer reconhecimento total sem corpus medido de layouts e imagens.
+- **Uploads de documentos de origem são sempre opcionais na ferramenta de preenchimento.** O usuário pode anexar zero, um ou vários documentos e deve conseguir revisar os mesmos campos mapeados ao PDF. Distinguir a validação de valores e campos necessários para gerar PDF da coleta de arquivos para OCR; jamais exigir RG/TIE/comprovante apenas por constarem do rol oficial de protocolo.
+- O único caminho de usuário para transferência é `/preencher-real/transferencia-moto-aquatica` (disponível apenas em QA local enquanto DRAFT). Não reintroduzir `WizardRoute`/demo público em `/preencher/*` nem um segundo serviço de teste. Testes devem exercitar 0 anexos, 1 RG sintético e múltiplos arquivos.
+
 
 ## 3.1. Sincronização obrigatória do PROJECT_TRACKER.md
 
