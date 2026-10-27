@@ -39,7 +39,7 @@ export function qaPreviewCatalog(): CatalogDefinition {
     services: catalog.services.map((service) =>
       service.id === QA_PREVIEW_SERVICE_ID ? {
         ...service,
-        title: service.title + ' — prévia local de QA',
+        title: service.title,
         description: 'Mesmo fluxo, perguntas e formulários do serviço piloto, somente ' +
           'com dados inventados. PDFs marcados como AMOSTRA e não válidos para protocolo.',
         status: 'AVAILABLE' as const,
