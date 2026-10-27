@@ -105,6 +105,8 @@ export function registerJobRoutes(
       return reply.status(422).send({ error: 'missing_document' });
     }
 
+    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
+    try {
     job.stage = 'PROCESSING';
     const conflicts = new Set<string>();
     for (const document of job.files) {
@@ -133,6 +135,9 @@ export function registerJobRoutes(
     job.stage = 'REVIEW';
     return { status: job.stage, fields: job.values, sources: job.sourceNotes,
       conflicts: [...conflicts], reviewRequired: true };
+    } finally {
+      store.endOperation(job);
+    }
   });
 
   app.patch<{Params:{id:string}}>('/api/jobs/:id/review', async (req, reply) => {
@@ -163,6 +168,7 @@ export function registerJobRoutes(
     if (!service || service.formVersionIds.length === 0) {
       return reply.status(409).send({ error: 'service_unavailable' });
     }
+    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     job.stage = 'GENERATING';
     const generated = new Map<string, string>();
     try {
@@ -185,6 +191,8 @@ export function registerJobRoutes(
       return reply.status(422).send({
         error: 'generation_failed', message: 'Verifique campos, saldo e modelo homologado.',
       });
+    } finally {
+      store.endOperation(job);
     }
   });
 
@@ -192,17 +200,24 @@ export function registerJobRoutes(
     const userId = await actor(req);
     const job = store.get(req.params.id, userId);
     const path = job?.stage === 'GENERATED' ? job.outputs.get(req.params.versionId) : undefined;
-    if (!path) return reply.status(404).send({ error: 'not_found' });
+    if (!path || !job) return reply.status(404).send({ error: 'not_found' });
+    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
+    const stream = createReadStream(path);
+    stream.once('close', () => store.endOperation(job));
     reply.header('Content-Type', 'application/pdf');
     reply.header('Content-Disposition', 'attachment; filename="' + req.params.versionId + '.pdf"');
-    return reply.send(createReadStream(path));
+    return reply.send(stream);
   });
 
   app.delete<{Params:{id:string}}>('/api/jobs/:id', async (req, reply) => {
     const userId = await actor(req);
     const job = store.get(req.params.id, userId);
     if (!job) return reply.status(404).send({ error: 'not_found' });
-    await store.remove(job);
-    return { removed: true };
+    try {
+      await store.remove(job);
+      return { removed: true };
+    } catch {
+      return reply.status(409).send({ error: 'job_busy' });
+    }
   });
 }

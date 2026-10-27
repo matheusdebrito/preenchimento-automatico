@@ -35,6 +35,8 @@ const MAX_JOB_BYTES = 30 * 1024 * 1024;
 export class JobStore {
   private readonly jobs = new Map<string, DocumentJob>();
   private readonly activeUploads = new Set<string>();
+  private readonly activeJobs = new Set<string>();
+  private readonly pendingCreates = new Map<string, string>();
   private readonly timer: NodeJS.Timeout;
 
   constructor(private readonly root = resolve(tmpdir(), 'preenchimento-automatico-jobs')) {
@@ -44,18 +46,25 @@ export class JobStore {
 
   async create(userId: string, serviceId: string, answers: Readonly<Record<string, string>> = {}): Promise<DocumentJob> {
     await this.cleanup();
-    if (this.jobs.size >= MAX_ROOT_FILES ||
-      [...this.jobs.values()].filter((job) => job.userId === userId).length >= MAX_USER_JOBS) {
+    const activeForUser = [...this.jobs.values()].filter((job) => job.userId === userId).length;
+    const pendingForUser = [...this.pendingCreates.values()].filter((owner) => owner === userId).length;
+    if (this.jobs.size + this.pendingCreates.size >= MAX_ROOT_FILES ||
+      activeForUser + pendingForUser >= MAX_USER_JOBS) {
       throw new Error('Capacidade temporária de processamento atingida.');
     }
     const id = randomUUID();
-    await mkdir(join(this.root, id), { recursive: true, mode: 0o700 });
-    const job: DocumentJob = {
-      id, userId, serviceId, answers, expiresAt: Date.now() + TTL,
-      files: [], values: {}, sourceNotes: {}, outputs: new Map(), stage: 'CREATED', reviewConfirmed: false,
-    };
-    this.jobs.set(id, job);
-    return job;
+    this.pendingCreates.set(id, userId);
+    try {
+      await mkdir(join(this.root, id), { recursive: true, mode: 0o700 });
+      const job: DocumentJob = {
+        id, userId, serviceId, answers, expiresAt: Date.now() + TTL,
+        files: [], values: {}, sourceNotes: {}, outputs: new Map(), stage: 'CREATED', reviewConfirmed: false,
+      };
+      this.jobs.set(id, job);
+      return job;
+    } finally {
+      this.pendingCreates.delete(id);
+    }
   }
 
   get(id: string, userId: string): DocumentJob | null {
@@ -64,12 +73,29 @@ export class JobStore {
     return job;
   }
 
+  /** Prevent expiration/cancellation while a request reads or generates private files. */
+  beginOperation(job: DocumentJob): boolean {
+    if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now() ||
+      this.activeJobs.has(job.id) || this.activeUploads.has(job.id)) return false;
+    this.activeJobs.add(job.id);
+    return true;
+  }
+
+  endOperation(job: DocumentJob): void {
+    if (this.activeJobs.delete(job.id) && this.jobs.get(job.id) === job) {
+      // The user can review/download the result after a potentially long OCR operation.
+      job.expiresAt = Date.now() + TTL;
+    }
+  }
+
   async upload(job: DocumentJob, requirementId: string, bytes: Buffer, contentType: string): Promise<StoredDocument> {
     if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now()) {
       throw new Error('Processo expirado ou removido.');
     }
     // Serialise mutations per job: parallel requests must not bypass the byte/file quotas.
-    if (this.activeUploads.has(job.id)) throw new Error('Outro upload está em andamento.');
+    if (this.activeUploads.has(job.id) || this.activeJobs.has(job.id)) {
+      throw new Error('Processo ocupado.');
+    }
     this.activeUploads.add(job.id);
     try {
       if (job.files.length >= DOCUMENT_LIMIT) throw new Error('Limite de documentos atingido.');
@@ -92,6 +118,7 @@ export class JobStore {
       const doc = { id, requirementId, path, kind, size: bytes.length };
       job.files.push(doc);
       job.stage = 'UPLOADED';
+      job.expiresAt = Date.now() + TTL;
       return doc;
     } finally {
       this.activeUploads.delete(job.id);
@@ -106,20 +133,24 @@ export class JobStore {
     await mkdir(this.root, { recursive: true, mode: 0o700 });
     const now = Date.now();
     for (const [id, job] of this.jobs.entries()) {
-      if (job.expiresAt > now) continue;
+      if (job.expiresAt > now || this.activeJobs.has(id) || this.activeUploads.has(id)) continue;
       this.jobs.delete(id);
       await rm(join(this.root, id), { recursive: true, force: true });
     }
     // Orphaned directories from interrupted processes are not reusable.
     const dirs = await readdir(this.root, { withFileTypes: true });
     for (const item of dirs) {
-      if (!item.isDirectory() || !/^[0-9a-f-]{36}$/i.test(item.name) || this.jobs.has(item.name)) continue;
+      if (!item.isDirectory() || !/^[0-9a-f-]{36}$/i.test(item.name) ||
+        this.jobs.has(item.name) || this.pendingCreates.has(item.name)) continue;
       // Private ephemeral volume. New instance never recovers abandoned processes.
       await rm(join(this.root, item.name), { recursive: true, force: true });
     }
   }
 
   async remove(job: DocumentJob): Promise<void> {
+    if (this.activeUploads.has(job.id) || this.activeJobs.has(job.id)) {
+      throw new Error('Processo ocupado.');
+    }
     this.jobs.delete(job.id);
     await rm(join(this.root, job.id), { recursive: true, force: true });
   }

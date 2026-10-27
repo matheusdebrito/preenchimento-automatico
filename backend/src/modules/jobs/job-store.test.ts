@@ -63,4 +63,35 @@ describe('JobStore', () => {
     expect(job.files).toHaveLength(1);
   });
 
+  it('não apaga documentos durante leitura ativa; renova o prazo ao final e apaga depois', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-lease-'));
+    directories.push(root);
+    const store = new JobStore(root);
+    stores.push(store);
+    const job = await store.create('alice', 'service');
+    expect(store.beginOperation(job)).toBe(true);
+    expect(store.beginOperation(job)).toBe(false);
+    job.expiresAt = Date.now() - 1;
+    await store.cleanup();
+    await stat(store.directory(job));
+    await expect(store.remove(job)).rejects.toThrow('ocupado');
+    store.endOperation(job);
+    expect(store.get(job.id, 'alice')).not.toBeNull();
+    job.expiresAt = Date.now() - 1;
+    await store.cleanup();
+    await expect(stat(store.directory(job))).rejects.toThrow();
+  });
+
+  it('não ultrapassa o limite global com várias criações concorrentes', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-jobs-create-race-'));
+    directories.push(root);
+    const store = new JobStore(root);
+    stores.push(store);
+    const results = await Promise.allSettled(
+      Array.from({ length: 7 }, (_, i) => store.create('owner-' + i, 'service')),
+    );
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(3);
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(4);
+  });
+
 });
