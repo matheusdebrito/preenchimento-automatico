@@ -57,6 +57,8 @@ describe('validação de assinatura do documento', () => {
 
     const critical = Buffer.from(valid);
     critical.write('ABCD', 37); // Replace IDAT with an unsupported critical chunk.
+    const payloadLength = critical.readUInt32BE(33);
+    critical.writeUInt32BE(crc32(critical.subarray(37, 41 + payloadLength)), 41 + payloadLength);
     expect(() => classifyDocument(critical, 'image/png')).toThrow('crítico PNG');
   });
 
