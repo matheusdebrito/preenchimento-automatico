@@ -66,6 +66,18 @@ export interface ExtractionCandidate {
   status: 'REVIEW_REQUIRED';
 }
 
+/**
+ * Return a candidate only when the document has exactly one unambiguous
+ * labelled value. No arbitrary "first row" or inferred associations.
+ */
+function singleLabelled(text: string, pattern: RegExp, maxLength: number): string | null {
+  const candidates = [...text.matchAll(pattern)]
+    .map((match) => match[1]?.trim().replace(/\s+/g, ' ') ?? '')
+    .filter((value) => value.length > 0 && value.length <= maxLength);
+  const unique = [...new Set(candidates.map((value) => value.normalize('NFC').toUpperCase()))];
+  return unique.length === 1 ? candidates[0]! : null;
+}
+
 /** Label-anchored hints only: all results require explicit human review. */
 export function suggestFields(text: string, source: string): Record<string, ExtractionCandidate> {
   const result: Record<string, ExtractionCandidate> = {};
@@ -91,7 +103,44 @@ export function suggestFields(text: string, source: string): Record<string, Extr
       };
     }
   }
-  const hull = /(?:HIN|CIN|N[ºo.]?\s*do\s*casco)\s*[:-]?\s*([A-Z0-9-]{6,30})/i.exec(text);
-  if (hull) result['vessel.hullId'] = { value: hull[1]!, source, status: 'REVIEW_REQUIRED' };
+  if (buyer || seller) {
+    const role = seller ? 'seller' : 'person';
+    const identity = singleLabelled(text,
+      /^\s*(?:RG|N[ºO.]?\s*DA\s*IDENTIDADE|IDENTIDADE)\s*[:-]\s*([A-Z0-9.\/-]{5,24})\s*$/gim, 24);
+    if (identity) result[role + '.identity'] = { value: identity, source, status: 'REVIEW_REQUIRED' };
+
+    const issuer = singleLabelled(text,
+      /^\s*(?:[ÓO]RG[AÃ]O\s+(?:EMISSOR|EXPEDIDOR)|EMISSOR)\s*[:-]\s*([A-ZÀ-Ý0-9 ./-]{2,32})\s*$/gim, 32);
+    if (issuer) result[role + '.issuer'] = { value: issuer, source, status: 'REVIEW_REQUIRED' };
+  }
+
+  if (source === 'tie') {
+    const registration = singleLabelled(text,
+      /^\s*(?:(?:N[ÚU]MERO|N[ºO.])\s+(?:DE|DA)\s+)?INSCRI[CÇ][AÃ]O\s*[:-]\s*([A-Z0-9./-]{4,30})\s*$/gim, 30);
+    if (registration) {
+      result['vessel.registration'] = { value: registration, source, status: 'REVIEW_REQUIRED' };
+    }
+
+    const vesselName = singleLabelled(text,
+      /^\s*NOME\s+DA\s+(?:EMBARCA[CÇ][AÃ]O|MOTO\s+AQU[AÁ]TICA)\s*[:-]\s*([A-ZÀ-Ý0-9' .-]{4,100})\s*$/gim, 100);
+    if (vesselName) {
+      result['vessel.name'] = { value: vesselName, source, status: 'REVIEW_REQUIRED' };
+    }
+  }
+
+  if (source === 'residence-proof') {
+    const postal = singleLabelled(text, /^\s*CEP\s*[:-]\s*(\d{5}-?\d{3})\s*$/gim, 9);
+    if (postal) result['person.postalCode'] = { value: postal, source, status: 'REVIEW_REQUIRED' };
+
+    const address = singleLabelled(text,
+      /^\s*ENDERE[CÇ]O\s*[:-]\s*(\S.{5,119})\s*$/gim, 120);
+    if (address) result['person.address'] = { value: address, source, status: 'REVIEW_REQUIRED' };
+  }
+
+  if (source === 'tie' || source === 'source') {
+    const hull = singleLabelled(text,
+      /(?:HIN|CIN|N[ºo.]?\s*do\s*casco)\s*[:-]?\s*([A-Z0-9-]{6,30})/gim, 30);
+    if (hull) result['vessel.hullId'] = { value: hull, source, status: 'REVIEW_REQUIRED' };
+  }
   return result;
 }

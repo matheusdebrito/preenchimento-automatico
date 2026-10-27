@@ -68,10 +68,48 @@ describe('candidatos OCR conservadores', () => {
       .toBeUndefined();
   });
 
+  it('extrai somente os valores identificados por rótulos no TIE', () => {
+    const fields = suggestFields(
+      'NOME DA EMBARCAÇÃO: MARÉ TESTE\nINSCRIÇÃO: RJ123456\nHIN: BR-ABC-12345\nCPF: 123.456.789-09',
+      'tie',
+    );
+    expect(fields['vessel.name']?.value).toBe('MARÉ TESTE');
+    expect(fields['vessel.registration']?.value).toBe('RJ123456');
+    expect(fields['vessel.hullId']?.value).toBe('BR-ABC-12345');
+    expect(fields['person.cpf']).toBeUndefined(); // Owner of TIE may not be purchaser.
+    expect(fields['vessel.name']?.status).toBe('REVIEW_REQUIRED');
+  });
+
+  it('recusa números de inscrição ambíguos e TIE sem rótulo da embarcação', () => {
+    const fields = suggestFields(
+      'INSCRIÇÃO: RJ123456\nINSCRIÇÃO: RJ987654\nNOME: MARIA TESTE',
+      'tie',
+    );
+    expect(fields['vessel.registration']).toBeUndefined();
+    expect(fields['vessel.name']).toBeUndefined();
+  });
+
+  it('identifica RG e órgão emissor somente para o titular correto', () => {
+    const fields = suggestFields('RG: 12345678\nÓRGÃO EMISSOR: SSP-RJ', 'seller-identity');
+    expect(fields['seller.identity']?.value).toBe('12345678');
+    expect(fields['seller.issuer']?.value).toBe('SSP-RJ');
+    expect(fields['person.identity']).toBeUndefined();
+  });
+
+  it('sugere endereço e CEP somente com rótulos explícitos em comprovante', () => {
+    const fields = suggestFields('ENDEREÇO: RUA SÃO JOSÉ 100\nCEP: 22000-000',
+      'residence-proof');
+    expect(fields['person.address']?.value).toBe('RUA SÃO JOSÉ 100');
+    expect(fields['person.postalCode']?.value).toBe('22000-000');
+    expect(fields['person.fullName']).toBeUndefined();
+  });
+
   it('retorna somente CPF e casco encontrados, sempre para revisão', () => {
     const found = suggestFields('CPF 123.456.789-09\nHIN BR-ABC-123456', 'buyer-identity');
+    const tie = suggestFields('HIN BR-ABC-123456', 'tie');
     expect(found['person.cpf']?.status).toBe('REVIEW_REQUIRED');
-    expect(found['vessel.hullId']?.value).toBe('BR-ABC-123456');
+    expect(found['vessel.hullId']).toBeUndefined();
+    expect(tie['vessel.hullId']?.value).toBe('BR-ABC-123456');
     expect(found['person.fullName']).toBeUndefined();
   });
 });
