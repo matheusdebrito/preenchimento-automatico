@@ -130,7 +130,7 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const review = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
       headers:{cookie},payload:{confirmed:true, values:{
         'person.fullName':'MARIA TESTE','vessel.name':'MA TESTE',
-        'person.cpf':'000.000.000-00',
+        'person.cpf':'123.456.789-09',
       }}});
     expect(review.statusCode,review.body).toBe(200);
     const generate=await app.inject({method:'POST',url:'/api/jobs/'+jobId+'/generate',
