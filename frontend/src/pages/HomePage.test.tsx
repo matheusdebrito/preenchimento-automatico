@@ -1,15 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HomePage } from './HomePage';
+import { AuthProvider } from '../features/auth/AuthProvider';
 
 function renderHome() {
+  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => new Response(
+    JSON.stringify(String(url) === '/api/auth/me'
+      ? { error: 'unauthorized' } : { services: [] }),
+    { status: String(url) === '/api/auth/me' ? 401 : 200,
+      headers: { 'Content-Type': 'application/json' } },
+  )));
   return render(
     <MemoryRouter>
-      <HomePage />
+      <AuthProvider><HomePage /></AuthProvider>
     </MemoryRouter>,
   );
 }
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe('HomePage', () => {
   it('apresenta a proposta e o caminho para começar', () => {
@@ -41,16 +50,16 @@ describe('HomePage', () => {
     expect(screen.getAllByText('Em breve')).toHaveLength(2);
   });
 
-  it('explica a operação real da demonstração sem prometer exclusão não implementada', () => {
+  it('distingue demonstração visual e processamento temporário no servidor', () => {
     renderHome();
 
     expect(
       screen.getByRole('heading', { level: 2, name: 'Seus documentos ficam sob seu controle' }),
     ).toBeTruthy();
     expect(
-      screen.getByText(/permanecem no seu navegador e não são enviados para nenhum servidor/),
+      screen.getByText(/arquivos enviados são processados temporariamente no servidor/),
     ).toBeTruthy();
-    expect(screen.getByText(/política de exclusão serão exibidos antes de qualquer envio/)).toBeTruthy();
+    expect(screen.getByText(/expiram após.*20 minutos/)).toBeTruthy();
   });
 
   it('oferece atalho de acessibilidade para o conteúdo principal', () => {
