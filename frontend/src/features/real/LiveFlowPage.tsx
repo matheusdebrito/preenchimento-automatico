@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
 import type { LiveService } from '../../lib/api';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
 type Step = 'questions' | 'files' | 'review' | 'download';
 
@@ -29,9 +30,58 @@ export function LiveFlowPage() {
   useEffect(() => {
     if (!serviceId) return;
     let cancelled = false;
-    void api<{service:LiveService}>('/api/services/' + encodeURIComponent(serviceId))
-      .then((response) => { if (!cancelled) setService(response.service); })
-      .catch(() => { if (!cancelled) setError('Este serviço ainda não foi homologado para preenchimento.'); });
+    void (async () => {
+      try {
+        const initial = await api<{service:LiveService}>(
+          '/api/services/' + encodeURIComponent(serviceId));
+        const savedId = readTemporaryJob(serviceId);
+        if (!savedId) {
+          if (!cancelled) setService(initial.service);
+          return;
+        }
+        try {
+          const status = await api<{
+            status: string; expiresAt: number; answers: Record<string,string>;
+            uploadedRequirementIds: string[];
+            fields: Record<string,string>; sources: Record<string,string>; downloads: string[];
+          }>('/api/jobs/' + savedId);
+          const quoted = await api<{service:LiveService}>(
+            '/api/services/' + encodeURIComponent(serviceId) + '/quote',
+            { method: 'POST', body: JSON.stringify({ answers: status.answers }) },
+          );
+          if (cancelled) return;
+          setService(quoted.service);
+          setAnswers(status.answers);
+          setJobId(savedId);
+          setExpiresAt(status.expiresAt);
+          setUploadedRequirements(status.uploadedRequirementIds);
+          if (status.status === 'REVIEW' || status.status === 'GENERATED') {
+            const visible = new Set(quoted.service.reviewFields.map((field) => field.id));
+            setValues(Object.fromEntries(
+              Object.entries(status.fields ?? {}).filter(([id]) => visible.has(id))));
+            setSources(Object.fromEntries(
+              Object.entries(status.sources ?? {}).filter(([id]) => visible.has(id))));
+            if (status.status === 'GENERATED') setDownloads(status.downloads ?? []);
+            setStep(status.status === 'GENERATED' ? 'download' : 'review');
+          } else {
+            setStep('files');
+            if (status.status === 'PROCESSING' || status.status === 'GENERATING') {
+              setError('O servidor ainda está processando este pacote. Atualize a página após a conclusão.');
+            }
+          }
+        } catch (issue) {
+          if (issue instanceof ApiError && [401, 404, 410].includes(issue.status)) {
+            forgetTemporaryJob(serviceId);
+          }
+          if (!cancelled) {
+            setService(initial.service);
+            setError('Não foi possível recuperar a sessão temporária. Você pode iniciar um novo processo.');
+          }
+        }
+      } catch {
+        if (!cancelled) setError('Este serviço ainda não foi homologado para preenchimento.');
+      }
+    })();
     return () => { cancelled = true; };
   }, [serviceId]);
 
@@ -55,8 +105,8 @@ export function LiveFlowPage() {
   const selectFile = (id: string, event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (jobId) {
-      setError('Para substituir um documento, cancele e reinicie o processo temporário.');
+    if (uploadedRequirements.includes(id)) {
+      setError('Esse documento já foi enviado. Para substituí-lo, cancele o processo.');
       return;
     }
     if (file.size === 0 || file.size > 10 * 1024 * 1024 ||
@@ -77,7 +127,8 @@ export function LiveFlowPage() {
 
   const extract = async () => {
     if (!service) return;
-    if (service.documentRequirements.some((required) => required.required && !files[required.id])) {
+    if (service.documentRequirements.some((required) =>
+      required.required && !files[required.id] && !uploadedRequirements.includes(required.id))) {
       setError('Adicione os documentos obrigatórios antes de continuar.');
       return;
     }
@@ -111,6 +162,7 @@ export function LiveFlowPage() {
         const job = await api<{id:string;expiresAt:number}>('/api/jobs',
           { method:'POST', body:JSON.stringify({serviceId:service.id,answers}) });
         currentJob = job.id;
+        rememberTemporaryJob(service.id, job.id);
         setJobId(job.id);
         setExpiresAt(job.expiresAt);
       }
@@ -130,6 +182,7 @@ export function LiveFlowPage() {
       showReview(read.fields, read.sources);
     } catch (issue) {
       if (issue instanceof ApiError && issue.status === 404) {
+        if (serviceId) forgetTemporaryJob(serviceId);
         setJobId(null);
         setUploadedRequirements([]);
         setExpiresAt(null);
@@ -170,6 +223,7 @@ export function LiveFlowPage() {
           if (!(issue instanceof ApiError && issue.status === 404)) throw issue;
         }
       }
+      if (serviceId) forgetTemporaryJob(serviceId);
       setJobId(null);
       setExpiresAt(null);
       setUploadedRequirements([]);
@@ -258,7 +312,11 @@ export function LiveFlowPage() {
                       <span className="field__hint">{required.description}</span>
                       <input className="field__input" type="file" accept=".pdf,.png,.jpg,.jpeg"
                         onChange={(event) => selectFile(required.id, event)} />
-                      {files[required.id] ? <span className="field__hint">{files[required.id]?.name}</span> : null}
+                      {uploadedRequirements.includes(required.id)
+                        ? <span className="field__hint">Documento recebido pelo servidor</span>
+                        : files[required.id]
+                          ? <span className="field__hint">{files[required.id]?.name}</span>
+                          : null}
                     </label>
                   ))}
                   <Button disabled={busy} onClick={() => void extract()}>

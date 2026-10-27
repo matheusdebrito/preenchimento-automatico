@@ -18,7 +18,7 @@ const service = {
   reviewFields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text' }],
 };
 
-afterEach(() => { vi.unstubAllGlobals(); });
+afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); });
 
 describe('jornada real isolada da demonstração', () => {
   it('navega pelo ciclo upload, OCR, revisão e download com API simulada', async () => {
@@ -146,5 +146,42 @@ describe('jornada real isolada da demonstração', () => {
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(1);
     expect(screen.getByRole('button', { name: /crédito já utilizado/ })).toBeTruthy();
   }, 25000);
+
+  it('restaura revisão após recarregar a aba sem gravar documentos no navegador', async () => {
+    const jobId = 'b148894d-9042-4b66-a3c0-c011be471234';
+    sessionStorage.setItem('pa:temporary-job:ci-only-service', jobId);
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const url = String(input);
+      if (url === '/api/services/ci-only-service' && !init?.method) return json({ service });
+      if (url === '/api/services/ci-only-service/quote') return json({ service });
+      if (url === '/api/jobs/' + jobId && !init?.method) {
+        return json({ status:'REVIEW', expiresAt:Date.now()+100_000, answers:{},
+          uploadedRequirementIds:['source'], fields:{'person.fullName':'ANA TESTE'},
+          sources:{'person.fullName':'source'}, downloads:[] });
+      }
+      if (url === '/api/jobs/' + jobId && init?.method === 'DELETE') return json({ removed:true });
+      return json({ error:'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
+    expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('ANA TESTE');
+    expect(sessionStorage.getItem('pa:temporary-job:ci-only-service')).toBe(jobId);
+    expect(sessionStorage.length).toBe(1);
+    await user.click(screen.getByRole('button',{name:'Cancelar e apagar documentos temporários'}));
+    expect(await screen.findByRole('heading',{name:'Dados do serviço'})).toBeTruthy();
+    expect(sessionStorage.length).toBe(0);
+  }, 25000);
+
+  it('descarta automaticamente um identificador de job expirado ao restaurar', async () => {
+    const jobId = 'b148894d-9042-4b66-a3c0-c011be471235';
+    sessionStorage.setItem('pa:temporary-job:ci-only-service', jobId);
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input).startsWith('/api/jobs/') ? json({ error:'not_found' },404) : json({ service })));
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading',{name:'Dados do serviço'})).toBeTruthy();
+    expect(sessionStorage.length).toBe(0);
+  });
 
 });

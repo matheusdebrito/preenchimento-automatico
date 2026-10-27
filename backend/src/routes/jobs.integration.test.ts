@@ -150,6 +150,7 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
       method:'GET',url:'/api/jobs/'+jobId,headers:{cookie},
     });
     expect(overview.statusCode).toBe(200);
+    expect(overview.json<{answers:Record<string,string>}>().answers).toEqual({});
     expect(overview.json<{uploadedRequirementIds:string[]}>().uploadedRequirementIds)
       .toEqual(['source']);
     const duplicate = await app.inject({method:'POST',

@@ -96,6 +96,8 @@ export function registerJobRoutes(
     if (!job) return reply.status(404).send({ error: 'not_found' });
     return {
       id: job.id, status: job.stage, expiresAt: job.expiresAt,
+      // Only enumerated service answers. Never expose document bytes or private file paths.
+      answers: job.answers,
       documentCount: job.files.length,
       uploadedRequirementIds: [...new Set(job.files.map((file) => file.requirementId))],
       fields: job.stage === 'REVIEW' || job.stage === 'GENERATED' ? job.values : {},
