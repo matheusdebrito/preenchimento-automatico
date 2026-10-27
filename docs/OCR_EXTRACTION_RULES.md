@@ -8,11 +8,11 @@ O backend chama `suggestFields(text, requirementId)` após extrair texto nativo 
 
 | Requisito de documento | Campos candidatos | Condições mínimas |
 | --- | --- | --- |
-| `buyer-identity` | `person.cpf`, `person.fullName`, `person.identity`, `person.issuer` | CPF com dígitos verificadores; nome e identidade apenas com rótulos explícitos |
-| `seller-identity` | `seller.cpf`, `seller.fullName`, `seller.identity`, `seller.issuer` | Mesmos filtros, mas **nunca transferidos aos campos do comprador** |
-| `tie` | `vessel.name`, `vessel.registration`, `vessel.hullId`, `vessel.year`, `vessel.length`, `vessel.capacity` | Atributos da embarcação somente com rótulos explícitos; nenhum CPF do titular atribuído ao comprador |
+| `buyer-identity` | `person.cpf`, `person.fullName`, `person.identity`, `person.issuer`, `person.issueDate` | CPF válido sintaticamente, dados de identidade rotulados e data de emissão válida |
+| `seller-identity` | `seller.cpf`, `seller.fullName`, `seller.identity`, `seller.issuer`, `seller.issueDate` | Mesmos filtros; **nunca transferidos aos campos do comprador** |
+| `tie` | `vessel.name`, `vessel.registration`, `vessel.hullId`, `vessel.year`, `vessel.length`, `vessel.capacity`, `vessel.motorBrand`, `vessel.motorPower`, `vessel.motorSerial` | Atributos da embarcação e motor com rótulos explícitos; nenhum CPF do titular atribuído ao comprador |
 | `residence-proof` | `person.address`, `person.streetNumber`, `person.apartment`, `person.city`, `person.neighborhood`, `person.state`, `person.postalCode` | Cada componente somente com seu rótulo (`ENDEREÇO`, `NÚMERO`, `COMPLEMENTO`, `CIDADE`, `BAIRRO`, `UF`, `CEP`); nunca deduz cidade/bairro de endereço não estruturado |
-| `sale-document` | `sale.invoice`, `sale.date`, `sale.price` | Número, data válida (DD/MM/AAAA) e valor rotulados de forma inequívoca; nenhum comprador/vendedor inferido |
+| `sale-document` | `sale.invoice`, `sale.date`, `sale.place`, `sale.price` | Número, data válida (DD/MM/AAAA), local e valor rotulados de forma inequívoca; nenhum comprador/vendedor inferido |
 | `source` (somente fixture de CI) | `vessel.hullId` | Rótulo HIN/CIN/casco |
 | fotos da popa/través, GRU, procuração e requisitos desconhecidos | não são enviados ao OCR | Sem heurística semântica confiável neste escopo; permanecem documentos de checklist |
 | outros requisitos | nenhum campo novo específico | Não há heurística arbitrária |
