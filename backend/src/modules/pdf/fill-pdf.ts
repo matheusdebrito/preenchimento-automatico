@@ -60,6 +60,20 @@ export async function fillPdf(
       new TextDecoder('latin1').decode(templateBytes.subarray(0, 5)) !== '%PDF-') {
     throw new Error('Modelo PDF inválido ou acima do limite.');
   }
+  const choices = new Map<string, Set<string>>();
+  for (const placement of placements) {
+    if (placement.kind === 'COORDINATES' && placement.markWhen !== undefined) {
+      const options = choices.get(placement.fieldId) ?? new Set<string>();
+      options.add(placement.markWhen);
+      choices.set(placement.fieldId, options);
+    }
+  }
+  for (const [fieldId, options] of choices) {
+    const value = values[fieldId];
+    if (typeof value === 'string' && value.trim() && !options.has(value.trim())) {
+      throw new Error('Opção não prevista no formulário: ' + fieldId);
+    }
+  }
   const pdf = await PDFDocument.load(templateBytes, { updateMetadata: false });
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const form = pdf.getForm();

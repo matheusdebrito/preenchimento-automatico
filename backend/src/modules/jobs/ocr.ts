@@ -3,6 +3,7 @@ import { execFile as execFileCallback } from 'node:child_process';
 import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { StoredDocument } from './job-store.js';
+import { isValidCpf } from '../catalog/field-validation.js';
 
 const execFile = promisify(execFileCallback);
 let active = 0;
@@ -65,18 +66,6 @@ export interface ExtractionCandidate {
   status: 'REVIEW_REQUIRED';
 }
 
-function validCpf(raw: string): boolean {
-  const digits = raw.replace(/\D/g, '');
-  if (!/^\d{11}$/.test(digits) || /^(\d)\1{10}$/.test(digits)) return false;
-  for (let length = 9; length <= 10; length++) {
-    const sum = Array.from({ length }, (_, i) =>
-      Number(digits[i]) * (length + 1 - i)).reduce((a, b) => a + b, 0);
-    const check = (sum * 10) % 11 % 10;
-    if (check !== Number(digits[length])) return false;
-  }
-  return true;
-}
-
 /** Label-anchored hints only: all results require explicit human review. */
 export function suggestFields(text: string, source: string): Record<string, ExtractionCandidate> {
   const result: Record<string, ExtractionCandidate> = {};
@@ -84,7 +73,7 @@ export function suggestFields(text: string, source: string): Record<string, Extr
   const buyer = source === 'buyer-identity';
   // Never assign a seller's CPF to the buyer, even if both documents are uploaded.
   const cpfs = [...text.matchAll(/(?:^|\D)(\d{3}[. ]?\d{3}[. ]?\d{3}[- ]?\d{2})(?!\d)/gm)]
-    .map((match) => match[1]!).filter(validCpf);
+    .map((match) => match[1]!).filter(isValidCpf);
   const uniqueCpf = [...new Set(cpfs.map((cpf) => cpf.replace(/\D/g, '')))];
   if (uniqueCpf.length === 1 && (seller || buyer)) {
     const id = seller ? 'seller.cpf' : 'person.cpf';

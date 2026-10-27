@@ -118,7 +118,7 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
       headers:{cookie},payload:{}});
     expect(beforeReview.statusCode).toBe(409);
     const incomplete = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
-      headers:{cookie},payload:{confirmed:true,values:{'person.cpf':'000.000.000-00'}}});
+      headers:{cookie},payload:{confirmed:true,values:{'person.cpf':'123.456.789-09'}}});
     expect(incomplete.statusCode).toBe(422);
 
     const unexpectedField = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',

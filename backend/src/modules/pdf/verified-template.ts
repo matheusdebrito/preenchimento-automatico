@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { CatalogDefinition } from '../catalog/contracts.js';
 import { fillPdf } from './fill-pdf.js';
+import { validateMappedFieldValues } from '../catalog/field-validation.js';
 
 const TEMPLATE_ROOT = resolve(process.cwd(), 'templates');
 /** Rejects unapproved mappings, substituted files and arbitrary paths. */
@@ -27,5 +28,6 @@ export async function fillApprovedTemplate(
   if (hash !== version.sha256.toUpperCase()) {
     throw new Error('O PDF original diverge do hash homologado.');
   }
+  validateMappedFieldValues(catalog.fields, approved[0]!.placements, values);
   return fillPdf(pdfBytes, approved[0]!.placements, values);
 }

@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { catalog } from '../dist/modules/catalog/catalog.js';
 import { fillPdf } from '../dist/modules/pdf/fill-pdf.js';
+import { validateMappedFieldValues } from '../dist/modules/catalog/field-validation.js';
 
 // All test data below is synthetic; only visual previews are committed.
 const root = resolve(process.cwd(), '..');
@@ -79,6 +80,7 @@ for (const map of catalog.mappings) {
   const v = catalog.versions.find((version) => version.id === map.formVersionId);
   if (!v?.templatePath) throw new Error('Template missing: '+map.formVersionId);
   const input = await readFile(resolve(root,v.templatePath));
+  validateMappedFieldValues(catalog.fields, map.placements, synthetic);
   const output = await fillPdf(input,map.placements,synthetic);
   const pdf = await PDFDocument.load(output);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
