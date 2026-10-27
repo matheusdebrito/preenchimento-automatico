@@ -220,6 +220,32 @@ describe('candidatos OCR conservadores', () => {
     expect(unlabelled['person.neighborhood']).toBeUndefined();
   });
 
+  it('reconhece datas de emissão, local de venda e motor com rótulos inequívocos', () => {
+    const identity = suggestFields(
+      'NOME: MARIA DE SOUZA\nDATA DE EMISSÃO: 12/01/2024',
+      'buyer-identity',
+    );
+    expect(identity['person.issueDate']?.value).toBe('12/01/2024');
+    expect(suggestFields('DATA DE EMISSÃO: 31/02/2024', 'buyer-identity')
+      ['person.issueDate']).toBeUndefined();
+    expect(suggestFields('DATA DE EMISSÃO: 12/01/2024', 'seller-identity')
+      ['seller.issueDate']?.value).toBe('12/01/2024');
+
+    const vessel = suggestFields(
+      'MARCA DO MOTOR: YAMAHA\nPOTÊNCIA DO MOTOR: 130 HP\n' +
+      'NÚMERO DE SÉRIE DO MOTOR: ABC123456',
+      'tie',
+    );
+    expect(vessel['vessel.motorBrand']?.value).toBe('YAMAHA');
+    expect(vessel['vessel.motorPower']?.value).toBe('130 HP');
+    expect(vessel['vessel.motorSerial']?.value).toBe('ABC123456');
+    expect(suggestFields('POTÊNCIA: 130', 'tie')['vessel.motorPower']).toBeUndefined();
+
+    const sale = suggestFields('LOCAL DA VENDA: NITERÓI', 'sale-document');
+    expect(sale['sale.place']?.value).toBe('NITERÓI');
+    expect(sale['sale.date']).toBeUndefined();
+  });
+
   it('sugere endereço e CEP somente com rótulos explícitos em comprovante', () => {
     const fields = suggestFields('ENDEREÇO: RUA SÃO JOSÉ 100\nCEP: 22000-000',
       'residence-proof');
