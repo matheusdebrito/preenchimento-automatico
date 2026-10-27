@@ -14,11 +14,11 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL e verificação por página PDF | Exige fuzzing/isolamento de decodificadores e testes de carga |
 | OCR no servidor | `pdftotext` + Tesseract; rótulos do TIE, identidade e comprovante | Sugestões conservadoras; conferir todos os campos e qualidade de imagem |
-| Autenticação e créditos | PostgreSQL, sessões HttpOnly, ledger idempotente | Créditos de teste somente; sem pagamentos reais |
+| Autenticação e créditos | PostgreSQL, sessões HttpOnly, ledger e recibos de entrega | Instância única, créditos de teste; sem pagamentos reais |
 | Fluxo real React | Perguntas, upload, revisão, geração, download e recuperação na mesma aba | Liberado somente para serviços homologados |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
-Consulte as [regras e limites do OCR](docs/OCR_EXTRACTION_RULES.md), o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
+Consulte o [fluxo de entrega e estorno de créditos](docs/CREDIT_DELIVERY_LIFECYCLE.md), as [regras e limites do OCR](docs/OCR_EXTRACTION_RULES.md), o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
 
 ## Estrutura
 
@@ -31,6 +31,7 @@ backend/
   src/routes/                 # /health, /api/services, /api/auth, /api/jobs
   templates/<form-id>/<revisao-interna>/original.pdf
   migrations/001_initial.sql
+  migrations/002_job_credit_receipts.sql
 frontend/
   src/features/wizard/        # Demonstração sem upload ao servidor
   src/features/real/          # Jornada real bloqueada até homologação

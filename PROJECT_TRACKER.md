@@ -159,7 +159,8 @@
 - [x] Conceder créditos de **teste** por mecanismo interno seguro; não integrar cobrança real nesta fase.
 - [x] Debitar **uma vez por pacote documental gerado com sucesso**, usando transação e idempotência; verificadas retentativas e concorrência no CI com PostgreSQL real.
 - [x] Testar concorrência, acesso entre usuários, estorno idempotente e falha de geração de PDF **sem consumir créditos**.
-- [ ] Implementar reconciliação durável após crash entre débito e disponibilidade de arquivo; ainda não há garantia de estorno/retomada após reinício.
+- [x] Criar recibo persistente mínimo, com débito atômico no PostgreSQL e estorno idempotente de jobs não entregues após cancelamento, expiração ou reinício em **instância única**.
+- [ ] Testar falha real de processo durante o download, inconsistência de banco e execução multi-instância antes de produção.
 - **Aceite:** segurança e invariantes de saldo verificadas por testes.
 
 ## Fase 09 — Segurança, desempenho e homologação
@@ -324,6 +325,15 @@
 - O frontend apresenta o **nome amigável do documento de origem** e lembra que cada sugestão requer conferência antes de gerar PDFs.
 - Testes sintéticos de várias origens e ambiguidades estão em `backend/src/modules/jobs/document-validator.test.ts`; testes do wizard em `frontend/src/features/real/LiveFlowPage.test.tsx`.
 - **Não concluído:** OCR com documentos reais ou digitalizações de qualidade variada; medição de confiança e acurácia, correções de perspectiva e avaliação de imagens ruins. Nenhum dado de cliente usado.
+
+## Fase 08 — entrega e estorno de créditos (26/10/2026)
+
+- A migração `002_job_credit_receipts.sql` registra apenas UUID de job/usuário, estado e horários; não grava arquivos, OCR ou dados pessoais.
+- Débito de **1 crédito por pacote** e recibo persistem juntos numa transação. Um segundo débito do mesmo job é recusado/idempotente.
+- A resposta HTTP concluída marca o job `delivered`. Cancelamento anterior, expiração e reinício da única instância estornam cobranças sem entrega de forma idempotente.
+- No startup, a API recupera as cobranças não entregues **antes de aceitar requisições**; uma rotina de 60 segundos procura recibos vencidos.
+- Testes em PostgreSQL: cobrança, concorrência, estorno, entrega e reinício simulado. Guia: [CREDIT_DELIVERY_LIFECYCLE.md](docs/CREDIT_DELIVERY_LIFECYCLE.md).
+- **Limitação bloqueante de produção:** `HTTP finish` não prova que o usuário salvou o PDF; execução com múltiplas instâncias e falhas reais exigem revisão e testes. Nenhuma cobrança real foi ativada.
 
 ## Registro de execução — atualizar a cada sessão/fase
 

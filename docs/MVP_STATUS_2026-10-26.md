@@ -82,3 +82,9 @@ Referências: [CI 40433692288](https://github.com/matheusdebrito/preenchimento-a
 Regras de OCR foram estendidas conservadoramente para TIE (`vessel.name`, `vessel.registration`, `vessel.hullId`), identidades distintas do comprador/vendedor (CPF, nome, RG/identidade, emissor) e comprovantes de residência (`person.address`, `person.postalCode`). Exigem rótulos claros e resultados não ambíguos; todo candidato é `REVIEW_REQUIRED`. A interface mostra a origem em linguagem compreensível. Não inferir titulares do TIE como compradores.
 
 O pipeline e os testes usam exclusivamente amostras fictícias. **Faltam** testes reais com imagens difíceis, medição de confiança, confiabilidade por tipo de documento e suporte a situações documentais variáveis. Referência: [regras técnicas de extração](OCR_EXTRACTION_RULES.md).
+
+## Débito e entrega: proteção após reinício
+
+Debitar o crédito por pacote e criar o recibo de geração agora é uma única transação PostgreSQL. Um download concluído registra o recibo `delivered`; um pacote sem entrega pode gerar reembolso idempotente ao cancelar, expirar ou reiniciar a API. Os recibos contêm apenas identificadores aleatórios e timestamps, não PDFs nem dados de documentos.
+
+**Importante:** o sistema continua sendo de instância única, os testes de falha abrupta real e de confirmação no dispositivo ainda estão pendentes, e a Fase 08 não deve ser considerada homologada para cobranças reais. Consulte [CREDIT_DELIVERY_LIFECYCLE.md](CREDIT_DELIVERY_LIFECYCLE.md).

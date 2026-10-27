@@ -210,3 +210,11 @@ Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exi
 - Se houver dois valores diferentes que encaixem na mesma regra, não selecionar nenhum. Campos ausentes permanecem vazios para preenchimento manual.
 - Nunca anunciar porcentagem de confiança sem evidências reais do OCR. Investigar imagem rotacionada, perspectiva, sombras e leituras inconsistentes antes de abrir para público.
 - Verificar e atualizar `docs/OCR_EXTRACTION_RULES.md` e testes unitários sempre que acrescentar padrões.
+
+## Cobrança com entrega — regras técnicas
+
+- Um serviço concluído gera no máximo **1 débito**, independentemente de quantos formulários existam no pacote. O débito e o recibo precisam ser inseridos atomicamente em PostgreSQL.
+- Não persistir conteúdo de documento, CPF, dados OCR ou campos de formulários em `job_credit_receipts`; somente job UUID, usuário UUID, estado e timestamps.
+- Não marcar um pacote como entregue antes de a resposta de download terminar; `HTTP finish` não garante que o cliente tenha salvo o arquivo.
+- A reconciliação de startup atual pressupõe **apenas uma instância** com jobs efêmeros; proibir implantação multi-instância sem novo projeto e testes de recuperação.
+- Não ativar cobrança real antes de crash-test, revisão de reembolso e homologação da entrega.
