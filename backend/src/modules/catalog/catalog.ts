@@ -161,8 +161,6 @@ export const catalog: CatalogDefinition = {
           required: false },
         { id: 'residence-proof', label: 'Comprovante de residência',
           required: true, conditions: [{ questionId: 'residenceProof', equals: 'comprovante' }] },
-        { id: 'photo-stern', label: 'Foto colorida da popa da moto aquática', required: true },
-        { id: 'photo-side', label: 'Foto colorida do través da moto aquática', required: true },
         { id: 'sale-document', label: 'Dados da venda ou nota fiscal',
           description: 'Documento de origem para auxiliar na conferência dos dados da venda.',
           required: false },
