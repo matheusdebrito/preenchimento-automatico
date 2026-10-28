@@ -31,16 +31,20 @@ function finite(value: unknown): value is number {
 }
 
 function parseBox(value: unknown): PaddleOcrLine['box'] {
-  if (!Array.isArray(value) || value.length !== 4 || !value.every(finite)) return null;
-  return [value[0], value[1], value[2], value[3]];
+  if (!Array.isArray(value) || value.length !== 4) return null;
+  const [x1, y1, x2, y2] = value;
+  if (!finite(x1) || !finite(y1) || !finite(x2) || !finite(y2)) return null;
+  return [x1, y1, x2, y2];
 }
 
 function parsePolygon(value: unknown): PaddleOcrLine['polygon'] {
   if (!Array.isArray(value) || value.length < 4) return null;
   const points: [number, number][] = [];
   for (const point of value) {
-    if (!Array.isArray(point) || point.length !== 2 || !point.every(finite)) return null;
-    points.push([point[0], point[1]]);
+    if (!Array.isArray(point) || point.length !== 2) return null;
+    const [x, y] = point;
+    if (!finite(x) || !finite(y)) return null;
+    points.push([x, y]);
   }
   return points;
 }
