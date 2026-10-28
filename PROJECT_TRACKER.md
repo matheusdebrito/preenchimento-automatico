@@ -241,3 +241,20 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Testes adicionados:** testes unitários Python cobrem perfis automáticos de 2/4/8/12/16 CPUs, overrides e preservação de ao menos uma CPU utilizável; teste TypeScript cobre o limite adaptativo da API. O CI passa a executar o teste puro de tuning antes de construir o PaddleOCR e corrige a detecção de alterações para o arquivo real `compose.yaml`.
 
 **Ainda não verificado:** benchmark de throughput e consumo real de RAM/CPU em VPS de 4/8/12+ vCPU, comportamento sob dezenas de uploads simultâneos, limites de memória do container e perfil ótimo por modelo de CPU. Portanto a Fase 15 permanece pendente e nenhuma quantidade de usuários simultâneos é homologada por esta entrega.
+
+
+## 15. Registro de execução — 28/10/2026, aproveitamento curado dos JSONs de âncoras
+
+**Origem:** o usuário adicionou `documentos/ancoras/` com referências para CHA, CIN, CIR, CNH, RG antigo, TIE digital e TIEM antigo. CIN é tratada no produto como integrante da família de identidade, sem presumir um número de RG separado do CPF.
+
+**Decisão arquitetural:** os JSONs não são configuração executável. Eles permanecem como fonte documental e somente conhecimento explicitamente revisado é promovido para o código. Isso impede que novos campos adicionados ao JSON alterem silenciosamente o domínio, reintroduzam múltiplos motores ou coletem dados pessoais desnecessários.
+
+**Promovido:** aliases de nome de titular em CIN/CNH, data de emissão/expedição, nacionalidade, naturalidade, órgão expedidor bilíngue, aliases adicionais TIE/TIEM para inscrição, ano, comprimento, casco e atividade, além de preferência de direção `below/right` no mecanismo semântico. O CPF continua dependente de validação e unicidade.
+
+**Descartado nesta entrega:** fuzzy matching global, motores 2–4, dados opcionais da CIN, campos de CNH sem uso atual, proprietário do TIE/TIEM como comprador, hipoteca/alienação, CIR parcialmente confirmado e quaisquer IDs sem correspondência segura no catálogo canônico.
+
+**Segurança semântica:** CPF da CIN não é copiado automaticamente para `person.identity`; proprietário do documento náutico não é convertido em comprador; valores divergentes continuam ambíguos e sujeitos a revisão humana.
+
+**Testes adicionados:** regressões sintéticas de CIN/CNH/RG e TIE/TIEM cobrem aliases promovidos, prioridade de direção e ausência de promoção de campos descartados. A validação integral depende do CI do PR desta entrega; não considerar homologado antes do último commit aprovado.
+
+**Documentação:** ver `docs/ANCHOR_PROFILES_CURATED_USAGE.md` e `docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md`.

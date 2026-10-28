@@ -9,12 +9,14 @@ import {
   selectUniqueCandidate,
   toEvidence,
   withSpatialPhrases,
+  type CandidateDirection,
 } from './extractor-utils.js';
 
 export interface SemanticFieldConcept {
   fieldId: string;
   anchor: string;
   labels: readonly RegExp[];
+  preferredDirections?: readonly CandidateDirection[];
   validate(value: string): boolean;
   normalize?(value: string): string;
 }
@@ -45,6 +47,7 @@ export function extractSemanticConcepts(
       concept.labels,
       concept.anchor,
       concept.validate,
+      concept.preferredDirections,
     );
     const selected = selectUniqueCandidate(candidates);
 

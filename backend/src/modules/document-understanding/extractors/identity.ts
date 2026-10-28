@@ -1,4 +1,4 @@
-import { isValidCpf } from '../../catalog/field-validation.js';
+import { isValidBrazilianDate, isValidCpf } from '../../catalog/field-validation.js';
 import type {
   DocumentExtractor,
   DocumentObservation,
@@ -6,13 +6,14 @@ import type {
   FieldEvidence,
   ObservationLine,
 } from '../contracts.js';
+import type { CandidateDirection } from '../extractor-utils.js';
 
 const normalize = (value: string) => value.normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
 const clean = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 const HOLDER_NAME_LABEL =
-  /^N[O0]M[E3](?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME))?\b/i;
+  /^(?:N[O0]M[E3](?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME))?|NAME\s+AND\s+SURNAME)\b/i;
 const FORBIDDEN_NAME_LABEL =
   /^N[O0]M[E3]\s+(?:DA\s+M[ÃA]E|DO\s+PAI|SOCIAL|DA\s+GENITORA|DO\s+GENITOR)\b/i;
 const HARD_BARRIER =
@@ -71,7 +72,7 @@ function validName(value: string): boolean {
 function inlineName(anchor: ObservationLine): NameCandidate | null {
   if (FORBIDDEN_NAME_LABEL.test(normalize(anchor.text))) return null;
   const stripped = anchor.text.replace(
-    /^\s*N[O0]M[E3](?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME))?\s*[:\-–]?\s*/i,
+    /^\s*(?:N[O0]M[E3](?:\s*\/\s*NAME|\s+(?:COMPLETO|CIVIL|DO\s+TITULAR|E\s+SOBRENOME))?|NAME\s+AND\s+SURNAME)\s*[:\-–]?\s*/i,
     '',
   );
   if (!validName(stripped)) return null;
@@ -198,9 +199,11 @@ function findName(observation: DocumentObservation): NameCandidate | null {
     for (let index = 0; index < lines.length; index++) {
       const anchor = lines[index]!;
       if (!isHolderNameLabel(anchor.text)) continue;
+      const preferBelow = /(?:NOME\s*\/\s*NAME|NAME\s+AND\s+SURNAME)/i.test(anchor.text);
       const candidate = inlineName(anchor) ??
-        nameRight(anchor, positioned) ??
-        nameBelow(anchor, positioned) ??
+        (preferBelow
+          ? nameBelow(anchor, positioned) ?? nameRight(anchor, positioned)
+          : nameRight(anchor, positioned) ?? nameBelow(anchor, positioned)) ??
         sequentialName(anchor, lines, index);
       if (candidate) found.push(candidate);
     }
@@ -244,11 +247,20 @@ function validIssuer(value: string): boolean {
   return true;
 }
 
+function validIdentityText(value: string): boolean {
+  const text = clean(value);
+  const upper = normalize(text);
+  if (text.length < 2 || text.length > 80 || !/[A-ZÀ-Ý]/i.test(text)) return false;
+  return !/^(?:NOME|CPF|RG|DATA|NASCIMENTO|NACIONALIDADE|NATURALIDADE|FILIACAO|VALIDADE|LOCAL)\b/
+    .test(upper);
+}
+
 function labelledValue(
   observation: DocumentObservation,
   label: RegExp,
   anchorName: string,
   isValid: (value: string) => boolean,
+  preferredDirections: readonly CandidateDirection[] = [],
 ): LabelValueCandidate | null {
   const found: LabelValueCandidate[] = [];
 
@@ -275,67 +287,81 @@ function labelledValue(
         continue;
       }
 
-      if (anchor.box) {
-        const height = boxHeight(anchor);
-        const centerY = (anchor.box[1] + anchor.box[3]) / 2;
-        const right = positioned
-          .filter((line) => {
-            if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
-            const center = (line.box[1] + line.box[3]) / 2;
-            return line.box[0] >= anchor.box![2] - height * 0.5 &&
-              line.box[0] - anchor.box![2] <= height * 10 &&
-              Math.abs(center - centerY) <= height * 1.25;
-          })
-          .sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
+      const defaultDirections: readonly CandidateDirection[] = ['right', 'below', 'sequential'];
+      const directions = [...new Set([...preferredDirections, ...defaultDirections])];
+      let matched = false;
 
-        if (right) {
-          found.push({
-            value: clean(right.text),
-            confidence: Math.min(anchor.confidence, right.confidence),
-            page: anchor.page,
-            lineIds: [anchor.id, right.id],
-            method: 'anchor-right',
-            anchor: anchorName,
-          });
-          continue;
+      for (const direction of directions) {
+        if (direction === 'right' && anchor.box) {
+          const height = boxHeight(anchor);
+          const centerY = (anchor.box[1] + anchor.box[3]) / 2;
+          const right = positioned
+            .filter((line) => {
+              if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
+              const center = (line.box[1] + line.box[3]) / 2;
+              return line.box[0] >= anchor.box![2] - height * 0.5 &&
+                line.box[0] - anchor.box![2] <= height * 10 &&
+                Math.abs(center - centerY) <= height * 1.25;
+            })
+            .sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
+
+          if (right) {
+            found.push({
+              value: clean(right.text),
+              confidence: Math.min(anchor.confidence, right.confidence),
+              page: anchor.page,
+              lineIds: [anchor.id, right.id],
+              method: 'anchor-right',
+              anchor: anchorName,
+            });
+            matched = true;
+          }
         }
 
-        const below = positioned
-          .filter((line) => {
-            if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
-            const dy = line.box[1] - anchor.box![3];
-            if (dy < -height * 0.2 || dy > height * 3.5) return false;
-            const overlap = horizontalOverlap(anchor, line);
-            const xDelta = Math.abs(line.box[0] - anchor.box![0]);
-            return overlap > 0 || xDelta <= height * 5;
-          })
-          .sort((a, b) => a.box![1] - b.box![1] || b.confidence - a.confidence)[0];
+        if (direction === 'below' && anchor.box && !matched) {
+          const height = boxHeight(anchor);
+          const below = positioned
+            .filter((line) => {
+              if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
+              const dy = line.box[1] - anchor.box![3];
+              if (dy < -height * 0.2 || dy > height * 3.5) return false;
+              const overlap = horizontalOverlap(anchor, line);
+              const xDelta = Math.abs(line.box[0] - anchor.box![0]);
+              return overlap > 0 || xDelta <= height * 5;
+            })
+            .sort((a, b) => a.box![1] - b.box![1] || b.confidence - a.confidence)[0];
 
-        if (below) {
-          found.push({
-            value: clean(below.text),
-            confidence: Math.min(anchor.confidence, below.confidence),
-            page: anchor.page,
-            lineIds: [anchor.id, below.id],
-            method: 'anchor-below',
-            anchor: anchorName,
-          });
-          continue;
+          if (below) {
+            found.push({
+              value: clean(below.text),
+              confidence: Math.min(anchor.confidence, below.confidence),
+              page: anchor.page,
+              lineIds: [anchor.id, below.id],
+              method: 'anchor-below',
+              anchor: anchorName,
+            });
+            matched = true;
+          }
         }
-      }
 
-      for (let offset = 1; offset <= 2; offset++) {
-        const next = lines[index + offset];
-        if (!next || !isValid(next.text)) continue;
-        found.push({
-          value: clean(next.text),
-          confidence: Math.min(anchor.confidence, next.confidence),
-          page: anchor.page,
-          lineIds: [anchor.id, next.id],
-          method: 'anchor-sequential',
-          anchor: anchorName,
-        });
-        break;
+        if (direction === 'sequential' && !matched) {
+          for (let offset = 1; offset <= 2; offset++) {
+            const next = lines[index + offset];
+            if (!next || !isValid(next.text)) continue;
+            found.push({
+              value: clean(next.text),
+              confidence: Math.min(anchor.confidence, next.confidence),
+              page: anchor.page,
+              lineIds: [anchor.id, next.id],
+              method: 'anchor-sequential',
+              anchor: anchorName,
+            });
+            matched = true;
+            break;
+          }
+        }
+
+        if (matched) break;
       }
     }
   }
@@ -356,8 +382,10 @@ function labelledEvidence(
   label: RegExp,
   anchor: string,
   validator: (value: string) => boolean,
+  preferredDirections: readonly CandidateDirection[] = [],
 ): FieldEvidence | null {
-  const candidate = labelledValue(observation, label, anchor, validator);
+  const candidate = labelledValue(
+    observation, label, anchor, validator, preferredDirections);
   if (!candidate) return null;
   return {
     fieldId,
@@ -441,11 +469,45 @@ export const identityDocumentExtractor: DocumentExtractor = {
       observation,
       context,
       prefix + '.issuer',
-      /^\s*(?:[ÓO]RG[AÃ]O\s+(?:EMISSOR|EXPEDIDOR)|[ÓO]RG[AÃ]O|EMISSOR|EXPEDIDOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:[ÓO]RG[AÃ]O\s+(?:EMISSOR|EXPEDIDOR)(?:\s*\/\s*CARD\s+ISSUER)?|[ÓO]RG[AÃ]O|EMISSOR|EXPEDIDOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
       'ORGAO EMISSOR',
       validIssuer,
+      ['below', 'right'],
     );
     if (issuer) evidence.push(issuer);
+
+    const issueDate = labelledEvidence(
+      observation,
+      context,
+      prefix + '.issueDate',
+      /^\s*(?:DATA\s+(?:DE\s+)?(?:EMISS[AÃ]O|EXPEDI[CÇ][AÃ]O)|ISSUING\s+DATE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      'DATA DE EMISSAO',
+      isValidBrazilianDate,
+      ['below', 'right'],
+    );
+    if (issueDate) evidence.push(issueDate);
+
+    const nationality = labelledEvidence(
+      observation,
+      context,
+      prefix + '.nationality',
+      /^\s*(?:NACIONALIDADE(?:\s*\/\s*NATIONALITY)?|NATIONALITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      'NACIONALIDADE',
+      validIdentityText,
+      ['below', 'right'],
+    );
+    if (nationality) evidence.push(nationality);
+
+    const birthplace = labelledEvidence(
+      observation,
+      context,
+      prefix + '.birthplace',
+      /^\s*(?:NATURALIDADE(?:\s*\/\s*PLACE\s+OF\s+BIRTH)?|NATURAL\s+DE|PLACE\s+OF\s+BIRTH)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      'NATURALIDADE',
+      validIdentityText,
+      ['below', 'right'],
+    );
+    if (birthplace) evidence.push(birthplace);
 
     return evidence;
   },
@@ -454,7 +516,8 @@ export const identityDocumentExtractor: DocumentExtractor = {
     const prefix = context.subjectRole;
     const evidence = identityDocumentExtractor.extract(observation, context);
     const byField = new Map(evidence.map((item) => [item.fieldId, item]));
-    return ['fullName', 'cpf', 'identity', 'issuer'].map((name) => {
+    return ['fullName', 'cpf', 'identity', 'issuer', 'issueDate', 'nationality', 'birthplace']
+      .map((name) => {
       const fieldId = prefix + '.' + name;
       const item = byField.get(fieldId);
       return item ? {
