@@ -2,21 +2,16 @@ from __future__ import annotations
 
 import json
 import os
+import queue
 import tempfile
 import threading
 import time
+from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-# Keep CPU inference on the conservative path. These must be set before
-# importing Paddle/PaddleOCR so the native runtime sees them during init.
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("MKL_NUM_THREADS", "1")
-os.environ.setdefault("FLAGS_use_mkldnn", "0")
-
-from paddleocr import PaddleOCR
+from tuning import calculate_tuning
 
 MAX_BODY = 10 * 1024 * 1024
 MIME_EXTENSIONS = {
@@ -25,21 +20,40 @@ MIME_EXTENSIONS = {
     "application/pdf": ".pdf",
 }
 
-ocr = PaddleOCR(
-    lang="pt",
-    ocr_version="PP-OCRv6",
-    use_doc_orientation_classify=True,
-    use_doc_unwarping=False,
-    use_textline_orientation=True,
-    device="cpu",
-    enable_mkldnn=False,
-    cpu_threads=max(1, int(os.getenv("OCR_CPU_THREADS", "1"))),
-)
+TUNING = calculate_tuning()
 
-# Paddle's predictor is not safe to execute concurrently in this CPU runtime.
-# The HTTP server may handle health checks concurrently, but inference itself
-# is serialized to one request at a time.
-OCR_LOCK = threading.Lock()
+# Native math runtimes must see these values before Paddle/PaddleOCR is imported.
+# The values are calculated from the CPUs effectively available to this container.
+os.environ["OMP_NUM_THREADS"] = str(TUNING.threads_per_worker)
+os.environ["OPENBLAS_NUM_THREADS"] = str(TUNING.threads_per_worker)
+os.environ["MKL_NUM_THREADS"] = str(TUNING.threads_per_worker)
+os.environ.setdefault("FLAGS_use_mkldnn", "0")
+
+from paddleocr import PaddleOCR
+
+
+def create_predictor() -> PaddleOCR:
+    return PaddleOCR(
+        lang="pt",
+        ocr_version="PP-OCRv6",
+        use_doc_orientation_classify=True,
+        use_doc_unwarping=False,
+        use_textline_orientation=True,
+        device="cpu",
+        enable_mkldnn=False,
+        cpu_threads=TUNING.threads_per_worker,
+    )
+
+
+# Each Paddle predictor is used by only one request at a time. This replaces the
+# previous global lock while avoiding concurrent calls into the same predictor.
+OCR_POOL: queue.Queue[PaddleOCR] = queue.Queue(maxsize=TUNING.workers)
+for _ in range(TUNING.workers):
+    OCR_POOL.put(create_predictor())
+
+# Bound both active and waiting OCR requests. This prevents a traffic spike from
+# creating an unbounded number of HTTP threads holding document bytes in memory.
+OCR_SLOTS = threading.BoundedSemaphore(TUNING.workers + TUNING.queue_depth)
 
 
 def builtin(value: Any) -> Any:
@@ -90,7 +104,7 @@ def normalize_result(result: Any, index: int) -> dict[str, Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "paddle-ocr-internal/1"
+    server_version = "paddle-ocr-internal/2"
 
     def log_message(self, _format: str, *_args: Any) -> None:
         # Never put OCR text, document paths or request bodies in logs.
@@ -109,12 +123,26 @@ class Handler(BaseHTTPRequestHandler):
         if self.path != "/health":
             self.send_json(404, {"error": "not_found"})
             return
-        self.send_json(200, {"status": "ok", "engine": "paddleocr", "version": "3.7.0", "model": "PP-OCRv6"})
+        self.send_json(200, {
+            "status": "ok",
+            "engine": "paddleocr",
+            "version": "3.7.0",
+            "model": "PP-OCRv6",
+            "capacity": {
+                "availableCpus": TUNING.available_cpus,
+                "reservedCpus": TUNING.reserved_cpus,
+                "usableCpus": TUNING.usable_cpus,
+                "workers": TUNING.workers,
+                "threadsPerWorker": TUNING.threads_per_worker,
+                "queueDepth": TUNING.queue_depth,
+            },
+        })
 
     def do_POST(self) -> None:
         if self.path != "/ocr":
             self.send_json(404, {"error": "not_found"})
             return
+
         content_type = (self.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
         extension = MIME_EXTENSIONS.get(content_type)
         try:
@@ -125,19 +153,28 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(415 if extension is None else 413, {"error": "invalid_document"})
             return
 
-        body = self.rfile.read(length)
-        if len(body) != length:
-            self.send_json(400, {"error": "truncated_document"})
+        if not OCR_SLOTS.acquire(blocking=False):
+            self.send_json(HTTPStatus.TOO_MANY_REQUESTS, {"error": "ocr_busy"})
             return
 
-        started = time.monotonic()
+        body: bytes | None = None
         path: str | None = None
+        predictor: PaddleOCR | None = None
+        started = time.monotonic()
         try:
+            body = self.rfile.read(length)
+            if len(body) != length:
+                self.send_json(400, {"error": "truncated_document"})
+                return
+
             with tempfile.NamedTemporaryFile(prefix="paddle-", suffix=extension, delete=False) as handle:
                 handle.write(body)
                 path = handle.name
-            with OCR_LOCK:
-                predictions = list(ocr.predict(path))
+            # Release request bytes before inference; the temporary file is the source.
+            body = None
+
+            predictor = OCR_POOL.get()
+            predictions = list(predictor.predict(path))
             pages = [normalize_result(result, index) for index, result in enumerate(predictions)]
             self.send_json(200, {
                 "engine": "paddleocr",
@@ -152,13 +189,24 @@ class Handler(BaseHTTPRequestHandler):
             detail = f"{type(exc).__name__}: {str(exc)}".replace("\n", " ")[:300]
             self.send_json(500, {"error": "ocr_failed", "detail": detail})
         finally:
+            if predictor is not None:
+                OCR_POOL.put(predictor)
             if path:
                 try:
                     Path(path).unlink(missing_ok=True)
                 except OSError:
                     pass
+            OCR_SLOTS.release()
 
 
 if __name__ == "__main__":
+    print("[OCR_CAPACITY]", json.dumps({
+        "availableCpus": TUNING.available_cpus,
+        "reservedCpus": TUNING.reserved_cpus,
+        "usableCpus": TUNING.usable_cpus,
+        "workers": TUNING.workers,
+        "threadsPerWorker": TUNING.threads_per_worker,
+        "queueDepth": TUNING.queue_depth,
+    }, separators=(",", ":")), flush=True)
     server = ThreadingHTTPServer(("0.0.0.0", 8000), Handler)
     server.serve_forever()
