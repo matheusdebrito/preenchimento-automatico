@@ -13,8 +13,11 @@ import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
-import { extractTextWithEngine, suggestFields, shouldExtractDocument, identityNameStage } from '../modules/jobs/ocr.js';
-import { paddleIdentitySuggestions } from '../modules/jobs/paddle-ocr.js';
+import { extractTextWithEngine, suggestFields, identityNameStage } from '../modules/jobs/ocr.js';
+import { paddleToObservation } from '../modules/document-understanding/paddle-observation.js';
+import { extractDocumentEvidence } from '../modules/document-understanding/registry.js';
+import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
+import type { FieldEvidence } from '../modules/document-understanding/contracts.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
 import { watermarkQaSample } from '../modules/pdf/qa-watermark.js';
 
@@ -169,64 +172,80 @@ export function registerJobRoutes(
     job.stage = 'PROCESSING';
     // Do not publish partial OCR results when one document fails. The job can be
     // retried from its uploaded files after an interrupted PaddleOCR request.
-    const collected: Record<string, string> = {};
-    const provenance: Record<string, string> = {};
-    const conflicts = new Set<string>();
     const diagnostics: ExtractionDiagnostic[] = [];
+    const evidence: FieldEvidence[] = [];
     const reviewableFields = new Set(service.reviewFields.map((field) => field.id));
     try {
       for (const document of job.files) {
-        // Supporting documents without semantic rules are ignored by OCR.
-        // No files means zero suggestions and immediate manual review.
-        if (!shouldExtractDocument(document.requirementId)) {
+        const requirement = service.documentRequirements.find((item) =>
+          item.id === document.requirementId);
+        // Supporting documents without a semantic extraction profile are not OCR inputs.
+        if (!requirement?.extraction) {
           diagnostics.push({
             requirementId: document.requirementId, outcome: 'not_analyzed', suggestionCount: 0,
           });
           continue;
         }
+
         const extraction = await extractTextWithEngine(document, store.directory(job));
         const text = extraction.text;
-        const suggestions = {
-          ...suggestFields(text, document.requirementId),
-          ...paddleIdentitySuggestions(extraction.paddle, document.requirementId),
-        };
-        // OCR rules may recognize fields absent from the selected form.
-        // Never offer or persist a field that this service cannot review.
-        const applicable = Object.entries(suggestions)
-          .filter(([fieldId]) => reviewableFields.has(fieldId));
-        const count = applicable.length;
+        const observation = paddleToObservation(extraction.paddle);
+        const context = {
+          documentId: document.id,
+          sourceId: document.requirementId,
+          documentType: requirement.extraction.documentType,
+          subjectRole: requirement.extraction.subjectRole,
+        } as const;
+
+        const structured = extractDocumentEvidence(observation, context);
+        // Transitional adapter: document types not migrated to their own extractor
+        // still use the conservative labelled-text rules. No new document type may
+        // be added here; migrate it to document-understanding instead.
+        const legacy = requirement.extraction.documentType === 'identity'
+          ? []
+          : Object.entries(suggestFields(text, document.requirementId)).map(
+            ([fieldId, candidate]): FieldEvidence => ({
+              fieldId,
+              value: candidate.value,
+              confidence: null,
+              documentId: document.id,
+              sourceId: candidate.source,
+              page: 0,
+              method: 'legacy-labelled-text',
+              lineIds: [],
+              status: 'REVIEW_REQUIRED',
+            }),
+          );
+        const documentEvidence = [...structured, ...legacy];
+        evidence.push(...documentEvidence);
+
+        const recognized = Object.fromEntries(documentEvidence.map((item) => [
+          item.fieldId,
+          { value: item.value, source: item.sourceId, status: item.status },
+        ]));
+        const applicableCount = documentEvidence
+          .filter((item) => reviewableFields.has(item.fieldId)).length;
         diagnostics.push({
           requirementId: document.requirementId,
           outcome: !text.trim() ? 'no_text'
-            : count > 0 ? 'suggested'
-              : Object.keys(suggestions).length > 0 ? 'no_applicable_fields'
+            : applicableCount > 0 ? 'suggested'
+              : documentEvidence.length > 0 ? 'no_applicable_fields'
                 : 'no_supported_labels',
-          suggestionCount: count,
+          suggestionCount: applicableCount,
           engine: extraction.engine,
-          ...(isQaJob(job.serviceId) && (
-            document.requirementId === 'buyer-identity' ||
-            document.requirementId === 'seller-identity'
-          ) ? { nameStage: identityNameStage(text,
-            document.requirementId, suggestions, reviewableFields) } : {}),
+          ...(isQaJob(job.serviceId) && requirement.extraction.documentType === 'identity'
+            ? { nameStage: identityNameStage(text,
+              document.requirementId, recognized, reviewableFields) } : {}),
         });
-        for (const [fieldId, data] of applicable) {
-          const prior = collected[fieldId];
-          if (prior && prior !== data.value) {
-            conflicts.add(fieldId);
-            delete collected[fieldId];
-            provenance[fieldId] = 'Divergência entre documentos: revisar manualmente.';
-          } else if (!conflicts.has(fieldId)) {
-            collected[fieldId] = data.value;
-            provenance[fieldId] = data.source;
-          }
-        }
       }
-      job.values = collected;
-      job.sourceNotes = provenance;
+
+      const resolved = resolveFieldEvidence(evidence, reviewableFields);
+      job.values = resolved.values;
+      job.sourceNotes = resolved.sourceNotes;
       job.diagnostics = diagnostics;
       job.stage = 'REVIEW';
       return { status: job.stage, fields: job.values, sources: job.sourceNotes,
-        diagnostics: job.diagnostics, conflicts: [...conflicts], reviewRequired: true };
+        diagnostics: job.diagnostics, conflicts: resolved.conflicts, reviewRequired: true };
     } catch {
       job.stage = 'UPLOADED';
       job.values = {};
