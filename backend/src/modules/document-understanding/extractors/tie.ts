@@ -29,10 +29,22 @@ const textValue = (value: string, min = 2, max = 100): boolean => {
   return text.length >= min && text.length <= max && /[A-ZÀ-Ý0-9]/i.test(text) && !labelLike(text);
 };
 
-const registration = (value: string): boolean =>
-  /^[A-Z0-9./-]{4,30}$/i.test(value.trim()) && /\d/.test(value);
-const hull = (value: string): boolean =>
-  /^[A-Z0-9./-]{5,50}$/i.test(value.trim()) && /[A-Z]/i.test(value) && /\d/.test(value);
+const compactIdentifier = (value: string): string => value.replace(/\s+/g, '').trim();
+
+const strongHullIdentifier = (value: string): boolean => {
+  const text = compactIdentifier(value);
+  return /^BR[A-Z0-9./-]{8,30}$/i.test(text) && /[A-Z]/i.test(text) && /\d/.test(text);
+};
+
+const registration = (value: string): boolean => {
+  const text = compactIdentifier(value);
+  return /^[A-Z0-9./-]{4,30}$/i.test(text) && /\d/.test(text) &&
+    !strongHullIdentifier(text);
+};
+const hull = (value: string): boolean => {
+  const text = compactIdentifier(value);
+  return /^[A-Z0-9./-]{5,50}$/i.test(text) && /[A-Z]/i.test(text) && /\d/.test(text);
+};
 const year = (value: string): boolean => /^(?:19|20)\d{2}$/.test(value.trim());
 const length = (value: string): boolean => /^\d{1,2}(?:[.,]\d{1,2})?\s*(?:M|METROS?)?$/i.test(value.trim());
 const capacity = (value: string): boolean => /^\d{1,3}$/.test(value.trim());
@@ -56,8 +68,8 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.registration',
     anchor: 'INSCRICAO',
     labels: [
-      /^\s*(?:(?:N[ÚU]MERO|N[ºO.]?)\s+(?:DE|DA)\s+)?INSCRI[CÇ][AÃ]O(?:\s*\/\s*REGISTRATION\s+NUMBER)?\s*(?:[:#\-–]\s*)?(.*)$/i,
-      /^\s*N[ºO.]?\s*INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:(?:N[ÚU]MERO|N\s*[°ºO.]?)\s*(?:(?:DE|DA)\s*)?)?INSCRI[CÇ][AÃ]O(?:\s*\/\s*REGISTRATION\s+NUMBER)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*N\s*[°ºO.]?\s*INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*REGISTRO\s+DA\s+EMBARCA[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
@@ -69,8 +81,12 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'NOME DA EMBARCACAO',
     labels: [
       /^\s*NOME\s+(?:DA\s+)?EMBARCA[CÇ][AÃ]O(?:\s*\/\s*NAME\s+OF\s+VESSEL)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*N[O0]M[E3]\s+D[A4]\s+EMBARC[A-ZÀ-Ý0-9]{3,}\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*NOME(?:\s*\/\s*NAME)?\s+(?:DA\s+)?MOTO\s+AQU[AÁ]TICA\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*NOME\s+(?:DO\s+)?BARCO\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    approximateLabels: [
+      { text: 'NOME DA EMBARCACAO', maxDistance: 3 },
     ],
     preferredDirections: ['below', 'right'],
     validate: (value) => textValue(value, 2, 100),
@@ -79,7 +95,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.hullId',
     anchor: 'IDENTIFICACAO DO CASCO',
     labels: [
-      /^\s*(?:HIN|CIN|N[ºO.]?\s*(?:DO\s+)?CASCO(?:\s*\/\s*HULL\s+NUMBER)?|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO|FORMATO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO(?:\s*\/\s*FORMA)?|N[ÚU]MERO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO\s*\/\s*CHASSIS)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:HIN|CIN|N\s*[°ºO.]?\s*(?:DO\s+)?CASCO(?:\s*\/\s*HULL\s+NUMBER)?|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO|FORMATO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO(?:\s*\/\s*FORMA)?|N[ÚU]MERO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO\s*\/\s*CHASSIS)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
     validate: hull,
@@ -131,7 +147,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.activity',
     anchor: 'ATIVIDADE',
     labels: [
-      /^\s*(?:ATIVIDADE\s*\/\s*ACTIVITY|ATIVIDADE\s*\/\s*USO|ATIVIDADE\s*\/\s*SERVI[CÇ]O|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:ATIVIDADE\s*[/|-]\s*ACTIVITY|ATIVIDADE\s*[/|-]\s*USO|ATIVIDADE\s*[/|-]\s*SERVI[CÇ]O|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
     validate: (value) => textValue(value, 2, 80),
@@ -154,8 +170,10 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.motorBrand',
     anchor: 'MARCA DO MOTOR',
     labels: [
-      /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR|NOME\s+FABRICANTE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR|NOME\s+(?:DO\s+)?FABRICANTE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*N[O0]M[E3]\s+(?:D[O0]\s+)?FABR[I1]CANTE\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    firstOccurrenceOnly: true,
     validate: (value) => textValue(value, 2, 60),
   },
   {
@@ -163,8 +181,14 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'POTENCIA DO MOTOR',
     labels: [
       /^\s*POT[EÊ]NCIA(?:\s+(?:DO\s+)?MOTOR)?(?:\s*\(HP\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*P[O0]T[EÊÉ3]NC[I1]A(?:\s*\(?\s*H[P8]\s*\)?)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    approximateLabels: [
+      { text: 'POTENCIA HP', maxDistance: 2 },
+      { text: 'POTENCIA', maxDistance: 2 },
     ],
     preferredDirections: ['below', 'right'],
+    firstOccurrenceOnly: true,
     validate: power,
   },
   {
@@ -172,8 +196,14 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'SERIE DO MOTOR',
     labels: [
       /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR|N[°ºO.]?\s+DO\s+1[°ºO.]?\s+MOTOR\s*\/\s*S[EÉ]RIE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:N\s*[°ºO.]?\s*)?D[O0]\s+1\s*[°ºO.]?\s+M[O0]T[O0]R\s*[-/]?\s*S[EÉ3]R[I1]E\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    approximateLabels: [
+      { text: 'N DO 1 MOTOR SERIE', maxDistance: 3 },
+      { text: '1 MOTOR SERIE', maxDistance: 2 },
     ],
     preferredDirections: ['below', 'right'],
+    firstOccurrenceOnly: true,
     boundaries: [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
       /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
@@ -185,7 +215,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.crewCount',
     anchor: 'TRIPULANTES',
     labels: [
-      /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD(?:ADE)?\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
     validate: count,
@@ -194,7 +224,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.passengerCount',
     anchor: 'PASSAGEIROS',
     labels: [
-      /^\s*(?:N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*NUMBER\s+OF\s+PASSAGERS|N[ÚU]MERO\s+DE\s+PASSAGEIROS|QTD\.?\s+DE\s+PASSAGEIROS|NUMBER\s+OF\s+PASSAGERS|NUMBER\s+OF\s+PASSENGERS)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*NUMBER\s+OF\s+PASSAGERS|N[ÚU]MERO\s+DE\s+PASSAGEIROS|QTD(?:ADE)?\.?\s+DE\s+PASSAGEIROS|NUMBER\s+OF\s+PASSAGERS|NUMBER\s+OF\s+PASSENGERS)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
     validate: count,

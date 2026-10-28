@@ -193,6 +193,112 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.hullId']).toBe('BR-MZL-123456');
   });
 
+  it('mantém campos do cabeçalho e motor em colunas densas sem conflito de frases sintéticas', () => {
+    const dense: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'NOME DA EMBARCAÇÃO', confidence: .99,
+            box: [120, 180, 520, 210], polygon: null },
+          { id: '0:1', page: 0, text: 'MAR AZUL', confidence: .98,
+            box: [250, 220, 390, 252], polygon: null },
+          { id: '0:2', page: 0, text: 'POTÊNCIA (HP)', confidence: .99,
+            box: [30, 340, 220, 370], polygon: null },
+          { id: '0:3', page: 0, text: 'Nº DO 1º MOTOR/SÉRIE', confidence: .99,
+            box: [230, 340, 560, 370], polygon: null },
+          { id: '0:4', page: 0, text: 'NOME FABRICANTE', confidence: .99,
+            box: [570, 340, 850, 370], polygon: null },
+          { id: '0:5', page: 0, text: '115', confidence: .98,
+            box: [95, 380, 150, 410], polygon: null },
+          { id: '0:6', page: 0, text: '6E5L1001234', confidence: .98,
+            box: [315, 380, 470, 410], polygon: null },
+          { id: '0:7', page: 0, text: 'YAMAHA', confidence: .98,
+            box: [655, 380, 770, 410], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(dense, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.name']).toBe('MAR AZUL');
+    expect(values['vessel.motorPower']).toBe('115');
+    expect(values['vessel.motorSerial']).toBe('6E5L1001234');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+  });
+
+  it('tolera erros OCR nos rótulos antigos e usa somente o primeiro motor do MVP', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N0ME DA EMBARCACA0',
+      'MAR AZUL',
+      'P0T3NCIA (HP)',
+      '115',
+      'N DO 1 MOTOR/S3R1E',
+      '6E5L1001234',
+      'N0ME FABR1CANTE',
+      'YAMAHA',
+      'N0ME FABR1CANTE',
+      'SEM VALOR',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.name']).toBe('MAR AZUL');
+    expect(values['vessel.motorPower']).toBe('115');
+    expect(values['vessel.motorSerial']).toBe('6E5L1001234');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+  });
+
+  it('rejeita identificador forte de casco como inscrição mesmo quando aparece junto ao rótulo', () => {
+    const mixed: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'N° DE INSCRIÇÃO BR-MZL-123456', confidence: .97,
+            box: [30, 90, 430, 120], polygon: null },
+          { id: '0:1', page: 0, text: '441M2023001234', confidence: .98,
+            box: [70, 126, 315, 158], polygon: null },
+          { id: '0:2', page: 0, text: 'FORMATO DE SÉRIE DO CASCO/FORMA', confidence: .99,
+            box: [900, 610, 1280, 642], polygon: null },
+          { id: '0:3', page: 0, text: 'BR-MZL-123456', confidence: .98,
+            box: [1280, 650, 1490, 682], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(mixed, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.registration']).toBe('441M2023001234');
+    expect(values['vessel.hullId']).toBe('BR-MZL-123456');
+  });
+
+  it('aceita variantes comuns do símbolo de número e rótulos antigos', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N° DE INSCRIÇÃO',
+      '441M2023001234',
+      'N° DO CASCO',
+      'BRABC12345D626',
+      'NOME DO FABRICANTE',
+      'YAMAHA',
+      'ATIVIDADE - USO',
+      'Esporte e Recreio',
+      'QTDADE DE TRIPULANTES',
+      '2',
+      'QTDADE DE PASSAGEIROS',
+      '6',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.registration']).toBe('441M2023001234');
+    expect(values['vessel.hullId']).toBe('BRABC12345D626');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+    expect(values['vessel.activity']).toBe('Esporte e Recreio');
+    expect(values['vessel.crewCount']).toBe('2');
+    expect(values['vessel.passengerCount']).toBe('6');
+  });
+
   it('aproveita aliases adicionais do TIE digital e TIEM antigo', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
