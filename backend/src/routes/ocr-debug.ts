@@ -1,7 +1,10 @@
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
-import { classifyDocument } from '../modules/jobs/document-validator.js';
+import { classifyDocument, validatePdfPages } from '../modules/jobs/document-validator.js';
 import { paddleTextForSource, runPaddleOcrBuffer } from '../modules/jobs/paddle-ocr.js';
 import { suggestFields } from '../modules/jobs/ocr.js';
 
@@ -28,7 +31,14 @@ export function registerOcrDebugRoutes(app: FastifyInstance, pool?: Database): v
     } catch {
       return reply.status(400).send({ error: 'invalid_document' });
     }
+    let validationDir: string | null = null;
     try {
+      if (kind === 'pdf') {
+        validationDir = await mkdtemp(join(tmpdir(), 'ocr-inspect-'));
+        const path = join(validationDir, 'document.pdf');
+        await writeFile(path, req.body, { mode: 0o600, flag: 'wx' });
+        await validatePdfPages(path);
+      }
       const result = await runPaddleOcrBuffer(req.body, kind);
       const text = paddleTextForSource(result, req.params.source);
       const fields = Object.fromEntries(Object.entries(suggestFields(text, req.params.source))
@@ -44,6 +54,8 @@ export function registerOcrDebugRoutes(app: FastifyInstance, pool?: Database): v
     } catch (error) {
       req.log.error({ err: error }, 'paddle_ocr_inspection_failed');
       return reply.status(503).send({ error: 'ocr_failed' });
+    } finally {
+      if (validationDir) await rm(validationDir, { recursive: true, force: true });
     }
   });
 }
