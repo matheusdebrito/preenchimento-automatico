@@ -63,6 +63,64 @@ const serial = (value: string): boolean => {
   return /^[A-Z0-9./-]{4,50}$/i.test(text) && /\d/.test(text);
 };
 
+
+export type TieDocumentVariant = 'digital' | 'legacy' | 'unknown';
+
+const digitalVariantMarkers: readonly RegExp[] = [
+  /\bREGISTRATION\s+NUMBER\b/,
+  /\bTYPE\s+OF\s+VESSEL\b/,
+  /\bENGINE\s+SERIAL\s+NUMBER\b/,
+  /\bNUMBER\s+OF\s+CREW\b/,
+  /\bBREADTH\b/,
+  /\bAB\s*\/\s*GT\b/,
+];
+
+const legacyVariantMarkers: readonly RegExp[] = [
+  /\bEMBARCACAO\s+MIUDA\b/,
+  /\bPOTENCIA\s*\(?\s*HP\s*\)?\b/,
+  /\bNOME\s+(?:DO\s+)?FABRICANTE\b/,
+  /\bCARACTERISTICAS\s+DO\s+CASCO\b/,
+  /\bCREDOR\s+HIPOTECARIO\b/,
+  /\bMOTOR\s*\/?\s*SERIE\b|\bMOTORSERIE\b/,
+];
+
+function markerScore(lines: readonly string[], markers: readonly RegExp[]): number {
+  return markers.reduce((score, marker) =>
+    score + (lines.some((line) => marker.test(line)) ? 1 : 0), 0);
+}
+
+export function classifyTieVariant(observation: DocumentObservation): TieDocumentVariant {
+  const lines = observation.pages.flatMap((page) =>
+    page.lines.map((line) => normalizeText(line.text)));
+  const digital = markerScore(lines, digitalVariantMarkers);
+  const legacy = markerScore(lines, legacyVariantMarkers);
+
+  if (digital >= 2 && digital > legacy) return 'digital';
+  if (legacy >= 2 && legacy > digital) return 'legacy';
+  return 'unknown';
+}
+
+const digitalOnlyFields = new Set([
+  'vessel.grossTonnage',
+  'vessel.breadth',
+  'vessel.motorManufacturerBrandModel',
+]);
+
+const legacyOnlyFields = new Set([
+  'vessel.motorBrand',
+  'vessel.motorPower',
+]);
+
+function conceptsForVariant(variant: TieDocumentVariant): readonly SemanticFieldConcept[] {
+  if (variant === 'digital') {
+    return tieFieldConcepts.filter((concept) => !legacyOnlyFields.has(concept.fieldId));
+  }
+  if (variant === 'legacy') {
+    return tieFieldConcepts.filter((concept) => !digitalOnlyFields.has(concept.fieldId));
+  }
+  return tieFieldConcepts;
+}
+
 export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
   {
     fieldId: 'vessel.registration',
@@ -98,6 +156,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:HIN|CIN|N\s*[°ºO.]?\s*(?:DO\s+)?CASCO(?:\s*\/\s*HULL\s+NUMBER)?|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO|FORMATO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO(?:\s*\/\s*FORMA)?|N[ÚU]MERO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO\s*\/\s*CHASSIS)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
     validate: hull,
   },
   {
@@ -133,6 +192,8 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*(?:AB\s*\/\s*GT|ARQUEA[CÇ][AÃ]O\s+BRUTA(?:\s*\/\s*GROSS\s+TONNAGE)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
     validate: grossTonnage,
   },
   {
@@ -141,6 +202,8 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*(?:BOCA\s*\/\s*BREADTH|BOCA|BREADTH)(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
     validate: decimalMeasure,
   },
   {
@@ -173,7 +236,9 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR|NOME\s+(?:DO\s+)?FABRICANTE)\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*N[O0]M[E3]\s+(?:D[O0]\s+)?FABR[I1]CANTE\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     firstOccurrenceOnly: true,
+    allowSequentialWithGeometry: false,
     validate: (value) => textValue(value, 2, 60),
   },
   {
@@ -189,6 +254,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     firstOccurrenceOnly: true,
+    allowSequentialWithGeometry: false,
     validate: power,
   },
   {
@@ -243,18 +309,28 @@ function runTieExtraction(
   observation: DocumentObservation,
   context: ExtractionContext,
 ): { evidence: FieldEvidence[]; assessments: FieldExtractionAssessment[] } {
-  const semantic = extractSemanticConcepts(observation, context, tieFieldConcepts);
+  const variant = classifyTieVariant(observation);
+  const concepts = conceptsForVariant(variant);
+  const semantic = extractSemanticConcepts(observation, context, concepts);
   const evidence = [...semantic.evidence];
-  const assessments = [...semantic.assessments];
+  const byAssessment = new Map(semantic.assessments.map((item) => [item.fieldId, item]));
+  const assessments = tieFieldConcepts.map((concept) =>
+    byAssessment.get(concept.fieldId) ?? {
+      fieldId: concept.fieldId,
+      status: 'NOT_FOUND' as const,
+      confidence: null,
+    });
 
-  // Some TIE variants expose a unique HIN/CIN without a stable label.
+  // A hull fallback is intentionally strict: only identifiers with a strong
+  // Brazilian hull/HIN shape are eligible. Generic alphanumeric identifiers
+  // can be vessel registrations and must never be promoted to hullId.
   if (!evidence.some((item) => item.fieldId === 'vessel.hullId')) {
     const source = withSpatialPhrases(observation);
     const fallback = toEvidence(uniqueLineValue(
       source,
-      /\b((?:BR[- ]?)?[A-Z0-9]{8,20})\b/gi,
-      (value) => hull(value) && /[A-Z]/i.test(value),
-      'unique-hull-pattern',
+      /\b(BR[A-Z0-9./-]{8,30})\b/gi,
+      strongHullIdentifier,
+      'unique-strong-hull-pattern',
     ), context, 'vessel.hullId');
     if (fallback) {
       evidence.push(fallback);
