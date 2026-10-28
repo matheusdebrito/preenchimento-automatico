@@ -190,6 +190,8 @@ versão mais recente, iniciar job novo e verificar o estado exibido por arquivo.
 
 O motor OCR atual é **PaddleOCR**. A aplicação separa a leitura visual da interpretação semântica: Paddle produz páginas, linhas, confiança e geometria; a camada `document-understanding` transforma isso em evidências de campos canônicos sujeitas a revisão.
 
+Os perfis em `documentos/ancoras/` são usados apenas como **referência curada de layouts**. A aplicação não carrega esses JSONs diretamente: aliases e preferências de direção só entram no runtime após revisão e teste contra campos canônicos já existentes. Dados fora do domínio ativo são ignorados.
+
 O primeiro extractor migrado é o perfil de **identidade**, que localiza o titular por âncoras como `NOME`, relações à direita/abaixo, linhas fragmentadas e validação de CPF, bloqueando rótulos de filiação e nome social. O mesmo extractor é reutilizado para os papéis comprador e vendedor sem conhecer o serviço.
 
 O fluxo atual ainda trata RG e CNH sob o perfil transitório `identity`, pois a interface não classifica explicitamente qual documento foi enviado. Não inferimos silenciosamente o tipo. A evolução prevista é separar RG, CNH, TIE, CHA e CIR em extractors próprios após introduzir classificação/seleção de tipo.
