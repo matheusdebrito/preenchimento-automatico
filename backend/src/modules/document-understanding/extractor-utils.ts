@@ -46,6 +46,7 @@ export function anchoredCandidates(
   anchorName: string,
   validate: (value: string) => boolean,
   preferredDirections: readonly CandidateDirection[] = [],
+  isFieldBoundary: (value: string) => boolean = () => false,
 ): readonly ExtractedCandidate[] {
   const candidates: ExtractedCandidate[] = [];
 
@@ -61,6 +62,8 @@ export function anchoredCandidates(
 
       const matchesAnyLabel = (value: string): boolean =>
         labels.some((pattern) => pattern.test(value));
+      const isBoundary = (value: string): boolean =>
+        matchesAnyLabel(value) || isFieldBoundary(value);
 
       const inline = cleanText(match[1] ?? '');
       const syntheticPhrase = anchor.id.startsWith('phrase:');
@@ -68,7 +71,8 @@ export function anchoredCandidates(
       // A synthetic same-row phrase may join a label with unrelated text at
       // the right. When the reviewed layout says the value is primarily below,
       // do not let that generated phrase outrank the original geometric anchor.
-      if (inline && validate(inline) && !(syntheticPhrase && preferBelow)) {
+      if (inline && !isBoundary(inline) && validate(inline) &&
+        !(syntheticPhrase && preferBelow)) {
         candidates.push({
           value: inline, confidence: anchor.confidence, page: anchor.page,
           lineIds: [anchor.id], method: 'anchor-inline', anchor: anchorName,
@@ -84,13 +88,20 @@ export function anchoredCandidates(
         if (direction === 'right' && anchor.box) {
           const height = boxHeight(anchor);
           const centerY = (anchor.box[1] + anchor.box[3]) / 2;
-          const right = positioned.filter((line) => {
-            if (line === anchor || !line.box || line.confidence < 0.35 ||
-              matchesAnyLabel(line.text) || !validate(line.text)) return false;
+          const sameRow = positioned.filter((line) => {
+            if (line === anchor || !line.box) return false;
             const center = (line.box[1] + line.box[3]) / 2;
             return line.box[0] >= anchor.box![2] - height * 0.5 &&
               line.box[0] - anchor.box![2] <= height * 16 &&
               Math.abs(center - centerY) <= height * 1.35;
+          });
+          const rightBoundaryX = sameRow
+            .filter((line) => isBoundary(line.text))
+            .map((line) => line.box![0])
+            .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
+          const right = sameRow.filter((line) => {
+            if (line.confidence < 0.35 || isBoundary(line.text) || !validate(line.text)) return false;
+            return line.box![0] < rightBoundaryX;
           }).sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
 
           if (right) {
@@ -106,13 +117,20 @@ export function anchoredCandidates(
 
         if (direction === 'below' && anchor.box && !matched) {
           const height = boxHeight(anchor);
-          const below = positioned.filter((line) => {
-            if (line === anchor || !line.box || line.confidence < 0.35 ||
-              matchesAnyLabel(line.text) || !validate(line.text)) return false;
+          const belowRegion = positioned.filter((line) => {
+            if (line === anchor || !line.box) return false;
             const dy = line.box[1] - anchor.box![3];
             if (dy < -height * 0.25 || dy > height * 5) return false;
             return horizontalOverlap(anchor, line) > 0 ||
               Math.abs(line.box[0] - anchor.box![0]) <= height * 7;
+          });
+          const belowBoundaryY = belowRegion
+            .filter((line) => isBoundary(line.text))
+            .map((line) => line.box![1])
+            .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
+          const below = belowRegion.filter((line) => {
+            if (line.confidence < 0.35 || isBoundary(line.text) || !validate(line.text)) return false;
+            return line.box![1] < belowBoundaryY;
           }).sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0])[0];
 
           if (below) {
@@ -129,7 +147,9 @@ export function anchoredCandidates(
         if (direction === 'sequential' && !matched) {
           for (let offset = 1; offset <= 3; offset++) {
             const next = lines[index + offset];
-            if (!next || matchesAnyLabel(next.text) || !validate(next.text)) continue;
+            if (!next) break;
+            if (isBoundary(next.text)) break;
+            if (!validate(next.text)) continue;
             candidates.push({
               value: cleanText(next.text),
               confidence: Math.min(anchor.confidence, next.confidence),
