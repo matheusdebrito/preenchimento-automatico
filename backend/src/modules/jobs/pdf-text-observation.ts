@@ -29,24 +29,56 @@ function parseBBoxXml(xml: string, elapsedMs: number): DocumentObservation | nul
     const body = pageMatch[1] ?? '';
     const lines: ObservationLine[] = [];
     let lineIndex = 0;
-    for (const lineMatch of body.matchAll(/(<line\b[^>]*>)([\s\S]*?)<\/line>/gi)) {
-      const tag = lineMatch[1] ?? '';
-      const lineBody = lineMatch[2] ?? '';
-      const words = [...lineBody.matchAll(/<word\b[^>]*>([\s\S]*?)<\/word>/gi)]
-        .map((match) => decodeXml(match[1] ?? '').trim()).filter(Boolean);
+    for (const lineMatch of body.matchAll(/<line\b[^>]*>([\s\S]*?)<\/line>/gi)) {
+      const lineBody = lineMatch[1] ?? '';
+      const words = [...lineBody.matchAll(/(<word\b[^>]*>)([\s\S]*?)<\/word>/gi)]
+        .map((match) => {
+          const tag = match[1] ?? '';
+          const text = decodeXml(match[2] ?? '').trim();
+          const x1 = numberAttr(tag, 'xMin');
+          const y1 = numberAttr(tag, 'yMin');
+          const x2 = numberAttr(tag, 'xMax');
+          const y2 = numberAttr(tag, 'yMax');
+          return { text, x1, y1, x2, y2 };
+        })
+        .filter((word) => word.text &&
+          word.x1 !== null && word.y1 !== null && word.x2 !== null && word.y2 !== null)
+        .sort((a, b) => a.x1! - b.x1!);
       if (words.length === 0) continue;
-      const x1 = numberAttr(tag, 'xMin');
-      const y1 = numberAttr(tag, 'yMin');
-      const x2 = numberAttr(tag, 'xMax');
-      const y2 = numberAttr(tag, 'yMax');
-      lines.push({
-        id: pageIndex + ':' + lineIndex++,
-        page: pageIndex,
-        text: words.join(' '),
-        confidence: 1,
-        box: x1 !== null && y1 !== null && x2 !== null && y2 !== null ? [x1, y1, x2, y2] : null,
-        polygon: null,
-      });
+
+      const heights = words.map((word) => Math.max(1, word.y2! - word.y1!));
+      const averageHeight = heights.reduce((sum, value) => sum + value, 0) / heights.length;
+      const splitGap = Math.max(18, averageHeight * 2.5);
+      const segments: typeof words[] = [];
+      let segment: typeof words = [];
+
+      for (const word of words) {
+        const previous = segment.at(-1);
+        if (previous && word.x1! - previous.x2! > splitGap) {
+          segments.push(segment);
+          segment = [];
+        }
+        segment.push(word);
+      }
+      if (segment.length) segments.push(segment);
+
+      for (const part of segments) {
+        const text = part.map((word) => word.text).join(' ').trim();
+        if (!text) continue;
+        lines.push({
+          id: pageIndex + ':' + lineIndex++,
+          page: pageIndex,
+          text,
+          confidence: 1,
+          box: [
+            Math.min(...part.map((word) => word.x1!)),
+            Math.min(...part.map((word) => word.y1!)),
+            Math.max(...part.map((word) => word.x2!)),
+            Math.max(...part.map((word) => word.y2!)),
+          ],
+          polygon: null,
+        });
+      }
     }
     return { page: pageIndex, orientation: 0, lines };
   });
