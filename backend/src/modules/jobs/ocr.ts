@@ -1,3 +1,4 @@
+import { availableParallelism } from 'node:os';
 import type { StoredDocument } from './job-store.js';
 import { isValidCpf, isValidBrazilianDate } from '../catalog/field-validation.js';
 import { extractPaddleDocument } from './paddle-ocr.js';
@@ -9,7 +10,39 @@ import { extractPdfPagesWithPaddle } from './pdf-paddle-pages.js';
 import { extractDocumentEvidence } from '../document-understanding/registry.js';
 
 let active = 0;
-const MAX_CONCURRENT = 2;
+
+function positiveInt(value: string | undefined): number | null {
+  if (!value || value.trim().toLowerCase() === 'auto') return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+/**
+ * Keep enough in-flight work to feed the OCR predictor pool without allowing
+ * unbounded synchronous requests to accumulate in the API process.
+ */
+export function ocrMaxConcurrent(
+  cpus = availableParallelism(),
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const manual = positiveInt(env.OCR_MAX_CONCURRENT);
+  if (manual) return Math.min(manual, 32);
+
+  const reserved = Math.min(
+    positiveInt(env.OCR_RESERVED_CPUS) ?? (cpus <= 4 ? 1 : 2),
+    Math.max(0, cpus - 1),
+  );
+  const usable = Math.max(1, cpus - reserved);
+  const maxWorkers = Math.min(positiveInt(env.OCR_MAX_WORKERS) ?? 4, 16);
+  const workers = Math.min(
+    positiveInt(env.OCR_WORKERS) ?? Math.max(1, Math.min(maxWorkers,
+      usable >= 3 ? Math.floor(usable / 3) : 1)),
+    16,
+  );
+  return Math.max(2, Math.min(32, workers * 2));
+}
+
+const MAX_CONCURRENT = ocrMaxConcurrent();
 
 export function fastObservationIsSufficient(
   doc: StoredDocument,

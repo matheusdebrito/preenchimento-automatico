@@ -45,16 +45,16 @@ jobs:
           ocr=false
           reference=false
 
-          if changed '^(backend/|docker-compose\.yml$|\.github/workflows/ci\.yml$)'; then
+          if changed '^(backend/|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
             backend=true
           fi
-          if changed '^(frontend/|docker-compose\.yml$|\.github/workflows/ci\.yml$)'; then
+          if changed '^(frontend/|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
             frontend=true
           fi
-          if changed '^(ocr-service/|backend/src/modules/jobs/|backend/src/modules/document-understanding/|backend/src/routes/qa-preview\.integration\.test\.ts$|backend/src/routes/jobs\.integration\.test\.ts$|docker-compose\.yml$|\.github/workflows/ci\.yml$)'; then
+          if changed '^(ocr-service/|backend/src/modules/jobs/|backend/src/modules/document-understanding/|backend/src/routes/qa-preview\.integration\.test\.ts$|backend/src/routes/jobs\.integration\.test\.ts$|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
             ocr=true
           fi
-          if changed '^(documentos/|ocr-service/|backend/src/modules/jobs/(paddle-ocr|pdf-paddle-pages|pdf-text-observation|reference-documents\.integration|reference-pdf-fast\.integration)\.|backend/src/modules/document-understanding/|\.github/workflows/ci\.yml$)'; then
+          if changed '^(documentos/|ocr-service/|backend/src/modules/jobs/(paddle-ocr|pdf-paddle-pages|pdf-text-observation|reference-documents\.integration|reference-pdf-fast\.integration)\.|backend/src/modules/document-understanding/|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
             reference=true
           fi
 
@@ -195,6 +195,8 @@ jobs:
         working-directory: backend
       - name: Install PDF tools
         run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Test adaptive OCR sizing
+        run: python -m unittest discover -s ocr-service -p 'test_*.py'
       - name: Build and start PaddleOCR
         run: |
           docker build -t preenchimento-ocr-ci ./ocr-service

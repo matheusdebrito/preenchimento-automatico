@@ -23,10 +23,11 @@ services:
     build:
       context: ./ocr-service
     environment:
-      OCR_CPU_THREADS: ${OCR_CPU_THREADS:-1}
-      OMP_NUM_THREADS: 1
-      OPENBLAS_NUM_THREADS: 1
-      MKL_NUM_THREADS: 1
+      OCR_RESERVED_CPUS: ${OCR_RESERVED_CPUS:-auto}
+      OCR_MAX_WORKERS: ${OCR_MAX_WORKERS:-4}
+      OCR_WORKERS: ${OCR_WORKERS:-auto}
+      OCR_CPU_THREADS: ${OCR_CPU_THREADS:-auto}
+      OCR_QUEUE_DEPTH: ${OCR_QUEUE_DEPTH:-auto}
       FLAGS_use_mkldnn: 0
       PADDLE_PDX_MODEL_SOURCE: BOS
     restart: unless-stopped
@@ -57,6 +58,10 @@ services:
       DEV_GRANT_SECRET: ${DEV_GRANT_SECRET:-}
       DEV_QA_PREVIEW: ${DEV_QA_PREVIEW:-false}
       PADDLE_OCR_URL: http://ocr:8000
+      OCR_RESERVED_CPUS: ${OCR_RESERVED_CPUS:-auto}
+      OCR_MAX_WORKERS: ${OCR_MAX_WORKERS:-4}
+      OCR_WORKERS: ${OCR_WORKERS:-auto}
+      OCR_MAX_CONCURRENT: ${OCR_MAX_CONCURRENT:-auto}
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     depends_on:

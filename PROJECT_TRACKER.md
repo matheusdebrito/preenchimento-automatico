@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 27/10/2026. Primeiro serviço: transferência de propriedade de moto aquática. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
+> Atualização: 28/10/2026. Primeiro serviço: transferência de propriedade de moto aquática. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de OCR abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -22,7 +22,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável de formulár
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade migra para DocumentObservation/Extractor/Evidence/Resolver; TIE/residência/venda ainda usam adaptador legado; corpus amplo pendente |
+| 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade, TIE/TIEM e residência usam extração estruturada/semântica; venda ainda usa adaptador legado; corpus amplo pendente |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
@@ -31,7 +31,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável de formulár
 | 12 | Segurança de produção e segredos | 11 | [ ] Pendente |
 | 13 | LGPD, políticas e retenção | 09, 11 e revisão responsável | [ ] Pendente |
 | 14 | Observabilidade, backup e recuperação | 11, 12 | [ ] Pendente |
-| 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente |
+| 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
 | 18 | Expansão de serviços | 17 e decisão | [ ] Pendente |
@@ -76,7 +76,8 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Migrar TIE e comprovante de residência do adaptador `suggestFields()` para extractors independentes; documento de venda permanece como último consumidor legado.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
-- [ ] Completar isolamento de decodificadores, limites reais de CPU/RAM, fuzzing, carga e comportamento sob interrupção.
+- [ ] Completar isolamento de decodificadores, limites reais de RAM, fuzzing, carga e comportamento sob interrupção.
+- [x] Implementar concorrência OCR adaptativa por CPU: detectar afinidade/quota do container, reservar CPU, dimensionar workers/threads, limitar fila e manter overrides por ambiente. Isso não substitui benchmark nem homologação de capacidade.
 - [ ] Homologar o OCR junto ao restante do serviço sem remover revisão humana nem confundir qualidade OCR com aprovação dos formulários.
 
 **Aceite:** extração rastreável, resultados conservadores e falhas tratadas; confiança medida e revisão humana preservada. A fase continua aberta.
@@ -225,3 +226,18 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Regressão com documentos de referência:** os dois modelos de TIE e o comprovante presentes em `documentos/` foram incorporados a um teste de integração que nunca imprime texto OCR nem valores extraídos; somente motor utilizado, tempo, páginas, quantidade de linhas e IDs canônicos encontrados. O objetivo é impedir que uma otimização futura torne a leitura mais rápida sacrificando os campos centrais.
 
 **Validação:** backend e frontend já passaram em typecheck, lint, testes unitários e build na branch. A integração real com Paddle/Poppler e o smoke do Compose devem ser registrados após o CI final desta entrega.
+
+
+## 14. Registro de execução — 28/10/2026, capacidade OCR adaptativa
+
+**Motivo:** o serviço PaddleOCR possuía um `OCR_LOCK` global que serializava toda inferência, enquanto a API rejeitava acima de duas extrações simultâneas. A máquina podia possuir mais vCPUs sem que o OCR aproveitasse essa capacidade.
+
+**Implementado:** novo `ocr-service/tuning.py` detecta CPUs efetivamente disponíveis por afinidade e quota de cgroup, reserva 1 CPU em máquinas até 4 vCPU e 2 CPUs acima disso, limita o modo automático a no máximo 4 workers e distribui até 4 threads por worker. Cada worker possui uma instância PaddleOCR própria; nenhuma instância é usada simultaneamente por duas requisições. O serviço mantém fila limitada por semáforo e devolve `429 ocr_busy` quando a capacidade total ativa+espera estiver esgotada.
+
+**Coordenação com a API:** `backend/src/modules/jobs/ocr.ts` calcula um limite de requisições OCR em voo a partir da mesma política de workers, com override `OCR_MAX_CONCURRENT`. O objetivo é manter o pool alimentado sem permitir acúmulo ilimitado no processo Node.
+
+**Operação:** `compose.yaml` e `.env.example` aceitam `OCR_RESERVED_CPUS`, `OCR_MAX_WORKERS`, `OCR_WORKERS`, `OCR_CPU_THREADS`, `OCR_QUEUE_DEPTH` e `OCR_MAX_CONCURRENT`. O endpoint interno `/health` do OCR expõe somente capacidade calculada, sem texto ou dados documentais. O smoke test valida esses metadados e a inferência repetida.
+
+**Testes adicionados:** testes unitários Python cobrem perfis automáticos de 2/4/8/12/16 CPUs, overrides e preservação de ao menos uma CPU utilizável; teste TypeScript cobre o limite adaptativo da API. O CI passa a executar o teste puro de tuning antes de construir o PaddleOCR e corrige a detecção de alterações para o arquivo real `compose.yaml`.
+
+**Ainda não verificado:** benchmark de throughput e consumo real de RAM/CPU em VPS de 4/8/12+ vCPU, comportamento sob dezenas de uploads simultâneos, limites de memória do container e perfil ótimo por modelo de CPU. Portanto a Fase 15 permanece pendente e nenhuma quantidade de usuários simultâneos é homologada por esta entrega.
