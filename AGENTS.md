@@ -63,8 +63,8 @@ Para cada mudança:
 
 - Não usar o primeiro CI do PR como substituto de validação local/da branch.
 - Backend/document-understanding: executar `npm run verify:document-understanding` em `backend/` antes do push final.
-- Mudanças em OCR, `document-understanding`, documentos de referência, aliases, geometria ou validadores exigem também o **CI completo na própria branch antes de abrir o PR**. O workflow `CI` suporta `workflow_dispatch` e compara a branch inteira contra `main`.
-- Com GitHub CLI, após push: `gh workflow run CI --ref <branch>` e acompanhar até conclusão. Pela interface: Actions -> CI -> Run workflow -> selecionar a branch.
+- Mudanças em OCR, `document-understanding`, documentos de referência, aliases, geometria ou validadores exigem também o workflow manual **Pre-PR OCR** na própria branch antes de abrir o PR.
+- Com GitHub CLI, após push: `gh workflow run pre-pr-ocr.yml --ref <branch>` e acompanhar até conclusão. Pela interface: Actions -> Pre-PR OCR -> Run workflow -> selecionar a branch.
 - Só abrir/marcar PR como pronto após esse preflight ficar verde. Se o ambiente não permitir executar o preflight, declarar a limitação e manter o PR como não validado; não assumir que testes sintéticos equivalem ao OCR real.
 - Ao alterar expectativas de documentos de referência, primeiro reproduzir a saída real e provar a causa. Nunca mudar `FOUND`/ `NOT_FOUND` apenas para refletir o resultado desejado.
 - Todo bug OCR real deve ganhar: (1) regressão determinística em `DocumentObservation`; (2) quando houver fixture pública equivalente, expectativa no teste de referência real.
