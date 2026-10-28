@@ -6,7 +6,7 @@ import type {
 } from '../contracts.js';
 import { anchoredValue, cleanText, normalizeText, toEvidence, uniqueLineValue } from '../extractor-utils.js';
 
-const streetPrefix = /^(?:RUA|R\.|AVENIDA|AV\.|AV |ESTRADA|EST\.|RODOVIA|ROD\.|TRAVESSA|TV\.|ALAMEDA|AL\.|PRA[CÇ]A|PRACA|LARGO|VIELA|BECO)\b/i;
+const streetPrefix = /^(?:RUA|R\.|R |AVENIDA|AV\.|AV |ESTRADA|EST\.|EST |RODOVIA|ROD\.|ROD |TRAVESSA|TV\.|TV |ALAMEDA|AL\.|AL |PRA[CÇ]A|PRACA|LARGO|VIELA|BECO)\b/i;
 const labelLike = (value: string): boolean =>
   /^(?:CEP|ENDERECO|LOGRADOURO|CIDADE|MUNICIPIO|BAIRRO|DISTRITO|UF|ESTADO|NUMERO|COMPLEMENTO)\b/
     .test(normalizeText(value));
