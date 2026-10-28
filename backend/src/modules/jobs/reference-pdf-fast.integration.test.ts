@@ -37,7 +37,7 @@ async function inspectFast(
   }));
 }
 
-describe.skipIf(!enabled).sequential('camada textual dos PDFs de referência', () => {
+describe.skipIf(!enabled)('camada textual dos PDFs de referência', () => {
   it('inspeciona somente estrutura e IDs canônicos', async () => {
     await inspectFast('documentos/tie/TIE digital modelo.pdf', 'tie', 'tie', 'vessel');
     await inspectFast('documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
