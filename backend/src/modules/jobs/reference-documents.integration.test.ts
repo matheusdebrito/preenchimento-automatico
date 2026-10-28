@@ -32,6 +32,31 @@ async function inspect(
     subjectRole,
   });
   const fields = new Set(evidence.map((item) => item.fieldId));
+  const motorDiagnostics = evidence
+    .filter((item) => item.fieldId === 'vessel.motorSerial' ||
+      item.fieldId === 'vessel.motorManufacturerBrandModel')
+    .map((item) => {
+      const normalized = item.value.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+      return {
+        fieldId: item.fieldId,
+        method: item.method,
+        lineIds: item.lineIds,
+        length: normalized.length,
+        letters: /[A-Z]/.test(normalized),
+        digits: /\d/.test(normalized),
+        digitsOnly: /^\d+$/.test(normalized),
+        looksYear: /^(?:19|20)\d{2}$/.test(normalized),
+        looksDate: /^\d{2}[./-]\d{2}[./-]\d{2,4}$/.test(normalized),
+        motorMarker: /^(?:MOTOR|ENGINE)\s*\d/.test(normalized),
+      };
+    });
+  if (motorDiagnostics.length) {
+    console.log('[REFERENCE_MOTOR_DIAG]', JSON.stringify({
+      file: relativePath.split('/').at(-1),
+      candidates: motorDiagnostics,
+    }));
+  }
   const lineCount = extraction.observation.pages.reduce(
     (sum, page) => sum + page.lines.length, 0);
 
