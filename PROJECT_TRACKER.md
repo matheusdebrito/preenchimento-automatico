@@ -197,3 +197,16 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Validação:** testes sintéticos adicionados para comprador, vendedor, rótulos inline, valores abaixo do rótulo, rejeição de CPF/data e ambiguidade de órgão emissor. CI completo deve ser registrado após execução do último commit; até lá a alteração está implementada, mas não declarada validada integralmente.
 
 **Limite:** o perfil ainda é `identity`, não um `RgExtractor` específico. A separação RG/CNH continua pendente para evitar inferência silenciosa do tipo documental.
+
+
+## 12. Registro de execução — 27/10/2026, simplificação para um único motor
+
+**Decisão de produto/domínio:** o MVP passa a trabalhar com apenas um motor. O rótulo impresso `Motor/Marca` representa somente a **marca do motor**, mapeada em `vessel.motorBrand`. Potência e número de série permanecem separados em `vessel.motorPower` e `vessel.motorSerial`.
+
+**Removido do domínio ativo:** `vessel.motor1Choice`, `vessel.motor2Choice`, `vessel.motor3Choice`, `vessel.motor4Choice` e todos os campos `motor2*`, `motor3*`, `motor4*`. O mapeamento da autorização de transferência mantém apenas o conjunto único de marca/potência/série do primeiro bloco.
+
+**Impacto no mapeamento:** `autorizacao-transferencia-ma-v1` passa de 42 para 25 posições ativas, e o total documentado dos seis formulários passa de 135 para 118 posições. Isso não representa homologação do PDF; o mapeamento continua DRAFT e sujeito à revisão visual/normativa.
+
+**Regra de evolução:** suporte futuro a múltiplos motores exige nova decisão arquitetural e deve preferir uma coleção estruturada de motores em vez de reintroduzir campos numerados espalhados pelo domínio.
+
+**Validação:** teste de catálogo impede a reintrodução acidental dos campos numerados de motor no MVP. CI completo deve ser registrado após a execução do último commit.
