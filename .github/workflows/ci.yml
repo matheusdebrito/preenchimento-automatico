@@ -65,17 +65,10 @@ jobs:
             echo "reference=$reference"
           } >> "$GITHUB_OUTPUT"
 
-  checks:
+  backend-checks:
     needs: detect-changes
-    if: >-
-      github.event_name == 'push' ||
-      (matrix.package == 'backend' && needs.detect-changes.outputs.backend == 'true') ||
-      (matrix.package == 'frontend' && needs.detect-changes.outputs.frontend == 'true')
+    if: github.event_name == 'push' || needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: [backend, frontend]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -84,24 +77,56 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+          cache-dependency-path: backend/package-lock.json
       - name: Install locked dependencies
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm ci
       - name: Audit production dependencies
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm audit --omit=dev --audit-level=high
       - name: Typecheck
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm run typecheck
       - name: Lint
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm run lint
       - name: Tests
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm test
       - name: Build
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
+        run: npm run build
+
+  frontend-checks:
+    needs: detect-changes
+    if: github.event_name == 'push' || needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Audit production dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Tests
+        working-directory: frontend
+        run: npm test
+      - name: Build
+        working-directory: frontend
         run: npm run build
 
   postgres-integration:
