@@ -1,65 +1,27 @@
-import { promisify } from 'node:util';
-import { execFile as execFileCallback } from 'node:child_process';
-import { readdir, rm, stat } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { StoredDocument } from './job-store.js';
 import { isValidCpf, isValidBrazilianDate } from '../catalog/field-validation.js';
-import { parseIdentityTsv, readIdentityImage, selectSpatialIdentityName } from './identity-ocr.js';
-import { extractPaddleText } from './paddle-ocr.js';
+import { extractPaddleDocument } from './paddle-ocr.js';
+import type { PaddleOcrResult } from './paddle-ocr.js';
 
-const execFile = promisify(execFileCallback);
 let active = 0;
 const MAX_CONCURRENT = 2;
-const MAX_RASTER_PAGE_BYTES = 16 * 1024 * 1024;
-const MAX_RASTER_TOTAL_BYTES = 48 * 1024 * 1024;
 
-export type OcrEngine = 'paddleocr' | 'tesseract' | 'pdf-text';
+export type OcrEngine = 'paddleocr';
 
 export interface OcrExtraction {
   text: string;
   engine: OcrEngine;
+  paddle: PaddleOcrResult;
 }
 
-/** Guard the disk footprint of Poppler output before Tesseract decodes it. */
-export function validateRasterBudget(pageSizes: readonly number[]): void {
-  if (pageSizes.length < 1 || pageSizes.length > 5) {
-    throw new Error('Quantidade de páginas rasterizadas não suportada.');
-  }
-  let total = 0;
-  for (const size of pageSizes) {
-    if (!Number.isSafeInteger(size) || size < 1 || size > MAX_RASTER_PAGE_BYTES) {
-      throw new Error('Página rasterizada excede limite de armazenamento para OCR.');
-    }
-    total += size;
-    if (total > MAX_RASTER_TOTAL_BYTES) {
-      throw new Error('Conjunto de páginas rasterizadas excede limite para OCR.');
-    }
-  }
-}
-
-
-async function run(command: string, args: readonly string[], timeout = 15_000): Promise<string> {
-  const { stdout } = await execFile(command, [...args], {
-    timeout, maxBuffer: 256 * 1024,
-    // Only the variables required by document decoders. Never pass DB credentials
-    // or application tokens into document-processing subprocesses.
-    env: {
-      PATH: process.env.PATH ?? '/usr/bin:/bin',
-      LC_ALL: 'C', OMP_THREAD_LIMIT: '1',
-      ...(process.env.TESSDATA_PREFIX ? { TESSDATA_PREFIX: process.env.TESSDATA_PREFIX } : {}),
-    },
-  });
-  return stdout;
-}
-
-/** Plain-text compatibility helper; image extraction uses TSV evidence. */
+/** Plain-text compatibility helper used by legacy parser tests only. */
 export function shouldRetryIdentityLayout(text: string, source: string): boolean {
   const fields = suggestFields(text, source);
   const nameId = source === 'seller-identity' ? 'seller.fullName' : 'person.fullName';
   return !fields[nameId] || Object.keys(fields).length < 2;
 }
 
-/** Plain-text compatibility helper; not used to rank image-name candidates. */
+/** Plain-text compatibility helper used by legacy parser tests only. */
 export function chooseIdentityLayout(primary: string, alternative: string, source: string): string {
   const first = suggestFields(primary, source);
   const second = suggestFields(alternative, source);
@@ -70,74 +32,22 @@ export function chooseIdentityLayout(primary: string, alternative: string, sourc
   return Object.keys(second).length > Object.keys(first).length ? alternative : primary;
 }
 
-/** Name recovery uses relative geometry, never fixed pixel regions. */
-export function spatialIdentityName(tsv: string, source: string): string | null {
-  return selectSpatialIdentityName([parseIdentityTsv(tsv)], suggestFields, source);
-}
-
-async function readImage(
-  path: string, source: string, tempDir: string, kind: 'png' | 'jpeg',
-): Promise<string> {
-  if (source === 'buyer-identity' || source === 'seller-identity') {
-    return readIdentityImage(path, kind, source, tempDir, suggestFields, run);
-  }
-  return run('tesseract', [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
-}
-
-async function extractFallback(doc: StoredDocument, tempDir: string): Promise<OcrExtraction> {
-  if (doc.kind !== 'pdf') {
-    return {
-      text: await readImage(doc.path, doc.requirementId, tempDir, doc.kind),
-      engine: 'tesseract',
-    };
-  }
-  const direct = await run('pdftotext', ['-layout', doc.path, '-'], 15_000);
-  if (direct.trim().length >= 40) return { text: direct, engine: 'pdf-text' };
-  const prefix = join(tempDir, doc.id + '-page');
-  try {
-    await run('pdftoppm', ['-f', '1', '-l', '5', '-r', '160', '-png', doc.path, prefix], 30_000);
-    const pages = (await readdir(tempDir))
-      .filter((name) => name.startsWith(doc.id + '-page') && name.endsWith('.png')).sort();
-    if (pages.length === 0) throw new Error('PDF não pôde ser convertido para OCR.');
-    // A compressed 10 MB PDF can expand to much larger raster files.
-    const pageStats = await Promise.all(pages.map((page) => stat(join(tempDir, page))));
-    validateRasterBudget(pageStats.map((page) => page.size));
-    const texts: string[] = [];
-    for (const page of pages) {
-      texts.push(await readImage(join(tempDir, page), doc.requirementId, tempDir, 'png'));
-    }
-    return { text: texts.join('\n'), engine: 'tesseract' };
-  } finally {
-    // Clean partial page images even when pdftoppm fails or times out.
-    const files = await readdir(tempDir).catch(() => []);
-    for (const filename of files) {
-      if (filename.startsWith(doc.id + '-page') && filename.endsWith('.png')) {
-        await rm(join(tempDir, filename), { force: true });
-      }
-    }
-  }
-}
-
 export async function extractTextWithEngine(
   doc: StoredDocument,
-  tempDir: string,
+  _tempDir: string,
 ): Promise<OcrExtraction> {
   if (active >= MAX_CONCURRENT) throw new Error('OCR ocupado. Tente novamente.');
+  if (!process.env.PADDLE_OCR_URL) {
+    throw new Error('PaddleOCR não configurado.');
+  }
   active++;
   try {
-    if (process.env.PADDLE_OCR_URL) {
-      try {
-        return {
-          text: (await extractPaddleText(doc)).slice(0, 50_000),
-          engine: 'paddleocr',
-        };
-      } catch {
-        // Keep the proven local engine as a resilience fallback. A failed
-        // Paddle sidecar must not make an otherwise reviewable job unusable.
-      }
-    }
-    const fallback = await extractFallback(doc, tempDir);
-    return { ...fallback, text: fallback.text.slice(0, 50_000) };
+    const extracted = await extractPaddleDocument(doc);
+    return {
+      text: extracted.text.slice(0, 50_000),
+      engine: 'paddleocr',
+      paddle: extracted.result,
+    };
   } finally {
     active--;
   }
