@@ -59,6 +59,16 @@ Para cada mudança:
 4. **Validar:** executar comandos existentes relevantes (lint, typecheck, testes, build e verificações de segurança). Corrigir causa-raiz antes de avançar.
 5. **Relatar:** informar o que mudou, o que foi realmente executado, resultados, limitações, riscos residuais e próximos passos.
 
+### Gate obrigatório antes de abrir PR
+
+- Não usar o primeiro CI do PR como substituto de validação local/da branch.
+- Backend/document-understanding: executar `npm run verify:document-understanding` em `backend/` antes do push final.
+- Mudanças em OCR, `document-understanding`, documentos de referência, aliases, geometria ou validadores exigem também o **CI completo na própria branch antes de abrir o PR**. O workflow `CI` suporta `workflow_dispatch` e compara a branch inteira contra `main`.
+- Com GitHub CLI, após push: `gh workflow run CI --ref <branch>` e acompanhar até conclusão. Pela interface: Actions -> CI -> Run workflow -> selecionar a branch.
+- Só abrir/marcar PR como pronto após esse preflight ficar verde. Se o ambiente não permitir executar o preflight, declarar a limitação e manter o PR como não validado; não assumir que testes sintéticos equivalem ao OCR real.
+- Ao alterar expectativas de documentos de referência, primeiro reproduzir a saída real e provar a causa. Nunca mudar `FOUND`/ `NOT_FOUND` apenas para refletir o resultado desejado.
+- Todo bug OCR real deve ganhar: (1) regressão determinística em `DocumentObservation`; (2) quando houver fixture pública equivalente, expectativa no teste de referência real.
+
 Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custos ou mudanças estruturais relevantes, solicitar aprovação antes de executar. Não avançar para outra etapa enquanto erros introduzidos pela etapa atual estiverem pendentes.
 
 ## 2.2. QA do mesmo serviço real — sem homologação implícita
