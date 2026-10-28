@@ -61,6 +61,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*REGISTRO\s+DA\s+EMBARCA[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
     validate: registration,
   },
   {
