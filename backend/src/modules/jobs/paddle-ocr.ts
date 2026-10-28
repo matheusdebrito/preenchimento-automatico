@@ -93,13 +93,14 @@ export async function runPaddleOcrBuffer(
   bytes: Buffer,
   kind: DocumentKind,
   url = process.env.PADDLE_OCR_URL,
+  timeoutMs = kind === 'pdf' ? 120_000 : 75_000,
 ): Promise<PaddleOcrResult> {
   if (!url) throw new Error('PaddleOCR não configurado.');
   const response = await fetch(new URL('/ocr', url), {
     method: 'POST',
     headers: { 'Content-Type': contentType(kind), 'Content-Length': String(bytes.length) },
     body: bytes,
-    signal: AbortSignal.timeout(kind === 'pdf' ? 120_000 : 75_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) throw new Error('PaddleOCR indisponível: HTTP ' + response.status);
   return parseResult(await response.json());
