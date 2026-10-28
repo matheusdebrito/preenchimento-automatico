@@ -18,21 +18,21 @@ Para alterações gerais do backend, manter também `npm test`. Para frontend al
 
 ## 2. Validação da branch no mesmo ambiente do CI
 
-Depois do push da branch e **antes de abrir o PR**, executar o workflow `CI` manualmente na branch.
+Depois do push da branch e **antes de abrir o PR**, executar o workflow manual `Pre-PR OCR` na branch.
 
 Com GitHub CLI:
 
 ```bash
-gh workflow run CI --ref NOME_DA_BRANCH
+gh workflow run pre-pr-ocr.yml --ref NOME_DA_BRANCH
 ```
 
-Ou pela interface do GitHub: **Actions -> CI -> Run workflow -> selecionar a branch**.
+Ou pela interface do GitHub: **Actions -> Pre-PR OCR -> Run workflow -> selecionar a branch**.
 
-No evento `workflow_dispatch`, o job `detect-changes` compara `origin/main...HEAD`, portanto valida todas as alterações da branch e não apenas o último commit.
+Esse workflow é separado do CI principal para não aumentar o risco de quebrar o pipeline de PR. Ele executa os testes determinísticos de document-understanding e o OCR real dos documentos públicos de referência com PaddleOCR.
 
 ## 3. Regra especial para OCR/documentos
 
-Alterações em qualquer um destes caminhos exigem o preflight completo da branch:
+Alterações em qualquer um destes caminhos exigem o `Pre-PR OCR` da branch:
 
 - `ocr-service/`
 - `backend/src/modules/document-understanding/`
