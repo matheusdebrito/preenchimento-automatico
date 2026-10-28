@@ -2,7 +2,10 @@ import { stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { extractTextWithEngine } from './ocr.js';
-import { extractDocumentEvidence } from '../document-understanding/registry.js';
+import {
+  assessDocumentFields,
+  extractDocumentEvidence,
+} from '../document-understanding/registry.js';
 import type { DocumentTypeId, DocumentSubjectRole } from '../document-understanding/contracts.js';
 import type { StoredDocument } from './job-store.js';
 
@@ -25,12 +28,14 @@ async function inspect(
   };
 
   const extraction = await extractTextWithEngine(doc, process.cwd());
-  const evidence = extractDocumentEvidence(extraction.observation, {
+  const context = {
     documentId: doc.id,
     sourceId: requirementId,
     documentType,
     subjectRole,
-  });
+  } as const;
+  const evidence = extractDocumentEvidence(extraction.observation, context);
+  const assessments = assessDocumentFields(extraction.observation, context);
   const fields = new Set(evidence.map((item) => item.fieldId));
   const motorDiagnostics = evidence
     .filter((item) => item.fieldId === 'vessel.motorSerial' ||
@@ -55,6 +60,20 @@ async function inspect(
     console.log('[REFERENCE_MOTOR_DIAG]', JSON.stringify({
       file: relativePath.split('/').at(-1),
       candidates: motorDiagnostics,
+    }));
+  }
+  if (documentType === 'tie') {
+    const target = new Set([
+      'vessel.name', 'vessel.motorPower', 'vessel.motorSerial', 'vessel.motorBrand',
+    ]);
+    console.log('[REFERENCE_FIELD_STATUS]', JSON.stringify({
+      file: relativePath.split('/').at(-1),
+      fields: assessments.filter((item) => target.has(item.fieldId)).map((item) => ({
+        fieldId: item.fieldId,
+        status: item.status,
+        method: item.method ?? null,
+        anchor: item.anchor ?? null,
+      })),
     }));
   }
   const lineCount = extraction.observation.pages.reduce(
