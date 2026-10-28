@@ -146,6 +146,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
       /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
     ],
+    allowSequentialWithGeometry: false,
     validate: (value) => textValue(value, 2, 100),
   },
   {
@@ -176,6 +177,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
       /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
     ],
+    allowSequentialWithGeometry: false,
     validate: serial,
   },
   {
