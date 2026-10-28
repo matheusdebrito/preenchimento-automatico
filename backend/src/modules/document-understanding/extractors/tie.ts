@@ -81,6 +81,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'NOME DA EMBARCACAO',
     labels: [
       /^\s*NOME\s+(?:DA\s+)?EMBARCA[CÇ][AÃ]O(?:\s*\/\s*NAME\s+OF\s+VESSEL)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*N[O0]M[E3]\s+D[A4]\s+EMBARC[A-ZÀ-Ý0-9]{3,}\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*NOME(?:\s*\/\s*NAME)?\s+(?:DA\s+)?MOTO\s+AQU[AÁ]TICA\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*NOME\s+(?:DO\s+)?BARCO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
@@ -167,7 +168,9 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'MARCA DO MOTOR',
     labels: [
       /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR|NOME\s+(?:DO\s+)?FABRICANTE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*N[O0]M[E3]\s+(?:D[O0]\s+)?FABR[I1]CANTE\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    firstOccurrenceOnly: true,
     validate: (value) => textValue(value, 2, 60),
   },
   {
@@ -175,8 +178,10 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'POTENCIA DO MOTOR',
     labels: [
       /^\s*POT[EÊ]NCIA(?:\s+(?:DO\s+)?MOTOR)?(?:\s*\(HP\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*P[O0]T[EÊÉ3]NC[I1]A(?:\s*\(?\s*H[P8]\s*\)?)?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    firstOccurrenceOnly: true,
     validate: power,
   },
   {
@@ -184,8 +189,10 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'SERIE DO MOTOR',
     labels: [
       /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR|N[°ºO.]?\s+DO\s+1[°ºO.]?\s+MOTOR\s*\/\s*S[EÉ]RIE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:N\s*[°ºO.]?\s*)?D[O0]\s+1\s*[°ºO.]?\s+M[O0]T[O0]R\s*[/\-]?\s*S[EÉ3]R[I1]E\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    firstOccurrenceOnly: true,
     boundaries: [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
       /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
