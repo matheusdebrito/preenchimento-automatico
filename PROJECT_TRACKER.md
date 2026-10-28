@@ -151,3 +151,16 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Validação:** CI `40613739310` concluído com sucesso nos cinco jobs: backend, frontend, PostgreSQL, PDFs e Compose. O Compose construiu e iniciou a stack, executou PaddleOCR dentro do container final e validou também o fallback Tesseract. O primeiro CI da branch encontrou somente uma expectativa antiga de diagnóstico que não incluía o novo campo `engine`; o contrato de teste foi atualizado e a segunda execução passou integralmente.
 
 **Pendente:** testar no navegador com os documentos reais usados pelo usuário na Transferência. O CI usa apenas dados/fixtures sintéticos e não constitui medição de precisão nem homologação documental.
+
+
+## 9. Registro de execução — 27/10/2026, OCR Paddle-only na Transferência
+
+**Motivo:** no fluxo real de `transferencia-moto-aquatica`, o PaddleOCR conseguia reconhecer o nome, mas a aplicação ainda convertia a resposta estruturada para texto e dependia de regras herdadas do parser Tesseract para preencher `person.fullName`/`seller.fullName`.
+
+**Correção:** PaddleOCR passa a ser o único motor de OCR dos documentos semânticos. O backend usa diretamente linhas, bounding boxes, ordem e confiança do Paddle para identidade, mantendo comprador e vendedor separados. O reconhecimento aceita nome abaixo/à direita do rótulo, nome quebrado em múltiplas linhas, ausência de caixas e uma pequena falha OCR no rótulo `NOME`; rótulos de filiação e nome social continuam bloqueados.
+
+**Removido:** fallback Tesseract, implementação TSV/OSD antiga, testes Tesseract, modelo `por.traineddata`, ImageMagick usado pelo pipeline antigo e dependências Tesseract do container da API/CI. `poppler-utils` permanece apenas para validação segura de PDFs via `pdfinfo`, não como OCR.
+
+**Segurança:** todo valor extraído continua `REVIEW_REQUIRED`; nenhuma evidência textual adicional é persistida e documentos permanecem temporários.
+
+**Validação:** PR 6. Backend/frontend unitários e builds passaram no CI após remoção das dependências antigas. Validação final Docker/Paddle e PostgreSQL registrada no mesmo PR antes do merge.
