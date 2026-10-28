@@ -193,6 +193,41 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.hullId']).toBe('BR-MZL-123456');
   });
 
+  it('mantém campos do cabeçalho e motor em colunas densas sem conflito de frases sintéticas', () => {
+    const dense: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'NOME DA EMBARCAÇÃO', confidence: .99,
+            box: [120, 180, 520, 210], polygon: null },
+          { id: '0:1', page: 0, text: 'MAR AZUL', confidence: .98,
+            box: [250, 220, 390, 252], polygon: null },
+          { id: '0:2', page: 0, text: 'POTÊNCIA (HP)', confidence: .99,
+            box: [30, 340, 220, 370], polygon: null },
+          { id: '0:3', page: 0, text: 'Nº DO 1º MOTOR/SÉRIE', confidence: .99,
+            box: [230, 340, 560, 370], polygon: null },
+          { id: '0:4', page: 0, text: 'NOME FABRICANTE', confidence: .99,
+            box: [570, 340, 850, 370], polygon: null },
+          { id: '0:5', page: 0, text: '115', confidence: .98,
+            box: [95, 380, 150, 410], polygon: null },
+          { id: '0:6', page: 0, text: '6E5L1001234', confidence: .98,
+            box: [315, 380, 470, 410], polygon: null },
+          { id: '0:7', page: 0, text: 'YAMAHA', confidence: .98,
+            box: [655, 380, 770, 410], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(dense, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.name']).toBe('MAR AZUL');
+    expect(values['vessel.motorPower']).toBe('115');
+    expect(values['vessel.motorSerial']).toBe('6E5L1001234');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+  });
+
   it('rejeita identificador forte de casco como inscrição mesmo quando aparece junto ao rótulo', () => {
     const mixed: DocumentObservation = {
       engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
