@@ -292,4 +292,23 @@ describe('tieDocumentExtractor', () => {
       .toBe('6AN123456');
   });
 
+  it('não usa ordem sequencial do OCR para atravessar colunas quando há geometria', () => {
+    const multiColumn: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:49', page: 0, text: 'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+            confidence: .99, box: [420, 300, 760, 325], polygon: null },
+          // Próxima linha na ordem do OCR, mas em outra coluna do documento.
+          { id: '0:50', page: 0, text: '2022',
+            confidence: .98, box: [180, 340, 240, 365], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(multiColumn, context);
+    expect(evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
+  });
+
 });
