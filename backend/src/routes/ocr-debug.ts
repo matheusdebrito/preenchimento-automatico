@@ -7,10 +7,27 @@ import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { classifyDocument, validatePdfPages } from '../modules/jobs/document-validator.js';
 import { paddleTextForSource, runPaddleOcrBuffer } from '../modules/jobs/paddle-ocr.js';
 import { suggestFields } from '../modules/jobs/ocr.js';
+import { paddleToObservation } from '../modules/document-understanding/paddle-observation.js';
+import { extractDocumentEvidence } from '../modules/document-understanding/registry.js';
+import type { DocumentSubjectRole, DocumentTypeId } from '../modules/document-understanding/contracts.js';
 
 const SOURCES = new Set([
   'buyer-identity', 'seller-identity', 'tie', 'residence-proof', 'sale-document',
 ]);
+
+function extractionProfile(source: string): {
+  documentType: DocumentTypeId;
+  subjectRole: DocumentSubjectRole;
+} | null {
+  if (source === 'buyer-identity') return { documentType: 'identity', subjectRole: 'person' };
+  if (source === 'seller-identity') return { documentType: 'identity', subjectRole: 'seller' };
+  if (source === 'tie') return { documentType: 'tie', subjectRole: 'vessel' };
+  if (source === 'residence-proof') {
+    return { documentType: 'residence-proof', subjectRole: 'person' };
+  }
+  if (source === 'sale-document') return { documentType: 'sale-document', subjectRole: 'person' };
+  return null;
+}
 
 export function registerOcrDebugRoutes(app: FastifyInstance, pool?: Database): void {
   async function actor(req: FastifyRequest): Promise<void> {
@@ -41,8 +58,22 @@ export function registerOcrDebugRoutes(app: FastifyInstance, pool?: Database): v
       }
       const result = await runPaddleOcrBuffer(req.body, kind);
       const text = paddleTextForSource(result, req.params.source);
-      const fields = Object.fromEntries(Object.entries(suggestFields(text, req.params.source))
-        .map(([id, candidate]) => [id, candidate.value]));
+      const profile = extractionProfile(req.params.source);
+      const structured = profile
+        ? extractDocumentEvidence(paddleToObservation(result), {
+            documentId: 'inspection',
+            sourceId: req.params.source,
+            ...profile,
+          })
+        : [];
+      const legacy = profile?.documentType === 'sale-document'
+        ? Object.entries(suggestFields(text, req.params.source))
+          .map(([fieldId, candidate]) => ({ fieldId, value: candidate.value }))
+        : [];
+      const fields = Object.fromEntries([
+        ...legacy.map((item) => [item.fieldId, item.value] as const),
+        ...structured.map((item) => [item.fieldId, item.value] as const),
+      ]);
       return {
         engine: result.engine,
         version: result.version,
