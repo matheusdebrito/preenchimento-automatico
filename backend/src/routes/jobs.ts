@@ -14,7 +14,6 @@ import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '.
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
 import { extractTextWithEngine, suggestFields, identityNameStage } from '../modules/jobs/ocr.js';
-import { paddleToObservation } from '../modules/document-understanding/paddle-observation.js';
 import { extractDocumentEvidence } from '../modules/document-understanding/registry.js';
 import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
 import type { FieldEvidence } from '../modules/document-understanding/contracts.js';
@@ -189,7 +188,7 @@ export function registerJobRoutes(
 
         const extraction = await extractTextWithEngine(document, store.directory(job));
         const text = extraction.text;
-        const observation = paddleToObservation(extraction.paddle);
+        const observation = extraction.observation;
         const context = {
           documentId: document.id,
           sourceId: document.requirementId,
@@ -201,9 +200,8 @@ export function registerJobRoutes(
         // Transitional adapter: document types not migrated to their own extractor
         // still use the conservative labelled-text rules. No new document type may
         // be added here; migrate it to document-understanding instead.
-        const legacy = requirement.extraction.documentType === 'identity'
-          ? []
-          : Object.entries(suggestFields(text, document.requirementId)).map(
+        const legacy = requirement.extraction.documentType === 'sale-document'
+          ? Object.entries(suggestFields(text, document.requirementId)).map(
             ([fieldId, candidate]): FieldEvidence => ({
               fieldId,
               value: candidate.value,
@@ -215,7 +213,8 @@ export function registerJobRoutes(
               lineIds: [],
               status: 'REVIEW_REQUIRED',
             }),
-          );
+          )
+          : [];
         const documentEvidence = [...structured, ...legacy];
         evidence.push(...documentEvidence);
 
