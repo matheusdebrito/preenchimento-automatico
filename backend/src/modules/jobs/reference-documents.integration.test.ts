@@ -47,7 +47,7 @@ async function inspect(
   return fields;
 }
 
-describe.skipIf(!enabled).sequential('documentos de referência do repositório', () => {
+describe.skipIf(!enabled)('documentos de referência do repositório', () => {
   it('lê os dois modelos de TIE e preserva os identificadores centrais', async () => {
     for (const file of [
       'documentos/tie/TIE digital modelo.pdf',
