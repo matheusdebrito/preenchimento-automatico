@@ -14,6 +14,7 @@ import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '.
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
 import { extractTextWithEngine, suggestFields, shouldExtractDocument, identityNameStage } from '../modules/jobs/ocr.js';
+import { paddleIdentitySuggestions } from '../modules/jobs/paddle-ocr.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
 import { watermarkQaSample } from '../modules/pdf/qa-watermark.js';
 
@@ -167,7 +168,7 @@ export function registerJobRoutes(
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     job.stage = 'PROCESSING';
     // Do not publish partial OCR results when one document fails. The job can be
-    // retried from its uploaded files after an interrupted Tesseract process.
+    // retried from its uploaded files after an interrupted PaddleOCR request.
     const collected: Record<string, string> = {};
     const provenance: Record<string, string> = {};
     const conflicts = new Set<string>();
@@ -185,7 +186,10 @@ export function registerJobRoutes(
         }
         const extraction = await extractTextWithEngine(document, store.directory(job));
         const text = extraction.text;
-        const suggestions = suggestFields(text, document.requirementId);
+        const suggestions = {
+          ...suggestFields(text, document.requirementId),
+          ...paddleIdentitySuggestions(extraction.paddle, document.requirementId),
+        };
         // OCR rules may recognize fields absent from the selected form.
         // Never offer or persist a field that this service cannot review.
         const applicable = Object.entries(suggestions)
