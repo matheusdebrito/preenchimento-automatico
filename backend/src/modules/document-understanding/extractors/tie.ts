@@ -7,7 +7,7 @@ import type {
 import { anchoredValue, normalizeText, toEvidence, uniqueLineValue, withSpatialPhrases } from '../extractor-utils.js';
 
 const labelLike = (value: string): boolean =>
-  /^(?:NOME|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|MARCA|POT|S[EÉ]RIE|CP\/DL\/AG|AUTORIDADE)\b/
+  /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|MARCA|POT|S[EÉ]RIE|CP\/DL\/AG|AUTORIDADE)\b/
     .test(normalizeText(value));
 
 const textValue = (value: string, min = 2, max = 100): boolean => {
@@ -55,7 +55,8 @@ export const tieDocumentExtractor: DocumentExtractor = {
     ], 'INSCRICAO', registration));
 
     push(evidence, field(source, context, 'vessel.name', [
-      /^\s*NOME(?:\s*\/\s*NAME)?\s+(?:DA\s+)?(?:EMBARCA[CÇ][AÃ]O|EMBARCA[CÇ][AÃ]O\s*\/\s*VESSEL|MOTO\s+AQU[AÁ]TICA)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*NOME\s+(?:DA\s+)?EMBARCA[CÇ][AÃ]O(?:\s*\/\s*NAME\s+OF\s+VESSEL)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*NOME(?:\s*\/\s*NAME)?\s+(?:DA\s+)?MOTO\s+AQU[AÁ]TICA\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*NOME\s+(?:DO\s+)?BARCO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'NOME DA EMBARCACAO', (value) => textValue(value, 2, 100)));
 

@@ -66,4 +66,24 @@ describe('tieDocumentExtractor', () => {
     ]), context);
     expect(evidence.some((item) => item.fieldId === 'vessel.registration')).toBe(false);
   });
+
+  it('trata o rótulo bilíngue completo como rótulo e pega o nome abaixo', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NOME DA EMBARCAÇÃO / NAME OF VESSEL',
+      'MAR AZUL',
+    ]), context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.name')?.value)
+      .toBe('MAR AZUL');
+  });
+
+  it('não usa NAME OF VESSEL como nome da embarcação quando o rótulo vem fragmentado', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NOME DA EMBARCAÇÃO',
+      'NAME OF VESSEL',
+      'MAR AZUL',
+    ]), context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.name')?.value)
+      .toBe('MAR AZUL');
+  });
+
 });
