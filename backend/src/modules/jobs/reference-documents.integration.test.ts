@@ -56,8 +56,10 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(digital.has('vessel.hullId')).toBe(true);
     expect(digital.has('vessel.grossTonnage')).toBe(true);
     expect(digital.has('vessel.activity')).toBe(true);
-    expect(digital.has('vessel.motorManufacturerBrandModel')).toBe(true);
-    expect(digital.has('vessel.motorSerial')).toBe(true);
+    // The public model masks motor manufacturer/model and serial with asterisks.
+    // A label or a neighboring field must never be promoted as the missing value.
+    expect(digital.has('vessel.motorManufacturerBrandModel')).toBe(false);
+    expect(digital.has('vessel.motorSerial')).toBe(false);
     expect(digital.has('vessel.passengerCount')).toBe(true);
 
     const legacy = await inspect(
