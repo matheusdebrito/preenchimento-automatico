@@ -22,7 +22,7 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — correção anterior passou no CI; usuário ainda relata nome vazio no formulário; diagnóstico local adicionado |
+| 06 | OCR e extração estruturada | 05 | [ ] Parcial — nome ausente confirmado na API; modelo português padronizado e smoke OCR no Docker adicionados; novo CI e reteste do usuário pendentes |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
@@ -61,6 +61,9 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Confirmar o CI completo do commit de código `401f3da`: backend, frontend, PostgreSQL, Compose e PDF aprovados na execução [40584518041](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40584518041).
 - [x] Adicionar console.log solicitado pelo usuário para fields/sources/diagnostics antes de entregar os dados ao formulário, somente em loopback com nameStage de QA; distinguir recuperação sem nova leitura. TypeScript isolado e 17 cenários locais com fetch simulado aprovados.
 - [x] Confirmar no CI os 24 casos de `api.ocr-console.test.ts` (73 testes frontend no total), typecheck, lint e build, além dos demais jobs: execução [40606288813](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40606288813), commit `71a636a`, completed/success.
+- [x] Localizar a ausência no retorno de uma nova extração: somente person.cpf e nameStage label_not_detected, conforme console do usuário. Não atribuir o 404 ao OCR sem URL.
+- [x] Conferir que o modelo local é o blob oficial de tessdata_fast/4.1.0; comparar com a origem tessdata do pacote Alpine. Implementar instalador com SHA-256 obrigatório, preservando OSD/configs.
+- [ ] Executar o novo smoke de nome/CPF e hash dentro da imagem final da API e confirmar todos os jobs do novo CI. Teste adicionado não equivale a teste executado.
 - [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário; investigar a resposta real da API e o campo ainda vazio.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
@@ -100,3 +103,17 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **CI da entrega:** implementação `ba174e0`; primeiro CI [40606175520](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40606175520) apontou dois erros no-unexpected-multiline no teste novo, corrigidos em `71a636a1ae1364747433879864eeea83fecf3ad6`. O CI [40606288813](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40606288813) desse último commit terminou completed/success. Frontend: typecheck, lint (sem erros; aviso anterior em AuthProvider.tsx), 24 testes novos e 73 no total aprovados, build aprovado. Backend, PostgreSQL, Compose e amostras PDF também aprovados. A atualização final deste tracker é exclusivamente documental e não altera o código validado.
 
 **Operação e limites:** ver [QA do console OCR](docs/QA_OCR_CONSOLE.md). Atualizar somente o frontend para receber o log; não reconstruir a API por causa desta instrumentação. O log mostra os campos processados devolvidos pela API, não todo texto reconhecido pelo Tesseract. Resultado recuperado não equivale a nova análise. Falha de extração no ambiente do usuário permanece em investigação.
+
+## 6. Registro de execução — 27/10/2026, paridade do modelo OCR
+
+**Base:** `dde014a895710bfff6081a4bb72a3419f694a471`. A resposta de nova extração fornecida pelo usuário contém somente person.cpf e label_not_detected; não há nome para o frontend preencher. O 404 não identifica recurso e permanece sem causa determinada.
+
+**Evidência:** o arquivo português deste ambiente tem SHA-256 `c4932b937207a9514b7514d518b931a99938c02a28a5a5a553f8599ed58b7deb` e Git blob `e9f373e95c66b4bf557c263721ef31f78e5bc301`, conferido com o repositório oficial tessdata_fast/4.1.0. O pacote Alpine é construído a partir de tessdata. Essa divergência de preparação explica por que não se deveria prometer equivalência dos testes anteriores; ainda não demonstra a causa exata no computador do usuário.
+
+**Arquivos/implementação:** `backend/Dockerfile`, `backend/scripts/install-ocr-model.sh`, `backend/scripts/smoke-ocr-runtime.mjs`, fixture PNG inteiramente fictícia, `.github/workflows/ci.yml`, `docs/OCR_RUNTIME_PARITY.md` e este tracker. Mesmo modelo português com checksum obrigatório no Ubuntu/Alpine; OSD/configs preservados. Novo smoke executa extração real de nome/CPF dentro do container final em 0°/90° e verifica limpeza, papel e REVIEW_REQUIRED. Nenhuma alteração nos filtros de nomes, frontend, contrato HTTP, cadastro, banco ou cobrança.
+
+**Executado localmente:** `sh -n`, `node --check`, hash/blob do modelo, quatro casos do instalador com transporte simulado (download válido, reaproveitamento, checksum inválido preservando destino e limpeza, destino ausente), todos aprovados. Nenhum download real foi simulado como bem-sucedido. Docker não está instalado neste ambiente; clone público também não foi possível por rede, então os arquivos foram lidos e publicados pelo conector.
+
+**Ainda pendente nesta revisão:** novo CI completo e smoke real no container, reteste da foto no ambiente do usuário e navegador. Sem nova afirmação de que o nome do usuário já aparece. A foto anexada não é tratada como idêntica ao original do repositório. O CI não usa documentos pessoais.
+
+**Operação:** após integração e validação, atualizar a main e reconstruir somente a API. O modelo é instalado no build; editar TypeScript sem rebuild não troca traineddata. Comandos e limites em [paridade OCR](docs/OCR_RUNTIME_PARITY.md). A revisão humana continua obrigatória.
