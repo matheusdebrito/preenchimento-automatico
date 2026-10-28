@@ -90,6 +90,7 @@ Agrupa evidências por campo. Valores equivalentes podem reforçar a origem; val
 9. Não exigir classificação de layout para extrair campos que compartilham a mesma semântica.
 10. Um novo layout deve preferencialmente adicionar aliases/testes ao conceito existente, não duplicar o extractor.
 11. Classificação explícita só é necessária quando famílias diferentes possuem semântica ou regras incompatíveis.
+12. Perfis em `documentos/ancoras/*.json` são referência documental, não configuração executável. Somente aliases, direção e contexto explicitamente revisados podem ser promovidos para os conceitos canônicos; campos não mapeados são ignorados.
 
 ## Migração incremental
 
@@ -101,3 +102,10 @@ Agrupa evidências por campo. Valores equivalentes podem reforçar a origem; val
 - Etapa 6: separar famílias somente onde houver semântica incompatível; migrar documento de venda e eliminar o parser legado quando não houver consumidores.
 
 O parser legado pode existir durante a transição para tipos ainda não migrados, mas não pode receber novos tipos de documento.
+
+
+## Perfis de âncoras de referência
+
+Os JSONs em `documentos/ancoras/` ajudam a catalogar rótulos de layouts conhecidos, mas não
+são carregados diretamente pelo runtime. A política de promoção seletiva, incluindo itens
+aceitos e descartados, está em [ANCHOR_PROFILES_CURATED_USAGE.md](ANCHOR_PROFILES_CURATED_USAGE.md).
