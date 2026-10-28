@@ -198,6 +198,8 @@ TIE, comprovante de residência e documento de venda ainda passam por um adaptad
 
 Detalhes e regras permanentes: [arquitetura de entendimento de documentos](docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md).
 
+TIE e comprovante de residência já usam extractors estruturados próprios. Para PDFs desses tipos, a API pode aproveitar diretamente uma camada textual com geometria quando ela já contém os campos centrais esperados; caso a camada esteja ausente, incompleta ou semanticamente insuficiente, a leitura cai automaticamente para PaddleOCR. Essa otimização não é aplicada ao RG/CNH enquanto o fluxo de identidade validado não tiver equivalência comprovada.
+
 ### Datas, OCR do BDMOTO e teste no serviço verdadeiro
 
 Os campos semânticos de data exibem `DD/MM/AAAA` automaticamente enquanto se digita; o backend continua a rejeitar datas inválidas. O OCR foi ampliado para sugerir separadamente `Cidade`, `Bairro`, `CEP`, `UF`, `Número` e `Complemento` quando os rótulos aparecem no comprovante. **Endereço é um campo distinto no PDF oficial BDMOTO** e não foi removido sem revisão visual. Campos ausentes, fotos ilegíveis e layouts desconhecidos continuam exigindo conferência manual. O backend limita sugestões aos campos da seleção atual.

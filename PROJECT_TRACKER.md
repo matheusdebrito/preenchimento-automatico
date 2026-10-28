@@ -73,7 +73,7 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Manter campos de revisão derivados dos `FormMapping.placements` dos formulários selecionados, sem lista paralela de campos por serviço.
 - [x] Ampliar o extractor transitório de identidade para número do documento e órgão emissor, usando âncoras semânticas/geometria e preservando comprador/vendedor em campos separados.
 - [ ] Separar RG e CNH em tipos documentais explícitos após implementar classificação/seleção confiável; o perfil `identity` permanece transitório.
-- [ ] Migrar TIE, comprovante de residência e documento de venda do adaptador `suggestFields()` para extractors independentes; novos tipos não podem ser adicionados ao parser legado.
+- [x] Migrar TIE e comprovante de residência do adaptador `suggestFields()` para extractors independentes; documento de venda permanece como último consumidor legado.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
 - [ ] Completar isolamento de decodificadores, limites reais de CPU/RAM, fuzzing, carga e comportamento sob interrupção.
@@ -210,3 +210,18 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Regra de evolução:** suporte futuro a múltiplos motores exige nova decisão arquitetural e deve preferir uma coleção estruturada de motores em vez de reintroduzir campos numerados espalhados pelo domínio.
 
 **Validação:** teste de catálogo impede a reintrodução acidental dos campos numerados de motor no MVP. CI completo deve ser registrado após a execução do último commit.
+
+
+## 13. Registro de execução — 27/10/2026, TIE, comprovante de residência e fast-path de PDF
+
+**Motivo:** após a migração arquitetural e a simplificação para um único motor, a `main` continha uma falha de lint no extractor de identidade e dois testes ainda acoplados aos antigos quatro motores. Além disso, TIE e comprovante de residência continuavam usando o parser textual legado, inadequado para os modelos realistas adicionados em `documentos/`.
+
+**Correção da base:** removida a expressão regular com escape desnecessário e atualizados os testes de mapeamento/validação para o domínio de um único motor. Nenhuma regra de múltiplos motores foi reintroduzida.
+
+**Entendimento estruturado:** adicionados `TieDocumentExtractor` e `ResidenceProofDocumentExtractor`, ambos sobre `DocumentObservation`. TIE produz evidências para inscrição, nome da embarcação, casco/HIN/CIN, ano, comprimento, lotação, marca, potência, série do motor e autoridade quando os rótulos/formatos permitem. Comprovante produz CEP, logradouro, número, complemento, bairro, cidade e UF. O comprovante não preenche `person.fullName`, pois o titular da conta não é prova suficiente de que seja a pessoa do processo.
+
+**Otimização conservadora:** PDFs de TIE, comprovante e documento de venda tentam primeiro `pdftotext -bbox-layout` para gerar a mesma representação espacial. A rota rápida é recusada quando a camada textual é ausente/pobre e então o fluxo usa PaddleOCR. Identidades continuam no Paddle para não alterar o comportamento já conferido no RG real.
+
+**Regressão com documentos de referência:** os dois modelos de TIE e o comprovante presentes em `documentos/` foram incorporados a um teste de integração que nunca imprime texto OCR nem valores extraídos; somente motor utilizado, tempo, páginas, quantidade de linhas e IDs canônicos encontrados. O objetivo é impedir que uma otimização futura torne a leitura mais rápida sacrificando os campos centrais.
+
+**Validação:** backend e frontend já passaram em typecheck, lint, testes unitários e build na branch. A integração real com Paddle/Poppler e o smoke do Compose devem ser registrados após o CI final desta entrega.

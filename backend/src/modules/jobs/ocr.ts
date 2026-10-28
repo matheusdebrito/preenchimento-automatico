@@ -2,16 +2,48 @@ import type { StoredDocument } from './job-store.js';
 import { isValidCpf, isValidBrazilianDate } from '../catalog/field-validation.js';
 import { extractPaddleDocument } from './paddle-ocr.js';
 import type { PaddleOcrResult } from './paddle-ocr.js';
+import { paddleToObservation } from '../document-understanding/paddle-observation.js';
+import type { DocumentObservation } from '../document-understanding/contracts.js';
+import { extractPdfTextObservation, observationText } from './pdf-text-observation.js';
+import { extractPdfPagesWithPaddle } from './pdf-paddle-pages.js';
+import { extractDocumentEvidence } from '../document-understanding/registry.js';
 
 let active = 0;
 const MAX_CONCURRENT = 2;
 
-export type OcrEngine = 'paddleocr';
+export function fastObservationIsSufficient(
+  doc: StoredDocument,
+  observation: DocumentObservation,
+): boolean {
+  if (doc.requirementId === 'tie') {
+    const fields = new Set(extractDocumentEvidence(observation, {
+      documentId: doc.id,
+      sourceId: doc.requirementId,
+      documentType: 'tie',
+      subjectRole: 'vessel',
+    }).map((item) => item.fieldId));
+    return ['vessel.registration', 'vessel.name', 'vessel.hullId']
+      .every((fieldId) => fields.has(fieldId));
+  }
+  if (doc.requirementId === 'residence-proof') {
+    const fields = new Set(extractDocumentEvidence(observation, {
+      documentId: doc.id,
+      sourceId: doc.requirementId,
+      documentType: 'residence-proof',
+      subjectRole: 'person',
+    }).map((item) => item.fieldId));
+    return fields.has('person.postalCode') && fields.has('person.address');
+  }
+  return false;
+}
+
+export type OcrEngine = 'paddleocr' | 'pdf-text';
 
 export interface OcrExtraction {
   text: string;
   engine: OcrEngine;
-  paddle: PaddleOcrResult;
+  observation: DocumentObservation;
+  paddle?: PaddleOcrResult;
 }
 
 /** Plain-text compatibility helper used by legacy parser tests only. */
@@ -36,18 +68,37 @@ export async function extractTextWithEngine(
   doc: StoredDocument,
   tempDir: string,
 ): Promise<OcrExtraction> {
-  void tempDir;
   if (active >= MAX_CONCURRENT) throw new Error('OCR ocupado. Tente novamente.');
   if (!process.env.PADDLE_OCR_URL) {
     throw new Error('PaddleOCR não configurado.');
   }
   active++;
   try {
+    const fast = await extractPdfTextObservation(doc);
+    if (fast && fastObservationIsSufficient(doc, fast)) {
+      return {
+        text: observationText(fast),
+        engine: 'pdf-text',
+        observation: fast,
+      };
+    }
+
+    if (doc.kind === 'pdf' &&
+      (doc.requirementId === 'tie' || doc.requirementId === 'residence-proof')) {
+      const observation = await extractPdfPagesWithPaddle(doc, tempDir, fast);
+      return {
+        text: observationText(observation),
+        engine: 'paddleocr',
+        observation,
+      };
+    }
+
     const extracted = await extractPaddleDocument(doc);
     return {
       text: extracted.text.slice(0, 50_000),
       engine: 'paddleocr',
       paddle: extracted.result,
+      observation: paddleToObservation(extracted.result),
     };
   } finally {
     active--;

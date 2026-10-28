@@ -14,9 +14,9 @@ import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './te
 type Step = 'questions' | 'files' | 'review' | 'download';
 type ExtractionDiagnostic = {
   requirementId: string;
-  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
   suggestionCount: number;
-  engine?: 'paddleocr';
+  engine?: 'paddleocr' | 'pdf-text';
   nameStage?: 'name_recognized' | 'name_not_mapped' |
     'label_seen_name_rejected' | 'label_not_detected';
 };
@@ -478,12 +478,13 @@ export function LiveFlowPage() {
                               ? item.suggestionCount + ' sugestão(ões) encontrada(s), sujeitas à revisão'
                               : item.outcome === 'no_text' ? 'nenhum texto legível identificado na imagem'
                                 : item.outcome === 'not_analyzed' ? 'não há extração automática configurada'
+                                  : item.outcome === 'read_failed' ? 'a leitura deste arquivo falhou; os demais documentos foram preservados'
                                   : item.outcome === 'no_applicable_fields'
                                     ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
                                     : 'texto detectado, mas nome/CPF/RG não foram identificados com segurança')}
                             {item.engine ? (
                               <span className="live-ocr-name-stage">
-                                {' · Motor: PaddleOCR'}
+                                {' · Leitura: ' + (item.engine === 'pdf-text' ? 'texto digital do PDF' : 'PaddleOCR')}
                               </span>
                             ) : null}
                             {item.nameStage ? (

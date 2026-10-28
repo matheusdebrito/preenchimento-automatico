@@ -14,7 +14,6 @@ import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '.
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
 import { extractTextWithEngine, suggestFields, identityNameStage } from '../modules/jobs/ocr.js';
-import { paddleToObservation } from '../modules/document-understanding/paddle-observation.js';
 import { extractDocumentEvidence } from '../modules/document-understanding/registry.js';
 import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
 import type { FieldEvidence } from '../modules/document-understanding/contracts.js';
@@ -175,6 +174,8 @@ export function registerJobRoutes(
     const diagnostics: ExtractionDiagnostic[] = [];
     const evidence: FieldEvidence[] = [];
     const reviewableFields = new Set(service.reviewFields.map((field) => field.id));
+    let attemptedDocuments = 0;
+    let failedDocuments = 0;
     try {
       for (const document of job.files) {
         const requirement = service.documentRequirements.find((item) =>
@@ -187,55 +188,75 @@ export function registerJobRoutes(
           continue;
         }
 
-        const extraction = await extractTextWithEngine(document, store.directory(job));
-        const text = extraction.text;
-        const observation = paddleToObservation(extraction.paddle);
-        const context = {
-          documentId: document.id,
-          sourceId: document.requirementId,
-          documentType: requirement.extraction.documentType,
-          subjectRole: requirement.extraction.subjectRole,
-        } as const;
+        attemptedDocuments++;
+        try {
+          const extraction = await extractTextWithEngine(document, store.directory(job));
+          const text = extraction.text;
+          const observation = extraction.observation;
+          const context = {
+            documentId: document.id,
+            sourceId: document.requirementId,
+            documentType: requirement.extraction.documentType,
+            subjectRole: requirement.extraction.subjectRole,
+          } as const;
 
-        const structured = extractDocumentEvidence(observation, context);
-        // Transitional adapter: document types not migrated to their own extractor
-        // still use the conservative labelled-text rules. No new document type may
-        // be added here; migrate it to document-understanding instead.
-        const legacy = requirement.extraction.documentType === 'identity'
-          ? []
-          : Object.entries(suggestFields(text, document.requirementId)).map(
-            ([fieldId, candidate]): FieldEvidence => ({
-              fieldId,
-              value: candidate.value,
-              confidence: null,
-              documentId: document.id,
-              sourceId: candidate.source,
-              page: 0,
-              method: 'legacy-labelled-text',
-              lineIds: [],
-              status: 'REVIEW_REQUIRED',
-            }),
-          );
-        const documentEvidence = [...structured, ...legacy];
-        evidence.push(...documentEvidence);
+          const structured = extractDocumentEvidence(observation, context);
+          // Transitional adapter: document types not migrated to their own extractor
+          // still use the conservative labelled-text rules. No new document type may
+          // be added here; migrate it to document-understanding instead.
+          const legacy = requirement.extraction.documentType === 'sale-document'
+            ? Object.entries(suggestFields(text, document.requirementId)).map(
+              ([fieldId, candidate]): FieldEvidence => ({
+                fieldId,
+                value: candidate.value,
+                confidence: null,
+                documentId: document.id,
+                sourceId: candidate.source,
+                page: 0,
+                method: 'legacy-labelled-text',
+                lineIds: [],
+                status: 'REVIEW_REQUIRED',
+              }),
+            )
+            : [];
+          const documentEvidence = [...structured, ...legacy];
+          evidence.push(...documentEvidence);
 
-        const recognized = Object.fromEntries(documentEvidence.map((item) => [
-          item.fieldId,
-          { value: item.value, source: item.sourceId, status: item.status },
-        ]));
-        const applicableCount = documentEvidence
-          .filter((item) => reviewableFields.has(item.fieldId)).length;
-        diagnostics.push({
-          requirementId: document.requirementId,
-          outcome: !text.trim() ? 'no_text'
-            : applicableCount > 0 ? 'suggested'
-              : documentEvidence.length > 0 ? 'no_applicable_fields'
-                : 'no_supported_labels',
-          suggestionCount: applicableCount,
-          engine: extraction.engine,
-          ...(isQaJob(job.serviceId) && requirement.extraction.documentType === 'identity'
-            ? { nameStage: identityNameStage(text,
-              document.requirementId, recognized, reviewableFields) } : {}),
+          const recognized = Object.fromEntries(documentEvidence.map((item) => [
+            item.fieldId,
+            { value: item.value, source: item.sourceId, status: item.status },
+          ]));
+          const applicableCount = documentEvidence
+            .filter((item) => reviewableFields.has(item.fieldId)).length;
+          diagnostics.push({
+            requirementId: document.requirementId,
+            outcome: !text.trim() ? 'no_text'
+              : applicableCount > 0 ? 'suggested'
+                : documentEvidence.length > 0 ? 'no_applicable_fields'
+                  : 'no_supported_labels',
+            suggestionCount: applicableCount,
+            engine: extraction.engine,
+            ...(isQaJob(job.serviceId) && requirement.extraction.documentType === 'identity'
+              ? { nameStage: identityNameStage(text,
+                document.requirementId, recognized, reviewableFields) } : {}),
+          });
+        } catch {
+          failedDocuments++;
+          diagnostics.push({
+            requirementId: document.requirementId,
+            outcome: 'read_failed',
+            suggestionCount: 0,
+          });
+        }
+      }
+
+      if (attemptedDocuments > 0 && failedDocuments === attemptedDocuments) {
+        job.stage = 'UPLOADED';
+        job.values = {};
+        job.sourceNotes = {};
+        job.diagnostics = diagnostics;
+        return reply.status(503).send({
+          error: 'ocr_failed', message: 'Não foi possível ler os documentos. Tente novamente.',
         });
       }
 

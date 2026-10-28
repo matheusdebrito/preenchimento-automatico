@@ -34,7 +34,9 @@ Um tipo de documento possui estratégia própria de entendimento. RG, CNH, TIE, 
 
 ### DocumentObservation
 
-É a representação neutra da saída do OCR: páginas, linhas, confiança e geometria. PaddleOCR é um produtor dessa observação; regras de domínio não devem depender da API específica do Paddle.
+É a representação neutra da leitura do documento: páginas, linhas, confiança e geometria. PaddleOCR é um produtor dessa observação, mas PDFs digitais podem produzir a mesma estrutura diretamente da camada textual confiável do PDF. Regras de domínio não dependem da API específica do Paddle nem do produtor da observação.
+
+Para PDFs de TIE, comprovante de residência e documento de venda, a aplicação pode tentar primeiro a camada textual com geometria. Essa rota rápida só é aceita quando há conteúdo textual suficiente; PDFs escaneados, vazios ou pobres caem automaticamente para PaddleOCR. Identidade permanece no Paddle até que a equivalência seja validada, preservando o fluxo real já homologado pelo usuário.
 
 ### DocumentExtractor
 
@@ -65,7 +67,7 @@ Agrupa evidências por campo. Valores equivalentes podem reforçar a origem; val
 - Etapa 1: contratos, observação neutra, resolver e extractor de identidade.
 - Etapa 2: retirar identidade do parser legado após regressões equivalentes.
 - Etapa 3: criar classificação/tipo explícito e separar RG de CNH.
-- Etapa 4: adicionar TIE, CHA e CIR como extractors independentes.
-- Etapa 5: migrar comprovante de residência e documento de venda; eliminar o parser legado quando não houver consumidores.
+- Etapa 4: TIE e comprovante de residência migrados para extractors independentes; adicionar CHA e CIR quando entrarem no escopo.
+- Etapa 5: migrar documento de venda; eliminar o parser legado quando não houver consumidores.
 
 O parser legado pode existir durante a transição para tipos ainda não migrados, mas não pode receber novos tipos de documento.

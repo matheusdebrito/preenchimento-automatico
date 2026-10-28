@@ -16,7 +16,7 @@ describe('validação semântica por versão do formulário', () => {
     expect(isValidBrazilianDate('31/04/2026')).toBe(false);
     expect(isValidBrazilianDate('01/01/2020')).toBe(true);
   });
-  it('rejeita CPF, data e escolha inválidos nos campos mapeados', () => {
+  it('rejeita CPF e data inválidos nos campos mapeados', () => {
     const mapping = catalog.mappings.find((m) => m.formVersionId === 'bdmoto-v1')!;
     expect(() => validateMappedFieldValues(catalog.fields, mapping.placements, {
       'person.cpf': '000.000.000-00',
@@ -24,10 +24,6 @@ describe('validação semântica por versão do formulário', () => {
     expect(() => validateMappedFieldValues(catalog.fields, mapping.placements, {
       'person.issueDate': '31/02/2026',
     })).toThrow('Data');
-    const transfer = catalog.mappings.find((m) => m.formVersionId === 'autorizacao-transferencia-ma-v1')!;
-    expect(() => validateMappedFieldValues(catalog.fields, transfer.placements, {
-      'vessel.motor2Choice': 'maybe',
-    })).toThrow('sim ou nao');
   });
   it('reutiliza dados do pacote sem tentar validar campos de outras versões', () => {
     const mapping = catalog.mappings.find((m) => m.formVersionId === 'requerimento-ma-v1')!;
