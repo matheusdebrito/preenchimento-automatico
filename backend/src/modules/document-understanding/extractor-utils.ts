@@ -11,6 +11,47 @@ export const normalizeText = (value: string): string => cleanText(value)
 
 export type CandidateDirection = 'right' | 'below' | 'sequential';
 
+export interface ApproximateLabel {
+  text: string;
+  maxDistance: number;
+}
+
+const compactForLabelMatch = (value: string): string =>
+  normalizeText(value).replace(/[^A-Z0-9]/g, '');
+
+function levenshteinDistance(a: string, b: string): number {
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      current[j] = Math.min(
+        current[j - 1]! + 1,
+        previous[j]! + 1,
+        previous[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    previous.splice(0, previous.length, ...current);
+  }
+  return previous[b.length]!;
+}
+
+export function matchesApproximateLabel(
+  value: string,
+  aliases: readonly ApproximateLabel[],
+): boolean {
+  const source = compactForLabelMatch(value);
+  return aliases.some(({ text, maxDistance }) => {
+    const target = compactForLabelMatch(text);
+    if (!target || source.length < Math.max(1, target.length - maxDistance)) return false;
+    const minLength = Math.max(1, target.length - maxDistance);
+    const maxLength = Math.min(source.length, target.length + maxDistance);
+    for (let length = minLength; length <= maxLength; length++) {
+      if (levenshteinDistance(source.slice(0, length), target) <= maxDistance) return true;
+    }
+    return false;
+  });
+}
+
 export interface ExtractedCandidate {
   value: string;
   confidence: number | null;
@@ -49,6 +90,7 @@ export function anchoredCandidates(
   isFieldBoundary: (value: string) => boolean = () => false,
   allowSequentialWithGeometry = true,
   firstOccurrenceOnly = false,
+  approximateLabels: readonly ApproximateLabel[] = [],
 ): readonly ExtractedCandidate[] {
   const candidates: ExtractedCandidate[] = [];
 
@@ -57,22 +99,26 @@ export function anchoredCandidates(
     const positioned = lines.filter((line) => line.box)
       .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0]);
 
+    const matchesConfiguredLabel = (value: string): boolean =>
+      labels.some((pattern) => pattern.test(value)) ||
+      matchesApproximateLabel(value, approximateLabels);
     const hasOriginalLabel = lines.some((line) =>
-      !line.id.startsWith('phrase:') && labels.some((pattern) => pattern.test(line.text)));
+      !line.id.startsWith('phrase:') && matchesConfiguredLabel(line.text));
 
     for (let index = 0; index < lines.length; index++) {
       const anchor = lines[index]!;
       const candidatesBeforeAnchor = candidates.length;
       if (anchor.id.startsWith('phrase:') && hasOriginalLabel) continue;
       const match = labels.map((pattern) => pattern.exec(anchor.text)).find(Boolean);
-      if (!match) continue;
+      const approximateMatch = !match && matchesApproximateLabel(anchor.text, approximateLabels);
+      if (!match && !approximateMatch) continue;
 
       const matchesAnyLabel = (value: string): boolean =>
-        labels.some((pattern) => pattern.test(value));
+        matchesConfiguredLabel(value);
       const isBoundary = (value: string): boolean =>
         matchesAnyLabel(value) || isFieldBoundary(value);
 
-      const inline = cleanText(match[1] ?? '');
+      const inline = cleanText(match?.[1] ?? '');
       const syntheticPhrase = anchor.id.startsWith('phrase:');
       const preferBelow = preferredDirections[0] === 'below';
       // A synthetic same-row phrase may join a label with unrelated text at
