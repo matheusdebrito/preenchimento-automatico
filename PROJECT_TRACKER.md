@@ -258,3 +258,14 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Testes adicionados:** regressões sintéticas de CIN/CNH/RG e TIE/TIEM cobrem aliases promovidos, prioridade de direção e ausência de promoção de campos descartados. A validação integral depende do CI do PR desta entrega; não considerar homologado antes do último commit aprovado.
 
 **Documentação:** ver `docs/ANCHOR_PROFILES_CURATED_USAGE.md` e `docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md`.
+
+
+## 16. Registro de execução — 28/10/2026, rótulo confundido com série do motor no TIE digital
+
+**Relato:** no TIE digital, o campo de número de série do motor recebeu o próprio rótulo bilíngue `N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER` em vez do valor real.
+
+**Causa investigada:** a extração semântica validava candidatos próximos ao rótulo, mas não possuía uma regra geral proibindo que outra linha reconhecida pelo mesmo conjunto de aliases fosse usada como valor. A fragmentação/agrupamento espacial do OCR pode colocar rótulos duplicados ou sintéticos na vizinhança do campo.
+
+**Correção:** `anchoredCandidates()` agora exclui explicitamente linhas que também correspondem aos aliases do próprio conceito antes de tratá-las como valor à direita, abaixo ou sequencial. O validador de `vessel.motorSerial` também rejeita defensivamente textos equivalentes a `SÉRIE DO MOTOR`, `ENGINE SERIAL NUMBER`, `MOTOR 1` e `ENGINE 1`.
+
+**Regressões:** testes sintéticos cobrem rótulo bilíngue duplicado e rótulo compactado próximo ao valor real; o resultado esperado permanece exclusivamente o número de série. A validação integral depende do CI do PR desta correção.
