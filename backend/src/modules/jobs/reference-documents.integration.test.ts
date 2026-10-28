@@ -101,8 +101,20 @@ async function inspect(
   }
   const lineCount = extraction.observation.pages.reduce(
     (sum, page) => sum + page.lines.length, 0);
+  const structuralLabels = extraction.observation.pages.flatMap((page) =>
+    page.lines
+      .map((line) => line.text.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').toUpperCase().trim())
+      .filter((text) => /(?:NOME|EMBARC|MOTOR|POT|FABRIC|SERIE|INSCRI|CASCO|ATIVIDADE|TRIPUL|PASSAGE)/.test(text))
+      .map((text) => text.replace(/[A-Z0-9./-]{6,}/g, '[TOKEN]')));
+  if (structuralLabels.length) {
+    console.log('[REFERENCE_LABEL_DIAG]', JSON.stringify({
+      file: relativePath.split('/').at(-1),
+      labels: structuralLabels,
+    }));
+  }
 
-  // Privacy-safe diagnostic: never print OCR text or extracted values.
+  // Privacy-safe diagnostic: never print OCR values; structural labels are sanitized above.
   console.log('[REFERENCE_OCR]', JSON.stringify({
     file: relativePath.split('/').at(-1),
     engine: extraction.engine,
