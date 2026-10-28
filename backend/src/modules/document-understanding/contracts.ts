@@ -48,7 +48,8 @@ export interface ExtractionContext {
 export interface FieldEvidence {
   fieldId: string;
   value: string;
-  confidence: number;
+  /** OCR/semantic confidence when measurable; legacy adapters use null. */
+  confidence: number | null;
   documentId: string;
   sourceId: string;
   page: number;
