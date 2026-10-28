@@ -7,6 +7,8 @@ import {
   extractDocumentEvidence,
 } from '../document-understanding/registry.js';
 import type { DocumentTypeId, DocumentSubjectRole } from '../document-understanding/contracts.js';
+import { anchoredCandidates, withSpatialPhrases } from '../document-understanding/extractor-utils.js';
+import { tieFieldConcepts } from '../document-understanding/extractors/tie.js';
 import type { StoredDocument } from './job-store.js';
 
 const enabled = process.env.REFERENCE_DOCUMENT_OCR === '1';
@@ -66,14 +68,35 @@ async function inspect(
     const target = new Set([
       'vessel.name', 'vessel.motorPower', 'vessel.motorSerial', 'vessel.motorBrand',
     ]);
+    const source = withSpatialPhrases(extraction.observation);
+    const targetConcepts = tieFieldConcepts.filter((concept) => target.has(concept.fieldId));
     console.log('[REFERENCE_FIELD_STATUS]', JSON.stringify({
       file: relativePath.split('/').at(-1),
-      fields: assessments.filter((item) => target.has(item.fieldId)).map((item) => ({
-        fieldId: item.fieldId,
-        status: item.status,
-        method: item.method ?? null,
-        anchor: item.anchor ?? null,
-      })),
+      fields: assessments.filter((item) => target.has(item.fieldId)).map((item) => {
+        const concept = targetConcepts.find((candidate) => candidate.fieldId === item.fieldId);
+        const originalLabelMatches = extraction.observation.pages.flatMap((page) => page.lines)
+          .filter((line) => concept?.labels.some((pattern) => pattern.test(line.text))).length;
+        const sourceLabelMatches = source.pages.flatMap((page) => page.lines)
+          .filter((line) => concept?.labels.some((pattern) => pattern.test(line.text))).length;
+        const candidateCount = concept ? anchoredCandidates(
+          source,
+          concept.labels,
+          concept.anchor,
+          concept.validate,
+          concept.preferredDirections,
+          () => false,
+          concept.allowSequentialWithGeometry ?? true,
+        ).length : 0;
+        return {
+          fieldId: item.fieldId,
+          status: item.status,
+          method: item.method ?? null,
+          anchor: item.anchor ?? null,
+          originalLabelMatches,
+          sourceLabelMatches,
+          candidateCount,
+        };
+      }),
     }));
   }
   const lineCount = extraction.observation.pages.reduce(
