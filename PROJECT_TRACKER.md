@@ -297,3 +297,16 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Mudança de processo:** o CI principal foi preservado sem alterações estruturais e foi criado um workflow manual separado, `Pre-PR OCR`, para executar na branch antes de abrir PRs que alterem OCR/document-understanding. Ele roda o gate determinístico e o OCR real dos documentos públicos de referência. `AGENTS.md` torna esse preflight obrigatório; também foi criado `npm run verify:document-understanding` para typecheck + lint + testes determinísticos + build, e `docs/PRE_PR_VALIDATION.md` documenta o processo.
 
 **Objetivo:** o CI do PR permanece uma verificação independente, mas deixa de ser o primeiro ambiente em que a alteração é realmente testada. Isso não garante zero falhas, porém reduz erros previsíveis e separa melhor regressão de código, comportamento do OCR real e infraestrutura.
+
+
+## 19. Registro de execução — 28/10/2026, inscrição do TIEM confundida com série do casco
+
+**Relato:** no TIEM antigo fotografado, a extração atribuiu o valor de `FORMATO DE SÉRIE DO CASCO/FORMA` ao campo `vessel.registration`, embora a inscrição correta estivesse no bloco `Nº DE INSCRIÇÃO` no topo do documento.
+
+**Causa-raiz:** o conceito `vessel.registration` permitia `anchor-sequential` mesmo quando o PaddleOCR fornecia bounding boxes. Como o validador de inscrição aceita valores alfanuméricos com hífen, um identificador de casco estruturalmente válido podia ser escolhido a partir da ordem bruta do OCR quando essa ordem divergisse da disposição visual.
+
+**Correção:** `vessel.registration` mantém as buscas geométricas `below/right`, mas desativa o fallback sequencial quando há geometria. Documentos sem geometria preservam o fallback sequencial existente.
+
+**Regressão:** adicionado teste com linhas deliberadamente fora da ordem visual: o array OCR coloca `BR-MZL-123456` antes de `441M2023001234`, enquanto as bounding boxes posicionam cada valor junto ao seu rótulo correto. O resultado exigido é `vessel.registration = 441M2023001234` e `vessel.hullId = BR-MZL-123456`.
+
+**Validação:** o commit `626203c2` foi validado no CI do PR #21, execução `40734184046`: `backend-checks`, `postgres-integration`, `pdf-mapping-visual`, `ocr-integration`, `reference-documents` e `compose-smoke` concluíram com sucesso; `frontend-checks` foi corretamente ignorado por não haver alteração de frontend. Isso valida a regressão automatizada e a integração de OCR, mas não substitui o reteste manual desta imagem no ambiente do usuário.
