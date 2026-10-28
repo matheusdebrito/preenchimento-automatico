@@ -99,7 +99,7 @@ export async function runPaddleOcrBuffer(
     method: 'POST',
     headers: { 'Content-Type': contentType(kind), 'Content-Length': String(bytes.length) },
     body: bytes,
-    signal: AbortSignal.timeout(75_000),
+    signal: AbortSignal.timeout(kind === 'pdf' ? 120_000 : 75_000),
   });
   if (!response.ok) throw new Error('PaddleOCR indisponível: HTTP ' + response.status);
   return parseResult(await response.json());
