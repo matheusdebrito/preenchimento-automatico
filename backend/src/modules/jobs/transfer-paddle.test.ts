@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { qaPreviewCatalog } from '../catalog/qa-preview.js';
 import { publicService } from '../catalog/public-catalog.js';
-import { paddleTextForSource } from './paddle-ocr.js';
+import { paddleIdentitySuggestions } from './paddle-ocr.js';
 import type { PaddleOcrResult } from './paddle-ocr.js';
-import { suggestFields } from './ocr.js';
 
 function identityResult(name: string, cpf: string): PaddleOcrResult {
   return {
@@ -39,11 +38,10 @@ describe('Transferência de moto aquática com PaddleOCR', () => {
     expect(reviewable.has('person.fullName')).toBe(true);
     expect(reviewable.has('person.cpf')).toBe(true);
 
-    const text = paddleTextForSource(
+    const suggestions = paddleIdentitySuggestions(
       identityResult('MARIA DE SOUZA', '123.456.789-09'),
       'buyer-identity',
     );
-    const suggestions = suggestFields(text, 'buyer-identity');
 
     expect(suggestions['person.fullName']?.value).toBe('MARIA DE SOUZA');
     expect(suggestions['person.cpf']?.value).toBe('123.456.789-09');
@@ -55,11 +53,10 @@ describe('Transferência de moto aquática com PaddleOCR', () => {
     expect(reviewable.has('seller.fullName')).toBe(true);
     expect(reviewable.has('seller.cpf')).toBe(true);
 
-    const text = paddleTextForSource(
+    const suggestions = paddleIdentitySuggestions(
       identityResult('JOAO DA SILVA', '529.982.247-25'),
       'seller-identity',
     );
-    const suggestions = suggestFields(text, 'seller-identity');
 
     expect(suggestions['seller.fullName']?.value).toBe('JOAO DA SILVA');
     expect(suggestions['seller.cpf']?.value).toBe('529.982.247-25');
