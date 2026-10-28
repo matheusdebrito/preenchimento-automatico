@@ -109,4 +109,46 @@ describe('extractSemanticConcepts', () => {
       item.fieldId === 'vessel.motorSerial')?.value).toBe('6AN123456');
   });
 
+  it('permite controlar fallback sequencial por conceito sem afetar os demais', () => {
+    const source: DocumentObservation = {
+      ...observation([]),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'AB / GT', confidence: .99,
+            box: [300, 10, 380, 30], polygon: null },
+          { id: '0:1', page: 0, text: '2,35', confidence: .98,
+            box: [10, 200, 60, 220], polygon: null },
+          { id: '0:2', page: 0, text: 'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+            confidence: .99, box: [300, 260, 640, 282], polygon: null },
+          { id: '0:3', page: 0, text: '2022', confidence: .98,
+            box: [10, 300, 60, 322], polygon: null },
+        ],
+      }],
+    };
+    const localConcepts: readonly SemanticFieldConcept[] = [
+      {
+        fieldId: 'vessel.grossTonnage',
+        anchor: 'AB / GT',
+        labels: [/^\s*AB\s*\/\s*GT\s*(?:[:-]\s*)?(.*)$/i],
+        validate: (value) => /^\d+(?:[.,]\d+)?$/.test(value.trim()),
+      },
+      {
+        fieldId: 'vessel.motorSerial',
+        anchor: 'SERIE',
+        labels: [
+          /^\s*N[°ºO.]?\s+DE\s+S[EÉ]RIE\s+DO\s+MOTOR\s*\/\s*ENGINE\s+SERIAL\s+NUMBER\s*(?:[:-]\s*)?(.*)$/i,
+        ],
+        allowSequentialWithGeometry: false,
+        validate: (value) => /^[A-Z0-9./-]{4,50}$/i.test(value.trim()) && /\d/.test(value),
+      },
+    ];
+
+    const result = extractSemanticConcepts(source, context, localConcepts);
+    expect(result.evidence.find((item) => item.fieldId === 'vessel.grossTonnage')?.value)
+      .toBe('2,35');
+    expect(result.evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
+  });
+
 });
