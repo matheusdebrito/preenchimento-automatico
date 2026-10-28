@@ -228,6 +228,27 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.motorBrand']).toBe('YAMAHA');
   });
 
+  it('tolera erros OCR nos rótulos antigos e usa somente o primeiro motor do MVP', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N0ME DA EMBARCACA0',
+      'MAR AZUL',
+      'P0T3NCIA (HP)',
+      '115',
+      'N DO 1 MOTOR/S3R1E',
+      '6E5L1001234',
+      'N0ME FABR1CANTE',
+      'YAMAHA',
+      'N0ME FABR1CANTE',
+      'SEM VALOR',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.name']).toBe('MAR AZUL');
+    expect(values['vessel.motorPower']).toBe('115');
+    expect(values['vessel.motorSerial']).toBe('6E5L1001234');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+  });
+
   it('rejeita identificador forte de casco como inscrição mesmo quando aparece junto ao rótulo', () => {
     const mixed: DocumentObservation = {
       engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
