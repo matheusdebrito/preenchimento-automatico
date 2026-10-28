@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import type { DocumentKind } from './document-validator.js';
 import type { StoredDocument } from './job-store.js';
+import { isValidCpf } from '../catalog/field-validation.js';
 
 export type PaddleOcrLine = {
   text: string;
@@ -121,6 +122,40 @@ const FORBIDDEN_NAME_LABEL =
 const HARD_BARRIER =
   /^(?:FILIACAO|FILIA[CÇ][AÃ]O|CPF|RG|REGISTRO|IDENTIDADE|DATA|NASCIMENTO|NATURALIDADE|ASSINATURA|ORGAO|[ÓO]RG[AÃ]O|EMISSOR)\b/i;
 
+
+function editDistanceAtMostOne(value: string, target: string): boolean {
+  if (value === target) return true;
+  if (Math.abs(value.length - target.length) > 1) return false;
+  let i = 0;
+  let j = 0;
+  let edits = 0;
+  while (i < value.length && j < target.length) {
+    if (value[i] === target[j]) {
+      i++;
+      j++;
+      continue;
+    }
+    if (++edits > 1) return false;
+    if (value.length > target.length) i++;
+    else if (target.length > value.length) j++;
+    else {
+      i++;
+      j++;
+    }
+  }
+  if (i < value.length || j < target.length) edits++;
+  return edits <= 1;
+}
+
+function isHolderNameLabel(value: string): boolean {
+  const upper = normalize(value);
+  if (FORBIDDEN_NAME_LABEL.test(upper)) return false;
+  if (HOLDER_NAME_LABEL.test(upper)) return true;
+  const first = upper.split(/[\s:/\-–]+/)[0]?.replace(/[^A-Z0-9]/g, '') ?? '';
+  return first.length >= 3 && first.length <= 5 &&
+    editDistanceAtMostOne(first.replaceAll('0', 'O').replaceAll('3', 'E'), 'NOME');
+}
+
 function clean(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
@@ -221,16 +256,38 @@ function collectNameRight(anchor: PaddleOcrLine, positioned: readonly PaddleOcrL
 export function paddleIdentityName(result: PaddleOcrResult): string | null {
   const found: string[] = [];
   for (const page of result.pages) {
-    const positioned = page.lines.filter((line) => line.box)
+    const allLines = [...page.lines];
+    const positioned = allLines.filter((line) => line.box)
       .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0]);
-    for (const anchor of positioned) {
-      const label = normalize(anchor.text);
-      if (!HOLDER_NAME_LABEL.test(label) || FORBIDDEN_NAME_LABEL.test(label)) continue;
+    for (let index = 0; index < allLines.length; index++) {
+      const anchor = allLines[index]!;
+      if (!isHolderNameLabel(anchor.text)) continue;
       const inline = anchorInlineName(anchor.text);
-      const right = inline ?? collectNameRight(anchor, positioned);
-      const below = inline ?? collectNameBelow(anchor, positioned);
-      const candidate = right ?? below;
-      if (candidate) found.push(candidate);
+      let candidate = inline;
+      if (!candidate && anchor.box) {
+        candidate = collectNameRight(anchor, positioned) ?? collectNameBelow(anchor, positioned);
+      }
+      if (!candidate) {
+        const sequential: string[] = [];
+        for (let offset = 1; offset <= 3; offset++) {
+          const next = allLines[index + offset];
+          if (!next) break;
+          const upper = normalize(next.text);
+          if (HARD_BARRIER.test(upper) || FORBIDDEN_NAME_LABEL.test(upper)) break;
+          const text = clean(next.text);
+          if (!/^[A-ZÀ-Ý][A-ZÀ-Ý' .-]+$/i.test(text)) {
+            if (sequential.length > 0) break;
+            continue;
+          }
+          sequential.push(text);
+          const joined = clean(sequential.join(' '));
+          if (validName(joined) && joined.split(/\s+/).length >= 3) {
+            candidate = joined;
+            break;
+          }
+        }
+      }
+      if (candidate && validName(candidate)) found.push(candidate);
     }
   }
   const unique = [...new Map(found.map((value) => [normalize(value), value])).values()];
@@ -255,7 +312,7 @@ export function paddleIdentitySuggestions(
   const name = paddleIdentityName(result);
   if (name) suggestions[role + '.fullName'] = { value: name, source, status: 'REVIEW_REQUIRED' };
 
-  const cpfs = cpfCandidates(result);
+  const cpfs = cpfCandidates(result).filter(isValidCpf);
   if (cpfs.length === 1) {
     suggestions[role + '.cpf'] = { value: cpfs[0]!, source, status: 'REVIEW_REQUIRED' };
   }
