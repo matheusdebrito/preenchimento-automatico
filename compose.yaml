@@ -23,7 +23,11 @@ services:
     build:
       context: ./ocr-service
     environment:
-      OCR_CPU_THREADS: ${OCR_CPU_THREADS:-4}
+      OCR_CPU_THREADS: ${OCR_CPU_THREADS:-1}
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
+      MKL_NUM_THREADS: 1
+      FLAGS_use_mkldnn: 0
       PADDLE_PDX_MODEL_SOURCE: BOS
     restart: unless-stopped
     security_opt:

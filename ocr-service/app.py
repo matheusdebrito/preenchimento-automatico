@@ -3,10 +3,18 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+
+# Keep CPU inference on the conservative path. These must be set before
+# importing Paddle/PaddleOCR so the native runtime sees them during init.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("FLAGS_use_mkldnn", "0")
 
 from paddleocr import PaddleOCR
 
@@ -24,8 +32,14 @@ ocr = PaddleOCR(
     use_doc_unwarping=False,
     use_textline_orientation=True,
     device="cpu",
-    cpu_threads=max(1, int(os.getenv("OCR_CPU_THREADS", "4"))),
+    enable_mkldnn=False,
+    cpu_threads=max(1, int(os.getenv("OCR_CPU_THREADS", "1"))),
 )
+
+# Paddle's predictor is not safe to execute concurrently in this CPU runtime.
+# The HTTP server may handle health checks concurrently, but inference itself
+# is serialized to one request at a time.
+OCR_LOCK = threading.Lock()
 
 
 def builtin(value: Any) -> Any:
@@ -122,7 +136,9 @@ class Handler(BaseHTTPRequestHandler):
             with tempfile.NamedTemporaryFile(prefix="paddle-", suffix=extension, delete=False) as handle:
                 handle.write(body)
                 path = handle.name
-            pages = [normalize_result(result, index) for index, result in enumerate(ocr.predict(path))]
+            with OCR_LOCK:
+                predictions = list(ocr.predict(path))
+            pages = [normalize_result(result, index) for index, result in enumerate(predictions)]
             self.send_json(200, {
                 "engine": "paddleocr",
                 "version": "3.7.0",
