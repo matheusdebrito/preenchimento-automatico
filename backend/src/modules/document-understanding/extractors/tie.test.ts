@@ -168,4 +168,47 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.hullId']).toBe('BR-MZL-123456');
   });
 
+  it('aproveita aliases adicionais do TIE digital e TIEM antigo', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
+      '3810056831',
+      'ANO DE CONSTRUÇÃO / YEAR OF BUILD',
+      '2025',
+      'COMPRIMENTO / LENGTH',
+      '3,20 M',
+      'Nº DO CASCO / HULL NUMBER',
+      'BRABC12345D626',
+      'ATIVIDADE / SERVIÇO',
+      'ESPORTE E RECREIO',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.registration']).toBe('3810056831');
+    expect(values['vessel.year']).toBe('2025');
+    expect(values['vessel.length']).toBe('3,20 M');
+    expect(values['vessel.hullId']).toBe('BRABC12345D626');
+    expect(values['vessel.activity']).toBe('ESPORTE E RECREIO');
+  });
+
+  it('prioriza a direção declarada quando há candidatos válidos à direita e abaixo', () => {
+    const directional: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'NOME DA EMBARCAÇÃO', confidence: .99,
+            box: [10, 10, 170, 30], polygon: null },
+          { id: '0:1', page: 0, text: 'VALOR A DIREITA', confidence: .96,
+            box: [180, 10, 320, 30], polygon: null },
+          { id: '0:2', page: 0, text: 'MAR AZUL', confidence: .97,
+            box: [10, 36, 140, 58], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(directional, context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.name')?.value)
+      .toBe('MAR AZUL');
+  });
+
 });
