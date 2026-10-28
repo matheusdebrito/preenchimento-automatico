@@ -60,7 +60,12 @@ export function anchoredCandidates(
       if (!match) continue;
 
       const inline = cleanText(match[1] ?? '');
-      if (inline && validate(inline)) {
+      const syntheticPhrase = anchor.id.startsWith('phrase:');
+      const preferBelow = preferredDirections[0] === 'below';
+      // A synthetic same-row phrase may join a label with unrelated text at
+      // the right. When the reviewed layout says the value is primarily below,
+      // do not let that generated phrase outrank the original geometric anchor.
+      if (inline && validate(inline) && !(syntheticPhrase && preferBelow)) {
         candidates.push({
           value: inline, confidence: anchor.confidence, page: anchor.page,
           lineIds: [anchor.id], method: 'anchor-inline', anchor: anchorName,
