@@ -74,4 +74,39 @@ describe('extractSemanticConcepts', () => {
       confidence: null,
     }]);
   });
+  it('não atravessa o rótulo do próximo conceito quando o valor atual é inválido', () => {
+    const localConcepts: readonly SemanticFieldConcept[] = [
+      {
+        fieldId: 'vessel.motorManufacturerBrandModel',
+        anchor: 'FABRICANTE',
+        labels: [
+          /^\s*FABRICANTE\s*-\s*MARCA\s*-\s*MODELO\s*\/\s*MANUFACTURER\s*-\s*BRAND\s*-\s*MODEL\s*(?:[:-]\s*)?(.*)$/i,
+        ],
+        preferredDirections: ['below'],
+        validate: (value) => /[A-Z0-9]/i.test(value) && !/^\*+$/.test(value.trim()),
+      },
+      {
+        fieldId: 'vessel.motorSerial',
+        anchor: 'SERIE',
+        labels: [
+          /^\s*N[°ºO.]?\s+DE\s+S[EÉ]RIE\s+DO\s+MOTOR\s*\/\s*ENGINE\s+SERIAL\s+NUMBER\s*(?:[:-]\s*)?(.*)$/i,
+        ],
+        preferredDirections: ['below'],
+        validate: (value) => /^[A-Z0-9./-]{4,50}$/i.test(value.trim()) && /\d/.test(value),
+      },
+    ];
+
+    const result = extractSemanticConcepts(observation([
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      '**********',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '6AN123456',
+    ]), context, localConcepts);
+
+    expect(result.evidence.some((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')).toBe(false);
+    expect(result.evidence.find((item) =>
+      item.fieldId === 'vessel.motorSerial')?.value).toBe('6AN123456');
+  });
+
 });
