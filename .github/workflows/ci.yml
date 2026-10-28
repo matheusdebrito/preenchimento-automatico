@@ -36,7 +36,10 @@ jobs:
             base="origin/main"
           else
             base="${{ github.event.before }}"
-            if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+
+            if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
+              base="HEAD^"
+            fi
+          fi
 
           files="$(git diff --name-only "$base" HEAD || true)"
           printf '%s\n' "$files"
