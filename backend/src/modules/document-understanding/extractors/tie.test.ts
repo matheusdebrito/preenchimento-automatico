@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tieDocumentExtractor } from './tie.js';
+import { classifyTieVariant, tieDocumentExtractor } from './tie.js';
 import type { DocumentObservation, ExtractionContext } from '../contracts.js';
 
 const context: ExtractionContext = {
@@ -18,6 +18,36 @@ function observation(lines: readonly string[]): DocumentObservation {
     }],
   };
 }
+
+describe('tie variant classification', () => {
+  it('classifica TIE digital por marcadores bilíngues fortes', () => {
+    expect(classifyTieVariant(observation([
+      'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
+      'TIPO DA EMBARCAÇÃO / TYPE OF VESSEL',
+      'MOTOR 1 / ENGINE 1',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      'BOCA / BREADTH',
+    ]))).toBe('digital');
+  });
+
+  it('classifica TIEM antigo mesmo com rótulos degradados pelo OCR', () => {
+    expect(classifyTieVariant(observation([
+      'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+      'NOMEDA EMBARCACAO',
+      'N DO F MOTORSERIE',
+      'NOME FABRICANTE',
+      'CARACTERISTICAS DO CASCO',
+      'CREDOR HIPOTECARIO',
+    ]))).toBe('legacy');
+  });
+
+  it('mantém unknown quando não há evidência suficiente de variante', () => {
+    expect(classifyTieVariant(observation([
+      'INSCRIÇÃO',
+      'NOME DA EMBARCAÇÃO',
+    ]))).toBe('unknown');
+  });
+});
 
 describe('tieDocumentExtractor', () => {
   it('extrai os campos náuticos canônicos sem conhecer o serviço', () => {
@@ -166,6 +196,80 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.year']).toBe('2022');
     expect(values['vessel.length']).toBe('6,50 m');
     expect(values['vessel.hullId']).toBe('BR-MZL-123456');
+  });
+
+  it('não inventa AB/GT nem casco a partir de campos mascarados do TIE digital', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
+      '381M2023000087',
+      'TIPO DA EMBARCAÇÃO / TYPE OF VESSEL',
+      'MOTO-AQUÁTICA / PERSONAL WATER CRAFT',
+      'NOME DA EMBARCAÇÃO / NAME OF VESSEL',
+      'MESTRE LEO',
+      'AB / GT',
+      '**********',
+      'BOCA / BREADTH',
+      '**********',
+      'ANO DE CONSTRUÇÃO / YEAR OF BUILD',
+      '2022',
+      'MATERIAL DO CASCO',
+      'FIBRA',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.registration']).toBe('381M2023000087');
+    expect(values['vessel.name']).toBe('MESTRE LEO');
+    expect(values['vessel.year']).toBe('2022');
+    expect(values['vessel.grossTonnage']).toBeUndefined();
+    expect(values['vessel.breadth']).toBeUndefined();
+    expect(values['vessel.hullId']).toBeUndefined();
+  });
+
+  it('extrai o TIEM legado limpo sem confundir inscrição com casco ou motor', () => {
+    const cleanLegacy: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+            confidence: .99, box: [20, 20, 850, 60], polygon: null },
+          { id: '0:1', page: 0, text: 'Nº DE INSCRIÇÃO',
+            confidence: .99, box: [40, 100, 350, 130], polygon: null },
+          { id: '0:2', page: 0, text: '441M2023001234',
+            confidence: .99, box: [90, 135, 310, 165], polygon: null },
+          { id: '0:3', page: 0, text: 'POTÊNCIA (HP)',
+            confidence: .99, box: [40, 340, 220, 370], polygon: null },
+          { id: '0:4', page: 0, text: 'Nº DO 1º MOTOR/SÉRIE',
+            confidence: .99, box: [230, 340, 560, 370], polygon: null },
+          { id: '0:5', page: 0, text: 'NOME FABRICANTE',
+            confidence: .99, box: [570, 340, 850, 370], polygon: null },
+          { id: '0:6', page: 0, text: '115',
+            confidence: .98, box: [95, 380, 150, 410], polygon: null },
+          { id: '0:7', page: 0, text: '6E5L1001234',
+            confidence: .98, box: [315, 380, 470, 410], polygon: null },
+          { id: '0:8', page: 0, text: 'YAMAHA',
+            confidence: .98, box: [655, 380, 770, 410], polygon: null },
+          { id: '0:9', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
+            confidence: .99, box: [900, 500, 1450, 530], polygon: null },
+          { id: '0:10', page: 0, text: 'FORMATO DE SÉRIE DO CASCO/FORMA',
+            confidence: .99, box: [900, 610, 1280, 642], polygon: null },
+          { id: '0:11', page: 0, text: 'BR-MZL-123456',
+            confidence: .98, box: [1285, 610, 1500, 642], polygon: null },
+        ],
+      }],
+    };
+
+    expect(classifyTieVariant(cleanLegacy)).toBe('legacy');
+    const evidence = tieDocumentExtractor.extract(cleanLegacy, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.registration']).toBe('441M2023001234');
+    expect(values['vessel.motorPower']).toBe('115');
+    expect(values['vessel.motorSerial']).toBe('6E5L1001234');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+    expect(values['vessel.hullId']).toBe('BR-MZL-123456');
+    expect(values['vessel.grossTonnage']).toBeUndefined();
+    expect(values['vessel.motorManufacturerBrandModel']).toBeUndefined();
   });
 
   it('mantém inscrição e série do casco separadas quando a ordem OCR diverge da geometria', () => {
