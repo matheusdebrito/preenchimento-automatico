@@ -91,8 +91,11 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
       'documentos/tie/TIE digital modelo.pdf', 'tie', 'tie', 'vessel');
     expect(digital.has('vessel.registration')).toBe(true);
     expect(digital.has('vessel.name')).toBe(true);
-    expect(digital.has('vessel.hullId')).toBe(true);
-    expect(digital.has('vessel.grossTonnage')).toBe(true);
+    // The public digital model masks/omits hull, AB/GT and breadth values.
+    // Nearby registration/year/length values must not be promoted into them.
+    expect(digital.has('vessel.hullId')).toBe(false);
+    expect(digital.has('vessel.grossTonnage')).toBe(false);
+    expect(digital.has('vessel.breadth')).toBe(false);
     expect(digital.has('vessel.activity')).toBe(true);
     // The public model masks motor manufacturer/model and serial with asterisks.
     // A label or a neighboring field must never be promoted as the missing value.
@@ -104,7 +107,9 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
       'documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
     expect(legacy.has('vessel.registration')).toBe(true);
     expect(legacy.has('vessel.name')).toBe(true);
-    expect(legacy.has('vessel.hullId')).toBe(true);
+    // The public legacy scan masks the hull/chassis serial. Its registration
+    // must not be reused as a hull identifier when the real value is absent.
+    expect(legacy.has('vessel.hullId')).toBe(false);
     expect(legacy.has('vessel.length')).toBe(true);
     expect(legacy.has('vessel.year')).toBe(true);
     // This scanned public reference does not yield a trustworthy power/serial
