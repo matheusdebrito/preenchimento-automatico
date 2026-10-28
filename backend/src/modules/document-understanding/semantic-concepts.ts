@@ -38,6 +38,9 @@ export function extractSemanticConcepts(
   concepts: readonly SemanticFieldConcept[],
 ): SemanticExtractionResult {
   const source = withSpatialPhrases(observation);
+  const allLabels = concepts.flatMap((concept) => concept.labels);
+  const isKnownConceptLabel = (value: string): boolean =>
+    allLabels.some((pattern) => pattern.test(value));
   const evidence: FieldEvidence[] = [];
   const assessments: FieldExtractionAssessment[] = [];
 
@@ -48,6 +51,7 @@ export function extractSemanticConcepts(
       concept.anchor,
       concept.validate,
       concept.preferredDirections,
+      isKnownConceptLabel,
     );
     const selected = selectUniqueCandidate(candidates);
 
