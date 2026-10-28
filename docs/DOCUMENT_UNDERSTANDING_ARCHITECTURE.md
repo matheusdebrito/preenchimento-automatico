@@ -35,8 +35,17 @@ Um mesmo extractor pode aceitar múltiplos layouts quando eles representam os me
 Exemplos: TIE/TIEM antigo e digital compartilham conceitos de embarcação; CNH física e
 digital podem compartilhar conceitos de identidade.
 
-A classificação de layout pode existir para diagnóstico, mas não deve ser pré-condição para
-extrair um campo. Um erro de classificação não pode inutilizar toda a extração.
+A classificação de layout pode existir para diagnóstico e para reduzir o espaço de busca de
+regras exclusivas de uma variante, mas não deve ser pré-condição para extrair conceitos
+compartilhados. Um erro ou ausência de classificação não pode inutilizar toda a extração:
+classificação inconclusiva deve cair no catálogo multi-layout conservador.
+
+No caso TIE/TIEM, marcadores estruturais fortes distinguem de forma opcional `digital` e
+`legacy`. A variante digital habilita conceitos exclusivos como `AB / GT`, `BOCA / BREADTH`
+e fabricante/marca/modelo bilíngue; a variante legacy habilita potência e nome do fabricante
+do grid antigo. Inscrição, nome, ano, comprimento, atividade, tripulantes, passageiros, casco
+e série do motor continuam conceitos compartilhados. Campos mascarados não podem atravessar
+outros rótulos ou reutilizar números vizinhos.
 
 O OCR não é treinado nem especializado por documento. PaddleOCR permanece um produtor
 genérico de texto, confiança e geometria. A especialização vive na camada de conceitos
@@ -87,10 +96,11 @@ Agrupa evidências por campo. Valores equivalentes podem reforçar a origem; val
 6. Formulários não conhecem a origem do dado.
 7. Serviços não duplicam listas de campos já presentes nos mapeamentos.
 8. Evidência e dados extraídos permanecem temporários e não entram em analytics/logs.
-9. Não exigir classificação de layout para extrair campos que compartilham a mesma semântica.
+9. Não exigir classificação de layout para extrair campos que compartilham a mesma semântica; classificação opcional pode restringir apenas regras exclusivas de uma variante.
 10. Um novo layout deve preferencialmente adicionar aliases/testes ao conceito existente, não duplicar o extractor.
-11. Classificação explícita só é necessária quando famílias diferentes possuem semântica ou regras incompatíveis.
-12. Perfis em `documentos/ancoras/*.json` são referência documental, não configuração executável. Somente aliases, direção e contexto explicitamente revisados podem ser promovidos para os conceitos canônicos; campos não mapeados são ignorados.
+11. Classificação explícita só é necessária quando famílias diferentes possuem semântica incompatível ou quando variantes possuem campos exclusivos que aumentariam falso positivo se buscados globalmente.
+12. Fallbacks sem âncora devem exigir formato forte e evidência de domínio; um identificador alfanumérico genérico nunca deve ser promovido a casco apenas por unicidade.
+13. Perfis em `documentos/ancoras/*.json` são referência documental, não configuração executável. Somente aliases, direção e contexto explicitamente revisados podem ser promovidos para os conceitos canônicos; campos não mapeados são ignorados.
 
 ## Migração incremental
 
