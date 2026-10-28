@@ -5,9 +5,36 @@ import type { PaddleOcrResult } from './paddle-ocr.js';
 import { paddleToObservation } from '../document-understanding/paddle-observation.js';
 import type { DocumentObservation } from '../document-understanding/contracts.js';
 import { extractPdfTextObservation, observationText } from './pdf-text-observation.js';
+import { extractDocumentEvidence } from '../document-understanding/registry.js';
 
 let active = 0;
 const MAX_CONCURRENT = 2;
+
+function fastObservationIsSufficient(
+  doc: StoredDocument,
+  observation: DocumentObservation,
+): boolean {
+  if (doc.requirementId === 'tie') {
+    const fields = new Set(extractDocumentEvidence(observation, {
+      documentId: doc.id,
+      sourceId: doc.requirementId,
+      documentType: 'tie',
+      subjectRole: 'vessel',
+    }).map((item) => item.fieldId));
+    return ['vessel.registration', 'vessel.name', 'vessel.hullId']
+      .every((fieldId) => fields.has(fieldId));
+  }
+  if (doc.requirementId === 'residence-proof') {
+    const fields = new Set(extractDocumentEvidence(observation, {
+      documentId: doc.id,
+      sourceId: doc.requirementId,
+      documentType: 'residence-proof',
+      subjectRole: 'person',
+    }).map((item) => item.fieldId));
+    return fields.has('person.postalCode') && fields.has('person.address');
+  }
+  return false;
+}
 
 export type OcrEngine = 'paddleocr' | 'pdf-text';
 
@@ -48,7 +75,7 @@ export async function extractTextWithEngine(
   active++;
   try {
     const fast = await extractPdfTextObservation(doc);
-    if (fast) {
+    if (fast && fastObservationIsSufficient(doc, fast)) {
       return {
         text: observationText(fast),
         engine: 'pdf-text',
