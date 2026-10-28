@@ -58,6 +58,7 @@ jobs:
           --health-interval=5s --health-timeout=5s --health-retries=15
     env:
       DATABASE_TEST_URL: postgresql://test_app:test_password_ci_only@127.0.0.1:5432/test_app
+      PADDLE_OCR_URL: http://127.0.0.1:18000
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -67,12 +68,23 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
         working-directory: backend
-      - name: Install PDF and identity OCR tools
-        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-por tesseract-ocr-osd imagemagick fonts-dejavu-core
-      - name: Pin the same Portuguese model as the API image
-        run: sudo sh backend/scripts/install-ocr-model.sh /usr/share/tesseract-ocr/5/tessdata
+      - name: Install PDF validation tool
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Build and start PaddleOCR
+        run: |
+          docker build -t preenchimento-ocr-ci ./ocr-service
+          docker run -d --name preenchimento-ocr-ci -p 127.0.0.1:18000:8000 preenchimento-ocr-ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:18000/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker logs preenchimento-ocr-ci
+          exit 1
       - run: npm test
         working-directory: backend
+      - name: Stop PaddleOCR
+        if: always()
+        run: docker rm -f preenchimento-ocr-ci || true
 
   compose-smoke:
     runs-on: ubuntu-latest
@@ -117,8 +129,6 @@ jobs:
           exit 1
       - name: Verify PaddleOCR inside the built OCR container
         run: docker compose exec -T ocr python /app/smoke.py
-      - name: Verify Tesseract fallback inside the built API container
-        run: docker compose exec -T api node scripts/smoke-ocr-runtime.mjs
       - name: Stop and delete test volumes
         if: always()
         run: docker compose down -v --remove-orphans

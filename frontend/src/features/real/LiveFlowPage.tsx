@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Camera, FileCheck2, FileText, UploadCloud } from 'lucide-react';
@@ -16,7 +16,7 @@ type ExtractionDiagnostic = {
   requirementId: string;
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
-  engine?: 'paddleocr' | 'tesseract' | 'pdf-text';
+  engine?: 'paddleocr';
   nameStage?: 'name_recognized' | 'name_not_mapped' |
     'label_seen_name_rejected' | 'label_not_detected';
 };
@@ -38,6 +38,7 @@ export function LiveFlowPage() {
   const [downloads, setDownloads] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const cancelRequested = useRef(false);
 
   useEffect(() => {
     if (!serviceId) return;
@@ -147,6 +148,7 @@ export function LiveFlowPage() {
 
   const extract = async () => {
     if (!service) return;
+    cancelRequested.current = false;
     setBusy(true);
     setError('');
     try {
@@ -197,9 +199,12 @@ export function LiveFlowPage() {
       }>(
         '/api/jobs/' + currentJob + '/extract', { method:'POST', body:JSON.stringify({}) },
       );
+      // A concurrent cancellation wins over a late OCR response.
+      if (cancelRequested.current) return;
       // Present and send only fields that the user can visibly review.
       showReview(read.fields, read.sources, read.diagnostics ?? []);
     } catch (issue) {
+      if (cancelRequested.current) return;
       if (issue instanceof ApiError && issue.status === 404) {
         if (serviceId) forgetTemporaryJob(serviceId);
         setJobId(null);
@@ -230,7 +235,10 @@ export function LiveFlowPage() {
   };
 
   const cancel = async () => {
-    if (busy) return;
+    // Cancellation is intentionally allowed while OCR is running on the files
+    // step. It remains blocked during generation/download accounting.
+    if (busy && step !== 'files') return;
+    cancelRequested.current = true;
     setBusy(true);
     setError('');
     try {
@@ -475,11 +483,7 @@ export function LiveFlowPage() {
                                     : 'texto detectado, mas nome/CPF/RG não foram identificados com segurança')}
                             {item.engine ? (
                               <span className="live-ocr-name-stage">
-                                {' · Motor: ' + (
-                                  item.engine === 'paddleocr' ? 'PaddleOCR'
-                                    : item.engine === 'tesseract' ? 'Tesseract (fallback)'
-                                      : 'Texto nativo do PDF'
-                                )}
+                                {' · Motor: PaddleOCR'}
                               </span>
                             ) : null}
                             {item.nameStage ? (
@@ -553,7 +557,8 @@ export function LiveFlowPage() {
                 </div>
               ) : null}
               {(step === 'files' || step === 'review' || step === 'download') ? (
-                <button type="button" className="live-text-button" disabled={busy}
+                <button type="button" className="live-text-button"
+                  disabled={busy && step !== 'files'}
                   onClick={() => void cancel()}>
                   {step === 'download'
                     ? 'Encerrar e apagar PDFs (sem novo débito)'

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PDFDocument } from 'pdf-lib';
 import { classifyDocument, validatePdfPages } from './document-validator.js';
-import { suggestFields, shouldExtractDocument, shouldRetryIdentityLayout, chooseIdentityLayout, spatialIdentityName, identityNameStage } from './ocr.js';
+import { suggestFields, shouldExtractDocument, shouldRetryIdentityLayout, chooseIdentityLayout, identityNameStage } from './ocr.js';
 
 describe('validação de assinatura do documento', () => {
   it('rejeita PDF falso, MIME incorreto e arquivo vazio', () => {
@@ -215,53 +215,6 @@ describe('candidatos OCR conservadores', () => {
     expect(suggestFields('NOME E SOBRENOME\nMARIA DE SOUZA', 'buyer-identity')['person.fullName']?.value).toBe('MARIA DE SOUZA');
     expect(suggestFields('NOME MARIA DE SOUZA', 'buyer-identity')['person.fullName']?.value).toBe('MARIA DE SOUZA');
     expect(suggestFields('NOME DA GENITORA\nMARIA DE SOUZA', 'buyer-identity')['person.fullName']).toBeUndefined();
-  });
-
-  it('recupera nome civil por coordenadas de TSV quando ordem de leitura intercalou colunas', () => {
-    const header = 'level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext';
-    const word = (line: number, x: number, y: number, text: string, ordinal = 1) =>
-      ['5','1',String(line),'1','1',String(ordinal),String(x),String(y),
-        String(text.length*14),'25','94',text].join('\t');
-    const tsv = [
-      header,
-      '1\t1\t0\t0\t0\t0\t0\t0\t2000\t1200\t-1\t',
-      word(1, 120, 90, 'NOME'),
-      // Tesseract may read this far-away CPF block BEFORE the name.
-      word(2, 1140, 120, 'CPF'),
-      word(3, 1140, 165, '123.456.789-09'),
-      word(4, 130, 155, 'MARIA'),
-      word(4, 240, 155, 'DE', 2),
-      word(4, 310, 155, 'SOUZA', 3),
-      word(5, 120, 400, 'FILIAÇÃO'),
-      word(6, 130, 450, 'ANA'),
-      word(6, 220, 450, 'DE', 2),
-      word(6, 290, 450, 'SOUZA', 3),
-    ].join('\n');
-    expect(spatialIdentityName(tsv, 'buyer-identity')).toBe('MARIA DE SOUZA');
-    expect(spatialIdentityName(tsv, 'seller-identity')).toBe('MARIA DE SOUZA');
-    expect(spatialIdentityName(tsv, 'tie')).toBeNull();
-    expect(suggestFields('CPF: 123.456.789-09', 'buyer-identity')['person.fullName'])
-      .toBeUndefined();
-    expect(suggestFields('NOME: ' + spatialIdentityName(tsv, 'buyer-identity'),
-      'buyer-identity')['person.fullName']?.value).toBe('MARIA DE SOUZA');
-  });
-
-  it('não escolhe nome de filiação por proximidade nem dois nomes de titulares diferentes', () => {
-    const header = 'level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext';
-    const word = (block: number, top: number, text: string) =>
-      ['5','1',String(block),'1','1','1','100',String(top),
-        '190','25','88',text].join('\t');
-    const prefix = [header, '1\t1\t0\t0\t0\t0\t0\t0\t1600\t1000\t-1\t'];
-    const parentOnly = [...prefix,
-      word(1, 100, 'NOME'), word(2, 132, 'FILIAÇÃO'),
-      word(3, 165, 'ANA'), word(4, 195, 'SOUZA'),
-    ].join('\n');
-    expect(spatialIdentityName(parentOnly, 'buyer-identity')).toBeNull();
-    const conflicting = [...prefix,
-      word(1, 100, 'NOME'), word(2, 132, 'MARIA DE SOUZA'),
-      word(3, 370, 'NOME'), word(4, 405, 'ANA DE SOUZA'),
-    ].join('\n');
-    expect(spatialIdentityName(conflicting, 'buyer-identity')).toBeNull();
   });
 
   it('não atribui nome da mãe, nome social ou linhas sem rótulo ao titular', () => {
