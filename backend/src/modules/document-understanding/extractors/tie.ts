@@ -4,7 +4,7 @@ import type {
   ExtractionContext,
   FieldEvidence,
 } from '../contracts.js';
-import { anchoredValue, normalizeText, toEvidence, uniqueLineValue } from '../extractor-utils.js';
+import { anchoredValue, normalizeText, toEvidence, uniqueLineValue, withSpatialPhrases } from '../extractor-utils.js';
 
 const labelLike = (value: string): boolean =>
   /^(?:NOME|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|MARCA|POT|S[EÉ]RIE|CP\/DL\/AG|AUTORIDADE)\b/
@@ -45,56 +45,57 @@ function field(
 export const tieDocumentExtractor: DocumentExtractor = {
   documentType: 'tie',
   extract(observation, context) {
+    const source = withSpatialPhrases(observation);
     const evidence: FieldEvidence[] = [];
 
-    push(evidence, field(observation, context, 'vessel.registration', [
+    push(evidence, field(source, context, 'vessel.registration', [
       /^\s*(?:(?:N[ÚU]MERO|N[ºO.]?)\s+(?:DE|DA)\s+)?INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*N[ºO.]?\s*INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*REGISTRO\s+DA\s+EMBARCA[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'INSCRICAO', registration));
 
-    push(evidence, field(observation, context, 'vessel.name', [
-      /^\s*NOME\s+(?:DA\s+)?(?:EMBARCA[CÇ][AÃ]O|MOTO\s+AQU[AÁ]TICA)\s*(?:[:#\-–]\s*)?(.*)$/i,
-      /^\s*NOME\s*(?:[:#\-–]\s*)?(.*)$/i,
+    push(evidence, field(source, context, 'vessel.name', [
+      /^\s*NOME(?:\s*\/\s*NAME)?\s+(?:DA\s+)?(?:EMBARCA[CÇ][AÃ]O|EMBARCA[CÇ][AÃ]O\s*\/\s*VESSEL|MOTO\s+AQU[AÁ]TICA)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*NOME\s+(?:DO\s+)?BARCO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'NOME DA EMBARCACAO', (value) => textValue(value, 2, 100)));
 
-    push(evidence, field(observation, context, 'vessel.hullId', [
+    push(evidence, field(source, context, 'vessel.hullId', [
       /^\s*(?:HIN|CIN|N[ºO.]?\s*(?:DO\s+)?CASCO|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'IDENTIFICACAO DO CASCO', hull));
 
-    push(evidence, field(observation, context, 'vessel.year', [
+    push(evidence, field(source, context, 'vessel.year', [
       /^\s*ANO\s+(?:DE\s+)?CONSTRU[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*ANO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'ANO DE CONSTRUCAO', year));
 
-    push(evidence, field(observation, context, 'vessel.length', [
+    push(evidence, field(source, context, 'vessel.length', [
       /^\s*COMPRIMENTO(?:\s+TOTAL)?(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'COMPRIMENTO', length));
 
-    push(evidence, field(observation, context, 'vessel.capacity', [
+    push(evidence, field(source, context, 'vessel.capacity', [
       /^\s*(?:LOTA[CÇ][AÃ]O|CAPACIDADE(?:\s+DE\s+PESSOAS)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'LOTACAO', capacity));
 
-    push(evidence, field(observation, context, 'vessel.motorBrand', [
+    push(evidence, field(source, context, 'vessel.motorBrand', [
       /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'MOTOR/MARCA', (value) => textValue(value, 2, 60)));
 
-    push(evidence, field(observation, context, 'vessel.motorPower', [
+    push(evidence, field(source, context, 'vessel.motorPower', [
       /^\s*POT[EÊ]NCIA(?:\s+(?:DO\s+)?MOTOR)?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'POTENCIA DO MOTOR', power));
 
-    push(evidence, field(observation, context, 'vessel.motorSerial', [
+    push(evidence, field(source, context, 'vessel.motorSerial', [
       /^\s*(?:N[ÚU]MERO\s+(?:DE\s+)?S[EÉ]RIE(?:\s+(?:DO\s+)?MOTOR)?|S[EÉ]RIE\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'SERIE DO MOTOR', serial));
 
-    push(evidence, field(observation, context, 'vessel.authority', [
+    push(evidence, field(source, context, 'vessel.authority', [
       /^\s*(?:CP\s*\/\s*DL\s*\/\s*AG|CAPITANIA\s*\/\s*DELEGACIA\s*\/\s*AG[EÊ]NCIA|AUTORIDADE\s+MAR[IÍ]TIMA)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'CP/DL/AG', (value) => textValue(value, 2, 50)));
 
     // Some TIE variants print HIN/CIN inline without a separate label.
     if (!evidence.some((item) => item.fieldId === 'vessel.hullId')) {
       push(evidence, toEvidence(uniqueLineValue(
-        observation,
+        source,
         /\b((?:BR[- ]?)?[A-Z0-9]{8,20})\b/gi,
         (value) => hull(value) && /[A-Z]/i.test(value),
         'unique-hull-pattern',
