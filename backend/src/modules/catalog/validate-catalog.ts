@@ -175,6 +175,11 @@ export function validateCatalog(data: CatalogDefinition): string[] {
     buildIndex(service.documentRequirements, 'documento de ' + service.id, issues);
     for (const requirement of service.documentRequirements) {
       validateConditions(requirement.conditions, questions, 'documento ' + requirement.id, issues);
+      if (requirement.extraction &&
+        (!SAFE_ID.test(requirement.extraction.documentType) ||
+          !SAFE_ID.test(requirement.extraction.subjectRole))) {
+        issues.push('documento ' + requirement.id + ': perfil de extração inválido');
+      }
     }
   }
 

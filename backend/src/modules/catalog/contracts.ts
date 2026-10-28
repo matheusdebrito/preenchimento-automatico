@@ -83,11 +83,23 @@ export interface ServiceCondition {
   equals: string;
 }
 
+export interface DocumentExtractionProfile {
+  /** Reusable document-understanding strategy; never a service ID. */
+  documentType: 'identity' | 'tie' | 'residence-proof' | 'sale-document';
+  /** Semantic owner of the extracted values. */
+  subjectRole: 'person' | 'seller' | 'vessel' | 'representative' | 'declarant' | 'coOwner';
+}
+
 export interface DocumentRequirement {
   id: string;
   label: string;
   description?: string;
   required: boolean;
+  /**
+   * Optional OCR/understanding profile. Requirements without this metadata are
+   * supporting documents and must not be sent through semantic extraction.
+   */
+  extraction?: DocumentExtractionProfile;
   /** All conditions must match; absent means unconditional. */
   conditions?: readonly ServiceCondition[];
 }

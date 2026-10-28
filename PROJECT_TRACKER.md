@@ -10,7 +10,7 @@ Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnico
 
 Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, texto OCR ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual é corrigir a extração do nome e reproduzir a falha no material fornecido, não liberar produção, cobrar, homologar PDFs nem publicar dados pessoais. Os portões normativos, visuais e de produção continuam pendentes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
+A autorização atual inclui consolidar a arquitetura reutilizável de formulários e entendimento de documentos, sem liberar produção, cobrar, homologar PDFs nem publicar dados pessoais. Os portões normativos, visuais e de produção continuam pendentes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
 
 ## 1. Quadro geral de progresso
 
@@ -22,7 +22,7 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR integrado como primário com Tesseract fallback; inspeção estruturada disponível; reteste da foto real e corpus amplo pendentes |
+| 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade migra para DocumentObservation/Extractor/Evidence/Resolver; TIE/residência/venda ainda usam adaptador legado; corpus amplo pendente |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
@@ -68,7 +68,11 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Adicionar página autenticada `/ocr` e item `OCR` ao lado de `Início`, exibindo motor/modelo, tempo, campos interpretados, texto reconhecido, confiança e bounding boxes.
 - [x] Validar PaddleOCR real dentro do container final com fixture fictícia e manter smoke do fallback Tesseract; execução CI `40610487883` aprovada nos cinco jobs após fixar PaddlePaddle 3.2.2 devido à regressão CPU/oneDNN observada em 3.3.1.
 - [x] Integrar e validar explicitamente o PaddleOCR no fluxo `transferencia-moto-aquatica`: comprador e vendedor permanecem separados, e o diagnóstico da revisão informa `paddleocr`, `tesseract` fallback ou `pdf-text` por documento. CI `40613739310` aprovado nos cinco jobs.
-- [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário com documentos reais da Transferência; comparar o retorno Paddle com o resultado Tesseract anterior.
+- [x] Confirmar no ambiente Windows/Docker do usuário que PaddleOCR está estável e que o nome do titular passou a ser preenchido no fluxo de Transferência após desabilitar oneDNN e limitar threads.
+- [x] Introduzir contratos `DocumentObservation`, `DocumentExtractor`, `FieldEvidence` e `FieldResolver`; migrar identidade para essa fronteira sem depender de ID de serviço.
+- [x] Manter campos de revisão derivados dos `FormMapping.placements` dos formulários selecionados, sem lista paralela de campos por serviço.
+- [ ] Separar RG e CNH em tipos documentais explícitos após implementar classificação/seleção confiável; o perfil `identity` permanece transitório.
+- [ ] Migrar TIE, comprovante de residência e documento de venda do adaptador `suggestFields()` para extractors independentes; novos tipos não podem ser adicionados ao parser legado.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
 - [ ] Completar isolamento de decodificadores, limites reais de CPU/RAM, fuzzing, carga e comportamento sob interrupção.
@@ -164,3 +168,18 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Segurança:** todo valor extraído continua `REVIEW_REQUIRED`; nenhuma evidência textual adicional é persistida e documentos permanecem temporários.
 
 **Validação:** PR 6. Backend/frontend unitários e builds passaram no CI após remoção das dependências antigas. Validação final Docker/Paddle e PostgreSQL registrada no mesmo PR antes do merge.
+
+
+## 10. Registro de execução — 27/10/2026, arquitetura de entendimento de documentos
+
+**Decisão arquitetural:** serviços deixam de ser tratados como fonte de campos. Os campos necessários continuam derivados dos mapeamentos dos formulários selecionados via `ServiceForm -> FormVersion -> FormMapping.placements`. Requisitos de documentos passam a declarar apenas um perfil semântico reutilizável de extração e o papel do sujeito; regras OCR não pertencem ao serviço.
+
+**Implementado:** camada `backend/src/modules/document-understanding/` com `DocumentObservation`, `DocumentExtractor`, `FieldEvidence`, conversão da resposta Paddle para observação neutra, extractor de identidade, registry e `FieldResolver`. O fluxo `/api/jobs/:id/extract` usa evidências canônicas e resolve divergências de forma centralizada. Evidências discordantes não escolhem valor automaticamente.
+
+**Migração incremental:** identidade foi migrada para o novo extractor. TIE, comprovante de residência e documento de venda permanecem temporariamente no adaptador rotulado legado para não quebrar o MVP. O arquivo `docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md` e o `AGENTS.md` proíbem adicionar novos tipos a `suggestFields()`.
+
+**Limite atual:** o requisito “identidade” ainda não distingue RG de CNH. Não há classificador documental homologado; portanto o sistema não deve inferir silenciosamente o tipo. A próxima evolução é classificação/seleção explícita e extractors individuais para RG/CNH, seguida de TIE, CHA e CIR.
+
+**Validação:** testes unitários novos cobrem evidências de nome/CPF, separação comprador/vendedor e conflitos entre fontes. CI completo deve ser registrado após execução do último commit; até lá esta mudança está implementada, mas não declarada validada integralmente.
+
+**Segurança/privacidade:** evidências continuam temporárias e `REVIEW_REQUIRED`; não são persistidas em banco, logs ou analytics. A arquitetura não altera os portões de homologação dos PDFs nem transforma OCR em prova de autenticidade.

@@ -176,24 +176,17 @@ enviada pelo usuário**, de modo que a falha real de reconhecimento permanece
 em investigação. Para reteste, utilizar foto inteiramente fictícia, subir a
 versão mais recente, iniciar job novo e verificar o estado exibido por arquivo.
 
-### Reconhecimento de RG fotografado
+### Entendimento de documentos e RG fotografado
 
-O OCR de identidade utiliza segmentação de texto disperso para fotos de
-RG (Tesseract `--psm 11`) e uma segunda leitura quando o nome civil estiver
-ausente, mesmo que CPF e RG já tenham sido detectados. Se ambas falharem,
-o processamento pode usar as coordenadas TSV de uma terceira leitura limitada
-para associar o nome ao rótulo impresso, sem se basear na ordem textual das
-colunas ou inferir nomes de filiação. Reconhece rótulos como `NOME`,
-`REGISTRO GERAL`, `CPF` e órgão emissor quando o valor está na mesma linha
-ou logo abaixo, sem copiar nome da mãe ou do pai como titular. **Todas as
-sugestões exigem conferência do usuário**. Testes com RG fictício renderizado
-em JPEG e coordenadas TSV passam pelo Tesseract real; isso **não comprova** leitura de fotos reais
-com qualidade/layout variáveis. Ver
-[regras e limitações do OCR](docs/OCR_EXTRACTION_RULES.md).
+O motor OCR atual é **PaddleOCR**. A aplicação separa a leitura visual da interpretação semântica: Paddle produz páginas, linhas, confiança e geometria; a camada `document-understanding` transforma isso em evidências de campos canônicos sujeitas a revisão.
 
-No QA local, use apenas dados falsos: após anexar um RG fictício, a etapa
-**Confira cada campo** informa se o documento não produziu texto ou se o texto
-não continha rótulos reconhecidos. Preencha manualmente qualquer dado ausente.
+O primeiro extractor migrado é o perfil de **identidade**, que localiza o titular por âncoras como `NOME`, relações à direita/abaixo, linhas fragmentadas e validação de CPF, bloqueando rótulos de filiação e nome social. O mesmo extractor é reutilizado para os papéis comprador e vendedor sem conhecer o serviço.
+
+O fluxo atual ainda trata RG e CNH sob o perfil transitório `identity`, pois a interface não classifica explicitamente qual documento foi enviado. Não inferimos silenciosamente o tipo. A evolução prevista é separar RG, CNH, TIE, CHA e CIR em extractors próprios após introduzir classificação/seleção de tipo.
+
+TIE, comprovante de residência e documento de venda ainda passam por um adaptador conservador do parser rotulado legado. **Nenhum novo tipo documental deve ser adicionado a esse parser**; a migração deve seguir `DocumentObservation -> DocumentExtractor -> FieldEvidence -> FieldResolver`.
+
+Detalhes e regras permanentes: [arquitetura de entendimento de documentos](docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md).
 
 ### Datas, OCR do BDMOTO e teste no serviço verdadeiro
 
