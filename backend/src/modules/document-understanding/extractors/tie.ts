@@ -189,7 +189,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'SERIE DO MOTOR',
     labels: [
       /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR|N[°ºO.]?\s+DO\s+1[°ºO.]?\s+MOTOR\s*\/\s*S[EÉ]RIE)\s*(?:[:#\-–]\s*)?(.*)$/i,
-      /^\s*(?:N\s*[°ºO.]?\s*)?D[O0]\s+1\s*[°ºO.]?\s+M[O0]T[O0]R\s*[/\-]?\s*S[EÉ3]R[I1]E\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:N\s*[°ºO.]?\s*)?D[O0]\s+1\s*[°ºO.]?\s+M[O0]T[O0]R\s*[-/]?\s*S[EÉ3]R[I1]E\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
     firstOccurrenceOnly: true,
