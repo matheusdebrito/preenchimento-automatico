@@ -70,6 +70,11 @@ jobs:
         working-directory: backend
       - name: Install PDF validation tool
         run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Inspect reference PDF text layer safely
+        working-directory: backend
+        env:
+          REFERENCE_DOCUMENT_FAST: '1'
+        run: npx vitest run src/modules/jobs/reference-pdf-fast.integration.test.ts --maxWorkers=1
       - name: Build and start PaddleOCR
         run: |
           docker build -t preenchimento-ocr-ci ./ocr-service
