@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { qaPreviewCatalog } from '../catalog/qa-preview.js';
 import { publicService } from '../catalog/public-catalog.js';
-import { paddleIdentitySuggestions } from './paddle-ocr.js';
+import { paddleToObservation } from '../document-understanding/paddle-observation.js';
+import { extractDocumentEvidence } from '../document-understanding/registry.js';
 import type { PaddleOcrResult } from './paddle-ocr.js';
 
 function identityResult(name: string, cpf: string): PaddleOcrResult {
@@ -22,7 +23,7 @@ function identityResult(name: string, cpf: string): PaddleOcrResult {
   };
 }
 
-describe('Transferência de moto aquática com PaddleOCR', () => {
+describe('Transferência com document-understanding', () => {
   const service = publicService(qaPreviewCatalog(), 'transferencia-moto-aquatica', {
     tieSituation: 'regular',
     transferAuthorization: 'anexo_2d',
@@ -32,35 +33,43 @@ describe('Transferência de moto aquática com PaddleOCR', () => {
     representative: 'nao',
   });
 
-  it('mantém nome e CPF do comprador disponíveis para a revisão do serviço', () => {
+  it('deriva campos dos formulários e extrai identidade sem regra de serviço', () => {
     expect(service).not.toBeNull();
     const reviewable = new Set(service!.reviewFields.map((field) => field.id));
     expect(reviewable.has('person.fullName')).toBe(true);
     expect(reviewable.has('person.cpf')).toBe(true);
 
-    const suggestions = paddleIdentitySuggestions(
-      identityResult('MARIA DE SOUZA', '123.456.789-09'),
-      'buyer-identity',
+    const evidence = extractDocumentEvidence(
+      paddleToObservation(identityResult('MARIA DE SOUZA', '123.456.789-09')),
+      {
+        documentId: 'doc-buyer',
+        sourceId: 'buyer-identity',
+        documentType: 'identity',
+        subjectRole: 'person',
+      },
     );
 
-    expect(suggestions['person.fullName']?.value).toBe('MARIA DE SOUZA');
-    expect(suggestions['person.cpf']?.value).toBe('123.456.789-09');
+    expect(evidence.find((item) => item.fieldId === 'person.fullName')?.value)
+      .toBe('MARIA DE SOUZA');
+    expect(evidence.find((item) => item.fieldId === 'person.cpf')?.value)
+      .toBe('123.456.789-09');
   });
 
-  it('mantém vendedor e comprador em campos separados', () => {
-    expect(service).not.toBeNull();
-    const reviewable = new Set(service!.reviewFields.map((field) => field.id));
-    expect(reviewable.has('seller.fullName')).toBe(true);
-    expect(reviewable.has('seller.cpf')).toBe(true);
-
-    const suggestions = paddleIdentitySuggestions(
-      identityResult('JOAO DA SILVA', '529.982.247-25'),
-      'seller-identity',
+  it('reutiliza o extractor para vendedor sem misturar papéis', () => {
+    const evidence = extractDocumentEvidence(
+      paddleToObservation(identityResult('JOAO DA SILVA', '529.982.247-25')),
+      {
+        documentId: 'doc-seller',
+        sourceId: 'seller-identity',
+        documentType: 'identity',
+        subjectRole: 'seller',
+      },
     );
 
-    expect(suggestions['seller.fullName']?.value).toBe('JOAO DA SILVA');
-    expect(suggestions['seller.cpf']?.value).toBe('529.982.247-25');
-    expect(suggestions['person.fullName']).toBeUndefined();
-    expect(suggestions['person.cpf']).toBeUndefined();
+    expect(evidence.find((item) => item.fieldId === 'seller.fullName')?.value)
+      .toBe('JOAO DA SILVA');
+    expect(evidence.find((item) => item.fieldId === 'seller.cpf')?.value)
+      .toBe('529.982.247-25');
+    expect(evidence.some((item) => item.fieldId === 'person.fullName')).toBe(false);
   });
 });
