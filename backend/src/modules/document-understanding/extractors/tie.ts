@@ -42,10 +42,11 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.registration',
     anchor: 'INSCRICAO',
     labels: [
-      /^\s*(?:(?:N[ÚU]MERO|N[ºO.]?)\s+(?:DE|DA)\s+)?INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:(?:N[ÚU]MERO|N[ºO.]?)\s+(?:DE|DA)\s+)?INSCRI[CÇ][AÃ]O(?:\s*\/\s*REGISTRATION\s+NUMBER)?\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*N[ºO.]?\s*INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*REGISTRO\s+DA\s+EMBARCA[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: registration,
   },
   {
@@ -56,31 +57,35 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*NOME(?:\s*\/\s*NAME)?\s+(?:DA\s+)?MOTO\s+AQU[AÁ]TICA\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*NOME\s+(?:DO\s+)?BARCO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: (value) => textValue(value, 2, 100),
   },
   {
     fieldId: 'vessel.hullId',
     anchor: 'IDENTIFICACAO DO CASCO',
     labels: [
-      /^\s*(?:HIN|CIN|N[ºO.]?\s*(?:DO\s+)?CASCO|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO|FORMATO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO(?:\s*\/\s*FORMA)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:HIN|CIN|N[ºO.]?\s*(?:DO\s+)?CASCO(?:\s*\/\s*HULL\s+NUMBER)?|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO|FORMATO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO(?:\s*\/\s*FORMA)?|N[ÚU]MERO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO\s*\/\s*CHASSIS)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: hull,
   },
   {
     fieldId: 'vessel.year',
     anchor: 'ANO DE CONSTRUCAO',
     labels: [
-      /^\s*ANO\s+(?:DE\s+)?CONSTRU[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*ANO\s+(?:DE\s+)?CONSTRU[CÇ][AÃ]O(?:\s*\/\s*YEAR\s+OF\s+BUILD)?\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*ANO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: year,
   },
   {
     fieldId: 'vessel.length',
     anchor: 'COMPRIMENTO',
     labels: [
-      /^\s*COMPRIMENTO(?:\s+TOTAL)?(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*COMPRIMENTO(?:\s+TOTAL)?(?:\s*\/\s*LENGTH)?(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: length,
   },
   {
@@ -111,8 +116,9 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     fieldId: 'vessel.activity',
     anchor: 'ATIVIDADE',
     labels: [
-      /^\s*(?:ATIVIDADE\s*\/\s*ACTIVITY|ATIVIDADE\s*\/\s*USO|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:ATIVIDADE\s*\/\s*ACTIVITY|ATIVIDADE\s*\/\s*USO|ATIVIDADE\s*\/\s*SERVI[CÇ]O|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: (value) => textValue(value, 2, 80),
   },
   {
@@ -138,6 +144,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*POT[EÊ]NCIA(?:\s+(?:DO\s+)?MOTOR)?(?:\s*\(HP\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: power,
   },
   {
@@ -146,6 +153,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR|N[°ºO.]?\s+DO\s+1[°ºO.]?\s+MOTOR\s*\/\s*S[EÉ]RIE)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: serial,
   },
   {
@@ -154,6 +162,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: count,
   },
   {
@@ -162,6 +171,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*(?:N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*NUMBER\s+OF\s+PASSAGERS|N[ÚU]MERO\s+DE\s+PASSAGEIROS|QTD\.?\s+DE\s+PASSAGEIROS|NUMBER\s+OF\s+PASSAGERS|NUMBER\s+OF\s+PASSENGERS)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    preferredDirections: ['below', 'right'],
     validate: count,
   },
   {
