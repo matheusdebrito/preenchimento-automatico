@@ -288,9 +288,9 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 
 ## 18. Registro de execução — 28/10/2026, correção do preflight e redução de falhas tardias no CI
 
-**Falha do PR 20:** todos os jobs determinísticos e de integração passaram, exceto `reference-documents`. O TIE digital real deixou de produzir o falso positivo `vessel.motorManufacturerBrandModel`, mas ainda produziu `vessel.motorSerial`. A causa provável validada pelo layout é a transição para os cabeçalhos `MOTOR 2/3/4 / ENGINE 2/3/4`, que não pertencem ao domínio ativo de um motor e, por isso, ainda não eram tratados como fronteira semântica.
+**Falha do PR 20:** o primeiro ajuste removeu o falso positivo `vessel.motorManufacturerBrandModel`, mas o TIE digital real ainda produziu `vessel.motorSerial`. Um diagnóstico sem expor o valor mostrou `method=anchor-sequential`, candidato somente numérico de 4 caracteres e `looksYear=true`: a ordem bruta do PaddleOCR colocou o ano de construção imediatamente após o rótulo da série, apesar de estar em outra coluna visual.
 
-**Correção adicional:** conceitos semânticos agora aceitam fronteiras específicas. Os campos do motor 1 no TIE param ao encontrar cabeçalhos de motor 2–4, inclusive forma compactada pelo OCR como `MOTOR2/ENGINE2`. O validador de série também rejeita cabeçalhos estruturais de motor. Foram adicionadas regressões específicas.
+**Correção adicional:** conceitos semânticos aceitam fronteiras específicas para cabeçalhos de motor e o fallback `anchor-sequential` deixou de ser implícito quando há geometria. Com `box` disponível, a extração usa relações espaciais `right/below`; sequência só é usada sem geometria ou quando o conceito opta explicitamente. Isso evita atravessar colunas e capturar ano, inscrição ou outro campo apenas porque veio em seguida no array do OCR. Foram adicionadas regressões para cabeçalhos compactados e para o caso realista de ano em outra coluna.
 
 **Padrão das falhas recentes:** as falhas não indicam flakiness geral do GitHub Actions; os jobs de infraestrutura têm passado. Os casos observados vieram de validação tardia de hipóteses: teste sintético inadequado, expectativa de referência alterada antes de reproduzir a saída real e diferença entre fragmentação sintética e PaddleOCR real.
 
