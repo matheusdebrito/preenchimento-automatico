@@ -59,6 +59,9 @@ export function anchoredCandidates(
       const match = labels.map((pattern) => pattern.exec(anchor.text)).find(Boolean);
       if (!match) continue;
 
+      const matchesAnyLabel = (value: string): boolean =>
+        labels.some((pattern) => pattern.test(value));
+
       const inline = cleanText(match[1] ?? '');
       const syntheticPhrase = anchor.id.startsWith('phrase:');
       const preferBelow = preferredDirections[0] === 'below';
@@ -82,7 +85,8 @@ export function anchoredCandidates(
           const height = boxHeight(anchor);
           const centerY = (anchor.box[1] + anchor.box[3]) / 2;
           const right = positioned.filter((line) => {
-            if (line === anchor || !line.box || line.confidence < 0.35 || !validate(line.text)) return false;
+            if (line === anchor || !line.box || line.confidence < 0.35 ||
+              matchesAnyLabel(line.text) || !validate(line.text)) return false;
             const center = (line.box[1] + line.box[3]) / 2;
             return line.box[0] >= anchor.box![2] - height * 0.5 &&
               line.box[0] - anchor.box![2] <= height * 16 &&
@@ -103,7 +107,8 @@ export function anchoredCandidates(
         if (direction === 'below' && anchor.box && !matched) {
           const height = boxHeight(anchor);
           const below = positioned.filter((line) => {
-            if (line === anchor || !line.box || line.confidence < 0.35 || !validate(line.text)) return false;
+            if (line === anchor || !line.box || line.confidence < 0.35 ||
+              matchesAnyLabel(line.text) || !validate(line.text)) return false;
             const dy = line.box[1] - anchor.box![3];
             if (dy < -height * 0.25 || dy > height * 5) return false;
             return horizontalOverlap(anchor, line) > 0 ||
@@ -124,7 +129,7 @@ export function anchoredCandidates(
         if (direction === 'sequential' && !matched) {
           for (let offset = 1; offset <= 3; offset++) {
             const next = lines[index + offset];
-            if (!next || !validate(next.text)) continue;
+            if (!next || matchesAnyLabel(next.text) || !validate(next.text)) continue;
             candidates.push({
               value: cleanText(next.text),
               confidence: Math.min(anchor.confidence, next.confidence),
