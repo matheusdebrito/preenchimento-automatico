@@ -115,4 +115,69 @@ describe('identityDocumentExtractor', () => {
     expect(evidence.some((item) => item.fieldId === 'person.issuer')).toBe(false);
   });
 
+  it('aproveita âncoras úteis de CNH e CIN sem importar campos extras', () => {
+    const sample: DocumentObservation = {
+      ...observation(),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'NAME AND SURNAME', confidence: .99,
+            box: [10, 10, 180, 32], polygon: null },
+          { id: '0:1', page: 0, text: 'MARIA DE SOUZA', confidence: .98,
+            box: [10, 36, 230, 60], polygon: null },
+          { id: '0:2', page: 0, text: 'CPF 123.456.789-09', confidence: .99,
+            box: [10, 70, 230, 94], polygon: null },
+          { id: '0:3', page: 0, text: 'DATA DE EMISSÃO', confidence: .97,
+            box: [10, 104, 170, 126], polygon: null },
+          { id: '0:4', page: 0, text: '15/08/2026', confidence: .97,
+            box: [10, 132, 130, 154], polygon: null },
+          { id: '0:5', page: 0, text: 'NACIONALIDADE / NATIONALITY', confidence: .97,
+            box: [10, 164, 260, 186], polygon: null },
+          { id: '0:6', page: 0, text: 'BRASILEIRA', confidence: .96,
+            box: [10, 192, 130, 214], polygon: null },
+          { id: '0:7', page: 0, text: 'NATURALIDADE / PLACE OF BIRTH', confidence: .97,
+            box: [10, 224, 290, 246], polygon: null },
+          { id: '0:8', page: 0, text: 'RIO DE JANEIRO RJ', confidence: .96,
+            box: [10, 252, 220, 274], polygon: null },
+          { id: '0:9', page: 0, text: 'TIPO SANGUÍNEO: O+', confidence: .99,
+            box: [10, 284, 220, 306], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = identityDocumentExtractor.extract(sample, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['person.fullName']).toBe('MARIA DE SOUZA');
+    expect(values['person.issueDate']).toBe('15/08/2026');
+    expect(values['person.nationality']).toBe('BRASILEIRA');
+    expect(values['person.birthplace']).toBe('RIO DE JANEIRO RJ');
+    expect(Object.keys(values).some((field) => field.includes('blood'))).toBe(false);
+  });
+
+  it('mantém CIN como família de identidade sem transformar CPF em RG automaticamente', () => {
+    const cin: DocumentObservation = {
+      ...observation(),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'NOME / NAME', confidence: .99,
+            box: [10, 10, 160, 32], polygon: null },
+          { id: '0:1', page: 0, text: 'MARIA DE SOUZA', confidence: .98,
+            box: [10, 38, 220, 60], polygon: null },
+          { id: '0:2', page: 0, text: 'REGISTRO GERAL - CPF / PERSONAL NUMBER', confidence: .99,
+            box: [10, 70, 340, 92], polygon: null },
+          { id: '0:3', page: 0, text: '123.456.789-09', confidence: .99,
+            box: [10, 98, 180, 120], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = identityDocumentExtractor.extract(cin, context);
+    expect(evidence.find((item) => item.fieldId === 'person.cpf')?.value)
+      .toBe('123.456.789-09');
+    expect(evidence.some((item) => item.fieldId === 'person.identity')).toBe(false);
+  });
+
 });
