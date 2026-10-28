@@ -7,7 +7,7 @@ import type {
 import { anchoredValue, normalizeText, toEvidence, uniqueLineValue, withSpatialPhrases } from '../extractor-utils.js';
 
 const labelLike = (value: string): boolean =>
-  /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|ACTIVITY|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS)\b/
+  /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|USO|ACTIVITY|QTD|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS|FORMATO)\b/
     .test(normalizeText(value));
 
 const textValue = (value: string, min = 2, max = 100): boolean => {
@@ -66,7 +66,7 @@ export const tieDocumentExtractor: DocumentExtractor = {
     ], 'NOME DA EMBARCACAO', (value) => textValue(value, 2, 100)));
 
     push(evidence, field(source, context, 'vessel.hullId', [
-      /^\s*(?:HIN|CIN|N[ºO.]?\s*(?:DO\s+)?CASCO|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:HIN|CIN|N[ºO.]?\s*(?:DO\s+)?CASCO|IDENTIFICA[CÇ][AÃ]O\s+(?:DO\s+)?CASCO|FORMATO\s+DE\s+S[EÉ]RIE\s+DO\s+CASCO(?:\s*\/\s*FORMA)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'IDENTIFICACAO DO CASCO', hull));
 
     push(evidence, field(source, context, 'vessel.year', [
@@ -91,7 +91,7 @@ export const tieDocumentExtractor: DocumentExtractor = {
     ], 'BOCA / BREADTH', decimalMeasure));
 
     push(evidence, field(source, context, 'vessel.activity', [
-      /^\s*(?:ATIVIDADE\s*\/\s*ACTIVITY|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:ATIVIDADE\s*\/\s*ACTIVITY|ATIVIDADE\s*\/\s*USO|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'ATIVIDADE / ACTIVITY', (value) => textValue(value, 2, 80)));
 
     push(evidence, field(source, context, 'vessel.motorManufacturerBrandModel', [
@@ -100,23 +100,23 @@ export const tieDocumentExtractor: DocumentExtractor = {
     ], 'MOTOR 1 / ENGINE 1 FABRICANTE-MARCA-MODELO', (value) => textValue(value, 2, 100)));
 
     push(evidence, field(source, context, 'vessel.motorBrand', [
-      /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR|NOME\s+FABRICANTE)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'MOTOR/MARCA', (value) => textValue(value, 2, 60)));
 
     push(evidence, field(source, context, 'vessel.motorPower', [
-      /^\s*POT[EÊ]NCIA(?:\s+(?:DO\s+)?MOTOR)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*POT[EÊ]NCIA(?:\s+(?:DO\s+)?MOTOR)?(?:\s*\(HP\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'POTENCIA DO MOTOR', power));
 
     push(evidence, field(source, context, 'vessel.motorSerial', [
-      /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR|N[°ºO.]?\s+DO\s+1[°ºO.]?\s+MOTOR\s*\/\s*S[EÉ]RIE)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'N DE SERIE DO MOTOR / ENGINE SERIAL NUMBER', serial));
 
     push(evidence, field(source, context, 'vessel.crewCount', [
-      /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'NUMERO DE TRIPULANTES / NUMBER OF CREW MEMBER', count));
 
     push(evidence, field(source, context, 'vessel.passengerCount', [
-      /^\s*(?:N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*NUMBER\s+OF\s+PASSAGERS|N[ÚU]MERO\s+DE\s+PASSAGEIROS|NUMBER\s+OF\s+PASSAGERS|NUMBER\s+OF\s+PASSENGERS)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*NUMBER\s+OF\s+PASSAGERS|N[ÚU]MERO\s+DE\s+PASSAGEIROS|QTD\.?\s+DE\s+PASSAGEIROS|NUMBER\s+OF\s+PASSAGERS|NUMBER\s+OF\s+PASSENGERS)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'NUMERO DE PASSAGEIROS / NUMBER OF PASSAGERS', count));
 
     push(evidence, field(source, context, 'vessel.authority', [
