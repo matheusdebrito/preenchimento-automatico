@@ -19,6 +19,27 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  ocr:
+    build:
+      context: ./ocr-service
+    environment:
+      OCR_CPU_THREADS: ${OCR_CPU_THREADS:-4}
+      PADDLE_PDX_MODEL_SOURCE: BOS
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    shm_size: 1gb
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   api:
     build:
       context: ./backend
@@ -31,10 +52,13 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-preenchimento}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:-preenchimento}
       DEV_GRANT_SECRET: ${DEV_GRANT_SECRET:-}
       DEV_QA_PREVIEW: ${DEV_QA_PREVIEW:-false}
+      PADDLE_OCR_URL: http://ocr:8000
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     depends_on:
       db:
+        condition: service_healthy
+      ocr:
         condition: service_healthy
     restart: unless-stopped
     security_opt:
