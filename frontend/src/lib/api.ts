@@ -8,6 +8,37 @@ export class ApiError extends Error {
   ) { super(message); }
 }
 
+/** Temporary QA diagnostic requested by the developer; never log arbitrary API responses. */
+function logLocalOcrResult(path: string, method: string, data: unknown): void {
+  const route = /^\/api\/jobs\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}(\/extract)?$/i.exec(path);
+  if (!route || method !== (route[1] ? 'POST' : 'GET') ||
+    typeof window === 'undefined' ||
+    !['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname) ||
+    !data || typeof data !== 'object' || !('diagnostics' in data) ||
+    !Array.isArray(data.diagnostics)) return;
+
+  // nameStage is emitted by the backend ONLY for identity documents in DEV_QA_PREVIEW.
+  // Vite's import.meta.env.DEV cannot be used: local Docker serves a built frontend.
+  const qaIdentity = data.diagnostics.some((item: unknown) =>
+    !!item && typeof item === 'object' && 'requirementId' in item &&
+    typeof item.requirementId === 'string' &&
+    ['buyer-identity', 'seller-identity'].includes(item.requirementId) &&
+    'nameStage' in item && typeof item.nameStage === 'string' &&
+    ['name_recognized', 'name_not_mapped', 'label_seen_name_rejected', 'label_not_detected']
+      .includes(item.nameStage));
+  if (!qaIdentity) return;
+
+  // Snapshot only these fields; no job IDs, cookies, files or raw OCR text.
+  console.log(route[1]
+    ? '[OCR] Extracao concluida - dados retornados pela API'
+    : '[OCR] Processo recuperado - sem nova leitura; pode incluir edicoes manuais',
+  JSON.stringify({
+    fields: 'fields' in data ? data.fields : {},
+    sources: 'sources' in data ? data.sources : {},
+    diagnostics: data.diagnostics,
+  }, null, 2));
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init, credentials: 'same-origin',
@@ -41,7 +72,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       : 'Não foi possível concluir a solicitação. Tente novamente.';
     throw new ApiError(response.status, message, fieldId, code, requirementId);
   }
-  return response.json() as Promise<T>;
+  const data: unknown = await response.json();
+  logLocalOcrResult(path, (init?.method ?? 'GET').toUpperCase(), data);
+  return data as T;
 }
 
 export interface LiveService {

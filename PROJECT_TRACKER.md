@@ -10,7 +10,7 @@ Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnico
 
 Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, texto OCR ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual é corrigir a extração do nome e reproduzir a falha no material fornecido, não liberar produção, cobrar, homologar PDFs nem publicar dados pessoais. Os portões normativos, visuais e de produção continuam pendentes.
+A autorização atual é corrigir a extração do nome e reproduzir a falha no material fornecido, não liberar produção, cobrar, homologar PDFs nem publicar dados pessoais. Os portões normativos, visuais e de produção continuam pendentes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
 
 ## 1. Quadro geral de progresso
 
@@ -22,8 +22,8 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — correção de orientação/nome e CI completo aprovados; corpus amplo e homologação pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — fluxo técnico existente; E2E/browser/mobile real pendentes |
+| 06 | OCR e extração estruturada | 05 | [ ] Parcial — correção anterior passou no CI; usuário ainda relata nome vazio no formulário; diagnóstico local adicionado |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação; E2E/browser/mobile real pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais | 09 e autorização | [ ] Pendente |
@@ -36,7 +36,7 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
 | 18 | Expansão de serviços | 17 e decisão | [ ] Pendente |
 
-**Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**, mesmo com o caso específico de nome agora recuperado e o CI de código aprovado. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
+**Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
 ## 2. Checklists preservados das outras fases
 
@@ -59,7 +59,9 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Verificar TypeScript estrito dos módulos alterados em isolamento; posteriormente confirmar typecheck completo no CI de Node 24.
 - [x] Configurar dependências de orientação/rasterização em Docker e CI; adicionar testes de integração sem fixture pessoal.
 - [x] Confirmar o CI completo do commit de código `401f3da`: backend, frontend, PostgreSQL, Compose e PDF aprovados na execução [40584518041](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40584518041).
-- [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário; iniciar novo job para não reutilizar sugestões antigas.
+- [x] Adicionar console.log solicitado pelo usuário para fields/sources/diagnostics antes de entregar os dados ao formulário, somente em loopback com nameStage de QA; distinguir recuperação sem nova leitura. TypeScript isolado e 17 cenários locais com fetch simulado aprovados.
+- [ ] Confirmar no CI o novo teste Vitest `api.ocr-console.test.ts` e os demais jobs do commit de diagnóstico; não reutilizar CI anterior como evidência.
+- [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário; investigar a resposta real da API e o campo ainda vazio.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
 - [ ] Completar isolamento de decodificadores, limites reais de CPU/RAM, fuzzing, carga e comportamento sob interrupção.
@@ -81,6 +83,18 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 
 **Ainda não verificado:** navegador e Windows/Docker da máquina do usuário, precisão de corpus amplo, isolamento/carga e homologação. A conclusão do CI não comprova esses itens. A atualização posterior deste registro é somente documental, sem modificar os arquivos de código validados.
 
-**Riscos/próximo passo:** revisar/integrar o PR; reconstruir a imagem da API uma vez pelas novas ferramentas; depois usar o testador que importa TypeScript local sem rebuild a cada alteração. Avaliar nomes multilinha e corpus amplo. Limites de cache do ImageMagick não equivalem a sandbox de processo.
+**Riscos/próximo passo (registro histórico):** revisar/integrar o PR; reconstruir a imagem da API uma vez pelas novas ferramentas; depois usar o testador que importa TypeScript local sem rebuild a cada alteração. Avaliar nomes multilinha e corpus amplo. Limites de cache do ImageMagick não equivalem a sandbox de processo. O PR 2 foi posteriormente integrado em `cf7ced32d642c6526f5909378bfad5650eb623bb`; isso não confirma a versão executada na máquina do usuário.
 
 **Documento técnico vigente:** [correção de OCR de identidade](docs/OCR_IDENTITY_FIX_2026-10-27.md). As descrições do caminho antigo no README e no histórico de OCR devem ser interpretadas como anteriores a esta correção.
+
+## 5. Registro de execução — 27/10/2026, console de diagnóstico solicitado
+
+**Base:** `cf7ced32d642c6526f5909378bfad5650eb623bb`, main. O usuário continua sem visualizar o nome e pediu um console.log simples; esta entrega adiciona instrumentação, não declara nova correção da leitura.
+
+**Arquivos:** `frontend/src/lib/api.ts`, `frontend/src/lib/api.ocr-console.test.ts`, `docs/QA_OCR_CONSOLE.md` e este tracker. Nenhuma alteração de backend, contrato, extração, imagem, banco ou dependência.
+
+**Implementado:** no retorno bem-sucedido de POST extract ou GET job, imprimir snapshot JSON de fields/sources/diagnostics antes do preenchimento. Apenas localhost/127.0.0.1/[::1] com diagnóstico de identidade nameStage emitido pelo QA do servidor. GET é identificado como recuperação, possivelmente com edições manuais. Sem requisições adicionais, sem persistência em storage/servidor e sem imprimir identificadores, erros, documentos, tokens ou texto OCR bruto. Os valores dos campos são visíveis no console por solicitação explícita; usar dados fictícios e não publicar capturas com informações reais.
+
+**Validação local:** `tsc --target ES2023 --module ESNext --strict --noUncheckedIndexedAccess --lib ES2023,DOM` sobre o módulo real; 17 testes com node:test, fetch simulado e o módulo compilado, todos aprovados. Cobrem retorno preservado, nova extração, recuperação, nome ausente, hosts locais/remotos, QA desligado, payload malformado, HTTP 503 e ambiente sem window. O novo teste Vitest deve ser executado pelo CI completo; não foi executado localmente por indisponibilidade das dependências/rede. Browser real, Docker local e reconhecimento da foto não foram retestados nesta entrega.
+
+**Operação e limites:** ver [QA do console OCR](docs/QA_OCR_CONSOLE.md). Atualizar somente o frontend para receber o log; não reconstruir a API por causa desta instrumentação. O log mostra os campos processados devolvidos pela API, não todo texto reconhecido pelo Tesseract. Resultado recuperado não equivale a nova análise. Falha de extração no ambiente do usuário permanece em investigação.
