@@ -31,8 +31,8 @@ const concepts: readonly SemanticFieldConcept[] = [{
   fieldId: 'vessel.activity',
   anchor: 'ATIVIDADE',
   labels: [
-    /^\s*ATIVIDADE\s*\/\s*ACTIVITY\s*(?:[:\-]\s*)?(.*)$/i,
-    /^\s*ATIVIDADE\s*\/\s*USO\s*(?:[:\-]\s*)?(.*)$/i,
+    /^\s*ATIVIDADE\s*\/\s*ACTIVITY\s*(?:[:-]\s*)?(.*)$/i,
+    /^\s*ATIVIDADE\s*\/\s*USO\s*(?:[:-]\s*)?(.*)$/i,
   ],
   validate: (value) => /^[A-ZÀ-Ý ]{3,60}$/i.test(value.trim()) &&
     !/^ATIVIDADE\b/i.test(value.trim()),
