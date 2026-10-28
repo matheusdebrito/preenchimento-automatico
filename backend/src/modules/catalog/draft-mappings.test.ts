@@ -53,16 +53,15 @@ describe('draft form map coordinates', () => {
     }
   });
 
-  it('tem ambas escolhas sim/nao em cada motor e nunca deriva declarante de vendedor', () => {
+  it('mantém um único motor no MVP e nunca deriva declarante de vendedor', () => {
     const transfer = catalog.mappings.find((m) => m.formVersionId === 'autorizacao-transferencia-ma-v1')!;
-    for (let engine = 1; engine <= 4; engine++) {
-      const choices = transfer.placements.filter((placement) =>
-        placement.kind === 'COORDINATES' && placement.fieldId === 'vessel.motor' + engine + 'Choice');
-      expect(choices).toHaveLength(2);
-      expect(new Set(choices.map((choice) =>
-        choice.kind === 'COORDINATES' ? choice.markWhen : ''))).toEqual(new Set(['sim', 'nao']));
-      expect(choices.every((choice) => choice.required)).toBe(true);
-    }
+    const fields = new Set(transfer.placements.map((placement) => placement.fieldId));
+    expect(fields.has('vessel.motorBrand')).toBe(true);
+    expect(fields.has('vessel.motorPower')).toBe(true);
+    expect(fields.has('vessel.motorSerial')).toBe(true);
+    expect([...fields].some((id) => /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id)))
+      .toBe(false);
+
     const loss = catalog.mappings.find((m) => m.formVersionId === 'declaracao-perda-tie-ma-v1')!;
     expect(loss.placements.some((p) => p.fieldId === 'declarant.fullName')).toBe(true);
     expect(loss.placements.some((p) => p.fieldId.startsWith('seller.'))).toBe(false);
