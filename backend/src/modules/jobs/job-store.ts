@@ -15,7 +15,7 @@ export interface StoredDocument {
 // Only technical outcomes and catalog IDs are retained, never OCR text here.
 export interface ExtractionDiagnostic {
   requirementId: string;
-  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
   suggestionCount: number;
   /** OCR engine used for this document. */
   engine?: 'paddleocr' | 'pdf-text';
