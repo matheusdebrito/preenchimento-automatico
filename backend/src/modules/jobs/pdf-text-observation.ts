@@ -7,6 +7,14 @@ import type { DocumentObservation, ObservationLine } from '../document-understan
 const execFileAsync = promisify(execFile);
 const FAST_SOURCES = new Set(['tie', 'residence-proof']);
 
+interface PdfWord {
+  text: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 function decodeXml(value: string): string {
   return value
     .replace(/&#x([0-9a-f]+);/gi, (_all, hex: string) =>
@@ -24,64 +32,116 @@ function numberAttr(tag: string, name: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-function parseBBoxXml(xml: string, elapsedMs: number): DocumentObservation | null {
-  const pages = [...xml.matchAll(/<page\b[^>]*>([\s\S]*?)<\/page>/gi)].map((pageMatch, pageIndex) => {
-    const body = pageMatch[1] ?? '';
-    const lines: ObservationLine[] = [];
-    let lineIndex = 0;
-    for (const lineMatch of body.matchAll(/<line\b[^>]*>([\s\S]*?)<\/line>/gi)) {
-      const lineBody = lineMatch[1] ?? '';
-      const words = [...lineBody.matchAll(/(<word\b[^>]*>)([\s\S]*?)<\/word>/gi)]
-        .map((match) => {
-          const tag = match[1] ?? '';
-          const text = decodeXml(match[2] ?? '').trim();
-          const x1 = numberAttr(tag, 'xMin');
-          const y1 = numberAttr(tag, 'yMin');
-          const x2 = numberAttr(tag, 'xMax');
-          const y2 = numberAttr(tag, 'yMax');
-          return { text, x1, y1, x2, y2 };
-        })
-        .filter((word) => word.text &&
-          word.x1 !== null && word.y1 !== null && word.x2 !== null && word.y2 !== null)
-        .sort((a, b) => a.x1! - b.x1!);
-      if (words.length === 0) continue;
+function parseWords(body: string): PdfWord[] {
+  const words: PdfWord[] = [];
+  for (const match of body.matchAll(/(<word\b[^>]*>)([\s\S]*?)<\/word>/gi)) {
+    const tag = match[1] ?? '';
+    const text = decodeXml(match[2] ?? '').trim();
+    const x1 = numberAttr(tag, 'xMin');
+    const y1 = numberAttr(tag, 'yMin');
+    const x2 = numberAttr(tag, 'xMax');
+    const y2 = numberAttr(tag, 'yMax');
+    if (!text || x1 === null || y1 === null || x2 === null || y2 === null) continue;
+    words.push({ text, x1, y1, x2, y2 });
+  }
+  return words;
+}
 
-      const heights = words.map((word) => Math.max(1, word.y2! - word.y1!));
-      const averageHeight = heights.reduce((sum, value) => sum + value, 0) / heights.length;
-      const splitGap = Math.max(8, averageHeight * 1.15);
-      const segments: typeof words[] = [];
-      let segment: typeof words = [];
+function rowCenter(word: PdfWord): number {
+  return (word.y1 + word.y2) / 2;
+}
 
-      for (const word of words) {
-        const previous = segment.at(-1);
-        if (previous && word.x1! - previous.x2! > splitGap) {
-          segments.push(segment);
-          segment = [];
-        }
-        segment.push(word);
-      }
-      if (segment.length) segments.push(segment);
+function groupRows(words: readonly PdfWord[]): PdfWord[][] {
+  const sorted = [...words].sort((a, b) =>
+    rowCenter(a) - rowCenter(b) || a.x1 - b.x1);
+  const rows: PdfWord[][] = [];
 
-      for (const part of segments) {
-        const text = part.map((word) => word.text).join(' ').trim();
-        if (!text) continue;
-        lines.push({
-          id: pageIndex + ':' + lineIndex++,
-          page: pageIndex,
-          text,
-          confidence: 1,
-          box: [
-            Math.min(...part.map((word) => word.x1!)),
-            Math.min(...part.map((word) => word.y1!)),
-            Math.max(...part.map((word) => word.x2!)),
-            Math.max(...part.map((word) => word.y2!)),
-          ],
-          polygon: null,
-        });
+  for (const word of sorted) {
+    const height = Math.max(1, word.y2 - word.y1);
+    const center = rowCenter(word);
+    let bestIndex = -1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    for (let index = Math.max(0, rows.length - 4); index < rows.length; index++) {
+      const row = rows[index]!;
+      const rowCenterValue = row.reduce((sum, item) => sum + rowCenter(item), 0) / row.length;
+      const rowHeight = row.reduce((sum, item) =>
+        sum + Math.max(1, item.y2 - item.y1), 0) / row.length;
+      const tolerance = Math.max(2.5, Math.min(height, rowHeight) * 0.65);
+      const distance = Math.abs(center - rowCenterValue);
+      if (distance <= tolerance && distance < bestDistance) {
+        bestIndex = index;
+        bestDistance = distance;
       }
     }
-    return { page: pageIndex, orientation: 0, lines };
-  });
+
+    if (bestIndex === -1) rows.push([word]);
+    else rows[bestIndex]!.push(word);
+  }
+
+  return rows
+    .map((row) => [...row].sort((a, b) => a.x1 - b.x1))
+    .sort((a, b) => rowCenter(a[0]!) - rowCenter(b[0]!));
+}
+
+function splitRow(row: readonly PdfWord[]): PdfWord[][] {
+  if (row.length === 0) return [];
+  const averageHeight = row.reduce((sum, word) =>
+    sum + Math.max(1, word.y2 - word.y1), 0) / row.length;
+  // Normal spaces inside a phrase are much smaller than a form-column gap.
+  // The cap keeps small-font PDFs from joining independent label/value cells.
+  const splitGap = Math.max(6, Math.min(14, averageHeight * 0.9));
+  const segments: PdfWord[][] = [];
+  let current: PdfWord[] = [];
+
+  for (const word of row) {
+    const previous = current.at(-1);
+    if (previous && word.x1 - previous.x2 > splitGap) {
+      segments.push(current);
+      current = [];
+    }
+    current.push(word);
+  }
+  if (current.length) segments.push(current);
+  return segments;
+}
+
+function segmentToLine(
+  part: readonly PdfWord[],
+  pageIndex: number,
+  lineIndex: number,
+): ObservationLine {
+  return {
+    id: pageIndex + ':' + lineIndex,
+    page: pageIndex,
+    text: part.map((word) => word.text).join(' ').trim(),
+    confidence: 1,
+    box: [
+      Math.min(...part.map((word) => word.x1)),
+      Math.min(...part.map((word) => word.y1)),
+      Math.max(...part.map((word) => word.x2)),
+      Math.max(...part.map((word) => word.y2)),
+    ],
+    polygon: null,
+  };
+}
+
+function parseBBoxXml(xml: string, elapsedMs: number): DocumentObservation | null {
+  const pages = [...xml.matchAll(/<page\b[^>]*>([\s\S]*?)<\/page>/gi)]
+    .map((pageMatch, pageIndex) => {
+      const body = pageMatch[1] ?? '';
+      const words = parseWords(body);
+      const lines: ObservationLine[] = [];
+      let lineIndex = 0;
+
+      for (const row of groupRows(words)) {
+        for (const part of splitRow(row)) {
+          if (!part.length) continue;
+          lines.push(segmentToLine(part, pageIndex, lineIndex++));
+        }
+      }
+      return { page: pageIndex, orientation: 0, lines };
+    });
 
   const text = pages.flatMap((page) => page.lines.map((line) => line.text)).join(' ');
   const useful = text.replace(/[^\p{L}\p{N}]/gu, '').length;
@@ -90,7 +150,7 @@ function parseBBoxXml(xml: string, elapsedMs: number): DocumentObservation | nul
   return {
     engine: 'pdf-text',
     engineVersion: 'poppler',
-    model: 'pdftotext-bbox-layout',
+    model: 'pdftotext-bbox',
     elapsedMs,
     pages,
   };
@@ -103,7 +163,7 @@ export async function extractPdfTextObservation(
   const started = performance.now();
   try {
     const { stdout } = await execFileAsync('pdftotext',
-      ['-bbox-layout', '-enc', 'UTF-8', doc.path, '-'],
+      ['-bbox', '-enc', 'UTF-8', doc.path, '-'],
       { timeout: 5_000, maxBuffer: 2 * 1024 * 1024 });
     return parseBBoxXml(stdout, Math.round(performance.now() - started));
   } catch {
