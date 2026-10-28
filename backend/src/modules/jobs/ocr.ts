@@ -34,8 +34,9 @@ export function chooseIdentityLayout(primary: string, alternative: string, sourc
 
 export async function extractTextWithEngine(
   doc: StoredDocument,
-  _tempDir: string,
+  tempDir: string,
 ): Promise<OcrExtraction> {
+  void tempDir;
   if (active >= MAX_CONCURRENT) throw new Error('OCR ocupado. Tente novamente.');
   if (!process.env.PADDLE_OCR_URL) {
     throw new Error('PaddleOCR não configurado.');
