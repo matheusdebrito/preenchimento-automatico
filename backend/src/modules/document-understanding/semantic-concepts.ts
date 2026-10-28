@@ -2,6 +2,7 @@ import type {
   DocumentObservation,
   ExtractionContext,
   FieldEvidence,
+  FieldExtractionAssessment,
 } from './contracts.js';
 import {
   anchoredCandidates,
@@ -9,16 +10,6 @@ import {
   toEvidence,
   withSpatialPhrases,
 } from './extractor-utils.js';
-
-export type SemanticFieldStatus = 'FOUND' | 'NOT_FOUND' | 'AMBIGUOUS';
-
-export interface SemanticFieldAssessment {
-  fieldId: string;
-  status: SemanticFieldStatus;
-  confidence: number | null;
-  method?: string;
-  anchor?: string;
-}
 
 export interface SemanticFieldConcept {
   fieldId: string;
@@ -30,7 +21,7 @@ export interface SemanticFieldConcept {
 
 export interface SemanticExtractionResult {
   evidence: readonly FieldEvidence[];
-  assessments: readonly SemanticFieldAssessment[];
+  assessments: readonly FieldExtractionAssessment[];
 }
 
 /**
@@ -46,7 +37,7 @@ export function extractSemanticConcepts(
 ): SemanticExtractionResult {
   const source = withSpatialPhrases(observation);
   const evidence: FieldEvidence[] = [];
-  const assessments: SemanticFieldAssessment[] = [];
+  const assessments: FieldExtractionAssessment[] = [];
 
   for (const concept of concepts) {
     const candidates = anchoredCandidates(
