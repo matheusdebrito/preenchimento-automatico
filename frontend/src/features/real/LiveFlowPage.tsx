@@ -16,7 +16,7 @@ type ExtractionDiagnostic = {
   requirementId: string;
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
-  engine?: 'paddleocr';
+  engine?: 'paddleocr' | 'pdf-text';
   nameStage?: 'name_recognized' | 'name_not_mapped' |
     'label_seen_name_rejected' | 'label_not_detected';
 };
@@ -483,7 +483,7 @@ export function LiveFlowPage() {
                                     : 'texto detectado, mas nome/CPF/RG não foram identificados com segurança')}
                             {item.engine ? (
                               <span className="live-ocr-name-stage">
-                                {' · Motor: PaddleOCR'}
+                                {' · Leitura: ' + (item.engine === 'pdf-text' ? 'texto digital do PDF' : 'PaddleOCR')}
                               </span>
                             ) : null}
                             {item.nameStage ? (
