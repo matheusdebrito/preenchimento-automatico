@@ -110,7 +110,9 @@ export function anchoredCandidates(
           const right = sameRow.filter((line) => {
             if (line.confidence < 0.35 || isBoundary(line.text) || !validate(line.text)) return false;
             return line.box![0] < rightBoundaryX;
-          }).sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
+          }).sort((a, b) =>
+            Number(a.id.startsWith('phrase:')) - Number(b.id.startsWith('phrase:')) ||
+            a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
 
           if (right) {
             candidates.push({
@@ -139,7 +141,9 @@ export function anchoredCandidates(
           const below = belowRegion.filter((line) => {
             if (line.confidence < 0.35 || isBoundary(line.text) || !validate(line.text)) return false;
             return line.box![1] < belowBoundaryY;
-          }).sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0])[0];
+          }).sort((a, b) =>
+            Number(a.id.startsWith('phrase:')) - Number(b.id.startsWith('phrase:')) ||
+            a.box![1] - b.box![1] || a.box![0] - b.box![0])[0];
 
           if (below) {
             candidates.push({
