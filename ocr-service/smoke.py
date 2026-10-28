@@ -12,8 +12,13 @@ request = urllib.request.Request(
     headers={"Content-Type": "image/png", "Content-Length": str(len(body))},
     method="POST",
 )
-with urllib.request.urlopen(request, timeout=60) as response:
-    result = json.load(response)
+try:
+    with urllib.request.urlopen(request, timeout=60) as response:
+        result = json.load(response)
+except Exception as exc:
+    if hasattr(exc, "read"):
+        print("[PADDLE_OCR_SMOKE_ERROR]", exc.read().decode("utf-8", "replace"))
+    raise
 
 texts = [
     str(line.get("text", ""))
