@@ -309,4 +309,4 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 
 **Regressão:** adicionado teste com linhas deliberadamente fora da ordem visual: o array OCR coloca `BR-MZL-123456` antes de `441M2023001234`, enquanto as bounding boxes posicionam cada valor junto ao seu rótulo correto. O resultado exigido é `vessel.registration = 441M2023001234` e `vessel.hullId = BR-MZL-123456`.
 
-**Validação:** a alteração está implementada na branch `fix/tiem-registration-hull-confusion`. O estado de CI/PR deve ser registrado após a execução do commit final; até lá, não considerar a correção homologada no ambiente do usuário.
+**Validação:** o commit `626203c2` foi validado no CI do PR #21, execução `40734184046`: `backend-checks`, `postgres-integration`, `pdf-mapping-visual`, `ocr-integration`, `reference-documents` e `compose-smoke` concluíram com sucesso; `frontend-checks` foi corretamente ignorado por não haver alteração de frontend. Isso valida a regressão automatizada e a integração de OCR, mas não substitui o reteste manual desta imagem no ambiente do usuário.
