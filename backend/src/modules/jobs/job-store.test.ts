@@ -56,23 +56,33 @@ describe('JobStore', () => {
     expect(job.files).toHaveLength(1);
   });
 
-  it('não apaga documentos durante leitura ativa; renova o prazo ao final e apaga depois', async () => {
+  it('protege operações ativas sensíveis, mas permite cancelar OCR e apagar os arquivos', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pa-jobs-lease-'));
     directories.push(root);
     const store = new JobStore(root);
     stores.push(store);
-    const job = await store.create('alice', 'service');
-    expect(store.beginOperation(job)).toBe(true);
-    expect(store.beginOperation(job)).toBe(false);
-    job.expiresAt = Date.now() - 1;
-    await store.cleanup();
-    await stat(store.directory(job));
-    await expect(store.remove(job)).rejects.toThrow('ocupado');
-    store.endOperation(job);
-    expect(store.get(job.id, 'alice')).not.toBeNull();
-    job.expiresAt = Date.now() - 1;
-    await store.cleanup();
-    await expect(stat(store.directory(job))).rejects.toThrow();
+
+    const protectedJob = await store.create('alice', 'service');
+    expect(store.beginOperation(protectedJob)).toBe(true);
+    protectedJob.stage = 'GENERATING';
+    await expect(store.remove(protectedJob)).rejects.toThrow('ocupado');
+    store.endOperation(protectedJob);
+
+    const ocrJob = await store.create('alice', 'service');
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8//8/AwMDEwMDAwMDAwAkBgMB/DXemwAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const uploaded = await store.upload(ocrJob, 'source', png, 'image/png');
+    expect(store.beginOperation(ocrJob)).toBe(true);
+    ocrJob.stage = 'PROCESSING';
+    await expect(store.remove(ocrJob)).resolves.toBeUndefined();
+    expect(store.get(ocrJob.id, 'alice')).toBeNull();
+    await expect(stat(uploaded.path)).rejects.toThrow();
+    // The original OCR request may finish after cancellation; releasing its lease
+    // must not recreate or renew the detached job.
+    store.endOperation(ocrJob);
+    expect(store.get(ocrJob.id, 'alice')).toBeNull();
   });
 
   it('não ultrapassa o limite global com várias criações concorrentes', async () => {
