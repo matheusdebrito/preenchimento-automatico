@@ -10,7 +10,7 @@ Fluxo obrigatório:
 
 ```text
 Serviço -> Formulários -> FormMapping -> campos canônicos
-Upload -> OCR -> DocumentObservation -> DocumentExtractor -> FieldEvidence
+Upload -> OCR -> DocumentObservation -> conceitos semânticos multi-layout -> FieldEvidence
 FieldEvidence -> FieldResolver -> revisão humana -> preenchimento dos formulários
 ```
 
@@ -28,9 +28,19 @@ FieldEvidence -> FieldResolver -> revisão humana -> preenchimento dos formulár
 
 `ServiceDefinition` contém workflow, perguntas, custo e documentos que podem auxiliar o processo. `ServiceForm` compõe versões de formulários e condições. O serviço não implementa regras de OCR.
 
-### Tipo de documento
+### Família de documento e layouts
 
-Um tipo de documento possui estratégia própria de entendimento. RG, CNH, TIE, CHA e CIR devem evoluir para tipos identificáveis e extratores independentes. Nesta primeira migração, RG/CNH continuam sob o perfil transitório `identity` porque o fluxo atual ainda não classifica qual documento de identidade foi enviado. Não inferir o tipo silenciosamente.
+A unidade principal de entendimento é a família semântica, não a versão visual do documento.
+Um mesmo extractor pode aceitar múltiplos layouts quando eles representam os mesmos conceitos.
+Exemplos: TIE/TIEM antigo e digital compartilham conceitos de embarcação; CNH física e
+digital podem compartilhar conceitos de identidade.
+
+A classificação de layout pode existir para diagnóstico, mas não deve ser pré-condição para
+extrair um campo. Um erro de classificação não pode inutilizar toda a extração.
+
+O OCR não é treinado nem especializado por documento. PaddleOCR permanece um produtor
+genérico de texto, confiança e geometria. A especialização vive na camada de conceitos
+semânticos e aliases de rótulo.
 
 ### DocumentObservation
 
@@ -40,11 +50,28 @@ Para PDFs de TIE, comprovante de residência e documento de venda, a aplicação
 
 ### DocumentExtractor
 
-Conhece a semântica de um tipo de documento e produz `FieldEvidence[]`. Não conhece serviço nem formulário.
+Conhece a semântica de uma família de documento e produz `FieldEvidence[]`. Não conhece
+serviço nem formulário.
+
+Campos repetidos entre layouts devem ser descritos como conceitos semânticos. Cada conceito
+define o campo canônico, aliases conhecidos de rótulo, validador estrutural e normalização
+opcional. A busca usa valor inline, relação à direita, relação abaixo e sequência próxima.
+
+A mesma regra deve funcionar para layouts antigo, digital, bilíngue ou futuras pequenas
+variações sempre que o significado do campo for o mesmo.
 
 ### FieldEvidence
 
-Registra valor, campo canônico, documento, página, linhas utilizadas, confiança e método de associação. É temporário e sujeito a revisão; nunca prova autenticidade.
+Registra valor, campo canônico, documento, página, linhas utilizadas, confiança e método de
+associação. É temporário e sujeito a revisão; nunca prova autenticidade.
+
+A inspeção também pode produzir `FieldExtractionAssessment`:
+- `FOUND`: um valor único e válido foi associado ao conceito;
+- `NOT_FOUND`: não houve evidência suficiente;
+- `AMBIGUOUS`: mais de um valor válido e divergente foi encontrado.
+
+`NOT_FOUND` não significa que o campo não exista fisicamente no documento; pode significar
+baixa qualidade de imagem, OCR insuficiente ou alias ainda não suportado.
 
 ### FieldResolver
 
@@ -60,14 +87,17 @@ Agrupa evidências por campo. Valores equivalentes podem reforçar a origem; val
 6. Formulários não conhecem a origem do dado.
 7. Serviços não duplicam listas de campos já presentes nos mapeamentos.
 8. Evidência e dados extraídos permanecem temporários e não entram em analytics/logs.
-9. Antes de suportar RG, CNH, TIE, CHA e CIR individualmente, implementar classificação explícita ou escolha do tipo; não assumir que todo documento de identidade é RG.
+9. Não exigir classificação de layout para extrair campos que compartilham a mesma semântica.
+10. Um novo layout deve preferencialmente adicionar aliases/testes ao conceito existente, não duplicar o extractor.
+11. Classificação explícita só é necessária quando famílias diferentes possuem semântica ou regras incompatíveis.
 
 ## Migração incremental
 
 - Etapa 1: contratos, observação neutra, resolver e extractor de identidade.
 - Etapa 2: retirar identidade do parser legado após regressões equivalentes.
-- Etapa 3: criar classificação/tipo explícito e separar RG de CNH.
-- Etapa 4: TIE e comprovante de residência migrados para extractors independentes; adicionar CHA e CIR quando entrarem no escopo.
-- Etapa 5: migrar documento de venda; eliminar o parser legado quando não houver consumidores.
+- Etapa 3: consolidar campos compartilhados em conceitos semânticos multi-layout.
+- Etapa 4: TIE/TIEM usam catálogo multi-layout; comprovante permanece extractor independente.
+- Etapa 5: cadastrar aliases de CNH física/digital e CHA antiga/digital quando os layouts reais entrarem no conjunto de referência.
+- Etapa 6: separar famílias somente onde houver semântica incompatível; migrar documento de venda e eliminar o parser legado quando não houver consumidores.
 
 O parser legado pode existir durante a transição para tipos ainda não migrados, mas não pode receber novos tipos de documento.
