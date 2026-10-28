@@ -34,8 +34,13 @@ const grossTonnage = (value: string): boolean =>
 const count = (value: string): boolean => /^\d{1,4}$/.test(value.trim());
 const power = (value: string): boolean =>
   /^\d{1,4}(?:[.,]\d{1,2})?\s*(?:HP|CV|KW)?$/i.test(value.trim());
-const serial = (value: string): boolean =>
-  /^[A-Z0-9./-]{4,50}$/i.test(value.trim()) && /\d/.test(value);
+const serial = (value: string): boolean => {
+  const text = value.trim();
+  const normalized = normalizeText(text);
+  if (/S[EÉ]RIE\s+DO\s+MOTOR|ENGINE\s+SERIAL\s+NUMBER|MOTOR\s*1|ENGINE\s*1/i
+    .test(normalized)) return false;
+  return /^[A-Z0-9./-]{4,50}$/i.test(text) && /\d/.test(text);
+};
 
 export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
   {
