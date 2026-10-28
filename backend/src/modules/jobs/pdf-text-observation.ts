@@ -48,7 +48,7 @@ function parseBBoxXml(xml: string, elapsedMs: number): DocumentObservation | nul
 
       const heights = words.map((word) => Math.max(1, word.y2! - word.y1!));
       const averageHeight = heights.reduce((sum, value) => sum + value, 0) / heights.length;
-      const splitGap = Math.max(18, averageHeight * 2.5);
+      const splitGap = Math.max(8, averageHeight * 1.15);
       const segments: typeof words[] = [];
       let segment: typeof words = [];
 
