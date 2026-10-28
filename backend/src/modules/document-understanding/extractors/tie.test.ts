@@ -265,4 +265,31 @@ describe('tieDocumentExtractor', () => {
       .toBe('6AN123456');
   });
 
+  it('para a busca de série ao chegar no cabeçalho do motor 2', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '**********',
+      'MOTOR2/ENGINE2',
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      '2022',
+    ]), context);
+
+    expect(evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
+  });
+
+  it('não trata cabeçalhos compactados de motor como valor de fabricante', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      '**********',
+      'MOTOR2/ENGINE2',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '6AN123456',
+    ]), context);
+
+    expect(evidence.some((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')).toBe(false);
+    expect(evidence.find((item) => item.fieldId === 'vessel.motorSerial')?.value)
+      .toBe('6AN123456');
+  });
+
 });
