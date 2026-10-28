@@ -310,3 +310,20 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Regressão:** adicionado teste com linhas deliberadamente fora da ordem visual: o array OCR coloca `BR-MZL-123456` antes de `441M2023001234`, enquanto as bounding boxes posicionam cada valor junto ao seu rótulo correto. O resultado exigido é `vessel.registration = 441M2023001234` e `vessel.hullId = BR-MZL-123456`.
 
 **Validação:** o commit `626203c2` foi validado no CI do PR #21, execução `40734184046`: `backend-checks`, `postgres-integration`, `pdf-mapping-visual`, `ocr-integration`, `reference-documents` e `compose-smoke` concluíram com sucesso; `frontend-checks` foi corretamente ignorado por não haver alteração de frontend. Isso valida a regressão automatizada e a integração de OCR, mas não substitui o reteste manual desta imagem no ambiente do usuário.
+
+
+## 20. Registro de execução — 28/10/2026, robustez semântica de TIE/TIEM após reteste real
+
+**Relato:** após o PR #21, o mesmo TIEM antigo continuou associando incorretamente o identificador do casco ao número de inscrição no ambiente do usuário. O usuário também informou que outros modelos deixavam de sugerir alguns campos já suportados.
+
+**Causa-raiz ampliada:** desativar `anchor-sequential` com geometria eliminou apenas um caminho de falso positivo. O validador de `vessel.registration` continuava aceitando identificadores náuticos fortes como `BR-MZL-123456` e `BRABC12345D626`; além disso, aliases antigos eram estreitos para variações comuns produzidas por OCR, como `N°`, `Nº`, `N O`, `ATIVIDADE - USO`, `QTDADE` e `NOME DO FABRICANTE`.
+
+**Correção:** `vessel.registration` agora rejeita identificadores fortes de casco iniciados por `BR` quando combinam letras e dígitos. A normalização remove espaços internos apenas para validação de identificadores, preservando o valor original como evidência. Os aliases de inscrição, casco, atividade, fabricante, tripulantes e passageiros foram ampliados de modo conservador para variantes comuns de OCR sem introduzir fuzzy matching global.
+
+**Regressões determinísticas:** adicionados cenários em que o OCR coloca `BR-MZL-123456` na mesma linha sintética do rótulo `N° DE INSCRIÇÃO`, mantendo `441M2023001234` geometricamente abaixo; e cenários com variantes de rótulos antigos. A expectativa continua separar `vessel.registration` de `vessel.hullId`.
+
+**Referência real:** o teste de `documentos/tie/TIEM antigo.pdf` passa a exigir, além de inscrição/casco/ano/comprimento, nome da embarcação, potência, série e marca do motor, atividade, tripulantes e passageiros. Isso transforma falhas de cobertura desses campos em regressão visível no CI em vez de permitir sucesso parcial silencioso.
+
+**Escopo preservado:** não foram promovidos proprietário, coproprietário, hipoteca, alienação, data de inscrição, validade, via, construtor, material ou cor do casco porque esses campos não pertencem atualmente aos mapeamentos ativos do MVP. A entrega amplia a confiabilidade dos campos canônicos já usados pelos formulários.
+
+**Validação:** implementação e testes estão na branch `fix/tiem-semantic-registration-and-aliases`. Registrar abaixo o CI do PR e não considerar homologado no ambiente do usuário até reteste manual após merge.
