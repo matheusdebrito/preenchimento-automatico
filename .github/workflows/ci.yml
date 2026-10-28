@@ -8,12 +8,67 @@ permissions:
   contents: read
 
 jobs:
-  checks:
+  detect-changes:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: [backend, frontend]
+    outputs:
+      backend: ${{ steps.paths.outputs.backend }}
+      frontend: ${{ steps.paths.outputs.frontend }}
+      ocr: ${{ steps.paths.outputs.ocr }}
+      reference: ${{ steps.paths.outputs.reference }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - id: paths
+        name: Detect affected areas
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            base="origin/${{ github.base_ref }}"
+          else
+            base="${{ github.event.before }}"
+            if [ -z "$base" ] || printf '%s' "$base" | grep -Eq '^0+$'; then
+              base="HEAD^"
+            fi
+          fi
+
+          files="$(git diff --name-only "$base" HEAD || true)"
+          printf '%s\n' "$files"
+
+          changed() {
+            printf '%s\n' "$files" | grep -Eq "$1"
+          }
+
+          backend=false
+          frontend=false
+          ocr=false
+          reference=false
+
+          if changed '^(backend/|docker-compose\.yml$|\.github/workflows/ci\.yml$)'; then
+            backend=true
+          fi
+          if changed '^(frontend/|docker-compose\.yml$|\.github/workflows/ci\.yml$)'; then
+            frontend=true
+          fi
+          if changed '^(ocr-service/|backend/src/modules/jobs/|backend/src/modules/document-understanding/|backend/src/routes/qa-preview\.integration\.test\.ts$|backend/src/routes/jobs\.integration\.test\.ts$|docker-compose\.yml$|\.github/workflows/ci\.yml$)'; then
+            ocr=true
+          fi
+          if changed '^(documentos/|ocr-service/|backend/src/modules/jobs/(paddle-ocr|pdf-paddle-pages|pdf-text-observation|reference-documents\.integration|reference-pdf-fast\.integration)\.|backend/src/modules/document-understanding/|\.github/workflows/ci\.yml$)'; then
+            reference=true
+          fi
+
+          {
+            echo "backend=$backend"
+            echo "frontend=$frontend"
+            echo "ocr=$ocr"
+            echo "reference=$reference"
+          } >> "$GITHUB_OUTPUT"
+
+  backend-checks:
+    needs: detect-changes
+    if: github.event_name == 'push' || needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -22,27 +77,97 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+          cache-dependency-path: backend/package-lock.json
       - name: Install locked dependencies
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm ci
       - name: Audit production dependencies
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm audit --omit=dev --audit-level=high
       - name: Typecheck
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm run typecheck
       - name: Lint
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm run lint
       - name: Tests
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
         run: npm test
       - name: Build
-        working-directory: ${{ matrix.package }}
+        working-directory: backend
+        run: npm run build
+
+  frontend-checks:
+    needs: detect-changes
+    if: github.event_name == 'push' || needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Audit production dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+      - name: Tests
+        working-directory: frontend
+        run: npm test
+      - name: Build
+        working-directory: frontend
         run: npm run build
 
   postgres-integration:
+    needs: detect-changes
+    if: github.event_name == 'push' || needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: test_app
+          POSTGRES_PASSWORD: test_password_ci_only
+          POSTGRES_DB: test_app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test_app -d test_app"
+          --health-interval=5s --health-timeout=5s --health-retries=15
+    env:
+      DATABASE_TEST_URL: postgresql://test_app:test_password_ci_only@127.0.0.1:5432/test_app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - name: Run database integration tests
+        working-directory: backend
+        run: >-
+          npx vitest run
+          src/modules/auth/auth.integration.test.ts
+          src/modules/auth/job-credit.integration.test.ts
+          src/modules/auth/db.integration.test.ts
+          --maxWorkers=1
+
+  ocr-integration:
+    needs: detect-changes
+    if: github.event_name == 'push' || needs.detect-changes.outputs.ocr == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -68,13 +193,8 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
         working-directory: backend
-      - name: Install PDF validation tool
+      - name: Install PDF tools
         run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
-      - name: Inspect reference PDF text layer safely
-        working-directory: backend
-        env:
-          REFERENCE_DOCUMENT_FAST: '1'
-        run: npx vitest run src/modules/jobs/reference-pdf-fast.integration.test.ts --maxWorkers=1
       - name: Build and start PaddleOCR
         run: |
           docker build -t preenchimento-ocr-ci ./ocr-service
@@ -85,8 +205,49 @@ jobs:
           done
           docker logs preenchimento-ocr-ci
           exit 1
-      - run: npm test
+      - name: Run synthetic OCR integration tests
         working-directory: backend
+        run: >-
+          npx vitest run
+          src/routes/jobs.integration.test.ts
+          src/routes/qa-preview.integration.test.ts
+          --maxWorkers=1
+      - name: Stop PaddleOCR
+        if: always()
+        run: docker rm -f preenchimento-ocr-ci || true
+
+  reference-documents:
+    needs: detect-changes
+    if: github.event_name == 'push' || needs.detect-changes.outputs.reference == 'true'
+    runs-on: ubuntu-latest
+    env:
+      PADDLE_OCR_URL: http://127.0.0.1:18000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - name: Install PDF tools
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Inspect reference PDF text layer safely
+        working-directory: backend
+        env:
+          REFERENCE_DOCUMENT_FAST: '1'
+        run: npx vitest run src/modules/jobs/reference-pdf-fast.integration.test.ts --maxWorkers=1
+      - name: Build and start PaddleOCR
+        run: |
+          docker build -t preenchimento-ocr-reference-ci ./ocr-service
+          docker run -d --name preenchimento-ocr-reference-ci -p 127.0.0.1:18000:8000 preenchimento-ocr-reference-ci
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:18000/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker logs preenchimento-ocr-reference-ci
+          exit 1
       - name: Validate repository reference documents serially
         working-directory: backend
         env:
@@ -94,15 +255,20 @@ jobs:
         run: npx vitest run src/modules/jobs/reference-documents.integration.test.ts --maxWorkers=1
       - name: Stop PaddleOCR
         if: always()
-        run: docker rm -f preenchimento-ocr-ci || true
+        run: docker rm -f preenchimento-ocr-reference-ci || true
 
   compose-smoke:
+    needs: detect-changes
+    if: >-
+      github.event_name == 'push' ||
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.frontend == 'true' ||
+      needs.detect-changes.outputs.ocr == 'true'
     runs-on: ubuntu-latest
     env:
       POSTGRES_PASSWORD: local_ci_password_only
       POSTGRES_USER: preenchimento
       POSTGRES_DB: preenchimento
-      # Force same-origin detection through the real Nginx proxy; do not rely on CORS.
       CORS_ORIGINS: http://localhost:5173
     steps:
       - uses: actions/checkout@v5
@@ -118,8 +284,6 @@ jobs:
             if curl -fsS http://127.0.0.1:3000/health >/dev/null && \
                curl -fsS http://127.0.0.1:8080/api/services >/dev/null; then
               curl -fsS http://127.0.0.1:8080/api/services
-              # A legitimate browser POST must reach auth (401: unknown user),
-              # while a cross-site POST must be blocked before authentication (403).
               local_status=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
                 -H 'Origin: http://127.0.0.1:8080' -H 'Content-Type: application/json' \
                 --data '{"email":"missing@example.invalid","password":"temporary-test-password"}' \
@@ -144,6 +308,8 @@ jobs:
         run: docker compose down -v --remove-orphans
 
   pdf-mapping-visual:
+    needs: detect-changes
+    if: github.event_name == 'push' || needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
