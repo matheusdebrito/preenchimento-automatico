@@ -164,3 +164,76 @@ export function toEvidence(
     status: 'REVIEW_REQUIRED',
   };
 }
+
+
+function verticalCenter(line: ObservationLine): number | null {
+  return line.box ? (line.box[1] + line.box[3]) / 2 : null;
+}
+
+/**
+ * Builds short left-to-right phrases from nearby OCR/PDF segments on the same row.
+ * This repairs layouts where a label/value is split into several boxes without
+ * flattening unrelated rows or pages into one arbitrary string.
+ */
+export function spatialPhrases(observation: DocumentObservation): readonly ObservationLine[] {
+  const phrases: ObservationLine[] = [];
+
+  for (const page of observation.pages) {
+    const positioned = page.lines.filter((line) => line.box)
+      .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0]);
+
+    for (let start = 0; start < positioned.length; start++) {
+      const first = positioned[start]!;
+      const firstCenter = verticalCenter(first)!;
+      const height = boxHeight(first);
+      const selected: ObservationLine[] = [first];
+
+      for (let offset = 1; offset <= 5; offset++) {
+        const next = positioned[start + offset];
+        if (!next?.box || next.page !== first.page) break;
+        const center = verticalCenter(next)!;
+        if (Math.abs(center - firstCenter) > Math.max(3, height * 0.8)) break;
+        const previous = selected.at(-1)!;
+        const gap = next.box[0] - previous.box![2];
+        if (gap < -height || gap > height * 18) break;
+        selected.push(next);
+      }
+
+      for (let count = 2; count <= selected.length; count++) {
+        const group = selected.slice(0, count);
+        const text = cleanText(group.map((line) => line.text).join(' '));
+        if (!text || text.length > 220) continue;
+        phrases.push({
+          id: 'phrase:' + group.map((line) => line.id).join('+'),
+          page: first.page,
+          text,
+          confidence: Math.min(...group.map((line) => line.confidence)),
+          box: [
+            Math.min(...group.map((line) => line.box![0])),
+            Math.min(...group.map((line) => line.box![1])),
+            Math.max(...group.map((line) => line.box![2])),
+            Math.max(...group.map((line) => line.box![3])),
+          ],
+          polygon: null,
+        });
+      }
+    }
+  }
+
+  return phrases;
+}
+
+export function withSpatialPhrases(observation: DocumentObservation): DocumentObservation {
+  const extra = spatialPhrases(observation);
+  if (extra.length === 0) return observation;
+  return {
+    ...observation,
+    pages: observation.pages.map((page) => ({
+      ...page,
+      lines: [
+        ...page.lines,
+        ...extra.filter((line) => line.page === page.page),
+      ],
+    })),
+  };
+}
