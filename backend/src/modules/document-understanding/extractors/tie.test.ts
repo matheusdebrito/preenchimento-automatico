@@ -233,4 +233,36 @@ describe('tieDocumentExtractor', () => {
       .toBe('6AN123456');
   });
 
+  it('não usa o rótulo de série como fabricante quando o TIE digital está mascarado', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'MOTOR 1 / ENGINE 1',
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      '**********',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '**********',
+      'MOTOR 2 / ENGINE 2',
+    ]), context);
+
+    expect(evidence.some((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')).toBe(false);
+    expect(evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
+  });
+
+  it('mantém fabricante e série separados quando ambos têm valores reais', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'MOTOR 1 / ENGINE 1',
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      'YAMAHA - WAVERUNNER - VX',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '6AN123456',
+      'MOTOR 2 / ENGINE 2',
+    ]), context);
+
+    expect(evidence.find((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')?.value)
+      .toBe('YAMAHA - WAVERUNNER - VX');
+    expect(evidence.find((item) => item.fieldId === 'vessel.motorSerial')?.value)
+      .toBe('6AN123456');
+  });
+
 });
