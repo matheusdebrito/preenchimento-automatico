@@ -208,7 +208,15 @@ export class JobStore {
   }
 
   async remove(job: DocumentJob): Promise<void> {
-    if (this.activeUploads.has(job.id) || this.activeJobs.has(job.id)) {
+    if (this.activeUploads.has(job.id)) {
+      throw new Error('Processo ocupado.');
+    }
+    const active = this.activeJobs.has(job.id);
+    // OCR is read-only with respect to billing and generated outputs. It is safe to
+    // detach the job and delete its private directory while the remote OCR request
+    // finishes. Generation/download remain protected because they may affect credit
+    // accounting or an active response stream.
+    if (active && job.stage !== 'PROCESSING') {
       throw new Error('Processo ocupado.');
     }
     this.jobs.delete(job.id);
