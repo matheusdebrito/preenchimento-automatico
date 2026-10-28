@@ -59,10 +59,25 @@ export interface FieldEvidence {
   status: 'REVIEW_REQUIRED';
 }
 
+export type FieldExtractionStatus = 'FOUND' | 'NOT_FOUND' | 'AMBIGUOUS';
+
+export interface FieldExtractionAssessment {
+  fieldId: string;
+  status: FieldExtractionStatus;
+  confidence: number | null;
+  method?: string;
+  anchor?: string;
+}
+
 export interface DocumentExtractor {
   readonly documentType: DocumentTypeId;
+  readonly supportedFields?: readonly string[];
   extract(
     observation: DocumentObservation,
     context: ExtractionContext,
   ): readonly FieldEvidence[];
+  assess?(
+    observation: DocumentObservation,
+    context: ExtractionContext,
+  ): readonly FieldExtractionAssessment[];
 }
