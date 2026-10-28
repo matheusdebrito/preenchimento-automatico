@@ -20,7 +20,11 @@ RUN apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-por \
 # Alpine's language package uses tessdata, unlike the tessdata_fast model tested
 # on Ubuntu. Pin the model bytes, retaining OSD and the distribution TSV configs.
 COPY scripts/install-ocr-model.sh /tmp/install-ocr-model.sh
-RUN sh /tmp/install-ocr-model.sh /usr/share/tessdata && rm /tmp/install-ocr-model.sh
+# Windows checkouts may rewrite shell scripts to CRLF. Normalize defensively
+# inside the Linux image before invoking /bin/sh.
+RUN sed -i 's/\r$//' /tmp/install-ocr-model.sh \
+    && sh /tmp/install-ocr-model.sh /usr/share/tessdata \
+    && rm /tmp/install-ocr-model.sh
 ENV TESSDATA_PREFIX=/usr/share/tessdata
 
 COPY package.json package-lock.json ./
