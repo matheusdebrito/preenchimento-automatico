@@ -97,8 +97,7 @@ describe('console OCR local e limitado ao QA de identidade', () => {
     expect(console.log).not.toHaveBeenCalled();
   });
 
-  it.each(['/api/auth/me', '/api/jobs', job + '/review', job + '/generate'])
-  ('nao imprime outras rotas: %s', async (path) => {
+  it.each(['/api/auth/me', '/api/jobs', job + '/review', job + '/generate'])('nao imprime outras rotas: %s', async (path) => {
     mockResponse(payload());
     await api(path, { method: 'POST' });
     expect(console.log).not.toHaveBeenCalled();
@@ -112,8 +111,7 @@ describe('console OCR local e limitado ao QA de identidade', () => {
   });
 
   it.each([null, [], {}, { diagnostics: [] }, { diagnostics: [null, 7, 'text'] },
-    { diagnostics: [{ requirementId: 'buyer-identity', nameStage: 'invalid' }] }])
-  ('tolera resposta sem diagnostico valido: %j', async (data) => {
+    { diagnostics: [{ requirementId: 'buyer-identity', nameStage: 'invalid' }] }].map((data) => [data]))('tolera resposta sem diagnostico valido: %j', async (data) => {
     mockResponse(data);
     expect(await api(job + '/extract', { method: 'POST' })).toBe(data);
     expect(console.log).not.toHaveBeenCalled();
