@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import type { StoredDocument } from './job-store.js';
 import { isValidCpf, isValidBrazilianDate } from '../catalog/field-validation.js';
 import { parseIdentityTsv, readIdentityImage, selectSpatialIdentityName } from './identity-ocr.js';
+import { extractPaddleText } from './paddle-ocr.js';
 
 const execFile = promisify(execFileCallback);
 let active = 0;
@@ -111,6 +112,14 @@ export async function extractText(doc: StoredDocument, tempDir: string): Promise
   if (active >= MAX_CONCURRENT) throw new Error('OCR ocupado. Tente novamente.');
   active++;
   try {
+    if (process.env.PADDLE_OCR_URL) {
+      try {
+        return (await extractPaddleText(doc)).slice(0, 50_000);
+      } catch {
+        // Keep the proven local engine as a resilience fallback. A failed
+        // Paddle sidecar must not make an otherwise reviewable job unusable.
+      }
+    }
     return (await extract(doc, tempDir)).slice(0, 50_000);
   } finally {
     active--;

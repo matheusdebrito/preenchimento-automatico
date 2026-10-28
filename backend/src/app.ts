@@ -10,6 +10,7 @@ import { registerHealthRoutes } from './routes/health.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerJobRoutes } from './routes/jobs.js';
+import { registerOcrDebugRoutes } from './routes/ocr-debug.js';
 import type { Database } from './modules/auth/db.js';
 import type { CatalogDefinition } from './modules/catalog/contracts.js';
 
@@ -77,6 +78,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // private root so orphan cleanup cannot erase another suite's live job.
   const testRoot = isTest ? resolve(tmpdir(), 'pa-test-app-' + randomUUID()) : undefined;
   registerJobRoutes(app, options.pool, options.catalogOverride, options.qaPreview === true, testRoot);
+  registerOcrDebugRoutes(app, options.pool);
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({

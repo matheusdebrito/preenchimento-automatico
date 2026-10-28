@@ -22,7 +22,7 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — modelo português padronizado; smoke OCR dentro do Docker e cinco jobs aprovados; reteste da foto no ambiente do usuário pendente |
+| 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR integrado como primário com Tesseract fallback; inspeção estruturada disponível; reteste da foto real e corpus amplo pendentes |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
@@ -64,7 +64,10 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Localizar a ausência no retorno de uma nova extração: somente person.cpf e nameStage label_not_detected, conforme console do usuário. Não atribuir o 404 ao OCR sem URL.
 - [x] Conferir que o modelo local é o blob oficial de tessdata_fast/4.1.0; comparar com a origem tessdata do pacote Alpine. Implementar instalador com SHA-256 obrigatório, preservando OSD/configs.
 - [x] Executar o novo smoke de nome/CPF e hash dentro da imagem final da API em 0°/90°; cinco jobs aprovados no CI [40607708562](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40607708562), commit `3a61d323d03a61746bda942fac91b93a6aff685e`. Não equivale a reteste da foto real.
-- [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário; investigar a resposta real da API e o campo ainda vazio.
+- [x] Integrar PaddleOCR como motor primário interno, mantendo Tesseract como fallback de disponibilidade e as regras semânticas/revisão humana no backend TypeScript.
+- [x] Adicionar página autenticada `/ocr` e item `OCR` ao lado de `Início`, exibindo motor/modelo, tempo, campos interpretados, texto reconhecido, confiança e bounding boxes.
+- [x] Validar PaddleOCR real dentro do container final com fixture fictícia e manter smoke do fallback Tesseract; execução CI `40610487883` aprovada nos cinco jobs após fixar PaddlePaddle 3.2.2 devido à regressão CPU/oneDNN observada em 3.3.1.
+- [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário com a foto real; comparar o retorno Paddle com o resultado Tesseract anterior.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
 - [ ] Completar isolamento de decodificadores, limites reais de CPU/RAM, fuzzing, carga e comportamento sob interrupção.
@@ -119,3 +122,18 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Ainda pendente:** reteste da foto no ambiente do usuário e navegador. Sem nova afirmação de que o nome do usuário já aparece. A foto anexada não é tratada como idêntica ao original do repositório. O CI não usa documentos pessoais e não demonstra precisão em corpus amplo.
 
 **Operação:** atualizar a main e reconstruir somente a API. O modelo é instalado no build; editar TypeScript sem rebuild não troca traineddata. Comandos e limites em [paridade OCR](docs/OCR_RUNTIME_PARITY.md). A revisão humana continua obrigatória.
+
+
+## 7. Registro de execução — 27/10/2026, PaddleOCR e página de inspeção
+
+**Base:** `3a214b40d02f99250dc40bce6084f64fea1d37b1`; branch `feat/paddle-ocr-inspector`; PR 4.
+
+**Arquitetura:** criado serviço interno Python para PaddleOCR, sem porta publicada no host. O Compose fornece `PADDLE_OCR_URL=http://ocr:8000` somente à API. O fluxo normal tenta Paddle primeiro e mantém o Tesseract existente como fallback quando o sidecar estiver indisponível. As regras de identificação de CPF/nome, separação comprador/vendedor e revisão obrigatória permanecem no backend TypeScript. O serviço Paddle não registra texto/documentos e remove o arquivo temporário após cada inferência.
+
+**Página de diagnóstico:** nova rota `/ocr`, acessível pelo item **OCR** imediatamente após **Início**. O endpoint autenticado `POST /api/ocr/inspect/:source` aceita JPG/PNG/PDF dentro dos limites existentes, valida PDF antes da decodificação e retorna somente ao usuário autenticado: engine, versão, modelo, tempo, campos semânticos e linhas reconhecidas com confiança/coordenadas. A tela alerta sobre dados sensíveis e não persiste o upload.
+
+**Versões:** `paddleocr==3.7.0`, `paddlepaddle==3.2.2`, PP-OCRv6, português, CPU. A tentativa inicial com PaddlePaddle 3.3.1 construiu/subiu, mas falhou na inferência CPU/oneDNN com `ConvertPirAttribute2RuntimeAttribute ... ArrayAttribute<DoubleAttribute>`; a versão foi fixada em 3.2.2 e a inferência passou no container.
+
+**Validação:** execução CI `40610487883`, commit `7875edf74d9b98c84672eb64de22334844fd5b7c`, todos os cinco jobs aprovados. Backend: typecheck, lint, testes e build. Frontend: typecheck, lint, testes e build. PostgreSQL e PDFs aprovados. Compose: build/start/health/proxy aprovados; `Verify PaddleOCR inside the built OCR container` reconheceu nome e CPF da fixture fictícia; `Verify Tesseract fallback inside the built API container` também passou. Nenhum documento pessoal faz parte do CI.
+
+**Riscos residuais:** sucesso da fixture não comprova que PaddleOCR resolverá a fotografia real nem mede precisão. Ainda é obrigatório retestar a imagem do usuário na nova página, avaliar perspectiva/reflexo/desfoque/nomes multilinha e calibrar falsos positivos/negativos antes de qualquer homologação. O primeiro build do serviço inclui modelos no image layer e aumenta substancialmente tamanho/tempo de build e consumo de memória; capacidade ainda precisa ser medida.
