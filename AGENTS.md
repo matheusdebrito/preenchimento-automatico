@@ -43,6 +43,13 @@ Se as instruções entrarem em conflito, informar o conflito e seguir a alternat
 - Arquivos pessoais, OCR e PDFs preenchidos não podem ser versionados ou colocados na pasta de templates; usar armazenamento temporário privado com expiração.
 - Consultar `docs/FORM_CATALOG.md` e `docs/SERVICE_FORM_MATRIX.md`; eles descrevem pendências e não substituem verificação normativa oficial.
 
+## 2.4. Escopo de motor no MVP
+
+- O MVP trabalha com **um único motor**. O domínio ativo usa somente `vessel.motorBrand`, `vessel.motorPower` e `vessel.motorSerial`.
+- Quando um formulário usar o rótulo impresso **Motor/Marca**, interpretar semanticamente apenas como **marca do motor** (`vessel.motorBrand`).
+- Não criar `motor1Choice`, `motor2*`, `motor3*` ou `motor4*` enquanto múltiplos motores estiverem fora do escopo.
+- Se múltiplos motores forem aprovados futuramente, reavaliar o modelo como coleção estruturada de motores; não espalhar novamente campos numerados pelo domínio sem decisão arquitetural explícita.
+
 ## 3. Método de trabalho incremental
 
 Para cada mudança:
