@@ -10,7 +10,7 @@ import { extractDocumentEvidence } from '../document-understanding/registry.js';
 let active = 0;
 const MAX_CONCURRENT = 2;
 
-function fastObservationIsSufficient(
+export function fastObservationIsSufficient(
   doc: StoredDocument,
   observation: DocumentObservation,
 ): boolean {
