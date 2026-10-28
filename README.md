@@ -97,7 +97,7 @@ npm test
 npm run build
 ```
 
-O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de dependências de produção, integração com PostgreSQL real e smoke test Docker Compose. Os testes usam dados sintéticos, inclusive PDFs oficiais preenchidos só para QA.
+O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de dependências de produção, integração com PostgreSQL real e smoke test Docker Compose. Os testes usam dados sintéticos, inclusive PDFs oficiais preenchidos só para QA. Antes de abrir PR, especialmente em mudanças de OCR/document-understanding, execute o gate descrito em [Validação antes de Pull Request](docs/PRE_PR_VALIDATION.md); o workflow `CI` pode ser disparado manualmente na própria branch para validar o mesmo conjunto de jobs contra `main`.
 
 **Validação incremental:** o teste de autorização entre contas e estorno por expiração (`a8607e3`) foi aprovado no [CI com PostgreSQL e Compose](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40435783780). Também foram adicionados controles de consistência para PNG/JPEG, limite de bytes dos arquivos rasterizados do OCR e limpeza de sessões expiradas no PostgreSQL, com regressões sintéticas. **As novas alterações passaram no CI [40437270173](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40437270173)** com backend, frontend, PostgreSQL, prévias sintéticas e Compose; isso não substitui fuzzing, sandbox de OCR, homologação documental nem testes de carga. O histórico detalhado fica no [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md), e as pendências em [`docs/RELATORIO_CONTINUIDADE_2026-10-26.md`](docs/RELATORIO_CONTINUIDADE_2026-10-26.md).
 
