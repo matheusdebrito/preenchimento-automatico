@@ -4,6 +4,16 @@ import json
 import urllib.request
 from pathlib import Path
 
+with urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=5) as health_response:
+    health = json.load(health_response)
+
+capacity = health.get("capacity", {})
+assert health.get("status") == "ok"
+assert int(capacity.get("availableCpus", 0)) >= 1
+assert int(capacity.get("workers", 0)) >= 1
+assert int(capacity.get("threadsPerWorker", 0)) >= 1
+assert int(capacity.get("queueDepth", 0)) >= 1
+
 path = Path("/app/fixtures/identity-synthetic.png")
 body = path.read_bytes()
 request = urllib.request.Request(
@@ -45,4 +55,6 @@ print("[PADDLE_OCR_SMOKE]", json.dumps({
     "nameTokensFound": True,
     "cpfFound": True,
     "repeatInferencePassed": True,
+    "workers": capacity.get("workers"),
+    "threadsPerWorker": capacity.get("threadsPerWorker"),
 }, ensure_ascii=False))
