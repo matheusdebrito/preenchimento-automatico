@@ -127,4 +127,45 @@ describe('tieDocumentExtractor', () => {
       .toBe('YAMAHA - WAVERUNNER - VX');
   });
 
+
+  it('extrai os campos equivalentes do layout antigo do TIE', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'Nº DE INSCRIÇÃO',
+      '441M2023001234',
+      'NOME DA EMBARCAÇÃO',
+      'MAR AZUL',
+      'POTÊNCIA (HP)',
+      '115',
+      'Nº DO 1º MOTOR/SÉRIE',
+      '6E5L1001234',
+      'NOME FABRICANTE',
+      'YAMAHA',
+      'ATIVIDADE/USO',
+      'Esporte e Recreio',
+      'QTD. DE TRIPULANTES',
+      '2',
+      'QTD. DE PASSAGEIROS',
+      '6',
+      'ANO DE CONSTRUÇÃO',
+      '2022',
+      'COMPRIMENTO TOTAL',
+      '6,50 m',
+      'FORMATO DE SÉRIE DO CASCO/FORMA',
+      'BR-MZL-123456',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.registration']).toBe('441M2023001234');
+    expect(values['vessel.name']).toBe('MAR AZUL');
+    expect(values['vessel.motorPower']).toBe('115');
+    expect(values['vessel.motorSerial']).toBe('6E5L1001234');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+    expect(values['vessel.activity']).toBe('Esporte e Recreio');
+    expect(values['vessel.crewCount']).toBe('2');
+    expect(values['vessel.passengerCount']).toBe('6');
+    expect(values['vessel.year']).toBe('2022');
+    expect(values['vessel.length']).toBe('6,50 m');
+    expect(values['vessel.hullId']).toBe('BR-MZL-123456');
+  });
+
 });
