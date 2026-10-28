@@ -11,9 +11,18 @@ import {
   type SemanticFieldConcept,
 } from '../semantic-concepts.js';
 
-const labelLike = (value: string): boolean =>
-  /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|USO|ACTIVITY|QTD|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS|FORMATO)\b/
-    .test(normalizeText(value));
+const motorSectionHeader =
+  /^\s*MOTOR\s*([1-4])\s*(?:\/|-)?\s*ENGINE\s*\1\s*$/i;
+const motorSectionFragment = /^\s*(?:MOTOR|ENGINE)\s*[1-4]\s*$/i;
+const motorStructuralMarker = (value: string): boolean =>
+  motorSectionHeader.test(value) || motorSectionFragment.test(value);
+
+const labelLike = (value: string): boolean => {
+  const normalized = normalizeText(value);
+  return motorStructuralMarker(normalized) ||
+    /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|USO|ACTIVITY|QTD|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS|FORMATO)\b/
+      .test(normalized);
+};
 
 const textValue = (value: string, min = 2, max = 100): boolean => {
   const text = value.trim();
@@ -37,8 +46,8 @@ const power = (value: string): boolean =>
 const serial = (value: string): boolean => {
   const text = value.trim();
   const normalized = normalizeText(text);
-  if (/S[EÉ]RIE\s+DO\s+MOTOR|ENGINE\s+SERIAL\s+NUMBER|MOTOR\s*1|ENGINE\s*1/i
-    .test(normalized)) return false;
+  if (/S[EÉ]RIE\s+DO\s+MOTOR|ENGINE\s+SERIAL\s+NUMBER/i.test(normalized) ||
+    motorStructuralMarker(normalized)) return false;
   return /^[A-Z0-9./-]{4,50}$/i.test(text) && /\d/.test(text);
 };
 
@@ -133,6 +142,11 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*MOTOR\s*1\s*\/\s*ENGINE\s*1\s+(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    boundaries: [
+      /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
+      /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
+    ],
+    allowSequentialWithGeometry: false,
     validate: (value) => textValue(value, 2, 100),
   },
   {
@@ -159,6 +173,11 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR|N[°ºO.]?\s+DO\s+1[°ºO.]?\s+MOTOR\s*\/\s*S[EÉ]RIE)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    boundaries: [
+      /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
+      /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
+    ],
+    allowSequentialWithGeometry: false,
     validate: serial,
   },
   {

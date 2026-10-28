@@ -32,6 +32,31 @@ async function inspect(
     subjectRole,
   });
   const fields = new Set(evidence.map((item) => item.fieldId));
+  const motorDiagnostics = evidence
+    .filter((item) => item.fieldId === 'vessel.motorSerial' ||
+      item.fieldId === 'vessel.motorManufacturerBrandModel')
+    .map((item) => {
+      const normalized = item.value.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+      return {
+        fieldId: item.fieldId,
+        method: item.method,
+        lineIds: item.lineIds,
+        length: normalized.length,
+        letters: /[A-Z]/.test(normalized),
+        digits: /\d/.test(normalized),
+        digitsOnly: /^\d+$/.test(normalized),
+        looksYear: /^(?:19|20)\d{2}$/.test(normalized),
+        looksDate: /^\d{2}[./-]\d{2}[./-]\d{2,4}$/.test(normalized),
+        motorMarker: /^(?:MOTOR|ENGINE)\s*\d/.test(normalized),
+      };
+    });
+  if (motorDiagnostics.length) {
+    console.log('[REFERENCE_MOTOR_DIAG]', JSON.stringify({
+      file: relativePath.split('/').at(-1),
+      candidates: motorDiagnostics,
+    }));
+  }
   const lineCount = extraction.observation.pages.reduce(
     (sum, page) => sum + page.lines.length, 0);
 
@@ -56,8 +81,10 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(digital.has('vessel.hullId')).toBe(true);
     expect(digital.has('vessel.grossTonnage')).toBe(true);
     expect(digital.has('vessel.activity')).toBe(true);
-    expect(digital.has('vessel.motorManufacturerBrandModel')).toBe(true);
-    expect(digital.has('vessel.motorSerial')).toBe(true);
+    // The public model masks motor manufacturer/model and serial with asterisks.
+    // A label or a neighboring field must never be promoted as the missing value.
+    expect(digital.has('vessel.motorManufacturerBrandModel')).toBe(false);
+    expect(digital.has('vessel.motorSerial')).toBe(false);
     expect(digital.has('vessel.passengerCount')).toBe(true);
 
     const legacy = await inspect(

@@ -269,3 +269,31 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Correção:** `anchoredCandidates()` agora exclui explicitamente linhas que também correspondem aos aliases do próprio conceito antes de tratá-las como valor à direita, abaixo ou sequencial. O validador de `vessel.motorSerial` também rejeita defensivamente textos equivalentes a `SÉRIE DO MOTOR`, `ENGINE SERIAL NUMBER`, `MOTOR 1` e `ENGINE 1`.
 
 **Regressões:** testes sintéticos cobrem rótulo bilíngue duplicado e rótulo compactado próximo ao valor real; o resultado esperado permanece exclusivamente o número de série. A validação integral depende do CI do PR desta correção.
+
+
+## 17. Registro de execução — 28/10/2026, fronteiras semânticas entre campos do TIE digital
+
+**Relato:** no TIE digital de referência, `vessel.motorManufacturerBrandModel` retornava o próprio rótulo do campo seguinte, `N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER`.
+
+**Evidência visual:** o layout digital empilha, para cada motor, o rótulo de fabricante/marca/modelo, seu valor, o rótulo de número de série e seu valor. No modelo público anexado, os dois valores do motor estão mascarados com asteriscos. Portanto esses campos devem resultar em `NOT_FOUND`; um rótulo vizinho nunca é um valor aceitável.
+
+**Causa-raiz:** o extrator semântico procurava o primeiro valor estruturalmente válido abaixo/direita do rótulo e podia pular uma linha inválida/mascarada. A correção anterior impedia somente que aliases do **mesmo conceito** fossem usados como valor. Assim, ao extrair fabricante/marca/modelo, o rótulo do conceito seguinte (série do motor) ainda podia ser atravessado e considerado candidato. O teste de integração real também estava incorreto: exigia `motorManufacturerBrandModel` e `motorSerial` como presentes no modelo cujo conteúdo está mascarado, institucionalizando o falso positivo.
+
+**Correção arquitetural:** `extractSemanticConcepts()` agora fornece ao mecanismo de candidatos todos os rótulos conhecidos do catálogo de conceitos. `anchoredCandidates()` trata qualquer rótulo semântico vizinho como fronteira de campo. A busca à direita/abaixo não atravessa a primeira fronteira e a busca sequencial interrompe ao encontrar outro rótulo. Isso preserva a associação espacial sem criar uma lista específica de exceções por documento.
+
+**Regressões:** adicionados testes para (1) valor inválido seguido pelo rótulo do próximo conceito, (2) TIE digital mascarado, que não deve produzir fabricante/série, e (3) TIE digital com valores reais, que deve manter fabricante e série separados. O teste de referência real foi corrigido para exigir ausência dos campos mascarados em vez de falso `FOUND`.
+
+**Pendente:** CI completo e reteste no ambiente do usuário com o mesmo TIE digital. A correção não altera campos de proprietário, múltiplos motores no domínio nem homologação documental.
+
+
+## 18. Registro de execução — 28/10/2026, correção do preflight e redução de falhas tardias no CI
+
+**Falha do PR 20:** o primeiro ajuste removeu o falso positivo `vessel.motorManufacturerBrandModel`, mas o TIE digital real ainda produziu `vessel.motorSerial`. Um diagnóstico sem expor o valor mostrou `method=anchor-sequential`, candidato somente numérico de 4 caracteres e `looksYear=true`: a ordem bruta do PaddleOCR colocou o ano de construção imediatamente após o rótulo da série, apesar de estar em outra coluna visual.
+
+**Correção adicional:** conceitos semânticos aceitam fronteiras específicas para cabeçalhos de motor e podem desativar `anchor-sequential` quando há geometria. O diagnóstico real mostrou que a série do motor estava capturando o ano de construção (4 dígitos) por ordem bruta do PaddleOCR em outra coluna. A restrição foi aplicada especificamente a `motorManufacturerBrandModel` e `motorSerial`; os demais conceitos preservam o fallback legado porque o TIE real ainda depende dele para campos como `AB / GT`. Foram adicionadas regressões para cabeçalhos compactados, ano em outra coluna e preservação de sequential fora dos conceitos de risco.
+
+**Padrão das falhas recentes:** as falhas não indicam flakiness geral do GitHub Actions; os jobs de infraestrutura têm passado. Os casos observados vieram de validação tardia de hipóteses: teste sintético inadequado, expectativa de referência alterada antes de reproduzir a saída real e diferença entre fragmentação sintética e PaddleOCR real.
+
+**Mudança de processo:** o CI principal foi preservado sem alterações estruturais e foi criado um workflow manual separado, `Pre-PR OCR`, para executar na branch antes de abrir PRs que alterem OCR/document-understanding. Ele roda o gate determinístico e o OCR real dos documentos públicos de referência. `AGENTS.md` torna esse preflight obrigatório; também foi criado `npm run verify:document-understanding` para typecheck + lint + testes determinísticos + build, e `docs/PRE_PR_VALIDATION.md` documenta o processo.
+
+**Objetivo:** o CI do PR permanece uma verificação independente, mas deixa de ser o primeiro ambiente em que a alteração é realmente testada. Isso não garante zero falhas, porém reduz erros previsíveis e separa melhor regressão de código, comportamento do OCR real e infraestrutura.

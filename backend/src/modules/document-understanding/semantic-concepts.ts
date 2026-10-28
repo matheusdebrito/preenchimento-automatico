@@ -17,6 +17,8 @@ export interface SemanticFieldConcept {
   anchor: string;
   labels: readonly RegExp[];
   preferredDirections?: readonly CandidateDirection[];
+  boundaries?: readonly RegExp[];
+  allowSequentialWithGeometry?: boolean;
   validate(value: string): boolean;
   normalize?(value: string): string;
 }
@@ -38,6 +40,9 @@ export function extractSemanticConcepts(
   concepts: readonly SemanticFieldConcept[],
 ): SemanticExtractionResult {
   const source = withSpatialPhrases(observation);
+  const allLabels = concepts.flatMap((concept) => concept.labels);
+  const isKnownConceptLabel = (value: string): boolean =>
+    allLabels.some((pattern) => pattern.test(value));
   const evidence: FieldEvidence[] = [];
   const assessments: FieldExtractionAssessment[] = [];
 
@@ -48,6 +53,9 @@ export function extractSemanticConcepts(
       concept.anchor,
       concept.validate,
       concept.preferredDirections,
+      (value) => isKnownConceptLabel(value) ||
+        Boolean(concept.boundaries?.some((pattern) => pattern.test(value))),
+      concept.allowSequentialWithGeometry ?? true,
     );
     const selected = selectUniqueCandidate(candidates);
 

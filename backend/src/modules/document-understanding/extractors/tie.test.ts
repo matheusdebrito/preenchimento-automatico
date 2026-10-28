@@ -233,4 +233,82 @@ describe('tieDocumentExtractor', () => {
       .toBe('6AN123456');
   });
 
+  it('não usa o rótulo de série como fabricante quando o TIE digital está mascarado', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'MOTOR 1 / ENGINE 1',
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      '**********',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '**********',
+      'MOTOR 2 / ENGINE 2',
+    ]), context);
+
+    expect(evidence.some((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')).toBe(false);
+    expect(evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
+  });
+
+  it('mantém fabricante e série separados quando ambos têm valores reais', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'MOTOR 1 / ENGINE 1',
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      'YAMAHA - WAVERUNNER - VX',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '6AN123456',
+      'MOTOR 2 / ENGINE 2',
+    ]), context);
+
+    expect(evidence.find((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')?.value)
+      .toBe('YAMAHA - WAVERUNNER - VX');
+    expect(evidence.find((item) => item.fieldId === 'vessel.motorSerial')?.value)
+      .toBe('6AN123456');
+  });
+
+  it('para a busca de série ao chegar no cabeçalho do motor 2', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '**********',
+      'MOTOR2/ENGINE2',
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      '2022',
+    ]), context);
+
+    expect(evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
+  });
+
+  it('não trata cabeçalhos compactados de motor como valor de fabricante', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      '**********',
+      'MOTOR2/ENGINE2',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '6AN123456',
+    ]), context);
+
+    expect(evidence.some((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')).toBe(false);
+    expect(evidence.find((item) => item.fieldId === 'vessel.motorSerial')?.value)
+      .toBe('6AN123456');
+  });
+
+  it('não usa ordem sequencial do OCR para atravessar colunas quando há geometria', () => {
+    const multiColumn: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:49', page: 0, text: 'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+            confidence: .99, box: [420, 300, 760, 325], polygon: null },
+          // Próxima linha na ordem do OCR, mas em outra coluna do documento.
+          { id: '0:50', page: 0, text: '2022',
+            confidence: .98, box: [180, 340, 240, 365], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(multiColumn, context);
+    expect(evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
+  });
+
 });
