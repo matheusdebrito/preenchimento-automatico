@@ -7,7 +7,7 @@ import type {
 import { anchoredValue, normalizeText, toEvidence, uniqueLineValue, withSpatialPhrases } from '../extractor-utils.js';
 
 const labelLike = (value: string): boolean =>
-  /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|MARCA|POT|S[EÉ]RIE|CP\/DL\/AG|AUTORIDADE)\b/
+  /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|ACTIVITY|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS)\b/
     .test(normalizeText(value));
 
 const textValue = (value: string, min = 2, max = 100): boolean => {
@@ -22,6 +22,11 @@ const hull = (value: string): boolean =>
 const year = (value: string): boolean => /^(?:19|20)\d{2}$/.test(value.trim());
 const length = (value: string): boolean => /^\d{1,2}(?:[.,]\d{1,2})?\s*(?:M|METROS?)?$/i.test(value.trim());
 const capacity = (value: string): boolean => /^\d{1,3}$/.test(value.trim());
+const decimalMeasure = (value: string): boolean =>
+  /^\d{1,4}(?:[.,]\d{1,3})?\s*(?:M|METROS?)?$/i.test(value.trim());
+const grossTonnage = (value: string): boolean =>
+  /^\d{1,5}(?:[.,]\d{1,3})?$/.test(value.trim());
+const count = (value: string): boolean => /^\d{1,4}$/.test(value.trim());
 const power = (value: string): boolean =>
   /^\d{1,4}(?:[.,]\d{1,2})?\s*(?:HP|CV|KW)?$/i.test(value.trim());
 const serial = (value: string): boolean =>
@@ -77,6 +82,23 @@ export const tieDocumentExtractor: DocumentExtractor = {
       /^\s*(?:LOTA[CÇ][AÃ]O|CAPACIDADE(?:\s+DE\s+PESSOAS)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'LOTACAO', capacity));
 
+    push(evidence, field(source, context, 'vessel.grossTonnage', [
+      /^\s*(?:AB\s*\/\s*GT|ARQUEA[CÇ][AÃ]O\s+BRUTA(?:\s*\/\s*GROSS\s+TONNAGE)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ], 'AB / GT', grossTonnage));
+
+    push(evidence, field(source, context, 'vessel.breadth', [
+      /^\s*(?:BOCA\s*\/\s*BREADTH|BOCA|BREADTH)(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ], 'BOCA / BREADTH', decimalMeasure));
+
+    push(evidence, field(source, context, 'vessel.activity', [
+      /^\s*(?:ATIVIDADE\s*\/\s*ACTIVITY|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ], 'ATIVIDADE / ACTIVITY', (value) => textValue(value, 2, 80)));
+
+    push(evidence, field(source, context, 'vessel.motorManufacturerBrandModel', [
+      /^\s*MOTOR\s*1\s*\/\s*ENGINE\s*1\s+(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ], 'MOTOR 1 / ENGINE 1 FABRICANTE-MARCA-MODELO', (value) => textValue(value, 2, 100)));
+
     push(evidence, field(source, context, 'vessel.motorBrand', [
       /^\s*(?:MOTOR\s*\/\s*MARCA|MARCA\s+(?:DO\s+)?MOTOR|MARCA\s*\/\s*MODELO\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'MOTOR/MARCA', (value) => textValue(value, 2, 60)));
@@ -86,8 +108,16 @@ export const tieDocumentExtractor: DocumentExtractor = {
     ], 'POTENCIA DO MOTOR', power));
 
     push(evidence, field(source, context, 'vessel.motorSerial', [
-      /^\s*(?:N[ÚU]MERO\s+(?:DE\s+)?S[EÉ]RIE(?:\s+(?:DO\s+)?MOTOR)?|S[EÉ]RIE\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
-    ], 'SERIE DO MOTOR', serial));
+      /^\s*(?:N[ÚU]MERO\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ], 'N DE SERIE DO MOTOR / ENGINE SERIAL NUMBER', serial));
+
+    push(evidence, field(source, context, 'vessel.crewCount', [
+      /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ], 'NUMERO DE TRIPULANTES / NUMBER OF CREW MEMBER', count));
+
+    push(evidence, field(source, context, 'vessel.passengerCount', [
+      /^\s*(?:N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*NUMBER\s+OF\s+PASSAGERS|N[ÚU]MERO\s+DE\s+PASSAGEIROS|NUMBER\s+OF\s+PASSAGERS|NUMBER\s+OF\s+PASSENGERS)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ], 'NUMERO DE PASSAGEIROS / NUMBER OF PASSAGERS', count));
 
     push(evidence, field(source, context, 'vessel.authority', [
       /^\s*(?:CP\s*\/\s*DL\s*\/\s*AG|CAPITANIA\s*\/\s*DELEGACIA\s*\/\s*AG[EÊ]NCIA|AUTORIDADE\s+MAR[IÍ]TIMA)\s*(?:[:#\-–]\s*)?(.*)$/i,
