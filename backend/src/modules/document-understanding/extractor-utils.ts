@@ -60,14 +60,12 @@ export function anchoredCandidates(
     const hasOriginalLabel = lines.some((line) =>
       !line.id.startsWith('phrase:') && labels.some((pattern) => pattern.test(line.text)));
 
-    let matchedAnchorCount = 0;
     for (let index = 0; index < lines.length; index++) {
       const anchor = lines[index]!;
+      const candidatesBeforeAnchor = candidates.length;
       if (anchor.id.startsWith('phrase:') && hasOriginalLabel) continue;
       const match = labels.map((pattern) => pattern.exec(anchor.text)).find(Boolean);
       if (!match) continue;
-      if (firstOccurrenceOnly && matchedAnchorCount > 0) continue;
-      matchedAnchorCount++;
 
       const matchesAnyLabel = (value: string): boolean =>
         labels.some((pattern) => pattern.test(value));
@@ -86,6 +84,7 @@ export function anchoredCandidates(
           value: inline, confidence: anchor.confidence, page: anchor.page,
           lineIds: [anchor.id], method: 'anchor-inline', anchor: anchorName,
         });
+        if (firstOccurrenceOnly) return candidates;
         continue;
       }
 
@@ -178,6 +177,10 @@ export function anchoredCandidates(
         }
 
         if (matched) break;
+      }
+
+      if (firstOccurrenceOnly && candidates.length > candidatesBeforeAnchor) {
+        return candidates;
       }
     }
   }
