@@ -9,9 +9,8 @@ import {
   selectUniqueCandidate,
   toEvidence,
   withSpatialPhrases,
+  type CandidateDirection,
 } from './extractor-utils.js';
-
-export type CandidateDirection = 'right' | 'below' | 'sequential';
 
 export interface SemanticFieldConcept {
   fieldId: string;
