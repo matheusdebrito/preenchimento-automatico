@@ -19,14 +19,14 @@ Não foram relaxados os filtros de nomes nem as proteções contra filiação, c
 
 ## Atualização e teste
 
-Na main contendo esta alteração, preserve alterações locais e execute um comando por vez. Pare se ocorrer erro:
+A alteração foi integrada à main pelo PR 3, merge `25e64ffbcd0157a00ee4b4af413eb2f0e6b1ab6f`. Preserve alterações locais e execute um comando por vez. Pare se ocorrer erro:
 
 ```powershell
 git pull --ff-only
 docker compose up -d --no-deps --build api
 ```
 
-API e banco devem estar em execução para o segundo comando, pois `--no-deps` não inicia o banco. Não é necessário reconstruir o frontend para trocar o modelo do servidor.
+O banco deve estar em execução para o segundo comando, pois `--no-deps` não o inicia. A recriação da API interrompe processos temporários em memória. Não é necessário reconstruir o frontend para trocar o modelo do servidor.
 
 Para verificar o runtime com a fixture fictícia, sem abrir formulário nem fornecer documento:
 
@@ -38,6 +38,8 @@ O relatório `[OCR_RUNTIME_SMOKE]` inclui a versão do Tesseract, o hash do mode
 
 ## Validação desta entrega
 
-Local: `sh -n` do instalador, `node --check` do smoke, comparação de hash/blob com o modelo oficial e quatro cenários do instalador com transporte simulado: download válido, reaproveitamento, checksum incorreto preservando destino e limpeza, destino ausente. Docker não está disponível localmente; a execução real do smoke depende do novo CI, a registrar no tracker. A foto do usuário não foi retestada no Docker nesta entrega.
+Local: `sh -n` do instalador, `node --check` do smoke, comparação de hash/blob com o modelo oficial e quatro cenários do instalador com transporte simulado: download válido, reaproveitamento, checksum incorreto preservando destino e limpeza, destino ausente. Docker não está disponível localmente.
+
+CI real: [40607708562](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40607708562), commit `3a61d323d03a61746bda942fac91b93a6aff685e`, completed/success. Os cinco jobs passaram. No Compose, `Verify real OCR inside the built API container` executou o código compilado na imagem final e conferiu nome/CPF da fixture em 0°/90°, além do hash e dos demais critérios. A foto do usuário não foi retestada no Docker nesta entrega; ainda não há comprovação de correção no navegador do usuário. Registro completo no PROJECT_TRACKER.md.
 
 Fontes primárias: https://tesseract-ocr.github.io/tessdoc/Data-Files ; https://github.com/tesseract-ocr/tessdata_fast/tree/4.1.0 ; https://gitlab.alpinelinux.org/alpine/aports/-/blob/master/community/tesseract-ocr/APKBUILD .
