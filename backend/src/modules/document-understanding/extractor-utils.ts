@@ -4,6 +4,7 @@ import type {
   FieldEvidence,
   ObservationLine,
 } from './contracts.js';
+import type { CandidateDirection } from './semantic-concepts.js';
 
 export const cleanText = (value: string): string => value.replace(/\s+/g, ' ').trim();
 export const normalizeText = (value: string): string => cleanText(value)
@@ -43,6 +44,7 @@ export function anchoredCandidates(
   labels: readonly RegExp[],
   anchorName: string,
   validate: (value: string) => boolean,
+  preferredDirections: readonly CandidateDirection[] = [],
 ): readonly ExtractedCandidate[] {
   const candidates: ExtractedCandidate[] = [];
 
@@ -65,56 +67,70 @@ export function anchoredCandidates(
         continue;
       }
 
-      if (anchor.box) {
-        const height = boxHeight(anchor);
-        const centerY = (anchor.box[1] + anchor.box[3]) / 2;
-        const right = positioned.filter((line) => {
-          if (line === anchor || !line.box || line.confidence < 0.35 || !validate(line.text)) return false;
-          const center = (line.box[1] + line.box[3]) / 2;
-          return line.box[0] >= anchor.box![2] - height * 0.5 &&
-            line.box[0] - anchor.box![2] <= height * 16 &&
-            Math.abs(center - centerY) <= height * 1.35;
-        }).sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
+      const defaultDirections: readonly CandidateDirection[] = ['right', 'below', 'sequential'];
+      const directions = [...new Set([...preferredDirections, ...defaultDirections])];
+      let matched = false;
 
-        if (right) {
-          candidates.push({
-            value: cleanText(right.text),
-            confidence: Math.min(anchor.confidence, right.confidence),
-            page: anchor.page, lineIds: [anchor.id, right.id],
-            method: 'anchor-right', anchor: anchorName,
-          });
-          continue;
+      for (const direction of directions) {
+        if (direction === 'right' && anchor.box) {
+          const height = boxHeight(anchor);
+          const centerY = (anchor.box[1] + anchor.box[3]) / 2;
+          const right = positioned.filter((line) => {
+            if (line === anchor || !line.box || line.confidence < 0.35 || !validate(line.text)) return false;
+            const center = (line.box[1] + line.box[3]) / 2;
+            return line.box[0] >= anchor.box![2] - height * 0.5 &&
+              line.box[0] - anchor.box![2] <= height * 16 &&
+              Math.abs(center - centerY) <= height * 1.35;
+          }).sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
+
+          if (right) {
+            candidates.push({
+              value: cleanText(right.text),
+              confidence: Math.min(anchor.confidence, right.confidence),
+              page: anchor.page, lineIds: [anchor.id, right.id],
+              method: 'anchor-right', anchor: anchorName,
+            });
+            matched = true;
+          }
         }
 
-        const below = positioned.filter((line) => {
-          if (line === anchor || !line.box || line.confidence < 0.35 || !validate(line.text)) return false;
-          const dy = line.box[1] - anchor.box![3];
-          if (dy < -height * 0.25 || dy > height * 5) return false;
-          return horizontalOverlap(anchor, line) > 0 ||
-            Math.abs(line.box[0] - anchor.box![0]) <= height * 7;
-        }).sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0])[0];
+        if (direction === 'below' && anchor.box && !matched) {
+          const height = boxHeight(anchor);
+          const below = positioned.filter((line) => {
+            if (line === anchor || !line.box || line.confidence < 0.35 || !validate(line.text)) return false;
+            const dy = line.box[1] - anchor.box![3];
+            if (dy < -height * 0.25 || dy > height * 5) return false;
+            return horizontalOverlap(anchor, line) > 0 ||
+              Math.abs(line.box[0] - anchor.box![0]) <= height * 7;
+          }).sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0])[0];
 
-        if (below) {
-          candidates.push({
-            value: cleanText(below.text),
-            confidence: Math.min(anchor.confidence, below.confidence),
-            page: anchor.page, lineIds: [anchor.id, below.id],
-            method: 'anchor-below', anchor: anchorName,
-          });
-          continue;
+          if (below) {
+            candidates.push({
+              value: cleanText(below.text),
+              confidence: Math.min(anchor.confidence, below.confidence),
+              page: anchor.page, lineIds: [anchor.id, below.id],
+              method: 'anchor-below', anchor: anchorName,
+            });
+            matched = true;
+          }
         }
-      }
 
-      for (let offset = 1; offset <= 3; offset++) {
-        const next = lines[index + offset];
-        if (!next || !validate(next.text)) continue;
-        candidates.push({
-          value: cleanText(next.text),
-          confidence: Math.min(anchor.confidence, next.confidence),
-          page: anchor.page, lineIds: [anchor.id, next.id],
-          method: 'anchor-sequential', anchor: anchorName,
-        });
-        break;
+        if (direction === 'sequential' && !matched) {
+          for (let offset = 1; offset <= 3; offset++) {
+            const next = lines[index + offset];
+            if (!next || !validate(next.text)) continue;
+            candidates.push({
+              value: cleanText(next.text),
+              confidence: Math.min(anchor.confidence, next.confidence),
+              page: anchor.page, lineIds: [anchor.id, next.id],
+              method: 'anchor-sequential', anchor: anchorName,
+            });
+            matched = true;
+            break;
+          }
+        }
+
+        if (matched) break;
       }
     }
   }
