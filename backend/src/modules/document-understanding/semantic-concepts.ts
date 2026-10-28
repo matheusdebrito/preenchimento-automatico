@@ -18,6 +18,7 @@ export interface SemanticFieldConcept {
   labels: readonly RegExp[];
   preferredDirections?: readonly CandidateDirection[];
   boundaries?: readonly RegExp[];
+  allowSequentialWithGeometry?: boolean;
   validate(value: string): boolean;
   normalize?(value: string): string;
 }
@@ -54,6 +55,7 @@ export function extractSemanticConcepts(
       concept.preferredDirections,
       (value) => isKnownConceptLabel(value) ||
         Boolean(concept.boundaries?.some((pattern) => pattern.test(value))),
+      concept.allowSequentialWithGeometry ?? true,
     );
     const selected = selectUniqueCandidate(candidates);
 
