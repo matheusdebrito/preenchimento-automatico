@@ -4,7 +4,7 @@ import type {
   ExtractionContext,
   FieldEvidence,
 } from '../contracts.js';
-import { anchoredValue, cleanText, normalizeText, toEvidence, uniqueLineValue } from '../extractor-utils.js';
+import { anchoredValue, cleanText, normalizeText, toEvidence, uniqueLineValue, withSpatialPhrases } from '../extractor-utils.js';
 
 const streetPrefix = /^(?:RUA|R\.|R |AVENIDA|AV\.|AV |ESTRADA|EST\.|EST |RODOVIA|ROD\.|ROD |TRAVESSA|TV\.|TV |ALAMEDA|AL\.|AL |PRA[CÇ]A|PRACA|LARGO|VIELA|BECO)\b/i;
 const labelLike = (value: string): boolean =>
@@ -43,38 +43,40 @@ export const residenceProofDocumentExtractor: DocumentExtractor = {
   documentType: 'residence-proof',
   extract(observation, context) {
     if (context.subjectRole !== 'person') return [];
+    const source = withSpatialPhrases(observation);
     const evidence: FieldEvidence[] = [];
 
-    const cep = field(observation, context, 'person.postalCode', [
+    const cep = field(source, context, 'person.postalCode', [
       /^\s*(?:CEP|C[ÓO]DIGO\s+POSTAL)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'CEP', cepValue) ?? toEvidence(uniqueLineValue(
-      observation, /\b(\d{5}-?\d{3})\b/g, cepValue, 'unique-cep-pattern',
+      source, /\b(\d{5}-?\d{3})\b/g, cepValue, 'unique-cep-pattern',
     ), context, 'person.postalCode');
     if (cep) {
       evidence.push({ ...cep, value: normalizedCep(cep.value) });
     }
 
-    push(evidence, field(observation, context, 'person.address', [
-      /^\s*(?:ENDERE[CÇ]O|LOGRADOURO)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    push(evidence, field(source, context, 'person.address', [
+      /^\s*(?:ENDERE[CÇ]O|LOGRADOURO)(?:\s+(?:DA|DE|DO)\s+(?:UNIDADE\s+CONSUMIDORA|INSTALA[CÇ][AÃ]O|CLIENTE|CORRESPOND[EÊ]NCIA))?\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:LOCAL|ENDERE[CÇ]O)\s+DE\s+CONSUMO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'ENDERECO', (value) => textValue(value, 4, 120)));
 
-    push(evidence, field(observation, context, 'person.streetNumber', [
+    push(evidence, field(source, context, 'person.streetNumber', [
       /^\s*(?:N[ÚU]MERO|N[ºO.]?\s+DO\s+ENDERE[CÇ]O)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'NUMERO', numberValue));
 
-    push(evidence, field(observation, context, 'person.apartment', [
+    push(evidence, field(source, context, 'person.apartment', [
       /^\s*COMPLEMENTO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'COMPLEMENTO', (value) => textValue(value, 1, 60)));
 
-    push(evidence, field(observation, context, 'person.neighborhood', [
+    push(evidence, field(source, context, 'person.neighborhood', [
       /^\s*(?:BAIRRO|DISTRITO)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'BAIRRO', (value) => textValue(value, 2, 80)));
 
-    push(evidence, field(observation, context, 'person.city', [
+    push(evidence, field(source, context, 'person.city', [
       /^\s*(?:CIDADE|MUNIC[IÍ]PIO)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'CIDADE', (value) => textValue(value, 2, 80)));
 
-    push(evidence, field(observation, context, 'person.state', [
+    push(evidence, field(source, context, 'person.state', [
       /^\s*(?:UF|ESTADO)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'UF', stateValue));
 
@@ -83,7 +85,7 @@ export const residenceProofDocumentExtractor: DocumentExtractor = {
     // precise than choosing any address printed elsewhere on a multi-page bill.
     if (!evidence.some((item) => item.fieldId === 'person.address')) {
       const cepEvidence = evidence.find((item) => item.fieldId === 'person.postalCode');
-      const allLines = observation.pages.flatMap((page) => page.lines);
+      const allLines = source.pages.flatMap((page) => page.lines);
       const cepLine = cepEvidence?.lineIds.length === 1
         ? allLines.find((line) => line.id === cepEvidence.lineIds[0])
         : undefined;
