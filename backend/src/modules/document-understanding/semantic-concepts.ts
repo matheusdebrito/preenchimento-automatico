@@ -9,6 +9,8 @@ import {
   selectUniqueCandidate,
   toEvidence,
   withSpatialPhrases,
+  matchesApproximateLabel,
+  type ApproximateLabel,
   type CandidateDirection,
 } from './extractor-utils.js';
 
@@ -16,6 +18,7 @@ export interface SemanticFieldConcept {
   fieldId: string;
   anchor: string;
   labels: readonly RegExp[];
+  approximateLabels?: readonly ApproximateLabel[];
   preferredDirections?: readonly CandidateDirection[];
   boundaries?: readonly RegExp[];
   allowSequentialWithGeometry?: boolean;
@@ -41,9 +44,10 @@ export function extractSemanticConcepts(
   concepts: readonly SemanticFieldConcept[],
 ): SemanticExtractionResult {
   const source = withSpatialPhrases(observation);
-  const allLabels = concepts.flatMap((concept) => concept.labels);
   const isKnownConceptLabel = (value: string): boolean =>
-    allLabels.some((pattern) => pattern.test(value));
+    concepts.some((concept) =>
+      concept.labels.some((pattern) => pattern.test(value)) ||
+      matchesApproximateLabel(value, concept.approximateLabels ?? []));
   const evidence: FieldEvidence[] = [];
   const assessments: FieldExtractionAssessment[] = [];
 
@@ -58,6 +62,7 @@ export function extractSemanticConcepts(
         Boolean(concept.boundaries?.some((pattern) => pattern.test(value))),
       concept.allowSequentialWithGeometry ?? true,
       concept.firstOccurrenceOnly ?? false,
+      concept.approximateLabels ?? [],
     );
     const selected = selectUniqueCandidate(candidates);
 
