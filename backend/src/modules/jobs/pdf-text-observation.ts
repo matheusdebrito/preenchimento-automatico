@@ -5,7 +5,7 @@ import type { StoredDocument } from './job-store.js';
 import type { DocumentObservation, ObservationLine } from '../document-understanding/contracts.js';
 
 const execFileAsync = promisify(execFile);
-const FAST_SOURCES = new Set(['tie', 'residence-proof', 'sale-document']);
+const FAST_SOURCES = new Set(['tie', 'residence-proof']);
 
 function decodeXml(value: string): string {
   return value
