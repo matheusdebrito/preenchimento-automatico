@@ -130,8 +130,11 @@ class Handler(BaseHTTPRequestHandler):
                 "elapsedMs": int((time.monotonic() - started) * 1000),
                 "pages": pages,
             })
-        except Exception:
-            self.send_json(500, {"error": "ocr_failed"})
+        except Exception as exc:
+            # Internal-only service: expose only exception class/message for operational
+            # diagnosis. Never include OCR text, request bytes, headers or file paths.
+            detail = f"{type(exc).__name__}: {str(exc)}".replace("\n", " ")[:300]
+            self.send_json(500, {"error": "ocr_failed", "detail": detail})
         finally:
             if path:
                 try:
