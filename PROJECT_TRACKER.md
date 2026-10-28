@@ -22,7 +22,7 @@ A autorização atual é corrigir a extração do nome e reproduzir a falha no m
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — nome ausente confirmado na API; modelo português padronizado e smoke OCR no Docker adicionados; novo CI e reteste do usuário pendentes |
+| 06 | OCR e extração estruturada | 05 | [ ] Parcial — modelo português padronizado; smoke OCR dentro do Docker e cinco jobs aprovados; reteste da foto no ambiente do usuário pendente |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
@@ -63,7 +63,7 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Confirmar no CI os 24 casos de `api.ocr-console.test.ts` (73 testes frontend no total), typecheck, lint e build, além dos demais jobs: execução [40606288813](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40606288813), commit `71a636a`, completed/success.
 - [x] Localizar a ausência no retorno de uma nova extração: somente person.cpf e nameStage label_not_detected, conforme console do usuário. Não atribuir o 404 ao OCR sem URL.
 - [x] Conferir que o modelo local é o blob oficial de tessdata_fast/4.1.0; comparar com a origem tessdata do pacote Alpine. Implementar instalador com SHA-256 obrigatório, preservando OSD/configs.
-- [ ] Executar o novo smoke de nome/CPF e hash dentro da imagem final da API e confirmar todos os jobs do novo CI. Teste adicionado não equivale a teste executado.
+- [x] Executar o novo smoke de nome/CPF e hash dentro da imagem final da API em 0°/90°; cinco jobs aprovados no CI [40607708562](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40607708562), commit `3a61d323d03a61746bda942fac91b93a6aff685e`. Não equivale a reteste da foto real.
 - [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário; investigar a resposta real da API e o campo ainda vazio.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
@@ -114,6 +114,8 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 
 **Executado localmente:** `sh -n`, `node --check`, hash/blob do modelo, quatro casos do instalador com transporte simulado (download válido, reaproveitamento, checksum inválido preservando destino e limpeza, destino ausente), todos aprovados. Nenhum download real foi simulado como bem-sucedido. Docker não está instalado neste ambiente; clone público também não foi possível por rede, então os arquivos foram lidos e publicados pelo conector.
 
-**Ainda pendente nesta revisão:** novo CI completo e smoke real no container, reteste da foto no ambiente do usuário e navegador. Sem nova afirmação de que o nome do usuário já aparece. A foto anexada não é tratada como idêntica ao original do repositório. O CI não usa documentos pessoais.
+**CI confirmado e integração:** commit `3a61d323d03a61746bda942fac91b93a6aff685e`, execução [40607708562](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40607708562), completed/success. Cinco jobs aprovados, incluindo o passo `Verify real OCR inside the built API container` do job Compose (`122551236075`): modelo verificado e extração sintética 0°/90° com nome/CPF corretos. PR [3](https://github.com/matheusdebrito/preenchimento-automatico/pull/3) integrado à main em `25e64ffbcd0157a00ee4b4af413eb2f0e6b1ab6f`. Este registro posterior é somente documental, sem modificar o código testado.
 
-**Operação:** após integração e validação, atualizar a main e reconstruir somente a API. O modelo é instalado no build; editar TypeScript sem rebuild não troca traineddata. Comandos e limites em [paridade OCR](docs/OCR_RUNTIME_PARITY.md). A revisão humana continua obrigatória.
+**Ainda pendente:** reteste da foto no ambiente do usuário e navegador. Sem nova afirmação de que o nome do usuário já aparece. A foto anexada não é tratada como idêntica ao original do repositório. O CI não usa documentos pessoais e não demonstra precisão em corpus amplo.
+
+**Operação:** atualizar a main e reconstruir somente a API. O modelo é instalado no build; editar TypeScript sem rebuild não troca traineddata. Comandos e limites em [paridade OCR](docs/OCR_RUNTIME_PARITY.md). A revisão humana continua obrigatória.
