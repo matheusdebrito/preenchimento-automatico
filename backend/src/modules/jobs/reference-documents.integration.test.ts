@@ -86,6 +86,8 @@ async function inspect(
           concept.preferredDirections,
           () => false,
           concept.allowSequentialWithGeometry ?? true,
+          concept.firstOccurrenceOnly ?? false,
+          concept.approximateLabels ?? [],
         ).length : 0;
         return {
           fieldId: item.fieldId,
@@ -106,7 +108,7 @@ async function inspect(
       .map((line) => line.text.normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '').toUpperCase().trim())
       .filter((text) => /(?:NOME|EMBARC|MOTOR|POT|FABRIC|SERIE|INSCRI|CASCO|ATIVIDADE|TRIPUL|PASSAGE)/.test(text))
-      .map((text) => text.replace(/[A-Z0-9./-]{6,}/g, '[TOKEN]')));
+      .map((text) => text.replace(/\b(?=[A-Z0-9./-]*\d)[A-Z0-9./-]{4,}\b/g, '[VALUE]')));
   if (structuralLabels.length) {
     console.log('[REFERENCE_LABEL_DIAG]', JSON.stringify({
       file: relativePath.split('/').at(-1),
