@@ -26,7 +26,7 @@ function horizontalOverlap(a: ObservationLine, b: ObservationLine): number {
   return Math.max(0, Math.min(a.box[2], b.box[2]) - Math.max(a.box[0], b.box[0]));
 }
 
-function uniqueCandidate(candidates: readonly ExtractedCandidate[]): ExtractedCandidate | null {
+export function selectUniqueCandidate(candidates: readonly ExtractedCandidate[]): ExtractedCandidate | null {
   const unique = new Map<string, ExtractedCandidate>();
   for (const candidate of candidates) {
     const key = normalizeText(candidate.value);
@@ -38,12 +38,12 @@ function uniqueCandidate(candidates: readonly ExtractedCandidate[]): ExtractedCa
   return unique.size === 1 ? [...unique.values()][0]! : null;
 }
 
-export function anchoredValue(
+export function anchoredCandidates(
   observation: DocumentObservation,
   labels: readonly RegExp[],
   anchorName: string,
   validate: (value: string) => boolean,
-): ExtractedCandidate | null {
+): readonly ExtractedCandidate[] {
   const candidates: ExtractedCandidate[] = [];
 
   for (const page of observation.pages) {
@@ -119,7 +119,17 @@ export function anchoredValue(
     }
   }
 
-  return uniqueCandidate(candidates);
+  return candidates;
+}
+
+export function anchoredValue(
+  observation: DocumentObservation,
+  labels: readonly RegExp[],
+  anchorName: string,
+  validate: (value: string) => boolean,
+): ExtractedCandidate | null {
+  return selectUniqueCandidate(anchoredCandidates(
+    observation, labels, anchorName, validate));
 }
 
 export function uniqueLineValue(
@@ -142,7 +152,7 @@ export function uniqueLineValue(
       }
     }
   }
-  return uniqueCandidate(candidates);
+  return selectUniqueCandidate(candidates);
 }
 
 export function toEvidence(

@@ -22,6 +22,13 @@ type OcrInspection = {
   model: string;
   elapsedMs: number;
   fields: Record<string,string>;
+  assessments: readonly {
+    fieldId: string;
+    status: 'FOUND' | 'NOT_FOUND' | 'AMBIGUOUS';
+    confidence: number | null;
+    method?: string;
+    anchor?: string;
+  }[];
   pages: readonly OcrPageResult[];
 };
 
@@ -135,6 +142,24 @@ export function OcrPage() {
                       ))}
                     </dl>
                   ) : <p>Nenhum campo semântico foi identificado.</p>}
+                  {result.assessments.length ? (
+                    <>
+                      <h3>Diagnóstico dos conceitos suportados</h3>
+                      <dl>
+                        {result.assessments.map((item) => (
+                          <div key={item.fieldId}>
+                            <dt>{item.fieldId}</dt>
+                            <dd>
+                              {item.status}
+                              {item.confidence !== null
+                                ? ' · ' + (item.confidence * 100).toFixed(1) + '%' : ''}
+                              {item.method ? ' · ' + item.method : ''}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </>
+                  ) : null}
                 </div>
               </section>
 

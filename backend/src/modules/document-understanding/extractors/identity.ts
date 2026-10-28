@@ -449,4 +449,25 @@ export const identityDocumentExtractor: DocumentExtractor = {
 
     return evidence;
   },
+  assess(observation, context) {
+    if (context.subjectRole !== 'person' && context.subjectRole !== 'seller') return [];
+    const prefix = context.subjectRole;
+    const evidence = identityDocumentExtractor.extract(observation, context);
+    const byField = new Map(evidence.map((item) => [item.fieldId, item]));
+    return ['fullName', 'cpf', 'identity', 'issuer'].map((name) => {
+      const fieldId = prefix + '.' + name;
+      const item = byField.get(fieldId);
+      return item ? {
+        fieldId,
+        status: 'FOUND' as const,
+        confidence: item.confidence,
+        method: item.method,
+        ...(item.anchor ? { anchor: item.anchor } : {}),
+      } : {
+        fieldId,
+        status: 'NOT_FOUND' as const,
+        confidence: null,
+      };
+    });
+  },
 };

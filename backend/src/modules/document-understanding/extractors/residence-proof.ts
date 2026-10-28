@@ -41,6 +41,15 @@ function normalizedCep(value: string): string {
 
 export const residenceProofDocumentExtractor: DocumentExtractor = {
   documentType: 'residence-proof',
+  supportedFields: [
+    'person.postalCode',
+    'person.address',
+    'person.streetNumber',
+    'person.apartment',
+    'person.neighborhood',
+    'person.city',
+    'person.state',
+  ],
   extract(observation, context) {
     if (context.subjectRole !== 'person') return [];
     const source = withSpatialPhrases(observation);
