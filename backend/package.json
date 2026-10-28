@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:document-understanding": "vitest run src/modules/document-understanding",
+    "verify:document-understanding": "npm run typecheck && npm run lint && npm run test:document-understanding && npm run build"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
