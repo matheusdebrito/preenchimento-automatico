@@ -13,7 +13,7 @@ import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
-import { extractText, suggestFields, shouldExtractDocument, identityNameStage } from '../modules/jobs/ocr.js';
+import { extractTextWithEngine, suggestFields, shouldExtractDocument, identityNameStage } from '../modules/jobs/ocr.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
 import { watermarkQaSample } from '../modules/pdf/qa-watermark.js';
 
@@ -183,7 +183,8 @@ export function registerJobRoutes(
           });
           continue;
         }
-        const text = await extractText(document, store.directory(job));
+        const extraction = await extractTextWithEngine(document, store.directory(job));
+        const text = extraction.text;
         const suggestions = suggestFields(text, document.requirementId);
         // OCR rules may recognize fields absent from the selected form.
         // Never offer or persist a field that this service cannot review.
@@ -197,6 +198,7 @@ export function registerJobRoutes(
               : Object.keys(suggestions).length > 0 ? 'no_applicable_fields'
                 : 'no_supported_labels',
           suggestionCount: count,
+          engine: extraction.engine,
           ...(isQaJob(job.serviceId) && (
             document.requirementId === 'buyer-identity' ||
             document.requirementId === 'seller-identity'
