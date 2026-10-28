@@ -8,7 +8,7 @@ import { classifyDocument, validatePdfPages } from '../modules/jobs/document-val
 import { paddleTextForSource, runPaddleOcrBuffer } from '../modules/jobs/paddle-ocr.js';
 import { suggestFields } from '../modules/jobs/ocr.js';
 import { paddleToObservation } from '../modules/document-understanding/paddle-observation.js';
-import { extractDocumentEvidence } from '../modules/document-understanding/registry.js';
+import { assessDocumentFields, extractDocumentEvidence } from '../modules/document-understanding/registry.js';
 import type { DocumentSubjectRole, DocumentTypeId } from '../modules/document-understanding/contracts.js';
 
 const SOURCES = new Set([
@@ -59,12 +59,17 @@ export function registerOcrDebugRoutes(app: FastifyInstance, pool?: Database): v
       const result = await runPaddleOcrBuffer(req.body, kind);
       const text = paddleTextForSource(result, req.params.source);
       const profile = extractionProfile(req.params.source);
-      const structured = profile
-        ? extractDocumentEvidence(paddleToObservation(result), {
-            documentId: 'inspection',
-            sourceId: req.params.source,
-            ...profile,
-          })
+      const observation = paddleToObservation(result);
+      const extractionContext = profile ? {
+        documentId: 'inspection',
+        sourceId: req.params.source,
+        ...profile,
+      } : null;
+      const structured = extractionContext
+        ? extractDocumentEvidence(observation, extractionContext)
+        : [];
+      const assessments = extractionContext
+        ? assessDocumentFields(observation, extractionContext)
         : [];
       const legacy = profile?.documentType === 'sale-document'
         ? Object.entries(suggestFields(text, req.params.source))
@@ -80,6 +85,7 @@ export function registerOcrDebugRoutes(app: FastifyInstance, pool?: Database): v
         model: result.model,
         elapsedMs: result.elapsedMs,
         fields,
+        assessments,
         pages: result.pages,
       };
     } catch (error) {
