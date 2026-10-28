@@ -284,3 +284,16 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Regressões:** adicionados testes para (1) valor inválido seguido pelo rótulo do próximo conceito, (2) TIE digital mascarado, que não deve produzir fabricante/série, e (3) TIE digital com valores reais, que deve manter fabricante e série separados. O teste de referência real foi corrigido para exigir ausência dos campos mascarados em vez de falso `FOUND`.
 
 **Pendente:** CI completo e reteste no ambiente do usuário com o mesmo TIE digital. A correção não altera campos de proprietário, múltiplos motores no domínio nem homologação documental.
+
+
+## 18. Registro de execução — 28/10/2026, correção do preflight e redução de falhas tardias no CI
+
+**Falha do PR 20:** todos os jobs determinísticos e de integração passaram, exceto `reference-documents`. O TIE digital real deixou de produzir o falso positivo `vessel.motorManufacturerBrandModel`, mas ainda produziu `vessel.motorSerial`. A causa provável validada pelo layout é a transição para os cabeçalhos `MOTOR 2/3/4 / ENGINE 2/3/4`, que não pertencem ao domínio ativo de um motor e, por isso, ainda não eram tratados como fronteira semântica.
+
+**Correção adicional:** conceitos semânticos agora aceitam fronteiras específicas. Os campos do motor 1 no TIE param ao encontrar cabeçalhos de motor 2–4, inclusive forma compactada pelo OCR como `MOTOR2/ENGINE2`. O validador de série também rejeita cabeçalhos estruturais de motor. Foram adicionadas regressões específicas.
+
+**Padrão das falhas recentes:** as falhas não indicam flakiness geral do GitHub Actions; os jobs de infraestrutura têm passado. Os casos observados vieram de validação tardia de hipóteses: teste sintético inadequado, expectativa de referência alterada antes de reproduzir a saída real e diferença entre fragmentação sintética e PaddleOCR real.
+
+**Mudança de processo:** o workflow `CI` passa a aceitar `workflow_dispatch` e, nesse modo, compara a branch completa contra `main`. `AGENTS.md` exige que mudanças de OCR/document-understanding executem o CI completo na branch **antes de abrir o PR**. Também foi criado `npm run verify:document-understanding` para typecheck + lint + testes determinísticos + build, e `docs/PRE_PR_VALIDATION.md` documenta o gate.
+
+**Objetivo:** o CI do PR permanece uma verificação independente, mas deixa de ser o primeiro ambiente em que a alteração é realmente testada. Isso não garante zero falhas, porém reduz erros previsíveis e separa melhor regressão de código, comportamento do OCR real e infraestrutura.
