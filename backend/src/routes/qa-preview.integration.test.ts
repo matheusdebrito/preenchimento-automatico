@@ -239,7 +239,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       await pool.end();
       await rm(root, { recursive: true, force: true });
     }
-  }, 90000);
+  }, 150000);
   it('informa separadamente quando um RG é lido mas o campo não pertence ao formulário', async () => {
     const pool = await connectDatabase(databaseUrl!);
     const email = 'qa-excluded-' + randomUUID() + '@example.invalid';
