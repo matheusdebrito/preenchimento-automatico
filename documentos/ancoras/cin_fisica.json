@@ -1,0 +1,175 @@
+{
+  "documentType": "CIN",
+  "variant": "fisica",
+  "aliases": [
+    "novo RG",
+    "Carteira de Identidade Nacional"
+  ],
+  "sourceStatus": "confirmed_from_official_federal_model",
+  "sources": [
+    "https://www.gov.br/antt/pt-br/assuntos/ultimas-noticias/antt-realiza-palestra-boas-praticas-em-transporte-rodoviario-de-passageiros-com-o-tema-201cidentificacao-de-passageiros201d/identificacao-de-passageiros.pdf",
+    "https://www.gov.br/governodigital/pt-br/identidade/cin"
+  ],
+  "documentAnchors": [
+    "CARTEIRA DE IDENTIDADE",
+    "REPÚBLICA FEDERATIVA DO BRASIL",
+    "GOVERNO FEDERAL"
+  ],
+  "fields": [
+    {
+      "field": "person.name",
+      "anchors": [
+        "Nome / Name",
+        "NOME"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "person_name"
+    },
+    {
+      "field": "person.socialName",
+      "anchors": [
+        "Nome Social / Social Name",
+        "NOME SOCIAL"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "person_name",
+      "optional": true
+    },
+    {
+      "field": "person.cpf",
+      "anchors": [
+        "Registro Geral - CPF / Personal Number",
+        "REGISTRO GERAL - CPF"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "cpf"
+    },
+    {
+      "field": "person.sex",
+      "anchors": [
+        "Sexo / Sex",
+        "SEXO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "sex"
+    },
+    {
+      "field": "person.birthDate",
+      "anchors": [
+        "Data de Nascimento / Date of Birth",
+        "DATA DE NASCIMENTO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "person.nationality",
+      "anchors": [
+        "Nacionalidade / Nationality",
+        "NACIONALIDADE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "person.birthPlace",
+      "anchors": [
+        "Naturalidade / Place of Birth",
+        "NATURALIDADE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.expirationDate",
+      "anchors": [
+        "Data de Validade / Date of Expiry",
+        "DATA DE VALIDADE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date_or_indeterminate"
+    },
+    {
+      "field": "person.parents",
+      "anchors": [
+        "Filiação / Filiation",
+        "FILIAÇÃO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "multiline_text"
+    },
+    {
+      "field": "document.issuer",
+      "anchors": [
+        "Órgão Expedidor / Card Issuer",
+        "ÓRGÃO EXPEDIDOR"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.issuePlace",
+      "anchors": [
+        "Local / Place of Issue",
+        "LOCAL"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.issueDate",
+      "anchors": [
+        "Data de Emissão / Issue Date",
+        "DATA DE EMISSÃO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    }
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  }
+}

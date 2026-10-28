@@ -1,0 +1,157 @@
+{
+  "documentType": "CIR",
+  "variant": "caderneta_com_etiqueta_dados_pessoais",
+  "sourceStatus": "partially_confirmed_from_official_marinha_sources",
+  "sources": [
+    "https://www.marinha.mil.br/dpc/sites/www.marinha.mil.br.dpc/files/legislacao/circulares/Circ-6-2019-DPC-CIR-010.01.pdf",
+    "https://www.marinha.mil.br/cprs/node/386",
+    "https://www.marinha.mil.br/delpepitacio/sites/www.marinha.mil.br.delpepitacio/files/2025-02/2-CIR%20EMISS%C3%83O%20DE%202%C2%BA%20VIA.pdf"
+  ],
+  "documentAnchors": [
+    "CADERNETA DE INSCRIÇÃO E REGISTRO",
+    "CIR",
+    "ETIQUETA DE DADOS PESSOAIS"
+  ],
+  "fields": [
+    {
+      "field": "person.name",
+      "anchors": [
+        "NOME DO AQUAVIÁRIO"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "person_name",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.motherName",
+      "anchors": [
+        "NOME DA MÃE"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "person_name",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.fatherName",
+      "anchors": [
+        "NOME DO PAI"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "person_name",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.birthPlace",
+      "anchors": [
+        "NATURALIDADE"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.nationality",
+      "anchors": [
+        "NACIONALIDADE"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.rg",
+      "anchors": [
+        "RG"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "rg",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.cpf",
+      "anchors": [
+        "CPF"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "cpf",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.height",
+      "anchors": [
+        "ALTURA"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "height",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.eyeColor",
+      "anchors": [
+        "COR DOS OLHOS"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text",
+      "confidence": "medium"
+    },
+    {
+      "field": "cir.number",
+      "anchors": [
+        "Nº DA CIR",
+        "N° DA CIR"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "alphanumeric",
+      "confidence": "medium"
+    },
+    {
+      "field": "person.birthDate",
+      "anchors": [
+        "DATA DE NASCIMENTO"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "date",
+      "confidence": "medium"
+    }
+  ],
+  "notes": [
+    "A Marinha confirma que a CIR usa Etiqueta de Dados Pessoais na folha de rosto.",
+    "Os nomes de campo foram confirmados em formulário oficial de emissão de 2ª via, mas não todos visualmente na própria etiqueta; por isso confidence=medium.",
+    "Se você obtiver uma foto real anonimizada da folha de rosto/etiqueta, este arquivo deve ser refinado."
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  }
+}

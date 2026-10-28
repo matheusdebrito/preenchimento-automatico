@@ -1,0 +1,294 @@
+{
+  "documentType": "CIN",
+  "variant": "digital",
+  "aliases": [
+    "novo RG",
+    "Carteira de Identidade Nacional"
+  ],
+  "sourceStatus": "confirmed_from_real_govbr_shared_cin_and_official_guidance",
+  "sources": [
+    "https://www.gov.br/governodigital/pt-br/identidade/cin",
+    "https://www.detran.rj.gov.br/todos-os-servicos/servicos-dic/carteira-de-identidade-nacional-cin.html"
+  ],
+  "documentAnchors": [
+    "CARTEIRA DE IDENTIDADE",
+    "Compartilhado pelo aplicativo gov.br",
+    "QR Code"
+  ],
+  "fields": [
+    {
+      "field": "person.name",
+      "anchors": [
+        "Nome / Name",
+        "NOME"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "person_name"
+    },
+    {
+      "field": "person.socialName",
+      "anchors": [
+        "Nome Social / Social Name",
+        "NOME SOCIAL"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "person_name",
+      "optional": true
+    },
+    {
+      "field": "person.cpf",
+      "anchors": [
+        "Registro Geral - CPF / Personal Number",
+        "REGISTRO GERAL - CPF"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "cpf"
+    },
+    {
+      "field": "person.sex",
+      "anchors": [
+        "Sexo / Sex",
+        "SEXO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "sex"
+    },
+    {
+      "field": "person.birthDate",
+      "anchors": [
+        "Data de Nascimento / Date of Birth",
+        "DATA DE NASCIMENTO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "person.nationality",
+      "anchors": [
+        "Nacionalidade / Nationality",
+        "NACIONALIDADE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "person.birthPlace",
+      "anchors": [
+        "Naturalidade / Place of Birth",
+        "NATURALIDADE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.expirationDate",
+      "anchors": [
+        "Data de Validade / Date of Expiry",
+        "DATA DE VALIDADE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date_or_indeterminate"
+    },
+    {
+      "field": "person.parents",
+      "anchors": [
+        "Filiação / Filiation",
+        "FILIAÇÃO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "multiline_text"
+    },
+    {
+      "field": "document.issuer",
+      "anchors": [
+        "Órgão Expedidor / Card Issuer",
+        "ÓRGÃO EXPEDIDOR"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.issuePlace",
+      "anchors": [
+        "Local / Place of Issue",
+        "LOCAL"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.issueDate",
+      "anchors": [
+        "Data de Emissão / Issue Date",
+        "DATA DE EMISSÃO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    }
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  },
+  "digitalOnlyFields": [
+    {
+      "field": "digital.qrCodeBlock",
+      "anchors": [
+        "QR Code"
+      ],
+      "validator": "presence"
+    },
+    {
+      "field": "optional.voterTitle",
+      "anchors": [
+        "Título de eleitor"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "optional.maritalStatus",
+      "anchors": [
+        "Estado civil"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "optional.bloodType",
+      "anchors": [
+        "Tipo sanguíneo/ Fator RH",
+        "Tipo sanguíneo"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "optional.organDonor",
+      "anchors": [
+        "Doador de Órgãos"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "boolean_pt",
+      "optional": true
+    },
+    {
+      "field": "optional.cnh",
+      "anchors": [
+        "CNH"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "optional.nis",
+      "anchors": [
+        "NIS"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "optional.pisPasep",
+      "anchors": [
+        "PIS / PASEP",
+        "PIS/PASEP"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "optional.workCard",
+      "anchors": [
+        "Carteira de trabalho"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "optional.cns",
+      "anchors": [
+        "CNS"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text",
+      "optional": true
+    }
+  ]
+}

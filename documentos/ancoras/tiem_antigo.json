@@ -1,0 +1,457 @@
+{
+  "documentType": "TIEM",
+  "variant": "antigo",
+  "sourceStatus": "confirmed_from_user_real_reference",
+  "documentAnchors": [
+    "TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA"
+  ],
+  "fields": [
+    {
+      "field": "vessel.registrationNumber",
+      "anchors": [
+        "Nº DE INSCRIÇÃO",
+        "N° DE INSCRIÇÃO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "registration_number"
+    },
+    {
+      "field": "vessel.registrationDate",
+      "anchors": [
+        "DATA INSCRIÇÃO",
+        "DATA DE INSCRIÇÃO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "document.expirationDate",
+      "anchors": [
+        "VALIDADE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "document.copyNumber",
+      "anchors": [
+        "VIA"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "integer"
+    },
+    {
+      "field": "vessel.name",
+      "anchors": [
+        "NOME DA EMBARCAÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.propulsionType",
+      "anchors": [
+        "TIPO DE PROPULSÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.type",
+      "anchors": [
+        "TIPO DA EMBARCAÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "engine1.powerHp",
+      "anchors": [
+        "POTÊNCIA (HP)"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "decimal"
+    },
+    {
+      "field": "engine1.serial",
+      "anchors": [
+        "Nº DO 1º MOTOR/SÉRIE",
+        "N° DO 1º MOTOR/SÉRIE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "engine1.manufacturer",
+      "anchors": [
+        "NOME FABRICANTE"
+      ],
+      "occurrence": 1,
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "engine2.serial",
+      "anchors": [
+        "Nº DO 2º MOTOR/SÉRIE",
+        "N° DO 2º MOTOR/SÉRIE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "engine2.manufacturer",
+      "anchors": [
+        "NOME FABRICANTE"
+      ],
+      "occurrence": 2,
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "engine3.serial",
+      "anchors": [
+        "Nº DO 3º MOTOR/SÉRIE",
+        "N° DO 3º MOTOR/SÉRIE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "engine3.manufacturer",
+      "anchors": [
+        "NOME FABRICANTE"
+      ],
+      "occurrence": 3,
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.navigationArea",
+      "anchors": [
+        "ÁREA DE NAVEGAÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.activity",
+      "anchors": [
+        "ATIVIDADE/SERVIÇO",
+        "ATIVIDADE / SERVIÇO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.crewCount",
+      "anchors": [
+        "QTD. DE TRIPULANTES"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "integer"
+    },
+    {
+      "field": "vessel.passengerCount",
+      "anchors": [
+        "QTD. DE PASSAGEIROS"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "integer"
+    },
+    {
+      "field": "finance.mortgaged",
+      "anchors": [
+        "HIPOTECADA"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "boolean_pt"
+    },
+    {
+      "field": "finance.mortgageCreditor",
+      "anchors": [
+        "CREDOR HIPOTECÁRIO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "finance.alienation",
+      "anchors": [
+        "ALIENAÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "owner.name",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "NOME"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "person_name"
+    },
+    {
+      "field": "owner.cpfCnpj",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "CPF/CNPJ"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "cpf_cnpj"
+    },
+    {
+      "field": "owner.address",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "ENDEREÇO"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "owner.number",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "NÚMERO"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "owner.complement",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "COMPLEMENTO"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "owner.district",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "BAIRRO"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "owner.cep",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "CEP"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "cep"
+    },
+    {
+      "field": "owner.city",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "CIDADE"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "owner.state",
+      "anchors": [
+        "PROPRIETÁRIO",
+        "ESTADO"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "uf"
+    },
+    {
+      "field": "coOwner.name",
+      "anchors": [
+        "CO-PROPRIETÁRIO",
+        "NOME"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "person_name"
+    },
+    {
+      "field": "coOwner.cpfCnpj",
+      "anchors": [
+        "CO-PROPRIETÁRIO",
+        "CPF/CNPJ"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "cpf_cnpj"
+    },
+    {
+      "field": "hull.builder",
+      "anchors": [
+        "CARACTERÍSTICAS DO CASCO",
+        "CONSTRUTOR"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "hull.buildYear",
+      "anchors": [
+        "ANO DE CONSTRUÇÃO"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "year"
+    },
+    {
+      "field": "hull.length",
+      "anchors": [
+        "COMPRIMENTO TOTAL"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "decimal"
+    },
+    {
+      "field": "hull.material",
+      "anchors": [
+        "MAT. CONSTRUÇÃO CASCO"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "hull.serial",
+      "anchors": [
+        "NÚMERO DE SÉRIE DO CASCO/CHASSIS",
+        "NUMERO DE SERIE DO CASCO/CHASSIS"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "hull.color",
+      "anchors": [
+        "COR PREDOMINANTE DO CASCO"
+      ],
+      "preferredDirection": [
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.observations",
+      "anchors": [
+        "OUTRAS OBSERVAÇÕES"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    }
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  }
+}

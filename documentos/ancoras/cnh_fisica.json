@@ -1,0 +1,191 @@
+{
+  "documentType": "CNH",
+  "variant": "fisica",
+  "sourceStatus": "confirmed_from_current_real_cnh_and_contran_model",
+  "sources": [
+    "https://www.gov.br/infraestrutura/pt-br/assuntos/transito/conteudo-contran/resolucoes/Resolucao8862021F.pdf"
+  ],
+  "documentAnchors": [
+    "CARTEIRA NACIONAL DE HABILITAÇÃO",
+    "DRIVER LICENSE",
+    "PERMISO DE CONDUCCIÓN",
+    "SECRETARIA NACIONAL DE TRÂNSITO"
+  ],
+  "fields": [
+    {
+      "field": "person.name",
+      "anchors": [
+        "NOME E SOBRENOME",
+        "Nome e Sobrenome",
+        "NAME AND SURNAME"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "person_name"
+    },
+    {
+      "field": "license.firstIssueDate",
+      "anchors": [
+        "1ª HABILITAÇÃO",
+        "1º HABILITAÇÃO",
+        "PRIMEIRA HABILITAÇÃO"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "person.birthDatePlace",
+      "anchors": [
+        "DATA, LOCAL E UF DE NASCIMENTO",
+        "DATA E LOCAL DE NASCIMENTO",
+        "DATE AND PLACE OF BIRTH"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "birth_date_place"
+    },
+    {
+      "field": "document.issueDate",
+      "anchors": [
+        "DATA EMISSÃO",
+        "DATA DE EMISSÃO",
+        "ISSUING DATE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "document.expirationDate",
+      "anchors": [
+        "VALIDADE",
+        "DATA DE VALIDADE",
+        "EXPIRATION DATE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "person.identityDocument",
+      "anchors": [
+        "DOC IDENTIDADE / ÓRG EMISSOR / UF",
+        "DOC. IDENTIDADE / ÓRG. EMISSOR / UF"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "person.cpf",
+      "anchors": [
+        "CPF"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "cpf"
+    },
+    {
+      "field": "license.registrationNumber",
+      "anchors": [
+        "Nº REGISTRO",
+        "N° REGISTRO",
+        "NÚMERO DE REGISTRO",
+        "DRIVER LICENSE NUMBER"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "cnh_number"
+    },
+    {
+      "field": "license.category",
+      "anchors": [
+        "CAT HAB",
+        "CAT. HAB",
+        "CATEGORIA",
+        "CATEGORY"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "cnh_category"
+    },
+    {
+      "field": "person.nationality",
+      "anchors": [
+        "NACIONALIDADE",
+        "NATIONALITY"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "person.parents",
+      "anchors": [
+        "FILIAÇÃO",
+        "FILIATION"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "multiline_text"
+    },
+    {
+      "field": "document.observations",
+      "anchors": [
+        "OBSERVAÇÕES",
+        "OBSERVATIONS"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text",
+      "optional": true
+    },
+    {
+      "field": "document.issuePlace",
+      "anchors": [
+        "LOCAL",
+        "PLACE"
+      ],
+      "preferredDirection": [
+        "below",
+        "right"
+      ],
+      "validator": "text"
+    }
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  }
+}

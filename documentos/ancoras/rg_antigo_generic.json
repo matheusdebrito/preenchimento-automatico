@@ -1,0 +1,117 @@
+{
+  "documentType": "RG",
+  "variant": "modelo_antigo_estadual",
+  "sourceStatus": "common_anchors_confirmed_across_real_legacy_state_ids",
+  "documentAnchors": [
+    "CARTEIRA DE IDENTIDADE",
+    "REPÚBLICA FEDERATIVA DO BRASIL"
+  ],
+  "fields": [
+    {
+      "field": "person.name",
+      "anchors": [
+        "NOME"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "person_name"
+    },
+    {
+      "field": "person.parents",
+      "anchors": [
+        "FILIAÇÃO"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "multiline_text"
+    },
+    {
+      "field": "person.birthPlace",
+      "anchors": [
+        "NATURALIDADE",
+        "NATURAL DE"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "person.birthDate",
+      "anchors": [
+        "DATA DE NASCIMENTO"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "person.cpf",
+      "anchors": [
+        "CPF"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "cpf"
+    },
+    {
+      "field": "identity.rg",
+      "anchors": [
+        "RG",
+        "REGISTRO GERAL"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "rg"
+    },
+    {
+      "field": "identity.issueDate",
+      "anchors": [
+        "DATA DE EXPEDIÇÃO",
+        "DATA EXPEDIÇÃO"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "identity.originDocument",
+      "anchors": [
+        "DOC. ORIGEM",
+        "DOCUMENTO DE ORIGEM"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text"
+    }
+  ],
+  "notes": [
+    "O RG antigo era estadual e não possuía um layout nacional único.",
+    "Use este arquivo apenas para âncoras comuns. Para maior precisão, crie variantes por UF (ex.: rg_antigo_rj.json, rg_antigo_sp.json)."
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  }
+}

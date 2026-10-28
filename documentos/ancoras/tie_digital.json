@@ -1,0 +1,298 @@
+{
+  "documentType": "TIE",
+  "variant": "digital",
+  "sourceStatus": "confirmed_from_official_marinha_model_image",
+  "sources": [
+    "https://www.marinha.mil.br/cpsc/sites/www.marinha.mil.br.cpsc/files/pictures/tie.digital.modelo.png"
+  ],
+  "documentAnchors": [
+    "TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO",
+    "REPÚBLICA FEDERATIVA DO BRASIL",
+    "AUTORIDADE MARÍTIMA BRASILEIRA"
+  ],
+  "fields": [
+    {
+      "field": "vessel.registrationNumber",
+      "anchors": [
+        "NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER",
+        "NÚMERO DE INSCRIÇÃO",
+        "REGISTRATION NUMBER"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "registration_number"
+    },
+    {
+      "field": "vessel.type",
+      "anchors": [
+        "TIPO DA EMBARCAÇÃO / TYPE OF VESSEL",
+        "TIPO DA EMBARCAÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "document.expirationDate",
+      "anchors": [
+        "DATA DE VALIDADE / EXPIRATION DATE",
+        "DATA DE VALIDADE"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "vessel.name",
+      "anchors": [
+        "NOME DA EMBARCAÇÃO / NAME OF VESSEL",
+        "NOME DA EMBARCAÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.activity",
+      "anchors": [
+        "ATIVIDADE / ACTIVITY",
+        "ATIVIDADE"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.navigationArea",
+      "anchors": [
+        "ÁREA DE NAVEGAÇÃO / NAVIGATION AREA",
+        "ÁREA DE NAVEGAÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "vessel.crewCount",
+      "anchors": [
+        "NÚMERO DE TRIPULANTES / NUMBER OF CREW MEMBERS",
+        "NÚMERO DE TRIPULANTES"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "integer"
+    },
+    {
+      "field": "vessel.passengerCount",
+      "anchors": [
+        "NÚMERO DE PASSAGEIROS / NUMBER OF PASSENGERS",
+        "NÚMERO DE PASSAGEIROS"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "integer"
+    },
+    {
+      "field": "hull.length",
+      "anchors": [
+        "COMPRIMENTO / LENGTH",
+        "COMPRIMENTO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "decimal"
+    },
+    {
+      "field": "hull.grossTonnage",
+      "anchors": [
+        "AB / GT"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "decimal"
+    },
+    {
+      "field": "hull.beam",
+      "anchors": [
+        "BOCA / BREADTH",
+        "BOCA"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "decimal"
+    },
+    {
+      "field": "hull.buildYear",
+      "anchors": [
+        "ANO DE CONSTRUÇÃO / YEAR OF BUILD",
+        "ANO DE CONSTRUÇÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "year"
+    },
+    {
+      "field": "hull.number",
+      "anchors": [
+        "Nº DO CASCO / HULL NUMBER",
+        "N° DO CASCO / HULL NUMBER",
+        "Nº DO CASCO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "hull.material",
+      "anchors": [
+        "MATERIAL DO CASCO",
+        "HULL MATERIAL"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "propulsion.type",
+      "anchors": [
+        "TIPO DE PROPULSÃO / TYPE OF PROPULSION",
+        "TIPO DE PROPULSÃO"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "propulsion.engineCount",
+      "anchors": [
+        "QUANTIDADE DE MOTORES / QUANTITY OF ENGINES",
+        "QUANTIDADE DE MOTORES"
+      ],
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "integer"
+    },
+    {
+      "field": "engine1.model",
+      "anchors": [
+        "MOTOR 1 / ENGINE 1",
+        "FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "engine1.serial",
+      "anchors": [
+        "MOTOR 1 / ENGINE 1",
+        "Nº DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "engine2.model",
+      "anchors": [
+        "MOTOR 2 / ENGINE 2",
+        "FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "engine2.serial",
+      "anchors": [
+        "MOTOR 2 / ENGINE 2",
+        "Nº DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "engine3.model",
+      "anchors": [
+        "MOTOR 3 / ENGINE 3",
+        "FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "engine3.serial",
+      "anchors": [
+        "MOTOR 3 / ENGINE 3",
+        "Nº DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "alphanumeric"
+    },
+    {
+      "field": "engine4.model",
+      "anchors": [
+        "MOTOR 4 / ENGINE 4",
+        "FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "engine4.serial",
+      "anchors": [
+        "MOTOR 4 / ENGINE 4",
+        "Nº DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER"
+      ],
+      "anchorChain": true,
+      "preferredDirection": [
+        "below"
+      ],
+      "validator": "alphanumeric"
+    }
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  }
+}

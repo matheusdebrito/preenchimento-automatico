@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "files": [
+    "cha_digital.json",
+    "cin_digital.json",
+    "cin_fisica.json",
+    "cir.json",
+    "cnh_digital.json",
+    "cnh_fisica.json",
+    "rg_antigo_generic.json",
+    "tie_digital.json",
+    "tiem_antigo.json"
+  ],
+  "generatedFor": "OCR anchor extraction",
+  "notes": [
+    "RG antigo é estadual e precisa de variantes por UF para alta precisão.",
+    "CIR ainda merece refinamento com foto real legível da Etiqueta de Dados Pessoais."
+  ]
+}

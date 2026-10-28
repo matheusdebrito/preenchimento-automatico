@@ -1,0 +1,108 @@
+{
+  "documentType": "CHA",
+  "variant": "digital",
+  "sourceStatus": "confirmed_from_real_govbr_shared_document",
+  "sources": [
+    "https://www.ba.gov.br/car/sites/site-car/files/2026-03/Habilitacao%20-%20Completa_0.pdf",
+    "https://www.marinha.mil.br/cpsc/amadores"
+  ],
+  "documentAnchors": [
+    "CARTEIRA DE HABILITAÇÃO DE AMADOR (CHA)",
+    "CARTEIRA DE HABILITAÇÃO DE AMADOR",
+    "AUTORIDADE MARÍTIMA BRASILEIRA"
+  ],
+  "fields": [
+    {
+      "field": "person.name",
+      "anchors": [
+        "Nome (Name)",
+        "NOME",
+        "NAME"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "person_name"
+    },
+    {
+      "field": "person.birthDate",
+      "anchors": [
+        "Data de Nascimento (Date of Birth)",
+        "DATA DE NASCIMENTO",
+        "NASCIMENTO"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "person.cpf",
+      "anchors": [
+        "CPF (Individual Registration)",
+        "CPF"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "cpf"
+    },
+    {
+      "field": "license.category",
+      "anchors": [
+        "Categoria (Category)",
+        "CATEGORIA",
+        "CATEGORY"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "text"
+    },
+    {
+      "field": "license.expirationDate",
+      "anchors": [
+        "Data de Validade (Expiration date)",
+        "DATA DE VALIDADE",
+        "VALIDADE"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "date"
+    },
+    {
+      "field": "license.registrationNumber",
+      "anchors": [
+        "Nº de Inscrição (Registration Number)",
+        "N° de Inscrição",
+        "INSCRIÇÃO",
+        "REGISTRATION NUMBER"
+      ],
+      "preferredDirection": [
+        "right",
+        "below"
+      ],
+      "validator": "alphanumeric"
+    }
+  ],
+  "notes": [
+    "Campos acima foram confirmados em CHA real compartilhada pelo aplicativo gov.br.",
+    "Modelos físicos anteriores podem conter também Identidade, Limites, Observações, Local de Emissão e Emissão."
+  ],
+  "matching": {
+    "caseInsensitive": true,
+    "stripAccentsForMatching": true,
+    "collapseWhitespace": true,
+    "fuzzyThreshold": 0.88
+  },
+  "extraction": {
+    "useRelativeGeometry": true,
+    "avoidAbsolutePixelCoordinates": true
+  }
+}
