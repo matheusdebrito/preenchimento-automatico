@@ -80,7 +80,13 @@ export function anchoredCandidates(
         continue;
       }
 
-      const defaultDirections: readonly CandidateDirection[] = ['right', 'below', 'sequential'];
+      // With coordinates available, raw OCR order is not a safe spatial relation:
+      // multi-column layouts may place an unrelated field next in the array.
+      // Sequential fallback is reserved for observations without geometry unless
+      // a concept explicitly opts into it.
+      const defaultDirections: readonly CandidateDirection[] = anchor.box
+        ? ['right', 'below']
+        : ['sequential'];
       const directions = [...new Set([...preferredDirections, ...defaultDirections])];
       let matched = false;
 
