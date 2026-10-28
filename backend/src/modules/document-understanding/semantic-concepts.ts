@@ -17,6 +17,7 @@ export interface SemanticFieldConcept {
   anchor: string;
   labels: readonly RegExp[];
   preferredDirections?: readonly CandidateDirection[];
+  boundaries?: readonly RegExp[];
   validate(value: string): boolean;
   normalize?(value: string): string;
 }
@@ -51,7 +52,8 @@ export function extractSemanticConcepts(
       concept.anchor,
       concept.validate,
       concept.preferredDirections,
-      isKnownConceptLabel,
+      (value) => isKnownConceptLabel(value) ||
+        Boolean(concept.boundaries?.some((pattern) => pattern.test(value))),
     );
     const selected = selectUniqueCandidate(candidates);
 
