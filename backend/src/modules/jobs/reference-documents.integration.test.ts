@@ -7,7 +7,11 @@ import {
   extractDocumentEvidence,
 } from '../document-understanding/registry.js';
 import type { DocumentTypeId, DocumentSubjectRole } from '../document-understanding/contracts.js';
-import { anchoredCandidates, withSpatialPhrases } from '../document-understanding/extractor-utils.js';
+import {
+  anchoredCandidates,
+  matchesApproximateLabel,
+  withSpatialPhrases,
+} from '../document-understanding/extractor-utils.js';
 import { tieFieldConcepts } from '../document-understanding/extractors/tie.js';
 import type { StoredDocument } from './job-store.js';
 
@@ -78,17 +82,22 @@ async function inspect(
           .filter((line) => concept?.labels.some((pattern) => pattern.test(line.text))).length;
         const sourceLabelMatches = source.pages.flatMap((page) => page.lines)
           .filter((line) => concept?.labels.some((pattern) => pattern.test(line.text))).length;
-        const candidateCount = concept ? anchoredCandidates(
+        const isKnownTieLabel = (value: string): boolean =>
+          tieFieldConcepts.some((known) =>
+            known.labels.some((pattern) => pattern.test(value)) ||
+            matchesApproximateLabel(value, known.approximateLabels ?? []));
+        const diagnosticCandidates = concept ? anchoredCandidates(
           source,
           concept.labels,
           concept.anchor,
           concept.validate,
           concept.preferredDirections,
-          () => false,
+          (value) => isKnownTieLabel(value) ||
+            Boolean(concept.boundaries?.some((pattern) => pattern.test(value))),
           concept.allowSequentialWithGeometry ?? true,
           concept.firstOccurrenceOnly ?? false,
           concept.approximateLabels ?? [],
-        ).length : 0;
+        ) : [];
         return {
           fieldId: item.fieldId,
           status: item.status,
@@ -96,11 +105,30 @@ async function inspect(
           anchor: item.anchor ?? null,
           originalLabelMatches,
           sourceLabelMatches,
-          candidateCount,
+          candidateCount: diagnosticCandidates.length,
+          candidateMethods: diagnosticCandidates.map((candidate) => candidate.method),
+          candidateLineIds: diagnosticCandidates.map((candidate) => candidate.lineIds),
         };
       }),
     }));
   }
+  if (relativePath.includes('TIEM antigo')) {
+    const rawLines = extraction.observation.pages.flatMap((page) => page.lines);
+    const motorIndexes = rawLines.flatMap((line, index) =>
+      /MOTOR|FABRICANTE/i.test(line.text) ? [index] : []);
+    const neighborhood = [...new Set(motorIndexes.flatMap((index) =>
+      [index - 2, index - 1, index, index + 1, index + 2]
+        .filter((candidate) => candidate >= 0 && candidate < rawLines.length)))]
+      .sort((a, b) => a - b)
+      .map((index) => ({
+        id: rawLines[index]!.id,
+        text: rawLines[index]!.text.normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '').toUpperCase().trim()
+          .replace(/\b(?=[A-Z0-9./-]*\d)[A-Z0-9./-]{4,}\b/g, '[VALUE]'),
+      }));
+    console.log('[REFERENCE_MOTOR_NEIGHBORHOOD]', JSON.stringify({ neighborhood }));
+  }
+
   const lineCount = extraction.observation.pages.reduce(
     (sum, page) => sum + page.lines.length, 0);
   const structuralLabels = extraction.observation.pages.flatMap((page) =>
