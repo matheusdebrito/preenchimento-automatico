@@ -239,7 +239,7 @@ function validIssuer(value: string): boolean {
   const text = clean(value);
   if (text.length < 2 || text.length > 24) return false;
   if (!/[A-ZÀ-Ý]/i.test(text)) return false;
-  if (!/^[A-ZÀ-Ý0-9 .\/-]+$/i.test(text)) return false;
+  if (!/^[A-ZÀ-Ý0-9 ./-]+$/i.test(text)) return false;
   if (/^(?:CPF|RG|NOME|DATA|NASCIMENTO|NATURALIDADE|FILIACAO)$/i.test(normalize(text))) return false;
   return true;
 }
