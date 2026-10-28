@@ -108,7 +108,7 @@ export const tieDocumentExtractor: DocumentExtractor = {
     ], 'POTENCIA DO MOTOR', power));
 
     push(evidence, field(source, context, 'vessel.motorSerial', [
-      /^\s*(?:N[ÚU]MERO\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ], 'N DE SERIE DO MOTOR / ENGINE SERIAL NUMBER', serial));
 
     push(evidence, field(source, context, 'vessel.crewCount', [
