@@ -168,6 +168,31 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.hullId']).toBe('BR-MZL-123456');
   });
 
+  it('mantém inscrição e série do casco separadas quando a ordem OCR diverge da geometria', () => {
+    const geometryShuffled: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'Nº DE INSCRIÇÃO', confidence: .99,
+            box: [30, 90, 330, 120], polygon: null },
+          { id: '0:1', page: 0, text: 'BR-MZL-123456', confidence: .98,
+            box: [1280, 650, 1490, 682], polygon: null },
+          { id: '0:2', page: 0, text: 'FORMATO DE SÉRIE DO CASCO/FORMA', confidence: .99,
+            box: [900, 610, 1280, 642], polygon: null },
+          { id: '0:3', page: 0, text: '441M2023001234', confidence: .98,
+            box: [75, 125, 315, 158], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(geometryShuffled, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.registration']).toBe('441M2023001234');
+    expect(values['vessel.hullId']).toBe('BR-MZL-123456');
+  });
+
   it('aproveita aliases adicionais do TIE digital e TIEM antigo', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
