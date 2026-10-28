@@ -2,16 +2,20 @@ import type { StoredDocument } from './job-store.js';
 import { isValidCpf, isValidBrazilianDate } from '../catalog/field-validation.js';
 import { extractPaddleDocument } from './paddle-ocr.js';
 import type { PaddleOcrResult } from './paddle-ocr.js';
+import { paddleToObservation } from '../document-understanding/paddle-observation.js';
+import type { DocumentObservation } from '../document-understanding/contracts.js';
+import { extractPdfTextObservation, observationText } from './pdf-text-observation.js';
 
 let active = 0;
 const MAX_CONCURRENT = 2;
 
-export type OcrEngine = 'paddleocr';
+export type OcrEngine = 'paddleocr' | 'pdf-text';
 
 export interface OcrExtraction {
   text: string;
   engine: OcrEngine;
-  paddle: PaddleOcrResult;
+  observation: DocumentObservation;
+  paddle?: PaddleOcrResult;
 }
 
 /** Plain-text compatibility helper used by legacy parser tests only. */
@@ -43,11 +47,21 @@ export async function extractTextWithEngine(
   }
   active++;
   try {
+    const fast = await extractPdfTextObservation(doc);
+    if (fast) {
+      return {
+        text: observationText(fast),
+        engine: 'pdf-text',
+        observation: fast,
+      };
+    }
+
     const extracted = await extractPaddleDocument(doc);
     return {
       text: extracted.text.slice(0, 50_000),
       engine: 'paddleocr',
       paddle: extracted.result,
+      observation: paddleToObservation(extracted.result),
     };
   } finally {
     active--;
