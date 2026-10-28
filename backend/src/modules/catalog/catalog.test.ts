@@ -56,6 +56,20 @@ describe('catálogo reutilizável de formulários', () => {
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
+  it('mantém o domínio do MVP restrito a um único motor', () => {
+    const ids = new Set(catalog.fields.map((field) => field.id));
+    expect(ids.has('vessel.motorBrand')).toBe(true);
+    expect(ids.has('vessel.motorPower')).toBe(true);
+    expect(ids.has('vessel.motorSerial')).toBe(true);
+    expect([...ids].some((id) => /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id)))
+      .toBe(false);
+
+    const placements = catalog.mappings.flatMap((mapping) => mapping.placements);
+    expect(placements.some((placement) =>
+      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(placement.fieldId)))
+      .toBe(false);
+  });
+
   it('permite a mesma versão do PDF em dois serviços sem duplicar o mapeamento', () => {
     const fixture = sharedFormFixture();
     expect(fixture.mappings).toHaveLength(1);

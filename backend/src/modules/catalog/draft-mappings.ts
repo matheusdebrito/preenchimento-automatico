@@ -105,27 +105,6 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("sale.price", 177, 738, 549, 7, 0),
       coordinate("person.placeDate", 219, 758, 512, 7, 0),
 
-      // Motor 1-4: both choices are declared explicitly and stamped only if selected.
-      coordinate("vessel.motor1Choice", 264, 243, 12, 7, 0, true, "sim"),
-      coordinate("vessel.motor1Choice", 321, 243, 12, 7, 0, true, "nao"),
-      coordinate("vessel.motor2Choice", 585, 243, 12, 7, 0, true, "sim"),
-      coordinate("vessel.motor2Choice", 643, 243, 12, 7, 0, true, "nao"),
-      coordinate("vessel.motor3Choice", 264, 344, 12, 7, 0, true, "sim"),
-      coordinate("vessel.motor3Choice", 321, 344, 12, 7, 0, true, "nao"),
-      coordinate("vessel.motor4Choice", 585, 344, 12, 7, 0, true, "sim"),
-      coordinate("vessel.motor4Choice", 643, 344, 12, 7, 0, true, "nao"),
-
-      // Independent optional motors; positions are distinct from motor 1.
-      coordinate("vessel.motor2Brand", 507, 264, 251, 7, 0),
-      coordinate("vessel.motor2Power", 514, 289, 240, 7, 0),
-      coordinate("vessel.motor2Serial", 532, 317, 225, 7, 0),
-      coordinate("vessel.motor3Brand", 178, 372, 251, 7, 0),
-      coordinate("vessel.motor3Power", 190, 398, 240, 7, 0),
-      coordinate("vessel.motor3Serial", 204, 423, 225, 7, 0),
-      coordinate("vessel.motor4Brand", 507, 372, 251, 7, 0),
-      coordinate("vessel.motor4Power", 514, 398, 240, 7, 0),
-      coordinate("vessel.motor4Serial", 532, 423, 225, 7, 0),
-
       // Not the seller: co-owner has a separate semantic identity.
       coordinate("coOwner.fullName", 507, 478, 244, 7, 0),
       coordinate("coOwner.cpf", 510, 532, 241, 7, 0),
