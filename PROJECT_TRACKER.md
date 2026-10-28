@@ -71,6 +71,7 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Confirmar no ambiente Windows/Docker do usuário que PaddleOCR está estável e que o nome do titular passou a ser preenchido no fluxo de Transferência após desabilitar oneDNN e limitar threads.
 - [x] Introduzir contratos `DocumentObservation`, `DocumentExtractor`, `FieldEvidence` e `FieldResolver`; migrar identidade para essa fronteira sem depender de ID de serviço.
 - [x] Manter campos de revisão derivados dos `FormMapping.placements` dos formulários selecionados, sem lista paralela de campos por serviço.
+- [x] Ampliar o extractor transitório de identidade para número do documento e órgão emissor, usando âncoras semânticas/geometria e preservando comprador/vendedor em campos separados.
 - [ ] Separar RG e CNH em tipos documentais explícitos após implementar classificação/seleção confiável; o perfil `identity` permanece transitório.
 - [ ] Migrar TIE, comprovante de residência e documento de venda do adaptador `suggestFields()` para extractors independentes; novos tipos não podem ser adicionados ao parser legado.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
@@ -183,3 +184,16 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Validação:** testes unitários novos cobrem evidências de nome/CPF, separação comprador/vendedor e conflitos entre fontes. CI completo deve ser registrado após execução do último commit; até lá esta mudança está implementada, mas não declarada validada integralmente.
 
 **Segurança/privacidade:** evidências continuam temporárias e `REVIEW_REQUIRED`; não são persistidas em banco, logs ou analytics. A arquitetura não altera os portões de homologação dos PDFs nem transforma OCR em prova de autenticidade.
+
+
+## 11. Registro de execução — 27/10/2026, número da identidade e órgão emissor
+
+**Escopo:** ampliar somente o `identityDocumentExtractor`, sem adicionar regras ao serviço nem ao parser legado. Os campos já existiam no catálogo e nos mapeamentos: `person.identity`/`person.issuer` e `seller.identity`/`seller.issuer`.
+
+**Implementado:** reconhecimento conservador de rótulos como `RG`, `REGISTRO GERAL`, `IDENTIDADE`, `ÓRGÃO EMISSOR`, `ÓRGÃO EXPEDIDOR`, `EMISSOR` e `EXPEDIDOR`. O valor pode estar na mesma linha, à direita ou abaixo do rótulo. Número de identidade exige presença de dígitos e formato limitado; CPF válido e datas são rejeitados como número de identidade. Órgão emissor exige conteúdo textual plausível e resultados divergentes não são escolhidos silenciosamente.
+
+**Arquitetura:** a extração continua independente de serviço e formulário. O papel semântico do requisito define apenas se as evidências alimentam `person.*` ou `seller.*`; os campos efetivamente exibidos continuam filtrados pelos mapeamentos dos formulários selecionados.
+
+**Validação:** testes sintéticos adicionados para comprador, vendedor, rótulos inline, valores abaixo do rótulo, rejeição de CPF/data e ambiguidade de órgão emissor. CI completo deve ser registrado após execução do último commit; até lá a alteração está implementada, mas não declarada validada integralmente.
+
+**Limite:** o perfil ainda é `identity`, não um `RgExtractor` específico. A separação RG/CNH continua pendente para evitar inferência silenciosa do tipo documental.
