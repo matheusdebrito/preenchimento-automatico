@@ -85,6 +85,9 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*NOME(?:\s*\/\s*NAME)?\s+(?:DA\s+)?MOTO\s+AQU[AÁ]TICA\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*NOME\s+(?:DO\s+)?BARCO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    approximateLabels: [
+      { text: 'NOME DA EMBARCACAO', maxDistance: 3 },
+    ],
     preferredDirections: ['below', 'right'],
     validate: (value) => textValue(value, 2, 100),
   },
@@ -180,6 +183,10 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*POT[EÊ]NCIA(?:\s+(?:DO\s+)?MOTOR)?(?:\s*\(HP\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*P[O0]T[EÊÉ3]NC[I1]A(?:\s*\(?\s*H[P8]\s*\)?)?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    approximateLabels: [
+      { text: 'POTENCIA HP', maxDistance: 2 },
+      { text: 'POTENCIA', maxDistance: 2 },
+    ],
     preferredDirections: ['below', 'right'],
     firstOccurrenceOnly: true,
     validate: power,
@@ -190,6 +197,10 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*(?:(?:N[ÚU]MERO|N[°ºO.]?)\s+(?:DE\s+)?S[EÉ]RIE\s+(?:DO\s+)?MOTOR(?:\s*\/\s*ENGINE\s+SERIAL\s+NUMBER)?|ENGINE\s+SERIAL\s+NUMBER|S[EÉ]RIE\s+(?:DO\s+)?MOTOR|N[°ºO.]?\s+DO\s+1[°ºO.]?\s+MOTOR\s*\/\s*S[EÉ]RIE)\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*(?:N\s*[°ºO.]?\s*)?D[O0]\s+1\s*[°ºO.]?\s+M[O0]T[O0]R\s*[-/]?\s*S[EÉ3]R[I1]E\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    approximateLabels: [
+      { text: 'N DO 1 MOTOR SERIE', maxDistance: 3 },
+      { text: '1 MOTOR SERIE', maxDistance: 2 },
     ],
     preferredDirections: ['below', 'right'],
     firstOccurrenceOnly: true,
