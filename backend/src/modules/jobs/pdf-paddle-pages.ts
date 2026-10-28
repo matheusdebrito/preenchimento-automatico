@@ -120,7 +120,11 @@ export async function extractPdfPagesWithPaddle(
         prefix,
       ], { timeout: 20_000, maxBuffer: 256 * 1024 });
 
-      const result = await runPaddleOcrBuffer(await readFile(png), 'png');
+      // Although the transport payload is PNG, this is a rasterized PDF page.
+      // Keep the larger PDF inference budget so shared CI/CPU runners do not
+      // abort valid document OCR at the normal image timeout.
+      const result = await runPaddleOcrBuffer(
+        await readFile(png), 'png', process.env.PADDLE_OCR_URL, 120_000);
       const observation = paddleToObservation(result);
       model = result.model;
       version = result.version;
