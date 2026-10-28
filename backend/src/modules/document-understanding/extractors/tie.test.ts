@@ -86,4 +86,45 @@ describe('tieDocumentExtractor', () => {
       .toBe('MAR AZUL');
   });
 
+
+  it('extrai campos bilíngues adicionais do TIE', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'AB / GT',
+      '2,35',
+      'BOCA / BREADTH',
+      '1,20 M',
+      'ATIVIDADE / ACTIVITY',
+      'ESPORTE E RECREIO',
+      'MOTOR 1 / ENGINE 1 FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      'YAMAHA - WAVERUNNER - VX',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '6AN123456',
+      'NÚMERO DE TRIPULANTES / NUMBER OF CREW MEMBER',
+      '2',
+      'NÚMERO DE PASSAGEIROS / NUMBER OF PASSAGERS',
+      '3',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.grossTonnage']).toBe('2,35');
+    expect(values['vessel.breadth']).toBe('1,20 M');
+    expect(values['vessel.activity']).toBe('ESPORTE E RECREIO');
+    expect(values['vessel.motorManufacturerBrandModel']).toBe('YAMAHA - WAVERUNNER - VX');
+    expect(values['vessel.motorSerial']).toBe('6AN123456');
+    expect(values['vessel.crewCount']).toBe('2');
+    expect(values['vessel.passengerCount']).toBe('3');
+  });
+
+  it('não confunde o rótulo bilíngue do motor com o valor do fabricante/marca/modelo', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'MOTOR 1 / ENGINE 1',
+      'FABRICANTE - MARCA - MODELO / MANUFACTURER - BRAND - MODEL',
+      'YAMAHA - WAVERUNNER - VX',
+    ]), context);
+
+    expect(evidence.find((item) =>
+      item.fieldId === 'vessel.motorManufacturerBrandModel')?.value)
+      .toBe('YAMAHA - WAVERUNNER - VX');
+  });
+
 });
