@@ -2,6 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { extractPdfTextObservation } from './pdf-text-observation.js';
+import { fastObservationIsSufficient } from './ocr.js';
 import { runPaddleOcrBuffer } from './paddle-ocr.js';
 import { paddleToObservation } from '../document-understanding/paddle-observation.js';
 import { extractDocumentEvidence } from '../document-understanding/registry.js';
@@ -58,14 +59,16 @@ async function inspect(
   const paddle = paddleToObservation(await runPaddleOcrBuffer(await readFile(path), 'pdf'));
   const paddleFields = fieldIds(paddle, doc, documentType, subjectRole);
 
-  const selected = fast ?? paddle;
-  const selectedFields = fastFields ?? paddleFields;
+  const fastAccepted = Boolean(fast && fastObservationIsSufficient(doc, fast));
+  const selected = fastAccepted ? fast! : paddle;
+  const selectedFields = fastAccepted ? fastFields! : paddleFields;
   const lineCount = selected.pages.reduce((sum, page) => sum + page.lines.length, 0);
 
   // Privacy-safe regression diagnostic: never print OCR text or extracted values.
   console.log('[REFERENCE_OCR]', JSON.stringify({
     file: relativePath.split('/').at(-1),
     selectedEngine: selected.engine,
+    fastAccepted,
     selectedElapsedMs: selected.elapsedMs,
     fastElapsedMs: fast?.elapsedMs ?? null,
     paddleElapsedMs: paddle.elapsedMs,
@@ -89,13 +92,9 @@ function expectCorePreserved(
   }
   // If the fast path is selected, it must not lose a required field that
   // Paddle can extract from the same reference document.
-  if (inspection.fastFields) {
-    for (const field of required) {
-      if (inspection.paddleFields.has(field)) {
-        expect(inspection.fastFields.has(field), file + ' fast-path lost ' + field).toBe(true);
-      }
-    }
-  }
+  // A fast observation may exist but be rejected. If production accepts it,
+  // selectedFields above are the fast fields and the required assertions
+  // guarantee that the optimization preserved the central data.
 }
 
 describe.skipIf(!enabled)('documentos de referência do repositório', () => {
