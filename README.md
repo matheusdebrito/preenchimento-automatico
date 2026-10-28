@@ -10,7 +10,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | --- | --- | --- |
 | Catálogo de serviços e condições | API e frontend integrados; fotos de popa/través excluídas dos uploads de preenchimento | Só serviços aprovados ficam disponíveis; não substitui rol documental oficial |
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
-| Mapeamento PDF reutilizável | **135 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
+| Mapeamento PDF reutilizável | **118 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
 | OCR no servidor | OCR conservador com extração individual de endereço, número, complemento, cidade, bairro, UF e CEP rotulados, além dos campos anteriores | Ausência de rótulos/baixa legibilidade ainda exigem revisão; sem precisão comprovada com fotos reais |
@@ -45,6 +45,16 @@ docs/
 ```
 
 Formulários são versionados e mapeados **independentemente dos serviços**, depois associados via `ServiceForm`. Não duplicar arquivos por serviço.
+
+### Escopo de motor no MVP
+
+O MVP trabalha com **um único motor** por processo/formulário. Os campos canônicos ativos são:
+
+- `vessel.motorBrand`: marca do motor. Quando o formulário imprimir **Motor/Marca**, interpretar exclusivamente como marca;
+- `vessel.motorPower`: potência;
+- `vessel.motorSerial`: número de série.
+
+Campos `motor2`, `motor3`, `motor4` e marcações sim/não por motor não fazem parte do domínio ativo. Se suporte a múltiplos motores for necessário futuramente, o modelo deve evoluir de forma estrutural, preferencialmente para uma coleção de motores, em vez de reintroduzir campos numerados espalhados pelo domínio.
 
 ### Retomada segura de processos
 
