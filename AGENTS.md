@@ -65,6 +65,18 @@ Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custo
 - O único caminho de usuário para transferência é `/preencher-real/transferencia-moto-aquatica` (disponível apenas em QA local enquanto DRAFT). Não reintroduzir `WizardRoute`/demo público em `/preencher/*` nem um segundo serviço de teste. Testes devem exercitar 0 anexos, 1 RG sintético e múltiplos arquivos.
 
 
+## 2.3. Arquitetura obrigatória de formulários e entendimento de documentos
+
+- **Serviço é composição, não fonte de campos.** `ServiceDefinition` contém workflow/perguntas/requisitos e `ServiceForm` seleciona versões de formulários. Os campos revisáveis devem ser derivados dos `FormMapping.placements` das versões selecionadas; não criar listas paralelas de campos por serviço.
+- **Campo canônico é reutilizável.** IDs como `person.fullName`, `person.cpf` e `vessel.registration` não pertencem a um serviço, formulário ou motor OCR.
+- **Documento não conhece serviço nem formulário.** OCR produz `DocumentObservation`; um `DocumentExtractor` do tipo documental produz `FieldEvidence[]`; somente depois o processo filtra pelos campos exigidos pelos formulários.
+- **Formulário não conhece a origem do dado.** O preenchimento consome campos canônicos resolvidos, independentemente de terem vindo de RG, CNH, TIE, entrada manual ou outra fonte permitida.
+- **Conflitos nunca são resolvidos silenciosamente.** `FieldResolver` deve bloquear seleção automática quando evidências divergirem e encaminhar o campo para revisão.
+- **Não ampliar `suggestFields()` com novos tipos documentais.** Esse parser é apenas adaptador transitório para tipos ainda não migrados. RG/CNH, TIE, CHA, CIR e futuros documentos devem possuir extractors independentes com fixtures sintéticas e testes.
+- Coordenadas absolutas podem auxiliar, mas não devem ser a única regra de reconhecimento. Preferir âncoras semânticas, geometria relativa, validação de formato e evidências rastreáveis.
+- Até existir classificação explícita/confiável, não afirmar que um upload é RG ou CNH apenas por estar no requisito “identidade”. O perfil `identity` é transitório e deve ser separado por tipo quando a classificação for implementada.
+- A especificação vigente está em `docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md`. Mudanças que contradigam essa arquitetura exigem decisão explícita e atualização do documento.
+
 ## 3.1. Sincronização obrigatória do PROJECT_TRACKER.md
 
 **Regra de entrega (sem exceções):** toda alteração de código, teste, arquitetura ou documentação que represente avanço, correção, bloqueio ou mudança de escopo de uma fase deve atualizar o `PROJECT_TRACKER.md` **na mesma entrega**, antes de declarar o trabalho encerrado. Não basta acrescentar uma nota ao final do arquivo.
