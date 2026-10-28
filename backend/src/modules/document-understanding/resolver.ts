@@ -40,7 +40,7 @@ export function resolveFieldEvidence(
     }
 
     const sameValue = [...byValue.values()][0]!;
-    const best = [...sameValue].sort((a, b) => b.confidence - a.confidence)[0]!;
+    const best = [...sameValue].sort((a, b) => (b.confidence ?? -1) - (a.confidence ?? -1))[0]!;
     values[fieldId] = best.value;
     sourceNotes[fieldId] = [...new Set(sameValue.map((item) => item.sourceId))].join(', ');
   }
