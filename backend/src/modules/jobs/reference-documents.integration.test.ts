@@ -90,9 +90,16 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     const legacy = await inspect(
       'documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
     expect(legacy.has('vessel.registration')).toBe(true);
+    expect(legacy.has('vessel.name')).toBe(true);
     expect(legacy.has('vessel.hullId')).toBe(true);
     expect(legacy.has('vessel.length')).toBe(true);
     expect(legacy.has('vessel.year')).toBe(true);
+    expect(legacy.has('vessel.motorPower')).toBe(true);
+    expect(legacy.has('vessel.motorSerial')).toBe(true);
+    expect(legacy.has('vessel.motorBrand')).toBe(true);
+    expect(legacy.has('vessel.activity')).toBe(true);
+    expect(legacy.has('vessel.crewCount')).toBe(true);
+    expect(legacy.has('vessel.passengerCount')).toBe(true);
   }, 180_000);
 
   it.skip('lê o comprovante e preserva CEP/logradouro sem usar nome do titular', async () => {
