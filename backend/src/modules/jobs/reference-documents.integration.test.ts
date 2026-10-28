@@ -24,7 +24,7 @@ async function inspect(
     size: info.size,
   };
 
-  const extraction = await extractTextWithEngine(doc, resolve(process.cwd(), '.tmp-reference'));
+  const extraction = await extractTextWithEngine(doc, process.cwd());
   const evidence = extractDocumentEvidence(extraction.observation, {
     documentId: doc.id,
     sourceId: requirementId,
