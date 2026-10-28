@@ -31,7 +31,7 @@ export interface ObservationPage {
 }
 
 export interface DocumentObservation {
-  engine: 'paddleocr';
+  engine: 'paddleocr' | 'pdf-text';
   engineVersion: string;
   model: string;
   elapsedMs: number;
