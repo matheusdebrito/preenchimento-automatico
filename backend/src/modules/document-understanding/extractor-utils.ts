@@ -4,11 +4,12 @@ import type {
   FieldEvidence,
   ObservationLine,
 } from './contracts.js';
-import type { CandidateDirection } from './semantic-concepts.js';
 
 export const cleanText = (value: string): string => value.replace(/\s+/g, ' ').trim();
 export const normalizeText = (value: string): string => cleanText(value)
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+
+export type CandidateDirection = 'right' | 'below' | 'sequential';
 
 export interface ExtractedCandidate {
   value: string;
