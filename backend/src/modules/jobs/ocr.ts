@@ -5,6 +5,7 @@ import type { PaddleOcrResult } from './paddle-ocr.js';
 import { paddleToObservation } from '../document-understanding/paddle-observation.js';
 import type { DocumentObservation } from '../document-understanding/contracts.js';
 import { extractPdfTextObservation, observationText } from './pdf-text-observation.js';
+import { extractPdfPagesWithPaddle } from './pdf-paddle-pages.js';
 import { extractDocumentEvidence } from '../document-understanding/registry.js';
 
 let active = 0;
@@ -67,7 +68,6 @@ export async function extractTextWithEngine(
   doc: StoredDocument,
   tempDir: string,
 ): Promise<OcrExtraction> {
-  void tempDir;
   if (active >= MAX_CONCURRENT) throw new Error('OCR ocupado. Tente novamente.');
   if (!process.env.PADDLE_OCR_URL) {
     throw new Error('PaddleOCR não configurado.');
@@ -80,6 +80,16 @@ export async function extractTextWithEngine(
         text: observationText(fast),
         engine: 'pdf-text',
         observation: fast,
+      };
+    }
+
+    if (doc.kind === 'pdf' &&
+      (doc.requirementId === 'tie' || doc.requirementId === 'residence-proof')) {
+      const observation = await extractPdfPagesWithPaddle(doc, tempDir, fast);
+      return {
+        text: observationText(observation),
+        engine: 'paddleocr',
+        observation,
       };
     }
 
