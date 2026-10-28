@@ -15,6 +15,8 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py ./
+COPY smoke.py ./
+COPY fixtures/identity-synthetic.png ./fixtures/identity-synthetic.png
 
 # Download the official models during the image build so document bytes are never
 # required to trigger a network download at runtime.
