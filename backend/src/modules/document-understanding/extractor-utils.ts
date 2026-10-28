@@ -47,6 +47,7 @@ export function anchoredCandidates(
   validate: (value: string) => boolean,
   preferredDirections: readonly CandidateDirection[] = [],
   isFieldBoundary: (value: string) => boolean = () => false,
+  allowSequentialWithGeometry = true,
 ): readonly ExtractedCandidate[] {
   const candidates: ExtractedCandidate[] = [];
 
@@ -80,13 +81,10 @@ export function anchoredCandidates(
         continue;
       }
 
-      // With coordinates available, raw OCR order is not a safe spatial relation:
-      // multi-column layouts may place an unrelated field next in the array.
-      // Sequential fallback is reserved for observations without geometry unless
-      // a concept explicitly opts into it.
-      const defaultDirections: readonly CandidateDirection[] = anchor.box
-        ? ['right', 'below']
-        : ['sequential'];
+      const defaultDirections: readonly CandidateDirection[] =
+        anchor.box && !allowSequentialWithGeometry
+          ? ['right', 'below']
+          : ['right', 'below', 'sequential'];
       const directions = [...new Set([...preferredDirections, ...defaultDirections])];
       let matched = false;
 
