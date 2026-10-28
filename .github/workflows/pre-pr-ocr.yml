@@ -1,0 +1,62 @@
+name: Pre-PR OCR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  document-understanding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install locked backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Validate document-understanding deterministically
+        working-directory: backend
+        run: npm run verify:document-understanding
+      - name: Validate OCR sizing rules
+        run: python -m unittest discover -s ocr-service -p 'test_*.py'
+
+  reference-documents:
+    needs: document-understanding
+    runs-on: ubuntu-latest
+    env:
+      PADDLE_OCR_URL: http://127.0.0.1:18000
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install locked backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Install PDF tools
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Build and start PaddleOCR
+        run: |
+          docker build -t preenchimento-ocr-pre-pr ./ocr-service
+          docker run -d --name preenchimento-ocr-pre-pr -p 127.0.0.1:18000:8000 preenchimento-ocr-pre-pr
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:18000/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          docker logs preenchimento-ocr-pre-pr
+          exit 1
+      - name: Validate real repository reference documents
+        working-directory: backend
+        env:
+          REFERENCE_DOCUMENT_OCR: '1'
+        run: npx vitest run src/modules/jobs/reference-documents.integration.test.ts --maxWorkers=1
+      - name: Stop PaddleOCR
+        if: always()
+        run: docker rm -f preenchimento-ocr-pre-pr || true
