@@ -193,6 +193,56 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.hullId']).toBe('BR-MZL-123456');
   });
 
+  it('rejeita identificador forte de casco como inscrição mesmo quando aparece junto ao rótulo', () => {
+    const mixed: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'N° DE INSCRIÇÃO BR-MZL-123456', confidence: .97,
+            box: [30, 90, 430, 120], polygon: null },
+          { id: '0:1', page: 0, text: '441M2023001234', confidence: .98,
+            box: [70, 126, 315, 158], polygon: null },
+          { id: '0:2', page: 0, text: 'FORMATO DE SÉRIE DO CASCO/FORMA', confidence: .99,
+            box: [900, 610, 1280, 642], polygon: null },
+          { id: '0:3', page: 0, text: 'BR-MZL-123456', confidence: .98,
+            box: [1280, 650, 1490, 682], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(mixed, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.registration']).toBe('441M2023001234');
+    expect(values['vessel.hullId']).toBe('BR-MZL-123456');
+  });
+
+  it('aceita variantes comuns do símbolo de número e rótulos antigos', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N° DE INSCRIÇÃO',
+      '441M2023001234',
+      'N° DO CASCO',
+      'BRABC12345D626',
+      'NOME DO FABRICANTE',
+      'YAMAHA',
+      'ATIVIDADE - USO',
+      'Esporte e Recreio',
+      'QTDADE DE TRIPULANTES',
+      '2',
+      'QTDADE DE PASSAGEIROS',
+      '6',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.registration']).toBe('441M2023001234');
+    expect(values['vessel.hullId']).toBe('BRABC12345D626');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+    expect(values['vessel.activity']).toBe('Esporte e Recreio');
+    expect(values['vessel.crewCount']).toBe('2');
+    expect(values['vessel.passengerCount']).toBe('6');
+  });
+
   it('aproveita aliases adicionais do TIE digital e TIEM antigo', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
