@@ -13,6 +13,13 @@ const MAX_CONCURRENT = 2;
 const MAX_RASTER_PAGE_BYTES = 16 * 1024 * 1024;
 const MAX_RASTER_TOTAL_BYTES = 48 * 1024 * 1024;
 
+export type OcrEngine = 'paddleocr' | 'tesseract' | 'pdf-text';
+
+export interface OcrExtraction {
+  text: string;
+  engine: OcrEngine;
+}
+
 /** Guard the disk footprint of Poppler output before Tesseract decodes it. */
 export function validateRasterBudget(pageSizes: readonly number[]): void {
   if (pageSizes.length < 1 || pageSizes.length > 5) {
@@ -77,12 +84,15 @@ async function readImage(
   return run('tesseract', [path, 'stdout', '-l', 'por', '--psm', '6'], 25_000);
 }
 
-async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
+async function extractFallback(doc: StoredDocument, tempDir: string): Promise<OcrExtraction> {
   if (doc.kind !== 'pdf') {
-    return readImage(doc.path, doc.requirementId, tempDir, doc.kind);
+    return {
+      text: await readImage(doc.path, doc.requirementId, tempDir, doc.kind),
+      engine: 'tesseract',
+    };
   }
   const direct = await run('pdftotext', ['-layout', doc.path, '-'], 15_000);
-  if (direct.trim().length >= 40) return direct;
+  if (direct.trim().length >= 40) return { text: direct, engine: 'pdf-text' };
   const prefix = join(tempDir, doc.id + '-page');
   try {
     await run('pdftoppm', ['-f', '1', '-l', '5', '-r', '160', '-png', doc.path, prefix], 30_000);
@@ -96,7 +106,7 @@ async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
     for (const page of pages) {
       texts.push(await readImage(join(tempDir, page), doc.requirementId, tempDir, 'png'));
     }
-    return texts.join('\n');
+    return { text: texts.join('\n'), engine: 'tesseract' };
   } finally {
     // Clean partial page images even when pdftoppm fails or times out.
     const files = await readdir(tempDir).catch(() => []);
@@ -108,22 +118,33 @@ async function extract(doc: StoredDocument, tempDir: string): Promise<string> {
   }
 }
 
-export async function extractText(doc: StoredDocument, tempDir: string): Promise<string> {
+export async function extractTextWithEngine(
+  doc: StoredDocument,
+  tempDir: string,
+): Promise<OcrExtraction> {
   if (active >= MAX_CONCURRENT) throw new Error('OCR ocupado. Tente novamente.');
   active++;
   try {
     if (process.env.PADDLE_OCR_URL) {
       try {
-        return (await extractPaddleText(doc)).slice(0, 50_000);
+        return {
+          text: (await extractPaddleText(doc)).slice(0, 50_000),
+          engine: 'paddleocr',
+        };
       } catch {
         // Keep the proven local engine as a resilience fallback. A failed
         // Paddle sidecar must not make an otherwise reviewable job unusable.
       }
     }
-    return (await extract(doc, tempDir)).slice(0, 50_000);
+    const fallback = await extractFallback(doc, tempDir);
+    return { ...fallback, text: fallback.text.slice(0, 50_000) };
   } finally {
     active--;
   }
+}
+
+export async function extractText(doc: StoredDocument, tempDir: string): Promise<string> {
+  return (await extractTextWithEngine(doc, tempDir)).text;
 }
 
 /**

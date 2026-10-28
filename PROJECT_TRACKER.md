@@ -67,7 +67,8 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [x] Integrar PaddleOCR como motor primário interno, mantendo Tesseract como fallback de disponibilidade e as regras semânticas/revisão humana no backend TypeScript.
 - [x] Adicionar página autenticada `/ocr` e item `OCR` ao lado de `Início`, exibindo motor/modelo, tempo, campos interpretados, texto reconhecido, confiança e bounding boxes.
 - [x] Validar PaddleOCR real dentro do container final com fixture fictícia e manter smoke do fallback Tesseract; execução CI `40610487883` aprovada nos cinco jobs após fixar PaddlePaddle 3.2.2 devido à regressão CPU/oneDNN observada em 3.3.1.
-- [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário com a foto real; comparar o retorno Paddle com o resultado Tesseract anterior.
+- [x] Integrar e validar explicitamente o PaddleOCR no fluxo `transferencia-moto-aquatica`: comprador e vendedor permanecem separados, e o diagnóstico da revisão informa `paddleocr`, `tesseract` fallback ou `pdf-text` por documento. CI `40613739310` aprovado nos cinco jobs.
+- [ ] Conferir o fluxo completo no navegador e o ambiente Windows/Docker do usuário com documentos reais da Transferência; comparar o retorno Paddle com o resultado Tesseract anterior.
 - [ ] Medir precisão em corpus variado: modelos, perspectiva, inclinação, sombras, reflexos, baixa resolução e nomes em múltiplas linhas. Não anunciar precisão numérica a partir de uma fotografia.
 - [ ] Calibrar critérios de confiança e medir falsos positivos/negativos; name_recognized não prova transcrição perfeita nem titularidade.
 - [ ] Completar isolamento de decodificadores, limites reais de CPU/RAM, fuzzing, carga e comportamento sob interrupção.
@@ -137,3 +138,16 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 **Validação:** execução CI `40610487883`, commit `7875edf74d9b98c84672eb64de22334844fd5b7c`, todos os cinco jobs aprovados. Backend: typecheck, lint, testes e build. Frontend: typecheck, lint, testes e build. PostgreSQL e PDFs aprovados. Compose: build/start/health/proxy aprovados; `Verify PaddleOCR inside the built OCR container` reconheceu nome e CPF da fixture fictícia; `Verify Tesseract fallback inside the built API container` também passou. Nenhum documento pessoal faz parte do CI.
 
 **Riscos residuais:** sucesso da fixture não comprova que PaddleOCR resolverá a fotografia real nem mede precisão. Ainda é obrigatório retestar a imagem do usuário na nova página, avaliar perspectiva/reflexo/desfoque/nomes multilinha e calibrar falsos positivos/negativos antes de qualquer homologação. O primeiro build do serviço inclui modelos no image layer e aumenta substancialmente tamanho/tempo de build e consumo de memória; capacidade ainda precisa ser medida.
+
+
+## 8. Registro de execução — 27/10/2026, PaddleOCR no serviço de Transferência
+
+**Base:** `35e0bc2cf85a25c2dcec5b2aac35ef8fcf8884fe`; branch `feat/transferencia-paddle-observability`; PR 5.
+
+**Implementação:** o serviço `transferencia-moto-aquatica` usa o caminho global de extração com PaddleOCR como motor primário. O backend agora retorna também o motor efetivamente utilizado em cada documento: `paddleocr`, `tesseract` (fallback) ou `pdf-text` quando o PDF possui camada textual suficiente. A tela de revisão exibe essa informação no diagnóstico por documento, sem armazenar texto OCR adicional.
+
+**Mapeamento de identidade:** testes específicos confirmam que identidade do comprador alimenta apenas `person.fullName`/`person.cpf` e identidade do vendedor alimenta apenas `seller.fullName`/`seller.cpf`, usando o texto estruturado produzido pelo Paddle e mantendo os papéis separados.
+
+**Validação:** CI `40613739310` concluído com sucesso nos cinco jobs: backend, frontend, PostgreSQL, PDFs e Compose. O Compose construiu e iniciou a stack, executou PaddleOCR dentro do container final e validou também o fallback Tesseract. O primeiro CI da branch encontrou somente uma expectativa antiga de diagnóstico que não incluía o novo campo `engine`; o contrato de teste foi atualizado e a segunda execução passou integralmente.
+
+**Pendente:** testar no navegador com os documentos reais usados pelo usuário na Transferência. O CI usa apenas dados/fixtures sintéticos e não constitui medição de precisão nem homologação documental.
