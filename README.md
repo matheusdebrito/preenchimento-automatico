@@ -200,6 +200,26 @@ Detalhes e regras permanentes: [arquitetura de entendimento de documentos](docs/
 
 TIE e comprovante de residência já usam extractors estruturados próprios. Para PDFs desses tipos, a API pode aproveitar diretamente uma camada textual com geometria quando ela já contém os campos centrais esperados; caso a camada esteja ausente, incompleta ou semanticamente insuficiente, a leitura cai automaticamente para PaddleOCR. Essa otimização não é aplicada ao RG/CNH enquanto o fluxo de identidade validado não tiver equivalência comprovada.
 
+### Capacidade adaptativa do PaddleOCR
+
+O serviço OCR detecta as CPUs efetivamente disponíveis ao container, incluindo afinidade e quota de cgroup/Docker, reserva capacidade para API/PostgreSQL e cria um pool conservador de predictors independentes. O objetivo é aumentar throughput sem compartilhar a mesma instância PaddleOCR entre threads.
+
+Perfil automático atual:
+
+```text
+2 vCPU  -> 1 worker / 1 thread
+4 vCPU  -> 1 worker / 3 threads
+8 vCPU  -> 2 workers / 3 threads por worker
+12 vCPU -> 3 workers / 3 threads por worker
+16 vCPU -> 4 workers / 3 threads por worker
+```
+
+Esses valores são limites iniciais de engenharia, não benchmark de produção. O número real de usuários simultâneos depende do modelo da CPU, tamanho/qualidade dos documentos e memória disponível. Antes de produção, a Fase 15 ainda exige teste de carga e medição de CPU/RAM/latência.
+
+O endpoint interno `/health` do OCR expõe somente metadados operacionais de capacidade (`availableCpus`, `workers`, `threadsPerWorker`, `queueDepth`), sem conteúdo documental. A fila é limitada; quando todos os slots estão ocupados o serviço responde `429 ocr_busy` em vez de acumular requisições sem limite.
+
+A configuração é automática por padrão e pode ser ajustada no `.env` com `OCR_RESERVED_CPUS`, `OCR_MAX_WORKERS`, `OCR_WORKERS`, `OCR_CPU_THREADS`, `OCR_QUEUE_DEPTH` e `OCR_MAX_CONCURRENT`. Manter `auto` até existir benchmark da máquina alvo.
+
 ### Datas, OCR do BDMOTO e teste no serviço verdadeiro
 
 Os campos semânticos de data exibem `DD/MM/AAAA` automaticamente enquanto se digita; o backend continua a rejeitar datas inválidas. O OCR foi ampliado para sugerir separadamente `Cidade`, `Bairro`, `CEP`, `UF`, `Número` e `Complemento` quando os rótulos aparecem no comprovante. **Endereço é um campo distinto no PDF oficial BDMOTO** e não foi removido sem revisão visual. Campos ausentes, fotos ilegíveis e layouts desconhecidos continuam exigindo conferência manual. O backend limita sugestões aos campos da seleção atual.
