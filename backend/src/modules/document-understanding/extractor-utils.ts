@@ -48,6 +48,7 @@ export function anchoredCandidates(
   preferredDirections: readonly CandidateDirection[] = [],
   isFieldBoundary: (value: string) => boolean = () => false,
   allowSequentialWithGeometry = true,
+  firstOccurrenceOnly = false,
 ): readonly ExtractedCandidate[] {
   const candidates: ExtractedCandidate[] = [];
 
@@ -59,11 +60,14 @@ export function anchoredCandidates(
     const hasOriginalLabel = lines.some((line) =>
       !line.id.startsWith('phrase:') && labels.some((pattern) => pattern.test(line.text)));
 
+    let matchedAnchorCount = 0;
     for (let index = 0; index < lines.length; index++) {
       const anchor = lines[index]!;
       if (anchor.id.startsWith('phrase:') && hasOriginalLabel) continue;
       const match = labels.map((pattern) => pattern.exec(anchor.text)).find(Boolean);
       if (!match) continue;
+      if (firstOccurrenceOnly && matchedAnchorCount > 0) continue;
+      matchedAnchorCount++;
 
       const matchesAnyLabel = (value: string): boolean =>
         labels.some((pattern) => pattern.test(value));
