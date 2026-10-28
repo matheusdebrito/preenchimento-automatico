@@ -56,8 +56,12 @@ export function anchoredCandidates(
     const positioned = lines.filter((line) => line.box)
       .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0]);
 
+    const hasOriginalLabel = lines.some((line) =>
+      !line.id.startsWith('phrase:') && labels.some((pattern) => pattern.test(line.text)));
+
     for (let index = 0; index < lines.length; index++) {
       const anchor = lines[index]!;
+      if (anchor.id.startsWith('phrase:') && hasOriginalLabel) continue;
       const match = labels.map((pattern) => pattern.exec(anchor.text)).find(Boolean);
       if (!match) continue;
 
