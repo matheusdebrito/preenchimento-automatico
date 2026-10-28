@@ -214,6 +214,165 @@ function findName(observation: DocumentObservation): NameCandidate | null {
   return unique.size === 1 ? [...unique.values()][0]! : null;
 }
 
+
+interface LabelValueCandidate {
+  value: string;
+  confidence: number;
+  page: number;
+  lineIds: readonly string[];
+  method: 'anchor-inline' | 'anchor-right' | 'anchor-below' | 'anchor-sequential';
+  anchor: string;
+}
+
+function validIdentityNumber(value: string): boolean {
+  const text = clean(value);
+  if (text.length < 4 || text.length > 24) return false;
+  if (!/[0-9]/.test(text)) return false;
+  if (!/^[A-Z0-9./-]+$/i.test(text)) return false;
+  const digits = text.replace(/\D/g, '');
+  if (digits.length === 11 && isValidCpf(digits)) return false;
+  if (/^\d{2}[./-]\d{2}[./-]\d{2,4}$/.test(text)) return false;
+  return true;
+}
+
+function validIssuer(value: string): boolean {
+  const text = clean(value);
+  if (text.length < 2 || text.length > 24) return false;
+  if (!/[A-ZÀ-Ý]/i.test(text)) return false;
+  if (!/^[A-ZÀ-Ý0-9 .\/-]+$/i.test(text)) return false;
+  if (/^(?:CPF|RG|NOME|DATA|NASCIMENTO|NATURALIDADE|FILIACAO)$/i.test(normalize(text))) return false;
+  return true;
+}
+
+function labelledValue(
+  observation: DocumentObservation,
+  label: RegExp,
+  anchorName: string,
+  isValid: (value: string) => boolean,
+): LabelValueCandidate | null {
+  const found: LabelValueCandidate[] = [];
+
+  for (const page of observation.pages) {
+    const lines = [...page.lines];
+    const positioned = lines.filter((line) => line.box)
+      .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0]);
+
+    for (let index = 0; index < lines.length; index++) {
+      const anchor = lines[index]!;
+      const match = label.exec(anchor.text);
+      if (!match) continue;
+
+      const inline = clean(match[1] ?? '');
+      if (inline && isValid(inline)) {
+        found.push({
+          value: inline,
+          confidence: anchor.confidence,
+          page: anchor.page,
+          lineIds: [anchor.id],
+          method: 'anchor-inline',
+          anchor: anchorName,
+        });
+        continue;
+      }
+
+      if (anchor.box) {
+        const height = boxHeight(anchor);
+        const centerY = (anchor.box[1] + anchor.box[3]) / 2;
+        const right = positioned
+          .filter((line) => {
+            if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
+            const center = (line.box[1] + line.box[3]) / 2;
+            return line.box[0] >= anchor.box![2] - height * 0.5 &&
+              line.box[0] - anchor.box![2] <= height * 10 &&
+              Math.abs(center - centerY) <= height * 1.25;
+          })
+          .sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
+
+        if (right) {
+          found.push({
+            value: clean(right.text),
+            confidence: Math.min(anchor.confidence, right.confidence),
+            page: anchor.page,
+            lineIds: [anchor.id, right.id],
+            method: 'anchor-right',
+            anchor: anchorName,
+          });
+          continue;
+        }
+
+        const below = positioned
+          .filter((line) => {
+            if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
+            const dy = line.box[1] - anchor.box![3];
+            if (dy < -height * 0.2 || dy > height * 3.5) return false;
+            const overlap = horizontalOverlap(anchor, line);
+            const xDelta = Math.abs(line.box[0] - anchor.box![0]);
+            return overlap > 0 || xDelta <= height * 5;
+          })
+          .sort((a, b) => a.box![1] - b.box![1] || b.confidence - a.confidence)[0];
+
+        if (below) {
+          found.push({
+            value: clean(below.text),
+            confidence: Math.min(anchor.confidence, below.confidence),
+            page: anchor.page,
+            lineIds: [anchor.id, below.id],
+            method: 'anchor-below',
+            anchor: anchorName,
+          });
+          continue;
+        }
+      }
+
+      for (let offset = 1; offset <= 2; offset++) {
+        const next = lines[index + offset];
+        if (!next || !isValid(next.text)) continue;
+        found.push({
+          value: clean(next.text),
+          confidence: Math.min(anchor.confidence, next.confidence),
+          page: anchor.page,
+          lineIds: [anchor.id, next.id],
+          method: 'anchor-sequential',
+          anchor: anchorName,
+        });
+        break;
+      }
+    }
+  }
+
+  const unique = new Map<string, LabelValueCandidate>();
+  for (const candidate of found) {
+    const key = normalize(candidate.value);
+    const prior = unique.get(key);
+    if (!prior || candidate.confidence > prior.confidence) unique.set(key, candidate);
+  }
+  return unique.size === 1 ? [...unique.values()][0]! : null;
+}
+
+function labelledEvidence(
+  observation: DocumentObservation,
+  context: ExtractionContext,
+  fieldId: string,
+  label: RegExp,
+  anchor: string,
+  validator: (value: string) => boolean,
+): FieldEvidence | null {
+  const candidate = labelledValue(observation, label, anchor, validator);
+  if (!candidate) return null;
+  return {
+    fieldId,
+    value: candidate.value,
+    confidence: candidate.confidence,
+    documentId: context.documentId,
+    sourceId: context.sourceId,
+    page: candidate.page,
+    method: candidate.method,
+    anchor: candidate.anchor,
+    lineIds: candidate.lineIds,
+    status: 'REVIEW_REQUIRED',
+  };
+}
+
 function cpfEvidence(
   observation: DocumentObservation,
   context: ExtractionContext,
@@ -267,6 +426,27 @@ export const identityDocumentExtractor: DocumentExtractor = {
     }
     const cpf = cpfEvidence(observation, context, prefix + '.cpf');
     if (cpf) evidence.push(cpf);
+
+    const identity = labelledEvidence(
+      observation,
+      context,
+      prefix + '.identity',
+      /^\s*(?:REGISTRO\s+GERAL|REG\.?\s*GERAL|N[ÚU]MERO\s+DA\s+IDENTIDADE|N[ÚU]MERO\s+DE\s+IDENTIDADE|IDENTIDADE|RG)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      'IDENTIDADE',
+      validIdentityNumber,
+    );
+    if (identity) evidence.push(identity);
+
+    const issuer = labelledEvidence(
+      observation,
+      context,
+      prefix + '.issuer',
+      /^\s*(?:[ÓO]RG[AÃ]O\s+(?:EMISSOR|EXPEDIDOR)|[ÓO]RG[AÃ]O|EMISSOR|EXPEDIDOR)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      'ORGAO EMISSOR',
+      validIssuer,
+    );
+    if (issuer) evidence.push(issuer);
+
     return evidence;
   },
 };
