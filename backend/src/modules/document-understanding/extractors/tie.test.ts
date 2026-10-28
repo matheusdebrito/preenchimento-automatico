@@ -211,4 +211,26 @@ describe('tieDocumentExtractor', () => {
       .toBe('MAR AZUL');
   });
 
+  it('não usa o próprio rótulo bilíngue como número de série do motor', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '6AN123456',
+    ]), context);
+
+    expect(evidence.find((item) => item.fieldId === 'vessel.motorSerial')?.value)
+      .toBe('6AN123456');
+  });
+
+  it('rejeita texto de rótulo mesmo quando OCR o compacta como candidato alfanumérico', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'N° DE SÉRIE DO MOTOR / ENGINE SERIAL NUMBER',
+      'MOTOR1',
+      '6AN123456',
+    ]), context);
+
+    expect(evidence.find((item) => item.fieldId === 'vessel.motorSerial')?.value)
+      .toBe('6AN123456');
+  });
+
 });
