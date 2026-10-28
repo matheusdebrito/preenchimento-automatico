@@ -145,7 +145,8 @@ function parseBBoxXml(xml: string, elapsedMs: number): DocumentObservation | nul
 
   const text = pages.flatMap((page) => page.lines.map((line) => line.text)).join(' ');
   const useful = text.replace(/[^\p{L}\p{N}]/gu, '').length;
-  if (useful < 80 || pages.every((page) => page.lines.length < 3)) return null;
+  const lineCount = pages.reduce((sum, page) => sum + page.lines.length, 0);
+  if (useful < 80 || lineCount < 8 || pages.every((page) => page.lines.length < 3)) return null;
 
   return {
     engine: 'pdf-text',
