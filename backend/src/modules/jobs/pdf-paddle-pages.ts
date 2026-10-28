@@ -10,7 +10,7 @@ import { extractDocumentEvidence } from '../document-understanding/registry.js';
 
 const execFileAsync = promisify(execFile);
 const MAX_REFERENCE_PAGES = 8;
-const RASTER_DPI = 150;
+const RASTER_DPI = 110;
 
 async function pdfPageCount(path: string): Promise<number> {
   const { stdout } = await execFileAsync('pdfinfo', [path], {
