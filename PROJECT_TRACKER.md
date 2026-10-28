@@ -343,4 +343,4 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 
 **Privacidade/escopo:** o arquivo QA enviado pelo usuário não é versionado no repositório. A regressão usa uma observação sintética equivalente com dados fictícios. Proprietário, coproprietário, CPF/CNPJ, hipoteca, alienação, datas e demais campos fora dos mapeamentos ativos continuam não promovidos.
 
-**Validação:** branch `feat/tie-variant-aware-extraction`. Executar `verify:document-understanding`, referências reais e CI completo antes de merge; não considerar a alteração integrada até o head final ficar totalmente verde.
+**Validação:** o preflight local não pôde ser executado nesta sessão por indisponibilidade de resolução DNS para `github.com`, portanto não foi contabilizado como aprovado. O CI do PR #23, execução `40765499950`, validou o head de código com `backend-checks`, `postgres-integration`, `pdf-mapping-visual`, `compose-smoke`, `reference-documents` e `ocr-integration` em sucesso; `frontend-checks` foi corretamente ignorado por não haver alteração de frontend. Após este registro documental, o novo head deve repetir o CI completo e somente então pode ser integrado.
