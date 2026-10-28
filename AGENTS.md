@@ -81,6 +81,8 @@ Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custo
 - **Conflitos nunca são resolvidos silenciosamente.** `FieldResolver` deve bloquear seleção automática quando evidências divergirem e encaminhar o campo para revisão.
 - **Não ampliar `suggestFields()` com novos tipos documentais.** Esse parser é apenas adaptador transitório para tipos ainda não migrados. RG/CNH, TIE, CHA, CIR e futuros documentos devem possuir extractors independentes com fixtures sintéticas e testes.
 - Coordenadas absolutas podem auxiliar, mas não devem ser a única regra de reconhecimento. Preferir âncoras semânticas, geometria relativa, validação de formato e evidências rastreáveis.
+- Otimizações de leitura devem preservar o contrato `DocumentObservation` e ter fallback seguro. Camada textual de PDF só pode substituir OCR quando houver conteúdo suficiente; documento escaneado ou ambíguo deve cair para PaddleOCR. Não acelerar removendo campos, revisão ou validações.
+- TIE e comprovante de residência usam extractors estruturados. Não voltar esses tipos para `suggestFields()`; o adaptador legado permanece apenas para tipos ainda não migrados.
 - Até existir classificação explícita/confiável, não afirmar que um upload é RG ou CNH apenas por estar no requisito “identidade”. O perfil `identity` é transitório e deve ser separado por tipo quando a classificação for implementada.
 - A especificação vigente está em `docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md`. Mudanças que contradigam essa arquitetura exigem decisão explícita e atualização do documento.
 
