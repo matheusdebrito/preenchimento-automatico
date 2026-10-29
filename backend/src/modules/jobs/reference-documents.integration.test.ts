@@ -86,9 +86,13 @@ async function inspect(
 }
 
 describe.skipIf(!enabled)('documentos de referência do repositório', () => {
-  it('lê os dois modelos de TIE e preserva identificadores compatíveis com cada layout', async () => {
+  it('lê os modelos de TIE/TIEM e preserva identificadores compatíveis com cada layout', async () => {
     const digital = await inspect(
       'documentos/tie/TIE digital modelo.pdf', 'tie', 'tie', 'vessel');
+    const currentDigital = await inspect(
+      'documentos/tie/tie digital 2.pdf', 'tie-current', 'tie', 'vessel');
+    const legacy = await inspect(
+      'documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
     expect(digital.has('vessel.registration')).toBe(true);
     expect(digital.has('vessel.name')).toBe(true);
     // The public digital model masks/omits hull, AB/GT and breadth values.
@@ -103,8 +107,7 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(digital.has('vessel.motorSerial')).toBe(false);
     expect(digital.has('vessel.passengerCount')).toBe(true);
 
-    const currentDigital = await inspect(
-      'documentos/tie/tie digital 2.pdf', 'tie-current', 'tie', 'vessel');
+
     expect(currentDigital.has('vessel.registration')).toBe(true);
     expect(currentDigital.has('vessel.name')).toBe(true);
     expect(currentDigital.has('vessel.type')).toBe(true);
@@ -114,10 +117,11 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(currentDigital.has('vessel.hullMaterial')).toBe(true);
     expect(currentDigital.has('vessel.activity')).toBe(true);
     expect(currentDigital.has('vessel.crewCount')).toBe(true);
-    expect(currentDigital.has('vessel.passengerCount')).toBe(true);
+    // The low-resolution public reference preserves the label, but PaddleOCR
+    // does not return a trustworthy passenger-count value. Do not fabricate it.
+    expect(currentDigital.has('vessel.passengerCount')).toBe(false);
 
-    const legacy = await inspect(
-      'documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
+
     expect(legacy.has('vessel.registration')).toBe(true);
     expect(legacy.has('vessel.name')).toBe(true);
     // The public legacy scan masks the hull/chassis serial. Its registration
