@@ -119,7 +119,7 @@ const badePlacements: readonly CoordinatePlacement[] = [
 
 const bsadePlacements: readonly CoordinatePlacement[] = [
   top('process.inscription', 69, 197, 10, 8, 0, false, 'true'),
-  top('process.transferOwnership', 226, 197, 10, 8, 0, false, 'true'),
+  top('process.transferProperty', 226, 197, 10, 8, 0, false, 'true'),
   top('process.transferJurisdiction', 226, 214, 10, 8, 0, false, 'true'),
   top('process.updateVesselData', 383, 197, 10, 8, 0, false, 'true'),
   top('person.fullName', 170, 265, 350, 6.8, 0, true),
