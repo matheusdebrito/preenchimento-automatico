@@ -10,7 +10,7 @@ Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnico
 
 Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, texto OCR ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual inclui consolidar a arquitetura reutilizável de formulários e entendimento de documentos, sem liberar produção, cobrar, homologar PDFs nem publicar dados pessoais. Os portões normativos, visuais e de produção continuam pendentes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
+A autorização atual inclui consolidar a arquitetura reutilizável, homologar tecnicamente os oito PDFs NORMAM-211 adicionados pelo usuário e evoluir OCR/document understanding, sem liberar produção, cobrar ou publicar dados pessoais. A revisão visual humana para APPROVED e os portões de produção continuam pendentes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
 
 ## 1. Quadro geral de progresso
 
@@ -20,7 +20,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável de formulár
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] Concluída; evidências anteriores preservadas |
 | 02 | PDFs oficiais e versões, sem aprovar mapeamento | 01 | [x] Concluída; portão humano anterior preservado |
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — seis mapas em QA; aprovação visual e normativa pendente |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — 14 mapas no catálogo; 8 NORMAM-211 em TESTED e 6 do piloto ainda DRAFT; aprovação visual humana pendente |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
 | 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade, TIE/TIEM e residência usam extração estruturada/semântica; venda ainda usa adaptador legado; corpus amplo pendente |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável de formulár
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 9 serviços NORMAM-211 e 8 anexos identificados; download, mapeamento visual e homologação ainda bloqueiam disponibilidade |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 8 anexos NORMAM-211 VERIFIED/STATIC e 8 mapas TESTED; revisão humana, 3-D quando aplicável, múltiplos motores e QA real ainda bloqueiam disponibilidade |
 
 **Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
@@ -93,17 +93,23 @@ gates normativos, visuais e de produção.
 - [x] Cadastrar `ServiceDefinition`, perguntas, requisitos opcionais de origem e composição condicional `ServiceForm` em DRAFT.
 - [x] Garantir perfil OCR em todos os requisitos da expansão; documentos de apoio usam `supporting-document` e não inventam campos.
 - [x] Exibir no frontend os serviços planejados sem criar links de geração antes da homologação.
-- [ ] Baixar e preservar os oito PDFs oficiais NORMAM-211; o ambiente desta sessão não conseguiu baixar os binários.
-- [ ] Registrar hash, páginas, dimensões, tipo PDF e mover cada versão de `IDENTIFIED` para `VERIFIED`.
-- [ ] Criar os mapeamentos de campos dos oito formulários.
-- [ ] Gerar amostras fictícias, renderizar todas as páginas e concluir revisão visual humana.
-- [ ] Aprovar os `FormMapping` e liberar os serviços individualmente como `AVAILABLE`.
+- [x] Preservar os oito PDFs NORMAM-211 adicionados pelo usuário em templates imutáveis.
+- [x] Registrar SHA-256, páginas, dimensões, tipo PDF e mover as oito versões para `VERIFIED/STATIC`.
+- [x] Criar os mapeamentos de campos dos oito formulários.
+- [x] Gerar amostras fictícias, renderizar todas as páginas e concluir revisão visual técnica do agente; mapas em `TESTED`.
+- [x] Manter o domínio do MVP em um único motor e impedir reintrodução silenciosa de motor2/3/4.
+- [x] Remover fotos da embarcação do upload da aplicação; exigência oficial permanece apenas na documentação do procedimento.
+- [ ] Concluir revisão visual humana e promover os `FormMapping` para `APPROVED`.
+- [ ] Incorporar/modelar o Anexo 3-D nos casos em que responsabilidade técnica for aplicável; não contornar TLS inválido da origem.
+- [ ] Decidir domínio e UX para embarcações com múltiplos motores antes de preencher Motor 2–4 ou caixas SIM/NÃO do 2-K.
+- [ ] Liberar os serviços individualmente como `AVAILABLE` somente após os gates acima.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
-**Aceite parcial atual:** catálogo e arquitetura preparados sem publicação
-prematura. A fase permanece aberta porque nenhum novo PDF NORMAM-211 está
-verificado/mapeado no repositório.
+**Aceite parcial atual:** os oito PDFs estão `VERIFIED/STATIC` e os oito mapas
+estão `TESTED` com relatório técnico reproduzível. A fase permanece aberta e
+fail-closed porque `TESTED` não substitui `APPROVED`, e os novos serviços
+continuam `DRAFT`.
 
 ## 3.2. Registro de execução — 28/10/2026, catálogo dos serviços NORMAM-211
 
@@ -144,6 +150,51 @@ ou PDFs. O próximo passo documental é baixar os oito anexos oficiais, inspecio
 com renderização, mapear e revisar visualmente antes de qualquer `AVAILABLE`.
 
 **Validação:** o primeiro CI do PR #24 revelou dois testes antigos que pressupunham que toda `FormVersion` já possuía PDF/hash e que toda versão possuía `FormMapping`. Eles foram corrigidos para preservar o contrato correto: somente versões `VERIFIED` exigem asset/hash e somente versões verificadas atualmente mapeadas entram nos testes de coordenadas. Um segundo CI encontrou apenas a expectativa textual antiga do diagnóstico frontend (`nome/CPF/RG`), atualizada para a mensagem genérica de qualquer documento. O head de implementação `ef9ade1d` passou integralmente na execução `40791885589`: `backend-checks`, `frontend-checks`, `postgres-integration`, `pdf-mapping-visual`, `compose-smoke`, `reference-documents` e `ocr-integration` em sucesso. Após este registro documental, o head final deve repetir o CI antes do merge.
+
+## 3.3. Registro de execução — 28/10/2026, homologação técnica NORMAM-211
+
+**Branch/PR:** `feat/homologate-normam211-services`, PR #25.
+
+**PDFs:** os oito anexos adicionados pelo usuário foram preservados sem
+reconversão em `backend/templates/<form>/v1/original.pdf`. A inspeção por
+GitHub Actions confirmou assinatura PDF, ausência de criptografia, qpdf sem
+erros estruturais, A4 sem rotação e ausência de AcroForm. SHA-256 e caminhos
+imutáveis foram registrados nas oito `FormVersion`, agora
+`VERIFIED/STATIC`.
+
+**Mapeamento e QA visual:** foram criados oito mapas por coordenadas. Amostras
+inteiramente fictícias foram geradas com marca d'água e todas as páginas foram
+renderizadas. A revisão técnica encontrou e corrigiu, entre outros pontos:
+caixas do 2-C/2-H, datas segmentadas em 2-A/2-G/2-H/2-I/3-C, escolhas de área de
+navegação fail-closed por aliases explícitos e campos densos do BADE. O artefato
+final de revisão técnica é do run `40802473189`,
+`pdf-mapping-review-synthetic` (`12866343656`); a inspeção estrutural do
+mesmo run está no artefato `12867145494`. Relatório:
+`docs/mapping-reports/normam211-2026-technical-qa.md`.
+
+**Escopo preservado:** a expansão inicialmente chegou a introduzir campos
+motor1–4, mas isso contrariava `AGENTS.md`. A alteração foi revertida e testes
+agora garantem o domínio de um único motor canônico. O 2-K deixa Motor 2–4 e as
+caixas SIM/NÃO manuais em vez de inferir informação ausente. Fotos da embarcação
+também foram retiradas do upload da aplicação, sem afirmar dispensa no
+procedimento oficial.
+
+**OCR/document understanding:** identidade passou a extrair data de nascimento;
+TIE/TIEM passou a reconhecer tipo, área de navegação, pontal, material do casco
+e tipo de propulsão nos layouts confirmados. O modelo `tie digital 2.pdf`
+entrou no teste de referência. Revisão humana permanece obrigatória.
+
+**Pendências que impedem publicação:** os oito mapas estão `TESTED`, não
+`APPROVED`; revisão visual humana ainda é obrigatória. O Anexo 3-D deve ser
+incorporado nos casos em que responsabilidade técnica for aplicável. A origem
+consultada apresentou cadeia TLS inválida no runner e a automação recusou
+contornar TLS. QA completo em navegador/mobile e decisão para múltiplos motores
+também permanecem abertos. Os nove serviços continuam `DRAFT`.
+
+**CI:** durante a homologação, falhas reais do preview foram usadas como gate e
+corrigidas, em vez de relaxar testes. O workflow passou a cancelar runs
+obsoletos do mesmo PR por `concurrency`. Após a atualização deste tracker, o
+head final deve repetir todos os gates antes do merge.
 
 ## 4. Registro de execução — 27/10/2026, correção do nome
 
