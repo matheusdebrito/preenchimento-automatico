@@ -59,7 +59,6 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
 
       const answers = {
         vesselType: 'moto_aquatica', tieSituation: 'regular',
-        representative: 'nao',
       };
       const created = await app.inject({
         method: 'POST', url: '/api/jobs', headers: { cookie },
@@ -260,7 +259,6 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         method: 'POST', url: '/api/jobs', headers: { cookie },
         payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers: {
           vesselType: 'moto_aquatica', tieSituation: 'regular',
-          representative: 'nao',
         } },
       });
       expect(created.statusCode, created.body).toBe(201);
@@ -310,7 +308,6 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
       const answers = {
         vesselType: 'moto_aquatica', tieSituation: 'regular',
-        representative: 'nao',
       };
       const service = publicService(qa, QA_PREVIEW_SERVICE_ID, answers);
       expect(service).not.toBeNull();
