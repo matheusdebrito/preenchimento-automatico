@@ -7,7 +7,6 @@ import { publicService, publicServices } from './public-catalog.js';
 const answers = {
   vesselType: 'moto_aquatica',
   tieSituation: 'regular',
-  representative: 'nao',
 };
 
 describe('prévia local do MESMO serviço de transferência', () => {
