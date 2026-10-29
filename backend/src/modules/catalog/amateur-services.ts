@@ -1,0 +1,159 @@
+import type {
+  DocumentRequirement,
+  FormDefinition,
+  FormVersion,
+  ServiceDefinition,
+  ServiceForm,
+  ServiceQuestion,
+} from './contracts.js';
+import {
+  APPLICANT_IDENTITY_FIELDS,
+  NO_AUTOMATIC_FIELDS,
+  RESIDENCE_PROOF_FIELDS,
+} from './document-field-policies.js';
+
+const chaSituationQuestion: ServiceQuestion = {
+  id: 'chaSituation',
+  label: 'Situação da CHA',
+  options: ['regular', 'extraviada_roubada_furtada_danificada'],
+};
+
+const commonDocuments: readonly DocumentRequirement[] = [
+  {
+    id: 'applicant-identity',
+    label: 'Documento oficial de identificação',
+    description: 'RG, CIN ou CNH. O arquivo é opcional e pode sugerir dados para revisão.',
+    required: false,
+    extraction: {
+      documentType: 'identity',
+      subjectRole: 'person',
+      allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
+    },
+  },
+  {
+    id: 'current-cha',
+    label: 'Carteira de Habilitação de Amador (CHA) atual',
+    description: 'Quando disponível. A leitura automática específica da CHA ainda está em validação.',
+    required: false,
+    extraction: {
+      documentType: 'supporting-document',
+      subjectRole: 'person',
+      allowedFieldIds: NO_AUTOMATIC_FIELDS,
+    },
+  },
+  {
+    id: 'residence-proof',
+    label: 'Comprovante de residência',
+    required: false,
+    extraction: {
+      documentType: 'residence-proof',
+      subjectRole: 'person',
+      allowedFieldIds: RESIDENCE_PROOF_FIELDS,
+    },
+  },
+  {
+    id: 'medical-or-cnh',
+    label: 'Atestado médico ou CNH válida',
+    description: 'A NORMAM permite dispensar o atestado médico quando apresentada CNH válida.',
+    required: false,
+    extraction: {
+      documentType: 'supporting-document',
+      subjectRole: 'person',
+      allowedFieldIds: NO_AUTOMATIC_FIELDS,
+    },
+  },
+  {
+    id: 'gru-receipt',
+    label: 'Comprovante de pagamento da GRU',
+    required: false,
+    extraction: {
+      documentType: 'supporting-document',
+      subjectRole: 'person',
+      allowedFieldIds: NO_AUTOMATIC_FIELDS,
+    },
+  },
+];
+
+export const amateurForms: readonly FormDefinition[] = [
+  {
+    id: 'requerimento-cha-amador',
+    name: 'Requerimento de serviços de amadores',
+    description: 'NORMAM-211/DPC 2026 - Anexo 5-H.',
+  },
+  {
+    id: 'declaracao-extravio-cha-amador',
+    name: 'Declaração de extravio, furto, roubo ou dano da CHA',
+    description: 'NORMAM-211/DPC 2026 - Anexo 5-D.',
+  },
+];
+
+export const amateurVersions: readonly FormVersion[] = [
+  {
+    id: 'requerimento-cha-amador-2026-v1',
+    formId: 'requerimento-cha-amador',
+    revision: 'v1',
+    officialRevision: 'NORMAM-211/DPC 2026 - Anexo 5-H',
+    regulation: 'NORMAM-211/DPC 2026, Anexo 5-H',
+    sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
+    verifiedAt: null,
+    sha256: null,
+    templatePath: null,
+    pdfKind: 'STATIC',
+    status: 'IDENTIFIED',
+  },
+  {
+    id: 'declaracao-extravio-cha-amador-2026-v1',
+    formId: 'declaracao-extravio-cha-amador',
+    revision: 'v1',
+    officialRevision: 'NORMAM-211/DPC 2026 - Anexo 5-D',
+    regulation: 'NORMAM-211/DPC 2026, Anexo 5-D',
+    sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
+    verifiedAt: null,
+    sha256: null,
+    templatePath: null,
+    pdfKind: 'STATIC',
+    status: 'IDENTIFIED',
+  },
+];
+
+export const amateurServices: readonly ServiceDefinition[] = [
+  {
+    id: 'emissao-cha-amador',
+    title: 'Emissão da CHA',
+    description: 'Fluxo identificado na NORMAM-211/DPC. Permanece em validação até extrair e mapear o Anexo 5-H.',
+    creditCost: 1,
+    status: 'DRAFT',
+    questions: [],
+    documentRequirements: commonDocuments,
+  },
+  {
+    id: 'renovacao-cha-amador',
+    title: 'Renovação da CHA',
+    description: 'Renovação de Arrais-Amador, Mestre-Amador ou Capitão-Amador. Perda, roubo, furto ou dano da cédula também segue renovação; não há segunda via separada.',
+    creditCost: 1,
+    status: 'DRAFT',
+    questions: [chaSituationQuestion],
+    documentRequirements: commonDocuments,
+  },
+];
+
+export const amateurServiceForms: readonly ServiceForm[] = [
+  {
+    serviceId: 'emissao-cha-amador',
+    formVersionId: 'requerimento-cha-amador-2026-v1',
+    order: 1,
+    fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
+  },
+  {
+    serviceId: 'renovacao-cha-amador',
+    formVersionId: 'requerimento-cha-amador-2026-v1',
+    order: 1,
+    fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
+  },
+  {
+    serviceId: 'renovacao-cha-amador',
+    formVersionId: 'declaracao-extravio-cha-amador-2026-v1',
+    order: 2,
+    conditions: [{ questionId: 'chaSituation', equals: 'extraviada_roubada_furtada_danificada' }],
+  },
+];
