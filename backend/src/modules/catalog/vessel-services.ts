@@ -251,8 +251,8 @@ function requirements(options: {
   ];
 }
 
-const scopeNote = 'Serviço para embarcação ou moto aquática, conforme a opção selecionada, ' +
-  'sem protocolo automático e com revisão humana obrigatória.';
+const scopeNote = 'Serviço liberado para embarcação/barco. Moto aquática permanece em validação, ' +
+  'sem protocolo automático e com revisão dos dados pelo usuário.';
 
 export const vesselServices: readonly ServiceDefinition[] = [
   {
