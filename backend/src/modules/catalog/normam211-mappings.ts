@@ -203,7 +203,6 @@ const requestPlacements: readonly CoordinatePlacement[] = [
   top('process.vesselAction', 96, 645, 10, 8, 0, false, 'renovacao'),
   top('process.vesselAction', 96, 673, 10, 8, 0, false, 'alteracao_dados'),
   top('process.vesselAction', 96, 709, 10, 8, 0, false, 'troca_motor'),
-  top('process.vesselAction', 96, 143, 10, 8, 1, false, 'segunda_via'),
   top('process.otherServiceDescription', 100, 177, 420, 7, 1),
   top('process.place', 90, 236, 100, 7, 1),
   top('process.date', 200, 236, 76, 7, 1),
