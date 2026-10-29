@@ -182,5 +182,6 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     formVersionId: 'declaracao-extravio-cha-amador-2026-v1',
     order: 2,
     conditions: [{ questionId: 'chaSituation', oneOf: ['extraviada', 'roubada', 'furtada', 'danificada'] }],
+    answerBindings: { 'process.chaLossReason': 'chaSituation' },
   },
 ];
