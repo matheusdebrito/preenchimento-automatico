@@ -46,10 +46,20 @@ function validateConditions(
   const seen = new Set<string>();
   for (const condition of conditions ?? []) {
     const question = questions.get(condition.questionId);
+    const hasEquals = condition.equals !== undefined;
+    const hasOneOf = condition.oneOf !== undefined;
     if (!question) {
       issues.push(context + ': pergunta inexistente: ' + condition.questionId);
-    } else if (!question.options.includes(condition.equals)) {
+    } else if (hasEquals === hasOneOf) {
+      issues.push(context + ': condição deve definir exatamente equals ou oneOf');
+    } else if (hasEquals && !question.options.includes(condition.equals!)) {
       issues.push(context + ': resposta fora das opções: ' + condition.equals);
+    } else if (hasOneOf && (
+      condition.oneOf!.length === 0 ||
+      new Set(condition.oneOf).size !== condition.oneOf!.length ||
+      condition.oneOf!.some((value) => !question.options.includes(value))
+    )) {
+      issues.push(context + ': respostas fora das opções em oneOf');
     }
     if (seen.has(condition.questionId)) {
       issues.push(context + ': pergunta repetida nas condições: ' + condition.questionId);
