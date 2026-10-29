@@ -50,16 +50,22 @@ O 5-H exige a opção 3 - RENOVAÇÃO DE CHA DE ARA, MSA OU CPA COM AGREGAÇÃO 
 CATEGORIA DE MTA. A NORMAM-212 também exige o requerimento 3-A e nele a declaração
 de que o requerente conduz ou já conduziu moto aquática.
 
-A posição da opção 3 do 5-H foi revisada visualmente. O Anexo 3-A foi extraído localmente
-das páginas PDF 86-87 da NORMAM-212/DPC 2026 e recebeu mapping DRAFT, mas ainda não
-está versionado no repositório.
+A posição da opção 3 do 5-H foi revisada visualmente. O Anexo 3-A foi extraído das
+páginas PDF 86-87 da NORMAM-212/DPC 2026 e versionado em
+`backend/templates/requerimento-motonauta/v1/original.pdf`. O Git blob do repositório
+(`e4cf10c93c8648d019a47d26ef2277e149cbb17e`) foi comparado com o arquivo local usado
+no QA e é byte a byte o mesmo conteúdo.
 
 Arquivo local preparado:
 - NORMAM-212_Anexo-3-A_Requerimento-Motonauta.pdf
 - SHA-256: 43288872ACFFA54A36A2292A21ED3029E33809CD4B444741A3A0C2C1DCAFEF52
 
-Estado: DRAFT até o PDF 3-A entrar no caminho canônico, seu hash ser confirmado e a
-geração pelo motor real ser revisada.
+O mapping v2 foi revisado visualmente com dados fictícios nas duas páginas. A primeira
+página confirmou os dados pessoais, a opção 3 e a declaração de condução de moto aquática.
+A segunda página exigiu correção das coordenadas de descrição do pedido, local, data e CPF;
+após o ajuste, todos ficaram alinhados aos campos impressos.
+
+Estado: AVAILABLE. FormVersion VERIFIED e mapping APPROVED.
 
 ## Anexo 5-G
 
