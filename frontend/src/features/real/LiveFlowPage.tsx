@@ -83,6 +83,11 @@ export function LiveFlowPage() {
   };
 
   useEffect(() => {
+    if (step !== 'review') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [step]);
+
+  useEffect(() => {
     if (!serviceId) return;
     let cancelled = false;
     void (async () => {
