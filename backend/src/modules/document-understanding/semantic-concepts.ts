@@ -67,7 +67,10 @@ export function extractSemanticConcepts(
       concept.approximateLabels ?? [],
       concept.spatialHint ?? {},
     );
-    const selected = selectUniqueCandidate(candidates);
+    const selected = selectUniqueCandidate(
+      candidates,
+      concept.spatialHint?.minSelectionScoreGap,
+    );
 
     if (selected) {
       const normalized = concept.normalize
