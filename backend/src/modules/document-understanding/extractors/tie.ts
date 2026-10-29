@@ -216,6 +216,16 @@ const creditorTableCell = {
   maxBelowHorizontalOffsetHeights: 2.5,
 } as const;
 
+const hullColorCell = {
+  ...compactTableCell,
+  // Color is a compact cell in the legacy TIEM. A narrow window prevents
+  // "OUTRAS OBSERVACOES" or nearby text from being promoted when the color
+  // itself is masked or missed by OCR.
+  maxRightDistanceHeights: 5,
+  maxBelowDistanceHeights: 1.8,
+  maxBelowHorizontalOffsetHeights: 2.5,
+} as const;
+
 
 export type TieDocumentVariant = 'digital' | 'legacy' | 'unknown';
 
@@ -635,7 +645,8 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*COR\s+PREDOMINANTE\s+(?:DO\s+)?CASCO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['right', 'below'],
-    spatialHint: tightTableCell,
+    firstOccurrenceOnly: true,
+    spatialHint: hullColorCell,
     validate: hullColorText,
   },
   {
