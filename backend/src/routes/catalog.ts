@@ -29,7 +29,9 @@ export function registerCatalogRoutes(app: FastifyInstance, definitions: Catalog
     const service = publicService(definitions, request.params.id, parsed.data.answers);
     const relevantQuestions = service?.questions.filter((question) =>
       (question.conditions ?? []).every((condition) =>
-        parsed.data.answers[condition.questionId] === condition.equals)) ?? [];
+        condition.equals !== undefined
+          ? parsed.data.answers[condition.questionId] === condition.equals
+          : condition.oneOf?.includes(parsed.data.answers[condition.questionId] ?? '') === true)) ?? [];
     if (!service || service.formVersionIds.length === 0 ||
       relevantQuestions.some((question) => !parsed.data.answers[question.id])) {
       return reply.status(404).send({ error: 'not_available' });
