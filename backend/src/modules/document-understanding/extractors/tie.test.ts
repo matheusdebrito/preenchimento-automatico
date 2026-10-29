@@ -108,6 +108,46 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.motorSerial']).toBe('20001P-342139');
   });
 
+  it('recupera proprietário inline quando o OCR perde o cabeçalho da seção', () => {
+    const source = observation([
+      'NOME: PRISCILA DAS NEVES MORAES',
+      'CPF/CNPJ: 529.982.247-25',
+      'NOME: ***************',
+      'CPF/CNPJ: ***************',
+    ]);
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['registeredOwner.fullName']).toBe('PRISCILA DAS NEVES MORAES');
+    expect(values['registeredOwner.taxId']).toBe('529.982.247-25');
+    expect(values['coOwner.fullName']).toBeUndefined();
+    expect(values['coOwner.cpf']).toBeUndefined();
+  });
+
+  it('não promove artefatos mascarados para proprietário, cor ou credor', () => {
+    const source = observation([
+      'PROPRIETÁRIO / OWNER',
+      'NOME: ****A********',
+      'CO-PROPRIETÁRIO / CO-OWNER',
+      'NOME: *************',
+      'CARACTERÍSTICAS DO CASCO',
+      'COR PREDOMINANTE DO CASCO',
+      '***A***',
+      'HIPOTECADA: NÃO',
+      'CREDOR HIPOTECÁRIO',
+      '**BAN**',
+    ]);
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['registeredOwner.fullName']).toBeUndefined();
+    expect(values['coOwner.fullName']).toBeUndefined();
+    expect(values['vessel.hullColor']).toBeUndefined();
+    expect(values['vessel.mortgageCreditor']).toBeUndefined();
+  });
+
   it('separa proprietário registrado e coproprietário sem atribuir papel de comprador ou vendedor', () => {
     const source: DocumentObservation = {
       engine: 'paddleocr',
@@ -175,9 +215,13 @@ describe('tieDocumentExtractor', () => {
             confidence: .98, box: [10, 60, 150, 80], polygon: null },
           { id: '0:2', page: 0, text: '441M20200001',
             confidence: .98, box: [10, 155, 170, 177], polygon: null },
-          { id: '0:3', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
+          { id: '0:3', page: 0, text: 'DATA INSCRIÇÃO',
+            confidence: .98, box: [180, 60, 310, 80], polygon: null },
+          { id: '0:4', page: 0, text: '28/01/1995',
+            confidence: .98, box: [180, 155, 300, 177], polygon: null },
+          { id: '0:5', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
             confidence: .98, box: [300, 220, 560, 242], polygon: null },
-          { id: '0:4', page: 0, text: 'CREDOR HIPOTECÁRIO',
+          { id: '0:6', page: 0, text: 'CREDOR HIPOTECÁRIO',
             confidence: .98, box: [300, 260, 520, 282], polygon: null },
         ],
       }],
