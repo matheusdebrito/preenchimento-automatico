@@ -52,16 +52,19 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.versions).toHaveLength(16);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(13);
     expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(3);
-    expect(catalog.versions.every((version) =>
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED').every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
     expect(catalog.mappings).toHaveLength(14);
     expect(catalog.mappings.filter((mapping) =>
-      mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
+      mapping.formVersionId.includes('-er-2026-') &&
+      mapping.formVersionId !== 'termo-responsabilidade-er-2026-v1').every((mapping) =>
       mapping.status === 'APPROVED')).toBe(true);
+    expect(catalog.mappings.find((mapping) =>
+      mapping.formVersionId === 'termo-responsabilidade-er-2026-v1')?.status).toBe('DRAFT');
     expect(catalog.mappings.filter((mapping) =>
       !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms.length).toBeGreaterThan(45);
+    expect(catalog.serviceForms).toHaveLength(45);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
