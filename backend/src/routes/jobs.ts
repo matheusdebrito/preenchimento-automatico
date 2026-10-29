@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { catalog } from '../modules/catalog/catalog.js';
-import { publicService } from '../modules/catalog/public-catalog.js';
+import { activeServiceQuestions, publicService } from '../modules/catalog/public-catalog.js';
 import { isValidCpf, isValidBrazilianDate } from '../modules/catalog/field-validation.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
 import { QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
@@ -107,8 +107,9 @@ export function registerJobRoutes(
     if (!service) return reply.status(409).send({
       error: 'not_available', message: 'Serviço ainda não homologado.',
     });
+    const activeQuestions = activeServiceQuestions(service.questions, parsed.data.answers);
     if (service.formVersionIds.length === 0 ||
-      service.questions.some((question) => !parsed.data.answers[question.id])) {
+      activeQuestions.some((question) => !parsed.data.answers[question.id])) {
       return reply.status(422).send({ error: 'incomplete_service_selection' });
     }
     try {
