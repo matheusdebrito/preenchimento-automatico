@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Camera, FileCheck2, FileText, UploadCloud } from 'lucide-react';
+import { Camera, ChevronDown, FileCheck2, FileText, UploadCloud } from 'lucide-react';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { Notice } from '../../components/ui/Notice';
 import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
 import { formatBrazilianDateInput } from '../../lib/date-mask';
-import type { LiveService } from '../../lib/api';
+import type { LiveReviewForm, LiveService } from '../../lib/api';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
@@ -22,6 +22,25 @@ type ExtractionDiagnostic = {
   nameStage?: 'name_recognized' | 'name_not_mapped' |
     'label_seen_name_rejected' | 'label_not_detected';
 };
+
+function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
+  if (service.reviewForms?.length) return service.reviewForms;
+  return [{
+    formVersionId: 'all-fields',
+    formId: 'all-fields',
+    name: 'Dados dos formulários',
+    fields: service.reviewFields,
+  }];
+}
+
+function reviewInputId(formVersionId: string, fieldId: string): string {
+  return 'review-' + formVersionId + '-' + fieldId;
+}
+
+function firstReviewFormIds(service: LiveService): string[] {
+  const first = groupedReviewForms(service)[0];
+  return first ? [first.formVersionId] : [];
+}
 
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
@@ -41,8 +60,27 @@ export function LiveFlowPage() {
   const [busy, setBusy] = useState(false);
   const [extractionProvider, setExtractionProvider] =
     useState<ExtractionProvider>('paddleocr');
+  const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const cancelRequested = useRef(false);
+
+  const reviewForms = service ? groupedReviewForms(service) : [];
+  const allReviewFormsOpen = reviewForms.length > 0 &&
+    reviewForms.every((form) => openReviewFormIds.includes(form.formVersionId));
+
+  const revealReviewField = (fieldId: string) => {
+    const form = reviewForms.find((item) =>
+      item.fields.some((field) => field.id === fieldId && field.required)) ??
+      reviewForms.find((item) => item.fields.some((field) => field.id === fieldId));
+    if (!form) return;
+    setOpenReviewFormIds((current) =>
+      current.includes(form.formVersionId)
+        ? current
+        : [...current, form.formVersionId]);
+    window.setTimeout(() => {
+      document.getElementById(reviewInputId(form.formVersionId, fieldId))?.focus();
+    }, 0);
+  };
 
   useEffect(() => {
     if (!serviceId) return;
@@ -80,7 +118,11 @@ export function LiveFlowPage() {
             setSources(Object.fromEntries(
               Object.entries(status.sources ?? {}).filter(([id]) => visible.has(id))));
             setDiagnostics(status.diagnostics ?? []);
-            if (status.status === 'GENERATED') setDownloads(status.downloads ?? []);
+            if (status.status === 'GENERATED') {
+              setDownloads(status.downloads ?? []);
+            } else {
+              setOpenReviewFormIds(firstReviewFormIds(quoted.service));
+            }
             setStep(status.status === 'GENERATED' ? 'download' : 'review');
           } else {
             setStep('files');
@@ -147,6 +189,7 @@ export function LiveFlowPage() {
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
     setInvalidFieldId(null);
+    if (service) setOpenReviewFormIds(firstReviewFormIds(service));
     setStep('review');
   };
 
@@ -264,6 +307,7 @@ export function LiveFlowPage() {
       setSources({});
       setDiagnostics([]);
       setInvalidFieldId(null);
+      setOpenReviewFormIds([]);
       setDownloads([]);
       setStep('questions');
     } catch {
@@ -277,12 +321,15 @@ export function LiveFlowPage() {
     if (!jobId || !service) return;
     setError('');
     setInvalidFieldId(null);
-    const missing = service.reviewFields.find((field) =>
-      field.required && !values[field.id]?.trim());
+    const missing = reviewForms
+      .flatMap((form) => form.fields)
+      .find((field) => field.required && !values[field.id]?.trim()) ??
+      service.reviewFields.find((field) =>
+        field.required && !values[field.id]?.trim());
     if (missing) {
       setInvalidFieldId(missing.id);
       setError('Preencha o campo obrigatório: ' + missing.label + '.');
-      document.getElementById('review-' + missing.id)?.focus();
+      revealReviewField(missing.id);
       return;
     }
 
@@ -318,7 +365,7 @@ export function LiveFlowPage() {
               : 'revise o formato e o valor.';
         setInvalidFieldId(issue.fieldId);
         setError('Confira ' + label + ': ' + tip);
-        document.getElementById('review-' + issue.fieldId)?.focus();
+        revealReviewField(issue.fieldId);
       } else {
         setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
       }
@@ -368,10 +415,10 @@ export function LiveFlowPage() {
               ) : null}
               {step === 'files' ? (
                 <>
-                  <h2>Documentos para leitura automática (opcionais)</h2>
-                  <p>Você pode anexar apenas um documento, vários ou nenhum.
-                    O OCR tentará sugerir os dados disponíveis; todos os demais campos
-                    poderão ser preenchidos manualmente na próxima etapa.</p>
+                  <h2>Documentos para preenchimento automático (opcionais)</h2>
+                  <p>Você pode anexar um documento, vários ou nenhum. A leitura automática
+                    serve apenas para sugerir dados. Se preferir, continue sem anexos e
+                    preencha cada formulário manualmente na próxima etapa.</p>
                   <p className="field__hint">Os arquivos escolhidos são enviados temporariamente
                     ao servidor e excluídos ao cancelar ou expirar o processo.</p>
                   <label className="field">
@@ -468,12 +515,16 @@ export function LiveFlowPage() {
               ) : null}
               {step === 'review' ? (
                 <>
-                  <h2>Confira cada campo</h2>
-                  <p>As sugestões do OCR podem estar incorretas. Corrija e confirme os valores antes de gerar.</p>
+                  <h2>Preencha e confira os formulários</h2>
+                  <p>
+                    Os campos estão organizados pelos formulários que serão gerados.
+                    Abra cada seção para preencher ou conferir. Quando o mesmo dado aparece
+                    em mais de um formulário, o valor é compartilhado automaticamente.
+                  </p>
                   {diagnostics.length === 0 ? (
                     <Notice tone="info" role="status">
-                      Você optou por preencher sem documentos. Informe manualmente os campos
-                      necessários para os formulários selecionados.
+                      Você optou por preencher sem documentos. Preencha manualmente os
+                      formulários abaixo; nenhum upload é obrigatório para continuar.
                     </Notice>
                   ) : service.reviewFields.some((field) => sources[field.id] &&
                     service.documentRequirements.some((doc) => doc.id === sources[field.id])) ? (
@@ -482,7 +533,7 @@ export function LiveFlowPage() {
                       Os demais podem ser preenchidos manualmente.
                     </Notice>
                   ) : (
-                    <Notice tone="danger" role="alert" title="Nenhum campo preenchido pelo OCR">
+                    <Notice tone="danger" role="alert" title="Nenhum campo preenchido automaticamente">
                       O arquivo foi recebido, mas não foi possível aproveitar dados dele para os
                       formulários selecionados. Confira o resultado da leitura por documento abaixo.
                       Se necessário, refaça a foto com o documento inteiro, bem iluminado, sem
@@ -532,39 +583,152 @@ export function LiveFlowPage() {
                       </ul>
                     </div>
                   ) : null}
-                  {service.reviewFields.map((field) => (
-                    <label key={field.id} className="field">
-                      <span className="field__label">{field.label}{field.required ? ' *' : ''}</span>
-                      <input id={'review-' + field.id} className="field__input"
-                        required={field.required} value={values[field.id] ?? ''}
-                        aria-invalid={invalidFieldId === field.id || undefined}
-                        inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
-                        maxLength={field.valueKind === 'date' ? 10 : undefined}
-                        placeholder={field.valueKind === 'date' ? 'DD/MM/AAAA' : undefined}
-                        onChange={(event) => {
-                          const typed = field.valueKind === 'date'
-                            ? formatBrazilianDateInput(event.target.value)
-                            : event.target.value;
-                          setValues((prev) => ({ ...prev, [field.id]:typed }));
-                          if (invalidFieldId === field.id) {
-                            setInvalidFieldId(null);
-                            setError('');
-                          }
-                        }} />
-                      <span className="field__hint">
-                        {sources[field.id] &&
-                          service.documentRequirements.some((doc) => doc.id === sources[field.id])
-                          ? 'Sugestão de ' +
-                            (service.documentRequirements.find((document) =>
-                              document.id === sources[field.id])?.label ?? 'documento enviado') +
-                            ' — confira antes de confirmar'
-                          : 'Preenchimento manual necessário'}
-                      </span>
-                      {invalidFieldId === field.id
-                        ? <span className="field__error">Confira o valor informado neste campo.</span>
-                        : null}
-                    </label>
-                  ))}
+
+                  <div className="live-review-toolbar">
+                    <span>
+                      {reviewForms.length} {reviewForms.length === 1 ? 'formulário' : 'formulários'}
+                    </span>
+                    {reviewForms.length > 1 ? (
+                      <button
+                        type="button"
+                        className="live-text-button"
+                        onClick={() => setOpenReviewFormIds(allReviewFormsOpen
+                          ? []
+                          : reviewForms.map((form) => form.formVersionId))}
+                      >
+                        {allReviewFormsOpen ? 'Fechar todos' : 'Abrir todos'}
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="live-review-forms">
+                    {reviewForms.map((form) => {
+                      const isOpen = openReviewFormIds.includes(form.formVersionId);
+                      const completed = form.fields.filter((field) =>
+                        values[field.id]?.trim()).length;
+                      const requiredRemaining = form.fields.filter((field) =>
+                        field.required && !values[field.id]?.trim()).length;
+                      const hasError = !!invalidFieldId &&
+                        form.fields.some((field) => field.id === invalidFieldId);
+                      const triggerId = 'form-trigger-' + form.formVersionId;
+                      const panelId = 'form-panel-' + form.formVersionId;
+
+                      return (
+                        <section
+                          key={form.formVersionId}
+                          className={'live-review-form' +
+                            (isOpen ? ' live-review-form--open' : '') +
+                            (hasError ? ' live-review-form--error' : '')}
+                        >
+                          <button
+                            id={triggerId}
+                            type="button"
+                            className="live-review-form__trigger"
+                            aria-expanded={isOpen}
+                            aria-controls={panelId}
+                            onClick={() => setOpenReviewFormIds((current) =>
+                              current.includes(form.formVersionId)
+                                ? current.filter((id) => id !== form.formVersionId)
+                                : [...current, form.formVersionId])}
+                          >
+                            <span className="live-review-form__icon" aria-hidden="true">
+                              <FileText />
+                            </span>
+                            <span className="live-review-form__heading">
+                              <strong>{form.name}</strong>
+                              <span>
+                                {completed} de {form.fields.length} campos preenchidos
+                                {requiredRemaining > 0
+                                  ? ' · ' + requiredRemaining + ' obrigatório(s) pendente(s)'
+                                  : ''}
+                              </span>
+                            </span>
+                            <ChevronDown
+                              className="live-review-form__chevron"
+                              aria-hidden="true"
+                            />
+                          </button>
+
+                          {isOpen ? (
+                            <div
+                              id={panelId}
+                              className="live-review-form__content"
+                              role="region"
+                              aria-labelledby={triggerId}
+                            >
+                              {form.description ? (
+                                <p className="live-review-form__description">{form.description}</p>
+                              ) : null}
+                              {form.fields.length === 0 ? (
+                                <p className="field__hint">
+                                  Este formulário não exige dados manuais adicionais.
+                                </p>
+                              ) : (
+                                <div className="live-review-form__fields">
+                                  {form.fields.map((field) => {
+                                    const sharedFormCount = reviewForms.filter((candidate) =>
+                                      candidate.fields.some((candidateField) =>
+                                        candidateField.id === field.id)).length;
+                                    const source = sources[field.id] &&
+                                      service.documentRequirements.find((document) =>
+                                        document.id === sources[field.id]);
+
+                                    return (
+                                      <label
+                                        key={form.formVersionId + ':' + field.id}
+                                        className="field live-review-field"
+                                      >
+                                        <span className="field__label">
+                                          {field.label}{field.required ? ' *' : ''}
+                                        </span>
+                                        <input
+                                          id={reviewInputId(form.formVersionId, field.id)}
+                                          className="field__input"
+                                          required={field.required}
+                                          value={values[field.id] ?? ''}
+                                          aria-invalid={invalidFieldId === field.id || undefined}
+                                          inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
+                                          maxLength={field.valueKind === 'date' ? 10 : undefined}
+                                          placeholder={field.valueKind === 'date'
+                                            ? 'DD/MM/AAAA'
+                                            : undefined}
+                                          onChange={(event) => {
+                                            const typed = field.valueKind === 'date'
+                                              ? formatBrazilianDateInput(event.target.value)
+                                              : event.target.value;
+                                            setValues((prev) => ({ ...prev, [field.id]:typed }));
+                                            if (invalidFieldId === field.id) {
+                                              setInvalidFieldId(null);
+                                              setError('');
+                                            }
+                                          }}
+                                        />
+                                        <span className="field__hint">
+                                          {source
+                                            ? 'Sugestão de ' + source.label +
+                                              ' — confira antes de confirmar'
+                                            : 'Preenchimento manual'}
+                                          {sharedFormCount > 1
+                                            ? ' · Este valor é compartilhado com outros formulários'
+                                            : ''}
+                                        </span>
+                                        {invalidFieldId === field.id
+                                          ? <span className="field__error">
+                                              Confira o valor informado neste campo.
+                                            </span>
+                                          : null}
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                        </section>
+                      );
+                    })}
+                  </div>
+
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   <Button disabled={busy} onClick={() => void generate()}>
                     {busy ? 'Gerando…' : 'Confirmar e gerar formulários'}
