@@ -272,4 +272,82 @@ describe('extractSemanticConcepts', () => {
     });
   });
 
+  it('não promove texto distante quando a célula contém um valor mascarado', () => {
+    const source: DocumentObservation = {
+      ...observation([]),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'CREDOR HIPOTECÁRIO',
+            confidence: .99, box: [20, 20, 220, 42], polygon: null },
+          { id: '0:1', page: 0, text: '********',
+            confidence: .99, box: [20, 48, 150, 70], polygon: null },
+          { id: '0:2', page: 0, text: 'SÃO SEBASTIÃO',
+            confidence: .98, box: [20, 100, 180, 122], polygon: null },
+        ],
+      }],
+    };
+    const localConcepts: readonly SemanticFieldConcept[] = [{
+      fieldId: 'vessel.mortgageCreditor',
+      anchor: 'CREDOR HIPOTECARIO',
+      labels: [/^\s*CREDOR\s+HIPOTEC[AÁ]RIO\s*(?:[:-]\s*)?(.*)$/i],
+      preferredDirections: ['below'],
+      spatialHint: {
+        maxBelowDistanceHeights: 5,
+        maxBelowHorizontalOffsetHeights: 4,
+      },
+      validate: (value) => /^[A-ZÀ-Ý ]{4,80}$/i.test(value.trim()),
+    }];
+
+    const result = extractSemanticConcepts(source, context, localConcepts);
+    expect(result.evidence).toEqual([]);
+    expect(result.assessments[0]).toEqual(
+      expect.objectContaining({ fieldId: 'vessel.mortgageCreditor', status: 'NOT_FOUND' }),
+    );
+  });
+
+  it('não usa rótulo de coluna vizinha como limite da busca abaixo', () => {
+    const source: DocumentObservation = {
+      ...observation([]),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'N DE INSCRICAO',
+            confidence: .96, box: [20, 20, 150, 42], polygon: null },
+          { id: '0:1', page: 0, text: 'DATA INSCRICAO',
+            confidence: .97, box: [190, 28, 330, 50], polygon: null },
+          { id: '0:2', page: 0, text: '441M20200001',
+            confidence: .98, box: [25, 58, 165, 80], polygon: null },
+        ],
+      }],
+    };
+    const localConcepts: readonly SemanticFieldConcept[] = [
+      {
+        fieldId: 'vessel.registration',
+        anchor: 'INSCRICAO',
+        labels: [/^\s*N\s+DE\s+INSCRI[CÇ][AÃ]O\s*(?:[:-]\s*)?(.*)$/i],
+        preferredDirections: ['below'],
+        allowSequentialWithGeometry: false,
+        spatialHint: {
+          maxBelowDistanceHeights: 5,
+          maxBelowHorizontalOffsetHeights: 7,
+        },
+        validate: (value) => /^[A-Z0-9]{4,30}$/i.test(value.trim()) && /\d/.test(value),
+      },
+      {
+        fieldId: 'vessel.registrationDate',
+        anchor: 'DATA DE INSCRICAO',
+        labels: [/^\s*DATA\s+INSCRI[CÇ][AÃ]O\s*(?:[:-]\s*)?(.*)$/i],
+        preferredDirections: ['below'],
+        validate: (value) => /^\d{2}\/\d{2}\/\d{4}$/.test(value.trim()),
+      },
+    ];
+
+    const result = extractSemanticConcepts(source, context, localConcepts);
+    expect(result.evidence.find((item) => item.fieldId === 'vessel.registration')?.value)
+      .toBe('441M20200001');
+  });
+
 });
