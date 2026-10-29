@@ -36,10 +36,85 @@ function fixture(): CatalogDefinition {
 }
 
 describe('projeção pública do catálogo', () => {
-  it('não publica o piloto em DRAFT', () => {
-    expect(publicServices(catalog)).toEqual([]);
-    expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).toBeNull();
+  it('publica sete serviços de barco e bloqueia moto aquática', () => {
+    expect(publicServices(catalog)).toHaveLength(7);
+    expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
+    expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'regular',
+    })).toBeNull();
   });
+
+  it('compõe corretamente os pacotes homologados para embarcação/barco', () => {
+    const cases = [
+      {
+        id: 'inscricao-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'transferencia-propriedade-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'transferencia-jurisdicao-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'transferencia-propriedade-jurisdicao-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'renovacao-tie-embarcacao',
+        answers: {
+          vesselType: 'embarcacao', vesselBand: 'ate_12m',
+          tieSituation: 'regular', dataChanged: 'nao',
+        },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'segunda-via-tie-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', dataChanged: 'nao' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'declaracao-perda-tie-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'comunicacao-venda-embarcacao',
+        answers: { vesselType: 'embarcacao' },
+        forms: ['comunicacao-transferencia-er-2026-v1'],
+      },
+    ] as const;
+
+    for (const item of cases) {
+      expect(publicService(catalog, item.id, item.answers)?.formVersionIds)
+        .toEqual(item.forms);
+    }
+  });
+
+  it('bloqueia cenários ainda dependentes do anexo 3-D', () => {
+    expect(publicService(catalog, 'inscricao-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'maior_12_ate_24m',
+    })).toBeNull();
+    expect(publicService(catalog, 'alteracao-dados-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_12m',
+      tieSituation: 'regular',
+    })).toBeNull();
+    expect(publicService(catalog, 'alteracao-motor-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_12m',
+      tieSituation: 'regular',
+    })).toBeNull();
+  });
+
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();
     expect(publicService(data, 's')?.documentRequirements).toHaveLength(1);

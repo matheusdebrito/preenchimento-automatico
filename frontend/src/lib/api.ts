@@ -109,6 +109,7 @@ export interface LiveService {
     id:string;
     label:string;
     options:readonly string[];
+    unavailableOptions?:readonly string[];
     conditions?:readonly {questionId:string;equals:string}[];
   }[];
   documentRequirements: readonly {id:string;label:string;description?:string;required:boolean}[];

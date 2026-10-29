@@ -52,7 +52,10 @@ export function publicService(
   if (!service || service.status !== 'AVAILABLE') return null;
 
   const allowed = new Map(service.questions.map((question) => [question.id, question.options]));
-  if (Object.entries(answers).some(([id, value]) => !allowed.get(id)?.includes(value))) {
+  const unavailable = new Map(service.questions.map((question) =>
+    [question.id, new Set(question.unavailableOptions ?? [])]));
+  if (Object.entries(answers).some(([id, value]) =>
+    !allowed.get(id)?.includes(value) || unavailable.get(id)?.has(value))) {
     return null;
   }
 

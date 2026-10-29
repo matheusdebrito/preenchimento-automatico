@@ -21,16 +21,16 @@ describe('prévia local do MESMO serviço de transferência', () => {
     for (const mapping of catalog.mappings) {
       expect(mapping.status).toBe(originalStatuses.get(mapping.id));
     }
-    expect([...originalStatuses.values()].filter((status) => status === 'TESTED'))
+    expect([...originalStatuses.values()].filter((status) => status === 'APPROVED'))
       .toHaveLength(8);
     expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status)
       .toBe(originalServiceStatus);
     expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status)
-      .toBe('DRAFT');
+      .toBe('AVAILABLE');
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === QA_PREVIEW_SERVICE_ID)).toBe(true);
-    expect(publicService(catalog, QA_PREVIEW_SERVICE_ID)).toBeNull();
-    expect(publicServices(catalog)).toHaveLength(0);
+    expect(publicService(catalog, QA_PREVIEW_SERVICE_ID)).not.toBeNull();
+    expect(publicServices(catalog)).toHaveLength(7);
 
     // The QA catalog is an isolated clone. It may promote mappings internally
     // so the local preview can exercise the real forms without publishing them.
@@ -49,7 +49,8 @@ describe('prévia local do MESMO serviço de transferência', () => {
       'requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
       'declaracao-residencia-ma-v1',
     ]);
-    expect(preview?.questions).toEqual(catalog.services[0]?.questions);
+    expect(preview?.questions.find((question) => question.id === 'vesselType')?.unavailableOptions)
+      .toEqual([]);
     expect(preview?.documentRequirements).toContainEqual(expect.objectContaining({
       id: 'seller-identity', required: false,
     }));
@@ -68,7 +69,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
       expect(qa.mappings.find((item) => item.id === mapping.id)?.placements)
         .toEqual(mapping.placements);
     }
-    expect(publicServices(qa).map((service) => service.id)).toEqual([QA_PREVIEW_SERVICE_ID]);
+    expect(publicServices(qa)).toHaveLength(7);
   });
 
   it('inclui os anexos condicionais reais quando selecionados', () => {

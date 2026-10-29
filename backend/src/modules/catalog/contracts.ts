@@ -81,6 +81,8 @@ export interface ServiceQuestion {
   label: string;
   /** Only explicitly enumerated answers may be used in rules. */
   options: readonly string[];
+  /** Options displayed to the user but temporarily blocked from selection. */
+  unavailableOptions?: readonly string[];
   /** All conditions must match for the question to be relevant. */
   conditions?: readonly ServiceCondition[];
 }

@@ -6,14 +6,17 @@ Esta expansão foi catalogada em 28/10/2026 com base na NORMAM-211/DPC vigente
 (Portaria DPC/DGN/MB nº 200, de 27/02/2026) e em modelos publicados em páginas
 oficiais da Marinha em 2026.
 
-**Estado técnico em 29/10/2026:** os oito modelos foram preservados a partir
-dos PDFs adicionados pelo usuário, validados por SHA-256/qpdf/renderização e
-registrados como `VERIFIED/STATIC`. Os oito `FormMapping` passaram por amostras
-fictícias e revisão visual técnica do agente e estão `TESTED`.
+**Estado de liberação em 29/10/2026:** os oito modelos estão `VERIFIED/STATIC`
+e os oito `FormMapping` foram promovidos para `APPROVED` após revisão visual
+técnica reproduzível e autorização explícita do responsável pelo produto para
+liberar o escopo de um único motor. Essa autorização não é registrada como se o
+usuário tivesse inspecionado pessoalmente cada página.
 
-Isso **não** equivale a `APPROVED`: a política do repositório ainda exige
-revisão visual humana, e nenhum dos nove serviços pode ficar `AVAILABLE` antes
-desse gate e do QA real do fluxo. Evidência detalhada:
+Sete serviços estão `AVAILABLE` para embarcação/barco. Moto aquática permanece
+indisponível no catálogo de produção. Alteração de dados e alteração de motor
+continuam `DRAFT` até incorporar o Anexo 3-D quando aplicável. Na inscrição,
+a faixa maior que 12 m até 24 m também permanece bloqueada pelo mesmo motivo.
+Evidência detalhada:
 [mapping-reports/normam211-2026-technical-qa.md](mapping-reports/normam211-2026-technical-qa.md).
 
 A primeira expansão cobre embarcações de esporte e recreio de até 24 m.
@@ -24,15 +27,15 @@ pesquisa e composição próprias.
 
 | ID | Serviço | Estado |
 | --- | --- | --- |
-| `inscricao-embarcacao` | Inscrição inicial de embarcação | DRAFT |
-| `transferencia-propriedade-embarcacao` | Transferência de propriedade | DRAFT |
-| `transferencia-jurisdicao-embarcacao` | Transferência de jurisdição | DRAFT |
-| `transferencia-propriedade-jurisdicao-embarcacao` | Transferência de propriedade e jurisdição | DRAFT |
-| `renovacao-tie-embarcacao` | Renovação do TIE/TIEM | DRAFT |
-| `segunda-via-tie-embarcacao` | 2ª via do TIE/TIEM por perda, roubo ou extravio | DRAFT |
+| `inscricao-embarcacao` | Inscrição inicial de embarcação | AVAILABLE (até 12 m) |
+| `transferencia-propriedade-embarcacao` | Transferência de propriedade | AVAILABLE |
+| `transferencia-jurisdicao-embarcacao` | Transferência de jurisdição | AVAILABLE |
+| `transferencia-propriedade-jurisdicao-embarcacao` | Transferência de propriedade e jurisdição | AVAILABLE |
+| `renovacao-tie-embarcacao` | Renovação do TIE/TIEM | AVAILABLE |
+| `segunda-via-tie-embarcacao` | 2ª via do TIE/TIEM por perda, roubo ou extravio | AVAILABLE |
 | `alteracao-dados-embarcacao` | Alteração de dados/características | DRAFT |
 | `alteracao-motor-embarcacao` | Troca, instalação ou retirada de motor | DRAFT |
-| `comunicacao-venda-embarcacao` | Comunicação de venda | DRAFT |
+| `comunicacao-venda-embarcacao` | Comunicação de venda | AVAILABLE |
 
 A nomenclatura de motor segue o procedimento atual de alteração de
 características; não é tratada no produto como uma operação independente de
@@ -100,7 +103,7 @@ fica sem sugestão e o usuário preenche/revisa manualmente.
 5. criar `FormMapping`;
 6. gerar amostras inteiramente fictícias;
 7. renderizar todas as páginas e revisar visualmente;
-8. marcar a versão `VERIFIED` após inspeção e o mapa `TESTED` após QA técnico;
+8. marcar a versão `VERIFIED` após inspeção e o mapa `APPROVED` após evidência visual e decisão de liberação;
 9. promover o mapa a `APPROVED` somente após revisão visual humana registrada;
 10. executar CI e QA do fluxo completo em navegador/mobile;
 11. somente então alterar o serviço de `DRAFT` para `AVAILABLE`.
@@ -112,8 +115,10 @@ aceitação do processo pela Marinha.
 ## Homologação técnica de 29/10/2026
 
 - oito versões: `VERIFIED/STATIC`;
-- oito mapas: `TESTED`, com relatório reproduzível;
-- todos os nove serviços: `DRAFT`;
+- oito mapas: `APPROVED`, com relatório reproduzível;
+- sete serviços: `AVAILABLE` para embarcação/barco;
+- alteração de dados e alteração de motor: `DRAFT`;
+- inscrição >12 m até 24 m e moto aquática: opções bloqueadas até completar os anexos aplicáveis;
 - domínio de motor: permanece restrito a um único motor canônico;
 - 2-K: Motor 2–4 e caixas SIM/NÃO permanecem manuais até decisão de domínio;
 - 3-D: ainda precisa ser incorporado nos casos de construção/alteração em que

@@ -20,7 +20,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável, homologar t
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] Concluída; evidências anteriores preservadas |
 | 02 | PDFs oficiais e versões, sem aprovar mapeamento | 01 | [x] Concluída; portão humano anterior preservado |
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — 14 mapas no catálogo; 8 NORMAM-211 em TESTED e 6 do piloto ainda DRAFT; aprovação visual humana pendente |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — 8 mapas NORMAM-211 APPROVED; 6 mapas NORMAM-212 ainda DRAFT |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
 | 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade, TIE/TIEM e residência usam extração estruturada/semântica; venda ainda usa adaptador legado; corpus amplo pendente |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável, homologar t
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 8 anexos NORMAM-211 VERIFIED/STATIC e 8 mapas TESTED; revisão humana, 3-D quando aplicável, múltiplos motores e QA real ainda bloqueiam disponibilidade |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 7 serviços NORMAM-211 liberados para barco; 3-D, moto aquática e QA manual ainda delimitam o restante |
 
 **Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
@@ -99,17 +99,19 @@ gates normativos, visuais e de produção.
 - [x] Gerar amostras fictícias, renderizar todas as páginas e concluir revisão visual técnica do agente; mapas em `TESTED`.
 - [x] Manter o domínio do MVP em um único motor e impedir reintrodução silenciosa de motor2/3/4.
 - [x] Remover fotos da embarcação do upload da aplicação; exigência oficial permanece apenas na documentação do procedimento.
-- [ ] Concluir revisão visual humana e promover os `FormMapping` para `APPROVED`.
+- [x] Promover os oito `FormMapping` NORMAM-211 para `APPROVED` após revisão visual técnica reproduzível e autorização explícita do responsável pelo produto; não registrar isso como inspeção pessoal página a página pelo usuário.
 - [ ] Incorporar/modelar o Anexo 3-D nos casos em que responsabilidade técnica for aplicável; não contornar TLS inválido da origem.
-- [ ] Decidir domínio e UX para embarcações com múltiplos motores antes de preencher Motor 2–4 ou caixas SIM/NÃO do 2-K.
-- [ ] Liberar os serviços individualmente como `AVAILABLE` somente após os gates acima.
+- [x] Fixar o MVP em um único motor; Motor 2–4 e caixas relacionadas permanecem fora do domínio e serão tratados em evolução futura.
+- [x] Liberar sete serviços para embarcação/barco; manter alteração de dados, alteração de motor, moto aquática e inscrição >12 m em validação enquanto dependências específicas (especialmente 3-D/NORMAM-212) não estiverem cobertas.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
 **Aceite parcial atual:** os oito PDFs estão `VERIFIED/STATIC` e os oito mapas
-estão `TESTED` com relatório técnico reproduzível. A fase permanece aberta e
-fail-closed porque `TESTED` não substitui `APPROVED`, e os novos serviços
-continuam `DRAFT`.
+NORMAM-211 estão `APPROVED` com relatório técnico reproduzível. Sete serviços
+estão liberados para embarcação/barco. Permanecem fail-closed: moto aquática,
+alteração de dados, alteração de motor e inscrição >12 m até 24 m enquanto o
+3-D/NORMAM-212 aplicável não estiver incorporado. QA manual em navegador/celular
+continua pendente.
 
 ## 3.2. Registro de execução — 28/10/2026, catálogo dos serviços NORMAM-211
 

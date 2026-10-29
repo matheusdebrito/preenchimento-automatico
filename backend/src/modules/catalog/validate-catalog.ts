@@ -184,6 +184,11 @@ export function validateCatalog(data: CatalogDefinition): string[] {
         question.options.some((option) => !option.trim())) {
         issues.push('serviço ' + service.id + ': opções inválidas para ' + question.id);
       }
+      if (question.unavailableOptions &&
+        (new Set(question.unavailableOptions).size !== question.unavailableOptions.length ||
+          question.unavailableOptions.some((option) => !question.options.includes(option)))) {
+        issues.push('serviço ' + service.id + ': opções indisponíveis inválidas para ' + question.id);
+      }
       validateConditions(question.conditions, questions, 'pergunta ' + question.id, issues);
     }
     buildIndex(service.documentRequirements, 'documento de ' + service.id, issues);
