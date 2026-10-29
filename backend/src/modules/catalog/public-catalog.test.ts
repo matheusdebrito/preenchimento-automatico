@@ -59,6 +59,42 @@ describe('projeção pública do catálogo', () => {
     }]);
     expect(JSON.stringify(result)).not.toContain('backend/templates');
   });
+  it('mantém um valor semântico único mesmo quando aparece em mais de um formulário', () => {
+    const data = fixture();
+    data.forms = [...data.forms, { id: 'form-2', name: 'Segundo formulário' }];
+    data.versions = [...data.versions, {
+      ...data.versions[0]!,
+      id: 'form-2-v1',
+      formId: 'form-2',
+      templatePath: 'backend/templates/form-2/v1/original.pdf',
+    }];
+    data.mappings = [...data.mappings, {
+      ...data.mappings[0]!,
+      id: 'map-2-v1',
+      formVersionId: 'form-2-v1',
+      placements: [{
+        kind: 'COORDINATES',
+        fieldId: 'person.fullName',
+        required: false,
+        pageIndex: 0,
+        x: 20,
+        y: 20,
+        fontSize: 10,
+        maxWidth: 200,
+      }],
+    }];
+    data.serviceForms = [...data.serviceForms,
+      { serviceId: 's', formVersionId: 'form-2-v1', order: 2 }];
+
+    const result = publicService(data, 's');
+    expect(result?.reviewFields).toHaveLength(1);
+    expect(result?.reviewForms).toHaveLength(2);
+    expect(result?.reviewForms[0]?.fields[0]?.id).toBe('person.fullName');
+    expect(result?.reviewForms[0]?.fields[0]?.required).toBe(true);
+    expect(result?.reviewForms[1]?.fields[0]?.id).toBe('person.fullName');
+    expect(result?.reviewForms[1]?.fields[0]?.required).toBe(false);
+  });
+
   it('falha fechado com condições inválidas ou mapeamento não aprovado', () => {
     const data = fixture();
     expect(publicService(data, 's', { extra: 'not-an-option' })).toBeNull();
