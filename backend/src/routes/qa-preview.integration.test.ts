@@ -191,9 +191,15 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         method: 'PATCH', url: '/api/jobs/' + jobId + '/review',
         headers: { cookie },
         payload: { confirmed: true, values: {
-          ...fields.fields, 'person.fullName': 'MARIA DE SOUZA',
-          'vessel.name': 'MAR TESTE', 'person.cpf': '123.456.789-09',
+          ...fields.fields,
+          'person.fullName': 'MARIA DE SOUZA',
+          'person.cpf': '123.456.789-09',
           'person.address': 'RUA DAS FLORES',
+          'seller.fullName': 'JOAO VENDEDOR',
+          'seller.cpf': '987.654.321-00',
+          'vessel.name': 'MAR TESTE',
+          'vessel.registration': 'RJ123456',
+          'vessel.hullId': 'BR-TESTE-123456',
         } },
       });
       expect(reviewed.statusCode, reviewed.body).toBe(200);
@@ -204,11 +210,16 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       });
       expect(generated.statusCode, generated.body).toBe(200);
       const versions = generated.json<{downloads:string[]}>().downloads;
-      expect(versions).toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
+      expect(versions).toEqual([
+            'requerimento-ma-v1',
+            'bdmoto-v1',
+            'autorizacao-transferencia-ma-v1',
+            'declaracao-residencia-ma-v1',
+          ]);
       expect(await creditBalance(pool, owner)).toBe(0);
 
-      // Check BOTH PDF files, every page watermark, and actual filled semantic
-      // values. Merely receiving HTTP 200 is not evidence of successful filling.
+      // Check every PDF, every page watermark, and actual filled semantic values.
+      // Merely receiving HTTP 200 is not evidence of successful filling.
       for (const versionId of versions) {
         const pdfResponse = await app.inject({
           method: 'GET', url: '/api/jobs/' + jobId + '/download/' + versionId,
@@ -369,7 +380,12 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         });
         expect(generated.statusCode, generated.body).toBe(200);
         expect(generated.json<{downloads:string[]}>().downloads)
-          .toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
+          .toEqual([
+            'requerimento-ma-v1',
+            'bdmoto-v1',
+            'autorizacao-transferencia-ma-v1',
+            'declaracao-residencia-ma-v1',
+          ]);
         expect(await creditBalance(pool, owner)).toBe(0);
       }
     } finally {
