@@ -27,7 +27,7 @@ const vesselTypeQuestion: ServiceQuestion = {
 const vesselBandQuestion: ServiceQuestion = {
   id: 'vesselBand',
   label: 'Comprimento da embarcação',
-  options: ['ate_12m', 'maior_12_ate_24m'],
+  options: ['ate_6m', 'maior_6_ate_12m', 'maior_12_menor_24m'],
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
@@ -230,7 +230,7 @@ function questions(options: {
   blockMediumBand?: boolean;
 } = {}): readonly ServiceQuestion[] {
   const bandQuestion = options.blockMediumBand
-    ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_ate_24m'] }
+    ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_menor_24m'] }
     : vesselBandQuestion;
   return [
     vesselTypeQuestion,
@@ -346,7 +346,7 @@ const bsade = (
   order,
   conditions: [
     { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'vesselBand', equals: 'ate_12m' },
+    { questionId: 'vesselBand', equals: 'ate_6m' },
     ...extraConditions,
   ],
   ...(action ? { fixedValues: action === 'inscricao'
@@ -362,6 +362,7 @@ const bsade = (
 const bade = (
   serviceId: string,
   order: number,
+  band: 'maior_6_ate_12m' | 'maior_12_menor_24m',
   extraConditions: ServiceForm['conditions'] = [],
 ): ServiceForm => ({
   serviceId,
@@ -369,7 +370,7 @@ const bade = (
   order,
   conditions: [
     { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'vesselBand', equals: 'maior_12_ate_24m' },
+    { questionId: 'vesselBand', equals: band },
     ...extraConditions,
   ],
 });
@@ -402,38 +403,44 @@ const lostTie = (serviceId: string, order: number): ServiceForm => ({
 });
 export const vesselServiceForms: readonly ServiceForm[] = [
   request('inscricao-embarcacao', 1, 'inscricao'),
-  bsade('inscricao-embarcacao', 2, 'inscricao'), bade('inscricao-embarcacao', 3),
-  residence('inscricao-embarcacao', 4),
+  bsade('inscricao-embarcacao', 2, 'inscricao'), bade('inscricao-embarcacao', 3, 'maior_6_ate_12m'),
+  bade('inscricao-embarcacao', 4, 'maior_12_menor_24m'),
+  residence('inscricao-embarcacao', 5),
 
   request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
-  bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'), bade('transferencia-propriedade-embarcacao', 3),
+  bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'), bade('transferencia-propriedade-embarcacao', 3, 'maior_6_ate_12m'),
+  bade('transferencia-propriedade-embarcacao', 4, 'maior_12_menor_24m'),
   { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4,
+    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 5,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
-  residence('transferencia-propriedade-embarcacao', 5),
-  lostTie('transferencia-propriedade-embarcacao', 6),
+  residence('transferencia-propriedade-embarcacao', 6),
+  lostTie('transferencia-propriedade-embarcacao', 7),
 
   request('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
-  bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'), bade('transferencia-jurisdicao-embarcacao', 3),
-  residence('transferencia-jurisdicao-embarcacao', 4),
-  lostTie('transferencia-jurisdicao-embarcacao', 5),
+  bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'), bade('transferencia-jurisdicao-embarcacao', 3, 'maior_6_ate_12m'),
+  bade('transferencia-jurisdicao-embarcacao', 4, 'maior_12_menor_24m'),
+  residence('transferencia-jurisdicao-embarcacao', 5),
+  lostTie('transferencia-jurisdicao-embarcacao', 6),
 
   request('transferencia-propriedade-jurisdicao-embarcacao', 1, 'transf_prop_jur'),
   bsade('transferencia-propriedade-jurisdicao-embarcacao', 2, 'transf_prop_jur'),
-  bade('transferencia-propriedade-jurisdicao-embarcacao', 3),
+  bade('transferencia-propriedade-jurisdicao-embarcacao', 3, 'maior_6_ate_12m'),
+  bade('transferencia-propriedade-jurisdicao-embarcacao', 4, 'maior_12_menor_24m'),
   { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
-    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4,
+    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 5,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
-  residence('transferencia-propriedade-jurisdicao-embarcacao', 5),
-  lostTie('transferencia-propriedade-jurisdicao-embarcacao', 6),
+  residence('transferencia-propriedade-jurisdicao-embarcacao', 6),
+  lostTie('transferencia-propriedade-jurisdicao-embarcacao', 7),
 
   request('renovacao-tie-embarcacao', 1, 'renovacao'),
   bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados',
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  bade('renovacao-tie-embarcacao', 3,
+  bade('renovacao-tie-embarcacao', 3, 'maior_6_ate_12m',
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  residence('renovacao-tie-embarcacao', 4),
-  lostTie('renovacao-tie-embarcacao', 5),
+  bade('renovacao-tie-embarcacao', 4, 'maior_12_menor_24m',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  residence('renovacao-tie-embarcacao', 5),
+  lostTie('renovacao-tie-embarcacao', 6),
 
   request('segunda-via-tie-embarcacao', 1, 'segunda_via'),
   { serviceId: 'segunda-via-tie-embarcacao',
@@ -442,17 +449,21 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     fixedValues: { 'process.lostTie': 'true' } },
   bsade('segunda-via-tie-embarcacao', 3, 'alteracao_dados',
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  bade('segunda-via-tie-embarcacao', 4,
+  bade('segunda-via-tie-embarcacao', 4, 'maior_6_ate_12m',
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  residence('segunda-via-tie-embarcacao', 5),
+  bade('segunda-via-tie-embarcacao', 5, 'maior_12_menor_24m',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  residence('segunda-via-tie-embarcacao', 6),
 
   request('alteracao-dados-embarcacao', 1, 'alteracao_dados'),
-  bsade('alteracao-dados-embarcacao', 2, 'alteracao_dados'), bade('alteracao-dados-embarcacao', 3),
-  residence('alteracao-dados-embarcacao', 4), lostTie('alteracao-dados-embarcacao', 5),
+  bsade('alteracao-dados-embarcacao', 2, 'alteracao_dados'), bade('alteracao-dados-embarcacao', 3, 'maior_6_ate_12m'),
+  bade('alteracao-dados-embarcacao', 4, 'maior_12_menor_24m'),
+  residence('alteracao-dados-embarcacao', 5), lostTie('alteracao-dados-embarcacao', 6),
 
   request('alteracao-motor-embarcacao', 1, 'troca_motor'),
-  bsade('alteracao-motor-embarcacao', 2, 'troca_motor'), bade('alteracao-motor-embarcacao', 3),
-  residence('alteracao-motor-embarcacao', 4), lostTie('alteracao-motor-embarcacao', 5),
+  bsade('alteracao-motor-embarcacao', 2, 'troca_motor'), bade('alteracao-motor-embarcacao', 3, 'maior_6_ate_12m'),
+  bade('alteracao-motor-embarcacao', 4, 'maior_12_menor_24m'),
+  residence('alteracao-motor-embarcacao', 5), lostTie('alteracao-motor-embarcacao', 6),
 
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 1,
