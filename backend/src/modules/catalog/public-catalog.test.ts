@@ -36,10 +36,93 @@ function fixture(): CatalogDefinition {
 }
 
 describe('projeção pública do catálogo', () => {
-  it('não publica o piloto em DRAFT', () => {
-    expect(publicServices(catalog)).toEqual([]);
-    expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).toBeNull();
+  it('publica os nove serviços de barco e bloqueia moto aquática', () => {
+    expect(publicServices(catalog)).toHaveLength(9);
+    expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
+    expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'regular',
+    })).toBeNull();
   });
+
+  it('compõe corretamente os pacotes homologados para embarcação/barco', () => {
+    const cases = [
+      {
+        id: 'inscricao-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'transferencia-propriedade-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'transferencia-jurisdicao-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'transferencia-propriedade-jurisdicao-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'renovacao-tie-embarcacao',
+        answers: {
+          vesselType: 'embarcacao', vesselBand: 'ate_12m',
+          tieSituation: 'regular', dataChanged: 'nao',
+        },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'segunda-via-tie-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', dataChanged: 'nao' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'declaracao-perda-tie-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'alteracao-dados-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'alteracao-motor-embarcacao',
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
+      },
+      {
+        id: 'comunicacao-venda-embarcacao',
+        answers: { vesselType: 'embarcacao' },
+        forms: ['comunicacao-transferencia-er-2026-v1'],
+      },
+    ] as const;
+
+    for (const item of cases) {
+      expect(publicService(catalog, item.id, item.answers)?.formVersionIds)
+        .toEqual(item.forms);
+    }
+  });
+
+  it('usa BADE e termo de responsabilidade na faixa maior que 12 m quando aplicável', () => {
+    const inscription = publicService(catalog, 'inscricao-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'maior_12_ate_24m',
+    });
+    expect(inscription?.formVersionIds).toEqual([
+      'requerimento-embarcacao-er-2026-v1',
+      'bade-er-2026-v1',
+      'declaracao-residencia-er-2026-v1',
+      'termo-responsabilidade-er-2026-v1',
+    ]);
+  });
+
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();
     expect(publicService(data, 's')?.documentRequirements).toHaveLength(1);
