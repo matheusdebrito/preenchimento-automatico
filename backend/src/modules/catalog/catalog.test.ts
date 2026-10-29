@@ -93,24 +93,18 @@ describe('catálogo reutilizável de formulários', () => {
     expect(generic.length).toBeGreaterThan(0);
   });
 
-  it('preserva o piloto de moto aquática e suporta até quatro motores nos anexos NORMAM-211', () => {
+  it('mantém o domínio do MVP restrito ao único motor aprovado', () => {
     const ids = new Set(catalog.fields.map((field) => field.id));
     expect(ids.has('vessel.motorBrand')).toBe(true);
-    expect(ids.has('vessel.motor2Brand')).toBe(true);
-    expect(ids.has('vessel.motor3Serial')).toBe(true);
-    expect(ids.has('vessel.motor4Power')).toBe(true);
+    expect(ids.has('vessel.motorPower')).toBe(true);
+    expect(ids.has('vessel.motorSerial')).toBe(true);
+    expect([...ids].some((id) =>
+      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
 
-    const legacyMappings = catalog.mappings.filter((mapping) =>
-      !mapping.formVersionId.includes('-er-2026-'));
-    const legacyFields = legacyMappings.flatMap((mapping) =>
+    const placements = catalog.mappings.flatMap((mapping) =>
       mapping.placements.map((placement) => placement.fieldId));
-    expect(legacyFields.some((id) =>
-      /^vessel\.motor[2-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
-
-    const authorization = catalog.mappings.find((mapping) =>
-      mapping.formVersionId === 'autorizacao-transferencia-er-2026-v1');
-    expect(authorization?.placements.some((placement) =>
-      placement.fieldId === 'vessel.motor4Serial')).toBe(true);
+    expect(placements.some((id) =>
+      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
   });
 
   it('permite a mesma versão do PDF em dois serviços sem duplicar o mapeamento', () => {
