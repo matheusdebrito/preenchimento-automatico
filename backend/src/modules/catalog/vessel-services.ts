@@ -6,6 +6,16 @@ import type {
   ServiceForm,
   ServiceQuestion,
 } from './contracts.js';
+import {
+  APPLICANT_IDENTITY_FIELDS,
+  DPEM_DOCUMENT_FIELDS,
+  MOTOR_DOCUMENT_FIELDS,
+  NO_AUTOMATIC_FIELDS,
+  RESIDENCE_PROOF_FIELDS,
+  SALE_DOCUMENT_FIELDS,
+  SELLER_IDENTITY_FIELDS,
+  TIE_FIELDS,
+} from './document-field-policies.js';
 
 const vesselBandQuestion: ServiceQuestion = {
   id: 'vesselBand',
@@ -43,20 +53,32 @@ const commonApplicantDocuments: readonly DocumentRequirement[] = [
     label: 'Documento de identificação do requerente',
     description: 'RG, CIN ou CNH. O arquivo é opcional e serve para sugerir dados para revisão.',
     required: false,
-    extraction: { documentType: 'identity', subjectRole: 'person' },
+    extraction: {
+      documentType: 'identity',
+      subjectRole: 'person',
+      allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
+    },
   },
   {
     id: 'residence-proof',
     label: 'Comprovante de residência',
     required: false,
-    extraction: { documentType: 'residence-proof', subjectRole: 'person' },
+    extraction: {
+      documentType: 'residence-proof',
+      subjectRole: 'person',
+      allowedFieldIds: RESIDENCE_PROOF_FIELDS,
+    },
     conditions: [{ questionId: 'residenceProof', equals: 'comprovante' }],
   },
   {
     id: 'power-of-attorney',
     label: 'Procuração e identificação do representante',
     required: false,
-    extraction: { documentType: 'supporting-document', subjectRole: 'representative' },
+    extraction: {
+      documentType: 'supporting-document',
+      subjectRole: 'representative',
+      allowedFieldIds: NO_AUTOMATIC_FIELDS,
+    },
     conditions: [{ questionId: 'representative', equals: 'sim' }],
   },
   {
@@ -64,22 +86,34 @@ const commonApplicantDocuments: readonly DocumentRequirement[] = [
     label: 'Comprovante de pagamento da GRU',
     description: 'Documento de apoio. O sistema não emite nem quita a GRU.',
     required: false,
-    extraction: { documentType: 'supporting-document', subjectRole: 'person' },
+    extraction: {
+      documentType: 'supporting-document',
+      subjectRole: 'person',
+      allowedFieldIds: NO_AUTOMATIC_FIELDS,
+    },
   },
   {
     id: 'dpem-proof',
     label: 'Comprovante/seguro DPEM, quando aplicável',
     required: false,
-    extraction: { documentType: 'supporting-document', subjectRole: 'vessel' },
+    extraction: {
+      documentType: 'supporting-document',
+      subjectRole: 'vessel',
+      allowedFieldIds: DPEM_DOCUMENT_FIELDS,
+    },
   },
 ];
 
 const currentTie: DocumentRequirement = {
   id: 'tie',
   label: 'TIE/TIEM atual',
-  description: 'Envie se estiver disponível. O OCR usa o documento para sugerir dados da embarcação.',
+  description: 'Envie se estiver disponível. O documento sugere somente dados permitidos da embarcação e titular registrado.',
   required: false,
-  extraction: { documentType: 'tie', subjectRole: 'vessel' },
+  extraction: {
+    documentType: 'tie',
+    subjectRole: 'vessel',
+    allowedFieldIds: TIE_FIELDS,
+  },
 };
 
 const vesselProof: DocumentRequirement = {
@@ -87,7 +121,11 @@ const vesselProof: DocumentRequirement = {
   label: 'Documento de origem/propriedade da embarcação',
   description: 'Nota fiscal, instrumento de compra e venda ou documento equivalente aplicável ao caso.',
   required: false,
-  extraction: { documentType: 'sale-document', subjectRole: 'person' },
+  extraction: {
+    documentType: 'sale-document',
+    subjectRole: 'person',
+    allowedFieldIds: SALE_DOCUMENT_FIELDS,
+  },
 };
 
 const motorProof: DocumentRequirement = {
@@ -95,14 +133,22 @@ const motorProof: DocumentRequirement = {
   label: 'Documento comprobatório do motor',
   description: 'Nota fiscal, declaração ou documento equivalente aplicável à alteração do motor.',
   required: false,
-  extraction: { documentType: 'supporting-document', subjectRole: 'vessel' },
+  extraction: {
+    documentType: 'supporting-document',
+    subjectRole: 'vessel',
+    allowedFieldIds: MOTOR_DOCUMENT_FIELDS,
+  },
 };
 
 const sellerIdentity: DocumentRequirement = {
   id: 'seller-identity',
   label: 'Documento de identificação do vendedor',
   required: false,
-  extraction: { documentType: 'identity', subjectRole: 'seller' },
+  extraction: {
+    documentType: 'identity',
+    subjectRole: 'seller',
+    allowedFieldIds: SELLER_IDENTITY_FIELDS,
+  },
 };
 
 export const vesselForms: readonly FormDefinition[] = [

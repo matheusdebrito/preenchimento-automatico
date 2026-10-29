@@ -188,10 +188,26 @@ export function validateCatalog(data: CatalogDefinition): string[] {
     buildIndex(service.documentRequirements, 'documento de ' + service.id, issues);
     for (const requirement of service.documentRequirements) {
       validateConditions(requirement.conditions, questions, 'documento ' + requirement.id, issues);
-      if (requirement.extraction &&
-        (!SAFE_ID.test(requirement.extraction.documentType) ||
-          !SAFE_ID.test(requirement.extraction.subjectRole))) {
-        issues.push('documento ' + requirement.id + ': perfil de extração inválido');
+      if (requirement.extraction) {
+        if (!SAFE_ID.test(requirement.extraction.documentType) ||
+          !SAFE_ID.test(requirement.extraction.subjectRole)) {
+          issues.push('documento ' + requirement.id + ': perfil de extração inválido');
+        }
+        const allowed = requirement.extraction.allowedFieldIds;
+        if (new Set(allowed).size !== allowed.length) {
+          issues.push('documento ' + requirement.id + ': campo permitido duplicado');
+        }
+        for (const fieldId of allowed) {
+          if (!fields.has(fieldId) || fieldId.startsWith('process.')) {
+            issues.push('documento ' + requirement.id +
+              ': campo de extração inválido ' + fieldId);
+          }
+        }
+        if (requirement.extraction.documentType !== 'supporting-document' &&
+          allowed.length === 0) {
+          issues.push('documento ' + requirement.id +
+            ': perfil de extração sem campos permitidos');
+        }
       }
     }
   }

@@ -190,25 +190,52 @@ export function registerJobRoutes(
     try {
       if (provider === 'openai' && job.files.length > 0) {
         const fieldsById = new Map(definitions.fields.map((field) => [field.id, field]));
-        const targetFields = service.reviewFields.map((field) => ({
-          id: field.id,
-          label: field.label,
-          valueKind: field.valueKind,
-          validationRuleId: fieldsById.get(field.id)?.validationRuleId,
-          required: field.required,
-        }));
 
+        // Only send documents that can provide at least one field required by
+        // the selected service. This is both a privacy boundary and a cost control.
         const documents = job.files.flatMap((document) => {
           const requirement = service.documentRequirements.find((item) =>
             item.id === document.requirementId);
-          if (!requirement) return [];
+          if (!requirement?.extraction) {
+            diagnostics.push({
+              requirementId: document.requirementId,
+              outcome: 'not_analyzed',
+              suggestionCount: 0,
+            });
+            return [];
+          }
+
+          const allowedFieldIds = requirement.extraction.allowedFieldIds
+            .filter((fieldId) => reviewableFields.has(fieldId));
+          if (allowedFieldIds.length === 0) {
+            diagnostics.push({
+              requirementId: document.requirementId,
+              outcome: 'no_applicable_fields',
+              suggestionCount: 0,
+            });
+            return [];
+          }
+
           return [{
             document,
             label: requirement.label,
-            documentType: requirement.extraction?.documentType,
-            subjectRole: requirement.extraction?.subjectRole,
+            documentType: requirement.extraction.documentType,
+            subjectRole: requirement.extraction.subjectRole,
+            allowedFieldIds,
           }];
         });
+
+        const allowedTargetIds = new Set(documents.flatMap((document) =>
+          document.allowedFieldIds));
+        const targetFields = service.reviewFields
+          .filter((field) => allowedTargetIds.has(field.id))
+          .map((field) => ({
+            id: field.id,
+            label: field.label,
+            valueKind: field.valueKind,
+            validationRuleId: fieldsById.get(field.id)?.validationRuleId,
+            required: field.required,
+          }));
 
         try {
           const startedAt = Date.now();
@@ -219,6 +246,7 @@ export function registerJobRoutes(
             provider: 'openai',
             model: extracted.model,
             documentCount: documents.length,
+            targetFieldCount: targetFields.length,
             inputTokens: extracted.usage?.inputTokens,
             outputTokens: extracted.usage?.outputTokens,
             totalTokens: extracted.usage?.totalTokens,
@@ -247,11 +275,20 @@ export function registerJobRoutes(
         for (const document of job.files) {
           const requirement = service.documentRequirements.find((item) =>
             item.id === document.requirementId);
-          // Supporting documents without a semantic extraction profile are not OCR inputs.
+          // Documents without a semantic profile are not extraction inputs.
           if (!requirement?.extraction) {
             diagnostics.push({
               requirementId: document.requirementId,
               outcome: 'not_analyzed',
+              suggestionCount: 0,
+            });
+            continue;
+          }
+          const allowedDocumentFields = new Set(requirement.extraction.allowedFieldIds);
+          if (![...allowedDocumentFields].some((fieldId) => reviewableFields.has(fieldId))) {
+            diagnostics.push({
+              requirementId: document.requirementId,
+              outcome: 'no_applicable_fields',
               suggestionCount: 0,
             });
             continue;
@@ -288,7 +325,8 @@ export function registerJobRoutes(
                 }),
               )
               : [];
-            const documentEvidence = [...structured, ...legacy];
+            const documentEvidence = [...structured, ...legacy]
+              .filter((item) => allowedDocumentFields.has(item.fieldId));
             evidence.push(...documentEvidence);
 
             const recognized = Object.fromEntries(documentEvidence.map((item) => [

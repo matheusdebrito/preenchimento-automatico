@@ -29,6 +29,8 @@ export interface OpenAiDocumentDescriptor {
   label: string;
   documentType?: string;
   subjectRole?: string;
+  /** Fields this source document is authorized to provide for this request. */
+  allowedFieldIds: readonly string[];
 }
 
 export interface OpenAiExtractionResult {
@@ -247,6 +249,7 @@ function extractionPrompt(
     label: item.label,
     documentType: item.documentType ?? 'unknown',
     subjectRole: item.subjectRole ?? 'unknown',
+    allowedFieldIds: item.allowedFieldIds,
   }));
 
   return [
@@ -262,6 +265,7 @@ function extractionPrompt(
     '7. Para campos sim/não use exatamente sim ou nao. Para booleanos use true ou false.',
     '8. Preserve nomes e identificadores como aparecem, exceto normalizações explícitas acima.',
     '9. Cada candidate deve apontar para o requirementId do documento em que o valor está visível.',
+    '9a. Para cada documento, retorne SOMENTE fieldIds presentes em allowedFieldIds daquele documento.',
     '10. Se documentos divergirem, retorne candidatos separados por documento; o backend resolverá o conflito.',
     '11. Não produza comentários, explicações ou campos além do schema.',
     'Campos permitidos: ' + JSON.stringify(fieldList),
@@ -368,16 +372,18 @@ export async function extractDocumentsWithOpenAi(
   const { parsed, usage } = responseText(raw);
 
   const allowedFields = new Map(fields.map((field) => [field.id, field]));
-  const allowedSources = new Set(requirementIds);
+  const allowedSources = new Map(documents.map((item) => [
+    item.document.requirementId,
+    item,
+  ]));
   const evidence: FieldEvidence[] = [];
   for (const candidate of parsed.candidates) {
     const field = allowedFields.get(candidate.fieldId);
-    if (!field || !allowedSources.has(candidate.sourceRequirementId)) continue;
+    const source = allowedSources.get(candidate.sourceRequirementId);
+    if (!field || !source || !source.allowedFieldIds.includes(field.id)) continue;
     const normalized = validateCandidateValue(candidate.value, field);
     if (!normalized) continue;
-    const document = documents.find((item) =>
-      item.document.requirementId === candidate.sourceRequirementId)?.document;
-    if (!document) continue;
+    const document = source.document;
     evidence.push({
       fieldId: field.id,
       value: normalized,

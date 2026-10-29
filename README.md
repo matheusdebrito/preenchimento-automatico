@@ -221,6 +221,14 @@ campos sim/não passam novamente pelas validações determinísticas do backend;
 valores diferentes entre documentos continuam sendo resolvidos como conflito,
 e toda sugestão permanece sujeita à revisão humana antes da geração do PDF.
 
+Além disso, cada requisito documental possui uma política explícita
+`allowedFieldIds`. A OpenAI recebe somente a interseção entre os campos
+necessários para os formulários selecionados e os campos autorizados para
+aquele documento. O backend valida novamente o par campo/origem e descarta
+qualquer candidato retornado a partir de uma fonte não autorizada. Documentos
+sem campos aplicáveis (por exemplo, GRU ou procuração sem campos próprios no
+catálogo) não são enviados à API, reduzindo exposição de dados e custo.
+
 Configuração no `.env`:
 
 ```text

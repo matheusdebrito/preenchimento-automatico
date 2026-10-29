@@ -3,6 +3,13 @@ import { additionalFields } from './fields.js';
 import { draftMappings } from './draft-mappings.js';
 import { normam211Mappings } from './normam211-mappings.js';
 import {
+  APPLICANT_IDENTITY_FIELDS,
+  RESIDENCE_PROOF_FIELDS,
+  SALE_DOCUMENT_FIELDS,
+  SELLER_IDENTITY_FIELDS,
+  TIE_FIELDS,
+} from './document-field-policies.js';
+import {
   vesselForms,
   vesselVersions,
   vesselServices,
@@ -166,18 +173,38 @@ export const catalog: CatalogDefinition = {
         // Source documents help OCR, but are NEVER prerequisites for filling PDF fields.
         // The user can provide a single photo, several files or type everything.
         { id: 'buyer-identity', label: 'Identidade do comprador', required: false,
-          extraction: { documentType: 'identity', subjectRole: 'person' } },
+          extraction: {
+            documentType: 'identity',
+            subjectRole: 'person',
+            allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
+          } },
         { id: 'seller-identity', label: 'Identidade do vendedor', required: false,
-          extraction: { documentType: 'identity', subjectRole: 'seller' } },
+          extraction: {
+            documentType: 'identity',
+            subjectRole: 'seller',
+            allowedFieldIds: SELLER_IDENTITY_FIELDS,
+          } },
         { id: 'tie', label: 'Título de inscrição da moto aquática',
           description: 'Envie se disponível. Se foi extraviado, informe a situação na etapa anterior.',
-          required: false, extraction: { documentType: 'tie', subjectRole: 'vessel' } },
+          required: false, extraction: {
+            documentType: 'tie',
+            subjectRole: 'vessel',
+            allowedFieldIds: TIE_FIELDS,
+          } },
         { id: 'residence-proof', label: 'Comprovante de residência',
-          required: false, extraction: { documentType: 'residence-proof', subjectRole: 'person' },
+          required: false, extraction: {
+            documentType: 'residence-proof',
+            subjectRole: 'person',
+            allowedFieldIds: RESIDENCE_PROOF_FIELDS,
+          },
           conditions: [{ questionId: 'residenceProof', equals: 'comprovante' }] },
         { id: 'sale-document', label: 'Dados da venda ou nota fiscal',
           description: 'Documento de origem para auxiliar na conferência dos dados da venda.',
-          required: false, extraction: { documentType: 'sale-document', subjectRole: 'person' } },
+          required: false, extraction: {
+            documentType: 'sale-document',
+            subjectRole: 'person',
+            allowedFieldIds: SALE_DOCUMENT_FIELDS,
+          } },
         { id: 'power-of-attorney', label: 'Procuração e identificação do representante',
           required: false, conditions: [{ questionId: 'representative', equals: 'sim' }] },
         { id: 'gru-receipt', label: 'Comprovante de pagamento da GRU',

@@ -100,6 +100,40 @@ describe('catálogo reutilizável de formulários', () => {
       .some((requirement) => requirement.id === 'vessel-photos')).toBe(false);
   });
 
+  it('mantém origem de campos explícita em todo perfil de extração', () => {
+    const requirements = catalog.services.flatMap((service) => service.documentRequirements)
+      .filter((requirement) => requirement.extraction);
+    expect(requirements.length).toBeGreaterThan(0);
+    for (const requirement of requirements) {
+      const allowed = requirement.extraction!.allowedFieldIds;
+      expect(new Set(allowed).size).toBe(allowed.length);
+      expect(allowed.every((fieldId) =>
+        catalog.fields.some((field) => field.id === fieldId))).toBe(true);
+      expect(allowed.some((fieldId) => fieldId.startsWith('process.'))).toBe(false);
+    }
+  });
+
+  it('rejeita política de origem com campo inexistente ou de processo', () => {
+    const fixture = sharedFormFixture();
+    fixture.services = [{
+      ...fixture.services[0]!,
+      documentRequirements: [{
+        id: 'identity',
+        label: 'Identidade',
+        required: false,
+        extraction: {
+          documentType: 'identity',
+          subjectRole: 'person',
+          allowedFieldIds: ['missing.field', 'process.fake'],
+        },
+      }],
+    }, fixture.services[1]!];
+
+    const problems = validateCatalog(fixture).join(' ');
+    expect(problems).toContain('campo de extração inválido missing.field');
+    expect(problems).toContain('campo de extração inválido process.fake');
+  });
+
   it('mantém o domínio do MVP restrito ao único motor aprovado', () => {
     const ids = new Set(catalog.fields.map((field) => field.id));
     expect(ids.has('vessel.motorBrand')).toBe(true);
