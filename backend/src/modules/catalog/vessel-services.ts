@@ -30,12 +30,6 @@ const vesselBandQuestion: ServiceQuestion = {
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
-const representativeQuestion: ServiceQuestion = {
-  id: 'representative',
-  label: 'O processo será feito por procurador?',
-  options: ['sim', 'nao'],
-};
-
 const tieSituationQuestion: ServiceQuestion = {
   id: 'tieSituation',
   label: 'Situação do TIE/TIEM atual',
@@ -79,7 +73,6 @@ const commonApplicantDocuments: readonly DocumentRequirement[] = [
       subjectRole: 'representative',
       allowedFieldIds: NO_AUTOMATIC_FIELDS,
     },
-    conditions: [{ questionId: 'representative', equals: 'sim' }],
   },
   {
     id: 'gru-receipt',
@@ -233,14 +226,12 @@ function questions(options: {
   band?: boolean;
   tie?: boolean;
   dataChanged?: boolean;
-  representative?: boolean;
 } = {}): readonly ServiceQuestion[] {
   return [
     vesselTypeQuestion,
     ...(options.band === false ? [] : [vesselBandQuestion]),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion] : []),
-    ...(options.representative === false ? [] : [representativeQuestion]),
   ];
 }
 
@@ -249,14 +240,9 @@ function requirements(options: {
   seller?: boolean;
   origin?: boolean;
   motor?: boolean;
-  representative?: boolean;
 } = {}): readonly DocumentRequirement[] {
-  const base = commonApplicantDocuments.filter((item) => {
-    if (item.id === 'power-of-attorney' && options.representative === false) return false;
-    return true;
-  });
   return [
-    ...base,
+    ...commonApplicantDocuments,
     ...(options.tie ? [currentTie] : []),
     ...(options.seller ? [sellerIdentity] : []),
     ...(options.origin ? [vesselProof] : []),
