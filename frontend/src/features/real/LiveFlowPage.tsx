@@ -405,13 +405,21 @@ export function LiveFlowPage() {
               {step === 'questions' ? (
                 <>
                   <h2>Dados do serviço</h2>
-                  {service.questions.map((question) => (
+                  {service.questions.filter((question) =>
+                    (question.conditions ?? []).every((condition) =>
+                      answers[condition.questionId] === condition.equals)).map((question) => (
                     <label key={question.id} className="field">
                       <span className="field__label">{question.label}</span>
                       <select className="field__input" required value={answers[question.id] ?? ''}
                         onChange={(event) => setAnswers((prev) => ({ ...prev, [question.id]:event.target.value }))}>
                         <option value="">Selecione</option>
-                        {question.options.map((value) => <option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}
+                        {question.options.map((value) => <option key={value} value={value}>{
+                          value === 'moto_aquatica' ? 'Moto aquática'
+                            : value === 'embarcacao' ? 'Embarcação / barco'
+                              : value === 'ate_12m' ? 'Até 12 m'
+                                : value === 'maior_12_ate_24m' ? 'Maior que 12 m até 24 m'
+                                  : value.replaceAll('_',' ')
+                        }</option>)}
                       </select>
                     </label>
                   ))}
