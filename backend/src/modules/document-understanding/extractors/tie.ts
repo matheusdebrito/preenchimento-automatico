@@ -38,9 +38,12 @@ const strongHullIdentifier = (value: string): boolean => {
 
 const registration = (value: string): boolean => {
   const text = compactIdentifier(value);
+  const alnum = text.replace(/[^A-Z0-9]/gi, '');
   if (/^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(text) ||
-    /^(?:19|20)\d{2}$/.test(text)) return false;
-  return /^[A-Z0-9./-]{4,30}$/i.test(text) && /\d/.test(text) &&
+    /^(?:19|20)\d{2}$/.test(text) ||
+    /^\d{1,4}[.,]\d{1,3}$/.test(text)) return false;
+  return alnum.length >= 8 && alnum.length <= 24 &&
+    /^[A-Z0-9/-]+$/i.test(text) && /\d/.test(text) &&
     !strongHullIdentifier(text);
 };
 const hull = (value: string): boolean => {
@@ -146,6 +149,7 @@ const meaningfulDocumentText = (
   const alnum = compact.match(/[A-ZÀ-Ý0-9]/gi)?.length ?? 0;
   const mask = compact.match(/[*.•_]/g)?.length ?? 0;
   if (alnum < minAlnum) return false;
+  if (/^X{4,}$/i.test(compact)) return false;
   if (mask >= 2 && mask >= alnum) return false;
   return alnum / Math.max(1, compact.length) >= 0.45;
 };
@@ -172,9 +176,21 @@ const creditorText = (value: string): boolean => {
       .test(normalized);
 };
 
+const HULL_COLOR_WORDS = new Set([
+  'AMARELO', 'AMARELA', 'AZUL', 'BEGE', 'BRANCO', 'BRANCA',
+  'CINZA', 'DOURADO', 'DOURADA', 'LARANJA', 'MARROM', 'PRETO', 'PRETA',
+  'PRATA', 'ROSA', 'ROXO', 'ROXA', 'VERDE', 'VERMELHO', 'VERMELHA',
+]);
+
 const hullColorText = (value: string): boolean => {
   if (!meaningfulDocumentText(value, 3, 50)) return false;
-  return !/^(?:SIM|NAO|HIPOTECAD[AO]|CREDOR)\b/i.test(normalizeText(value));
+  const normalized = normalizeText(value);
+  if (/^(?:SIM|NAO|HIPOTECAD[AO]|CREDOR|OUTRAS?\s+OBSERVACOES)\b/.test(normalized)) {
+    return false;
+  }
+  const words = normalized.split(/[^A-Z]+/).filter(Boolean)
+    .filter((word) => word !== 'E');
+  return words.length >= 1 && words.every((word) => HULL_COLOR_WORDS.has(word));
 };
 
 const tightTableCell = {
@@ -288,6 +304,16 @@ const legacyRegistrationCell = {
   maxBelowHorizontalOffsetHeights: 8,
 } as const;
 
+const legacyCountCell = {
+  ...compactTableCell,
+  // TIEM crew/passenger counts live in adjacent narrow columns. Keep the
+  // candidate close to the anchor center so one column cannot steal the other.
+  maxRightDistanceHeights: 4,
+  maxBelowDistanceHeights: 4,
+  maxBelowHorizontalOffsetHeights: 2.25,
+  minSelectionScoreGap: 0.08,
+} as const;
+
 function conceptsForVariant(variant: TieDocumentVariant): readonly SemanticFieldConcept[] {
   if (variant === 'digital') {
     return tieFieldConcepts.filter((concept) => !legacyOnlyFields.has(concept.fieldId));
@@ -295,9 +321,25 @@ function conceptsForVariant(variant: TieDocumentVariant): readonly SemanticField
   if (variant === 'legacy') {
     return tieFieldConcepts
       .filter((concept) => !digitalOnlyFields.has(concept.fieldId))
-      .map((concept) => concept.fieldId === 'vessel.registration'
-        ? { ...concept, spatialHint: legacyRegistrationCell }
-        : concept);
+      .map((concept) => {
+        if (concept.fieldId === 'vessel.registration') {
+          return {
+            ...concept,
+            firstOccurrenceOnly: true,
+            spatialHint: legacyRegistrationCell,
+          };
+        }
+        if (concept.fieldId === 'vessel.crewCount' ||
+          concept.fieldId === 'vessel.passengerCount') {
+          return {
+            ...concept,
+            allowSequentialWithGeometry: false,
+            firstOccurrenceOnly: true,
+            spatialHint: legacyCountCell,
+          };
+        }
+        return concept;
+      });
   }
   return tieFieldConcepts;
 }
@@ -566,6 +608,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD(?:ADE)?\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
     spatialHint: countTableCell,
     validate: count,
   },
@@ -577,6 +620,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
     spatialHint: countTableCell,
     validate: count,
   },
@@ -742,10 +786,25 @@ function sectionObservation(
   observation: DocumentObservation,
   start: RegExp,
   stops: readonly RegExp[],
+  minPageCenterXRatio?: number,
 ): DocumentObservation {
   const pages = observation.pages.map((page) => {
     const lines = page.lines;
-    const startIndex = lines.findIndex((line) => start.test(normalizeText(line.text)));
+    const positioned = lines.filter((line) => line.box);
+    const pageMinX = positioned.length
+      ? Math.min(...positioned.map((line) => line.box![0]))
+      : 0;
+    const pageMaxX = positioned.length
+      ? Math.max(...positioned.map((line) => line.box![2]))
+      : 0;
+    const pageWidth = Math.max(1, pageMaxX - pageMinX);
+    const inHorizontalPanel = (line: (typeof lines)[number]): boolean => {
+      if (minPageCenterXRatio === undefined || !line.box) return true;
+      const centerX = (line.box[0] + line.box[2]) / 2;
+      return centerX >= pageMinX + pageWidth * minPageCenterXRatio;
+    };
+    const startIndex = lines.findIndex((line) =>
+      inHorizontalPanel(line) && start.test(normalizeText(line.text)));
     if (startIndex < 0) return { ...page, lines: [] };
 
     const header = lines[startIndex]!;
@@ -762,7 +821,7 @@ function sectionObservation(
       return {
         ...page,
         lines: lines.filter((line) =>
-          line !== header && line.box &&
+          line !== header && line.box && inHorizontalPanel(line) &&
           line.box[1] >= startY - Math.max(1, header.box![3] - header.box![1]) * 0.25 &&
           line.box[1] < stopY),
       };
@@ -772,7 +831,7 @@ function sectionObservation(
     for (let index = startIndex + 1; index < lines.length; index++) {
       const line = lines[index]!;
       if (matchesStop(line.text)) break;
-      selected.push(line);
+      if (inHorizontalPanel(line)) selected.push(line);
     }
     return { ...page, lines: selected };
   });
@@ -784,6 +843,7 @@ function extractOwnerSections(
   observation: DocumentObservation,
   context: ExtractionContext,
 ): { evidence: FieldEvidence[]; assessments: FieldExtractionAssessment[] } {
+  const ownerPanelMinX = classifyTieVariant(observation) === 'legacy' ? 0.48 : undefined;
   const registered = sectionObservation(
     observation,
     /^PROPRIETARIO(?:\s*\/\s*OWNER)?$/,
@@ -793,6 +853,7 @@ function extractOwnerSections(
       /^HIPOTECAD[AO]\b/,
       /^CARACTERISTICAS\s+DO\s+CASCO\b/,
     ],
+    ownerPanelMinX,
   );
   const coOwner = sectionObservation(
     observation,
@@ -802,6 +863,7 @@ function extractOwnerSections(
       /^HIPOTECAD[AO]\b/,
       /^CARACTERISTICAS\s+DO\s+CASCO\b/,
     ],
+    ownerPanelMinX,
   );
 
   const registeredResult =
