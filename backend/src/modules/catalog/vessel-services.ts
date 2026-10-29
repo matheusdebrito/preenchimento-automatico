@@ -21,6 +21,7 @@ const vesselTypeQuestion: ServiceQuestion = {
   id: 'vesselType',
   label: 'Tipo de embarcação',
   options: ['embarcacao', 'moto_aquatica'],
+  unavailableOptions: ['moto_aquatica'],
 };
 
 const vesselBandQuestion: ServiceQuestion = {
@@ -258,7 +259,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'inscricao-embarcacao',
     title: 'Inscrição inicial de embarcação',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions(),
     documentRequirements: requirements({ origin: true }),
   },
@@ -266,7 +267,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'transferencia-propriedade-embarcacao',
     title: 'Transferência de propriedade',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, seller: true, origin: true }),
   },
@@ -274,7 +275,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'transferencia-jurisdicao-embarcacao',
     title: 'Transferência de jurisdição de embarcação',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true }),
   },
@@ -282,7 +283,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'transferencia-propriedade-jurisdicao-embarcacao',
     title: 'Transferência de propriedade e jurisdição',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, seller: true, origin: true }),
   },
@@ -290,7 +291,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'renovacao-tie-embarcacao',
     title: 'Renovação do TIE/TIEM',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true, dataChanged: true }),
     documentRequirements: requirements({ tie: true }),
   },
@@ -298,7 +299,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'segunda-via-tie-embarcacao',
     title: '2ª via do TIE/TIEM por perda, roubo ou extravio',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ dataChanged: true }),
     documentRequirements: requirements(),
   },
@@ -306,7 +307,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados ou características da embarcação',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, origin: true }),
   },
@@ -314,7 +315,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'alteracao-motor-embarcacao',
     title: 'Troca, instalação ou retirada de motor',
     description: scopeNote,
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, motor: true }),
   },
@@ -322,7 +323,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     id: 'comunicacao-venda-embarcacao',
     title: 'Comunicação de venda de embarcação',
     description: 'Comunicação do vendedor conforme a NORMAM-211/DPC. Não efetiva por si só a transferência.',
-    creditCost: 1, status: 'DRAFT',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ band: false }),
     documentRequirements: requirements({
       tie: true, seller: true, origin: true,
@@ -464,9 +465,12 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 1,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
+];
 
-  // NORMAM-212: same service card, different forms when the user chooses moto aquática.
-  { serviceId: 'transferencia-propriedade-embarcacao',
+// Preserved for later NORMAM-212 homologation. These relations are intentionally
+// excluded from the active catalog while moto aquática remains unavailable.
+export const pendingMotoAquaticaServiceForms: readonly ServiceForm[] = [
+{ serviceId: 'transferencia-propriedade-embarcacao',
     formVersionId: 'requerimento-ma-v1', order: 8,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
     fixedValues: { 'process.transferOwnership': 'X' } },
