@@ -458,6 +458,9 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 1,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
+  { serviceId: 'comunicacao-venda-embarcacao',
+    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 2,
+    conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
 ];
 
 // Preserved for later NORMAM-212 homologation. These relations are intentionally
@@ -486,6 +489,9 @@ export const pendingMotoAquaticaServiceForms: readonly ServiceForm[] = [
 
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-ma-v1', order: 2,
+    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
+  { serviceId: 'comunicacao-venda-embarcacao',
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
 ];
 
