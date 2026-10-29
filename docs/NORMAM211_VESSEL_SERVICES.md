@@ -6,11 +6,15 @@ Esta expansão foi catalogada em 28/10/2026 com base na NORMAM-211/DPC vigente
 (Portaria DPC/DGN/MB nº 200, de 27/02/2026) e em modelos publicados em páginas
 oficiais da Marinha em 2026.
 
-**Importante:** os oito modelos abaixo estão somente como `IDENTIFIED`.
-O ambiente desta sessão não conseguiu baixar os binários oficiais para o
-workspace; por isso não há hash, inspeção estrutural, renderização, mapeamento
-ou aprovação visual. Nenhum dos nove serviços pode ficar `AVAILABLE` antes
-desses gates.
+**Estado técnico em 29/10/2026:** os oito modelos foram preservados a partir
+dos PDFs adicionados pelo usuário, validados por SHA-256/qpdf/renderização e
+registrados como `VERIFIED/STATIC`. Os oito `FormMapping` passaram por amostras
+fictícias e revisão visual técnica do agente e estão `TESTED`.
+
+Isso **não** equivale a `APPROVED`: a política do repositório ainda exige
+revisão visual humana, e nenhum dos nove serviços pode ficar `AVAILABLE` antes
+desse gate e do QA real do fluxo. Evidência detalhada:
+[mapping-reports/normam211-2026-technical-qa.md](mapping-reports/normam211-2026-technical-qa.md).
 
 A primeira expansão cobre embarcações de esporte e recreio de até 24 m.
 Embarcações maiores e casos sujeitos a registro no Tribunal Marítimo exigem
@@ -60,9 +64,8 @@ semântico do serviço.
 - 2-H: quando o TIE/TIEM estiver perdido/extraviado; na segunda via é parte
   do fluxo base desta expansão.
 - 2-G: quando o usuário selecionar declaração de residência.
-- 3-C: composição inicial para faixa maior que 12 m e até 24 m em
-  inscrição/transferência/renovação; deve ser reconferido no gate normativo
-  antes de liberação.
+- 3-C: usado na composição atual para faixa maior que 12 m e até 24 m em
+  inscrição/transferência de propriedade; não é aplicado automaticamente à renovação.
 - 2-I: comunicação de venda.
 
 A composição é deliberadamente `DRAFT`: páginas locais podem conter
@@ -78,7 +81,10 @@ requisitos cadastrados nesta expansão possuem um perfil de extração:
 - TIE/TIEM -> extractor estruturado TIE;
 - comprovante de residência -> extractor de residência;
 - documento de compra/venda -> adaptador legado atual, até sua migração;
-- procuração, GRU, fotos e outros apoios -> `supporting-document`.
+- procuração, GRU e outros apoios -> `supporting-document`.
+
+Fotos da embarcação podem integrar o procedimento oficial, mas não são solicitadas
+pela ferramenta de preenchimento porque não alimentam OCR nem os PDFs.
 
 `supporting-document` passa pelo OCR para leitura técnica, mas não produz
 campo automaticamente sem um extractor semântico explícito. Isso atende ao
@@ -94,9 +100,23 @@ fica sem sugestão e o usuário preenche/revisa manualmente.
 5. criar `FormMapping`;
 6. gerar amostras inteiramente fictícias;
 7. renderizar todas as páginas e revisar visualmente;
-8. marcar a versão `VERIFIED` e o mapa `APPROVED` somente com evidência;
-9. executar CI e QA do fluxo completo;
-10. somente então alterar o serviço de `DRAFT` para `AVAILABLE`.
+8. marcar a versão `VERIFIED` após inspeção e o mapa `TESTED` após QA técnico;
+9. promover o mapa a `APPROVED` somente após revisão visual humana registrada;
+10. executar CI e QA do fluxo completo em navegador/mobile;
+11. somente então alterar o serviço de `DRAFT` para `AVAILABLE`.
 
 O sistema não protocola, não assina, não reconhece firmas e não promete
 aceitação do processo pela Marinha.
+
+
+## Homologação técnica de 29/10/2026
+
+- oito versões: `VERIFIED/STATIC`;
+- oito mapas: `TESTED`, com relatório reproduzível;
+- todos os nove serviços: `DRAFT`;
+- domínio de motor: permanece restrito a um único motor canônico;
+- 2-K: Motor 2–4 e caixas SIM/NÃO permanecem manuais até decisão de domínio;
+- 3-D: ainda precisa ser incorporado nos casos de construção/alteração em que
+  responsabilidade técnica for aplicável; a automação não contorna TLS inválido;
+- assinaturas, reconhecimento de firma, carimbos e campos reservados à autoridade
+  nunca são preenchidos pelo sistema.
