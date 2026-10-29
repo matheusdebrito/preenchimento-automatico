@@ -219,7 +219,7 @@ export const vesselVersions: readonly FormVersion[] = [
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 3-C',
     regulation: 'NORMAM-211/DPC 2026, Anexo 3-C',
     sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
-    verifiedAt: '2026-10-29', sha256: 'F7B75FC1D6C74317DEA7D6AC3CC61A74EDFAB7C84182578C74C8BD871D23722F', templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
+    verifiedAt: null, sha256: null, templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'IDENTIFIED',
   },
 ];
 
@@ -400,16 +400,6 @@ const lostTie = (serviceId: string, order: number): ServiceForm => ({
     { questionId: 'tieSituation', equals: 'extraviado' },
   ],
 });
-const responsibility = (serviceId: string, order: number): ServiceForm => ({
-  serviceId,
-  formVersionId: 'termo-responsabilidade-er-2026-v1',
-  order,
-  conditions: [
-    { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'vesselBand', equals: 'maior_12_ate_24m' },
-  ],
-});
-
 export const vesselServiceForms: readonly ServiceForm[] = [
   request('inscricao-embarcacao', 1, 'inscricao'),
   bsade('inscricao-embarcacao', 2, 'inscricao'), bade('inscricao-embarcacao', 3),
