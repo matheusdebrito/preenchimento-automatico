@@ -63,6 +63,19 @@ describe('motor determinístico de PDF', () => {
     // The X is visibly tested by rendered PDF regression; this asserts both options fit.
   });
 
+  it('aceita false em checkbox estático unilateral deixando a caixa em branco', async () => {
+    const input = await syntheticPdf();
+    const placement = [{
+      kind: 'COORDINATES' as const, fieldId: 'equipment',
+      pageIndex: 0, x: 50, y: 600, fontSize: 12, maxWidth: 12,
+      required: false, markWhen: 'true',
+    }];
+    const output = await fillPdf(input, placement, { equipment: 'false' });
+    expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
+    await expect(fillPdf(input, placement, { equipment: 'maybe' }))
+      .rejects.toThrow('Opção não prevista');
+  });
+
   it('identifica tipos reais de AcroForm em vez de confundir texto true com checkbox', async () => {
     const original = await PDFDocument.create();
     const page = original.addPage([595, 842]);
