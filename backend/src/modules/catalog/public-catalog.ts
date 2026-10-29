@@ -1,4 +1,10 @@
-import type { CatalogDefinition, DocumentRequirement, ServiceCondition, ServiceDefinition } from './contracts.js';
+import type {
+  CatalogDefinition,
+  DocumentRequirement,
+  ServiceCondition,
+  ServiceDefinition,
+  ServiceQuestion,
+} from './contracts.js';
 
 export interface PublicReviewField {
   id: string;
@@ -37,6 +43,13 @@ function matches(
   answers: Readonly<Record<string, string>>,
 ): boolean {
   return (rules ?? []).every((rule) => answers[rule.questionId] === rule.equals);
+}
+
+export function activeServiceQuestions(
+  questions: readonly ServiceQuestion[],
+  answers: Readonly<Record<string, string>>,
+): readonly ServiceQuestion[] {
+  return questions.filter((question) => matches(question.conditions, answers));
 }
 
 /**
