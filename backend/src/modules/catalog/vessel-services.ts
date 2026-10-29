@@ -50,10 +50,10 @@ const dataChangedQuestion: ServiceQuestion = {
   options: ['sim', 'nao'],
 };
 
-const structuralAlterationQuestion: ServiceQuestion = {
-  id: 'structuralAlteration',
-  label: 'A alteração envolve modificação estrutural ou construtiva da embarcação?',
-  options: ['nao', 'sim'],
+const responsibilityTermCaseQuestion: ServiceQuestion = {
+  id: 'responsibilityTermCase',
+  label: 'O caso envolve estaleiro comprovadamente extinto ou embarcação de construção artesanal?',
+  options: ['nao', 'estaleiro_extinto', 'construcao_artesanal'],
 };
 
 const rowToMotorConversionQuestion: ServiceQuestion = {
@@ -125,9 +125,12 @@ const motorProof: DocumentRequirement = {
 const technicalResponsibilityDocument: DocumentRequirement = {
   id: 'technical-responsibility-document',
   label: 'Documento do responsável técnico / ART',
-  description: 'Quando a alteração exigir responsabilidade técnica, envie a ART e a declaração/termo aplicável para conferência. A aplicação não presume que toda alteração exija o Anexo 3-C.',
+  description: 'No fluxo do item 2.12.1, o Anexo 3-C é aceito nos casos de estaleiro comprovadamente extinto ou construção artesanal. Envie também a ART/documentação técnica aplicável para conferência.',
   required: false,
-  conditions: [{ questionId: 'structuralAlteration', equals: 'sim' }],
+  conditions: [{
+    questionId: 'responsibilityTermCase',
+    oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
+  }],
   extraction: {
     documentType: 'supporting-document',
     subjectRole: 'vessel',
@@ -243,7 +246,7 @@ function questions(options: {
   dataChanged?: boolean;
   blockMediumBand?: boolean;
   constructionCase?: boolean;
-  structuralAlteration?: boolean;
+  responsibilityTermCase?: boolean;
   rowToMotorConversion?: boolean;
 } = {}): readonly ServiceQuestion[] {
   const baseBandQuestion = options.blockMediumBand
@@ -261,7 +264,7 @@ function questions(options: {
     ...(options.dataChanged ? [dataChangedQuestion] : []),
     ...(options.band === false ? [] : [bandQuestion]),
     ...(options.constructionCase ? [builtByApplicantQuestion] : []),
-    ...(options.structuralAlteration ? [structuralAlterationQuestion] : []),
+    ...(options.responsibilityTermCase ? [responsibilityTermCaseQuestion] : []),
     ...(options.rowToMotorConversion ? [rowToMotorConversionQuestion] : []),
   ];
 }
@@ -338,7 +341,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Alteração de dados ou características da embarcação',
     description: 'Em validação normativa. O Anexo 3-C só se aplica em situações específicas de construção/alteração; não deve ser incluído automaticamente.',
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true, structuralAlteration: true }),
+    questions: questions({ tie: true, responsibilityTermCase: true }),
     documentRequirements: [
       ...requirements({ tie: true, origin: true }),
       technicalResponsibilityDocument,
@@ -349,7 +352,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Troca, instalação ou retirada de motor',
     description: 'Em validação normativa. O fluxo distingue troca cadastral de alteração estrutural e a adaptação de embarcação miúda a remo para motor, que possui exigência técnica específica.',
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true, structuralAlteration: true, rowToMotorConversion: true }),
+    questions: questions({ tie: true, responsibilityTermCase: true, rowToMotorConversion: true }),
     documentRequirements: [
       ...requirements({ tie: true, motor: true }),
       technicalResponsibilityDocument,
@@ -486,7 +489,8 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     formVersionId: 'termo-responsabilidade-er-2026-v1', order: 6,
     conditions: [
       { questionId: 'vesselType', equals: 'embarcacao' },
-      { questionId: 'structuralAlteration', equals: 'sim' },
+      { questionId: 'responsibilityTermCase',
+        oneOf: ['estaleiro_extinto', 'construcao_artesanal'] },
     ],
     fixedValues: { 'process.constructionAction': 'alterada' } },
 
@@ -498,7 +502,8 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     formVersionId: 'termo-responsabilidade-er-2026-v1', order: 6,
     conditions: [
       { questionId: 'vesselType', equals: 'embarcacao' },
-      { questionId: 'structuralAlteration', equals: 'sim' },
+      { questionId: 'responsibilityTermCase',
+        oneOf: ['estaleiro_extinto', 'construcao_artesanal'] },
     ],
     fixedValues: { 'process.constructionAction': 'alterada' } },
 
