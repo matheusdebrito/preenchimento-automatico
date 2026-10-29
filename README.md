@@ -202,6 +202,39 @@ Detalhes e regras permanentes: [arquitetura de entendimento de documentos](docs/
 
 TIE e comprovante de residência já usam extractors estruturados próprios. Para PDFs desses tipos, a API pode aproveitar diretamente uma camada textual com geometria quando ela já contém os campos centrais esperados; caso a camada esteja ausente, incompleta ou semanticamente insuficiente, a leitura cai automaticamente para PaddleOCR. Essa otimização não é aplicada ao RG/CNH enquanto o fluxo de identidade validado não tiver equivalência comprovada.
 
+### Leitura opcional com OpenAI
+
+Além do PaddleOCR local, o fluxo real pode enviar os documentos de um processo
+para a **Responses API da OpenAI** em uma única chamada multimodal. O usuário
+escolhe o método antes da análise; PaddleOCR continua disponível como caminho
+local e compatível.
+
+O backend usa por padrão o snapshot `gpt-5.4-mini-2026-03-17`, configurável
+por `OPENAI_MODEL`. O `gpt-5.4-nano-2026-03-17` também é aceito para
+benchmarks de custo, mas não é o padrão. A API recebe somente os campos
+revisáveis do serviço como schema permitido, exige saída estruturada, usa
+`store:false` e não habilita ferramentas. Valores mascarados, ilegíveis,
+incertos ou ausentes devem ser omitidos.
+
+A resposta do modelo **não é tratada como verdade**. CPF, datas, booleanos e
+campos sim/não passam novamente pelas validações determinísticas do backend;
+valores diferentes entre documentos continuam sendo resolvidos como conflito,
+e toda sugestão permanece sujeita à revisão humana antes da geração do PDF.
+
+Configuração no `.env`:
+
+```text
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.4-mini-2026-03-17
+OPENAI_PROJECT_ID=
+OPENAI_DOCUMENT_DETAIL=high
+```
+
+A chave é exclusivamente do servidor e nunca deve ser incluída no frontend,
+Git ou logs. Quando OpenAI é selecionada, os documentos deixam a VPS e são
+enviados ao provedor externo para processamento; isso deve ser considerado na
+política de privacidade e no tratamento de dados pessoais do produto.
+
 ### Capacidade adaptativa do PaddleOCR
 
 O serviço OCR detecta as CPUs efetivamente disponíveis ao container, incluindo afinidade e quota de cgroup/Docker, reserva capacidade para API/PostgreSQL e cria um pool conservador de predictors independentes. O objetivo é aumentar throughput sem compartilhar a mesma instância PaddleOCR entre threads.

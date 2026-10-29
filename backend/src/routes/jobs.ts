@@ -14,6 +14,10 @@ import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '.
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
 import { extractTextWithEngine, suggestFields, identityNameStage } from '../modules/jobs/ocr.js';
+import {
+  extractDocumentsWithOpenAi,
+  OpenAiDocumentError,
+} from '../modules/jobs/openai-document-extractor.js';
 import { extractDocumentEvidence } from '../modules/document-understanding/registry.js';
 import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
 import type { FieldEvidence } from '../modules/document-understanding/contracts.js';
@@ -23,6 +27,10 @@ import { watermarkQaSample } from '../modules/pdf/qa-watermark.js';
 const createSchema = z.object({ serviceId: z.string().max(100),
   answers: z.record(z.string().max(100), z.string().max(100)).default({}),
 });
+const extractSchema = z.object({
+  provider: z.enum(['paddleocr', 'openai']).default('paddleocr'),
+});
+
 const reviewSchema = z.object({
   confirmed: z.literal(true),
   values: z.record(z.string().max(100), z.string().max(500)).refine(
@@ -159,8 +167,13 @@ export function registerJobRoutes(
     const userId = await actor(req);
     const job = store.get(req.params.id, userId);
     if (!job) return reply.status(404).send({ error: 'not_found' });
+
+    const parsedRequest = extractSchema.safeParse(req.body ?? {});
+    if (!parsedRequest.success) return reply.status(400).send({ error: 'invalid' });
+    const provider = parsedRequest.data.provider;
+
     // A job with no files can transition straight from CREATED to REVIEW.
-    // Uploaded documents are an optional OCR aid, not a condition of service.
+    // Uploaded documents are an optional extraction aid, not a condition of service.
     if (job.stage !== 'CREATED' && job.stage !== 'UPLOADED') {
       return reply.status(409).send({ error: 'invalid_state' });
     }
@@ -169,95 +182,160 @@ export function registerJobRoutes(
 
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     job.stage = 'PROCESSING';
-    // Do not publish partial OCR results when one document fails. The job can be
-    // retried from its uploaded files after an interrupted PaddleOCR request.
+
     const diagnostics: ExtractionDiagnostic[] = [];
     const evidence: FieldEvidence[] = [];
     const reviewableFields = new Set(service.reviewFields.map((field) => field.id));
-    let attemptedDocuments = 0;
-    let failedDocuments = 0;
+
     try {
-      for (const document of job.files) {
-        const requirement = service.documentRequirements.find((item) =>
-          item.id === document.requirementId);
-        // Supporting documents without a semantic extraction profile are not OCR inputs.
-        if (!requirement?.extraction) {
-          diagnostics.push({
-            requirementId: document.requirementId, outcome: 'not_analyzed', suggestionCount: 0,
-          });
-          continue;
-        }
+      if (provider === 'openai' && job.files.length > 0) {
+        const fieldsById = new Map(definitions.fields.map((field) => [field.id, field]));
+        const targetFields = service.reviewFields.map((field) => ({
+          id: field.id,
+          label: field.label,
+          valueKind: field.valueKind,
+          validationRuleId: fieldsById.get(field.id)?.validationRuleId,
+          required: field.required,
+        }));
 
-        attemptedDocuments++;
-        try {
-          const extraction = await extractTextWithEngine(document, store.directory(job));
-          const text = extraction.text;
-          const observation = extraction.observation;
-          const context = {
-            documentId: document.id,
-            sourceId: document.requirementId,
-            documentType: requirement.extraction.documentType,
-            subjectRole: requirement.extraction.subjectRole,
-          } as const;
-
-          const structured = extractDocumentEvidence(observation, context);
-          // Transitional adapter: document types not migrated to their own extractor
-          // still use the conservative labelled-text rules. No new document type may
-          // be added here; migrate it to document-understanding instead.
-          const legacy = requirement.extraction.documentType === 'sale-document'
-            ? Object.entries(suggestFields(text, document.requirementId)).map(
-              ([fieldId, candidate]): FieldEvidence => ({
-                fieldId,
-                value: candidate.value,
-                confidence: null,
-                documentId: document.id,
-                sourceId: candidate.source,
-                page: 0,
-                method: 'legacy-labelled-text',
-                lineIds: [],
-                status: 'REVIEW_REQUIRED',
-              }),
-            )
-            : [];
-          const documentEvidence = [...structured, ...legacy];
-          evidence.push(...documentEvidence);
-
-          const recognized = Object.fromEntries(documentEvidence.map((item) => [
-            item.fieldId,
-            { value: item.value, source: item.sourceId, status: item.status },
-          ]));
-          const applicableCount = documentEvidence
-            .filter((item) => reviewableFields.has(item.fieldId)).length;
-          diagnostics.push({
-            requirementId: document.requirementId,
-            outcome: !text.trim() ? 'no_text'
-              : applicableCount > 0 ? 'suggested'
-                : documentEvidence.length > 0 ? 'no_applicable_fields'
-                  : 'no_supported_labels',
-            suggestionCount: applicableCount,
-            engine: extraction.engine,
-            ...(isQaJob(job.serviceId) && requirement.extraction.documentType === 'identity'
-              ? { nameStage: identityNameStage(text,
-                document.requirementId, recognized, reviewableFields) } : {}),
-          });
-        } catch {
-          failedDocuments++;
-          diagnostics.push({
-            requirementId: document.requirementId,
-            outcome: 'read_failed',
-            suggestionCount: 0,
-          });
-        }
-      }
-
-      if (attemptedDocuments > 0 && failedDocuments === attemptedDocuments) {
-        job.stage = 'UPLOADED';
-        job.values = {};
-        job.sourceNotes = {};
-        job.diagnostics = diagnostics;
-        return reply.status(503).send({
-          error: 'ocr_failed', message: 'Não foi possível ler os documentos. Tente novamente.',
+        const documents = job.files.flatMap((document) => {
+          const requirement = service.documentRequirements.find((item) =>
+            item.id === document.requirementId);
+          if (!requirement) return [];
+          return [{
+            document,
+            label: requirement.label,
+            documentType: requirement.extraction?.documentType,
+            subjectRole: requirement.extraction?.subjectRole,
+          }];
         });
+
+        try {
+          const startedAt = Date.now();
+          const extracted = await extractDocumentsWithOpenAi(documents, targetFields);
+          evidence.push(...extracted.evidence);
+          diagnostics.push(...extracted.diagnostics);
+          req.log.info({
+            provider: 'openai',
+            model: extracted.model,
+            documentCount: documents.length,
+            inputTokens: extracted.usage?.inputTokens,
+            outputTokens: extracted.usage?.outputTokens,
+            totalTokens: extracted.usage?.totalTokens,
+            elapsedMs: Date.now() - startedAt,
+          }, 'document_extraction_usage');
+        } catch (error) {
+          job.stage = 'UPLOADED';
+          job.values = {};
+          job.sourceNotes = {};
+          job.diagnostics = [];
+          if (error instanceof OpenAiDocumentError && error.code === 'not_configured') {
+            return reply.status(503).send({
+              error: 'openai_not_configured',
+              message: 'Leitura pela OpenAI não configurada neste servidor.',
+            });
+          }
+          return reply.status(503).send({
+            error: 'openai_failed',
+            message: 'Não foi possível analisar os documentos com a OpenAI. Tente novamente.',
+          });
+        }
+      } else if (provider === 'paddleocr') {
+        let attemptedDocuments = 0;
+        let failedDocuments = 0;
+
+        for (const document of job.files) {
+          const requirement = service.documentRequirements.find((item) =>
+            item.id === document.requirementId);
+          // Supporting documents without a semantic extraction profile are not OCR inputs.
+          if (!requirement?.extraction) {
+            diagnostics.push({
+              requirementId: document.requirementId,
+              outcome: 'not_analyzed',
+              suggestionCount: 0,
+            });
+            continue;
+          }
+
+          attemptedDocuments++;
+          try {
+            const extraction = await extractTextWithEngine(document, store.directory(job));
+            const text = extraction.text;
+            const observation = extraction.observation;
+            const context = {
+              documentId: document.id,
+              sourceId: document.requirementId,
+              documentType: requirement.extraction.documentType,
+              subjectRole: requirement.extraction.subjectRole,
+            } as const;
+
+            const structured = extractDocumentEvidence(observation, context);
+            // Transitional adapter: document types not migrated to their own extractor
+            // still use the conservative labelled-text rules. No new document type may
+            // be added here; migrate it to document-understanding instead.
+            const legacy = requirement.extraction.documentType === 'sale-document'
+              ? Object.entries(suggestFields(text, document.requirementId)).map(
+                ([fieldId, candidate]): FieldEvidence => ({
+                  fieldId,
+                  value: candidate.value,
+                  confidence: null,
+                  documentId: document.id,
+                  sourceId: candidate.source,
+                  page: 0,
+                  method: 'legacy-labelled-text',
+                  lineIds: [],
+                  status: 'REVIEW_REQUIRED',
+                }),
+              )
+              : [];
+            const documentEvidence = [...structured, ...legacy];
+            evidence.push(...documentEvidence);
+
+            const recognized = Object.fromEntries(documentEvidence.map((item) => [
+              item.fieldId,
+              { value: item.value, source: item.sourceId, status: item.status },
+            ]));
+            const applicableCount = documentEvidence
+              .filter((item) => reviewableFields.has(item.fieldId)).length;
+            diagnostics.push({
+              requirementId: document.requirementId,
+              outcome: !text.trim() ? 'no_text'
+                : applicableCount > 0 ? 'suggested'
+                  : documentEvidence.length > 0 ? 'no_applicable_fields'
+                    : 'no_supported_labels',
+              suggestionCount: applicableCount,
+              engine: extraction.engine,
+              ...(isQaJob(job.serviceId) && requirement.extraction.documentType === 'identity'
+                ? {
+                    nameStage: identityNameStage(
+                      text,
+                      document.requirementId,
+                      recognized,
+                      reviewableFields,
+                    ),
+                  }
+                : {}),
+            });
+          } catch {
+            failedDocuments++;
+            diagnostics.push({
+              requirementId: document.requirementId,
+              outcome: 'read_failed',
+              suggestionCount: 0,
+            });
+          }
+        }
+
+        if (attemptedDocuments > 0 && failedDocuments === attemptedDocuments) {
+          job.stage = 'UPLOADED';
+          job.values = {};
+          job.sourceNotes = {};
+          job.diagnostics = diagnostics;
+          return reply.status(503).send({
+            error: 'ocr_failed',
+            message: 'Não foi possível ler os documentos. Tente novamente.',
+          });
+        }
       }
 
       const resolved = resolveFieldEvidence(evidence, reviewableFields);
@@ -265,15 +343,22 @@ export function registerJobRoutes(
       job.sourceNotes = resolved.sourceNotes;
       job.diagnostics = diagnostics;
       job.stage = 'REVIEW';
-      return { status: job.stage, fields: job.values, sources: job.sourceNotes,
-        diagnostics: job.diagnostics, conflicts: resolved.conflicts, reviewRequired: true };
+      return {
+        status: job.stage,
+        fields: job.values,
+        sources: job.sourceNotes,
+        diagnostics: job.diagnostics,
+        conflicts: resolved.conflicts,
+        reviewRequired: true,
+      };
     } catch {
       job.stage = 'UPLOADED';
       job.values = {};
       job.sourceNotes = {};
       job.diagnostics = [];
       return reply.status(503).send({
-        error: 'ocr_failed', message: 'Não foi possível ler os documentos. Tente novamente.',
+        error: provider === 'openai' ? 'openai_failed' : 'ocr_failed',
+        message: 'Não foi possível ler os documentos. Tente novamente.',
       });
     } finally {
       store.endOperation(job);
