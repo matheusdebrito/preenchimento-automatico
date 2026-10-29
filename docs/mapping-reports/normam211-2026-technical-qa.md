@@ -2,8 +2,12 @@
 
 **Data técnica:** 29/10/2026  
 **Escopo:** oito PDFs oficiais adicionados ao repositório para serviços de embarcações de esporte e recreio.  
-**Resultado:** `FormVersion = VERIFIED` e `FormMapping = TESTED`.  
-**Não representa aprovação humana:** os mapas permanecem abaixo de `APPROVED` e os serviços permanecem `DRAFT`.
+**Resultado técnico:** `FormVersion = VERIFIED` e revisão visual técnica concluída.  
+**Decisão de produto em 29/10/2026:** o responsável pelo produto autorizou a
+liberação do escopo de um único motor com base nesta evidência. Os oito mapas
+NORMAM-211 foram promovidos para `APPROVED`. Isso não afirma que o usuário
+tenha inspecionado pessoalmente cada página; a inspeção visual registrada abaixo
+foi realizada pelo agente sobre os artefatos reproduzíveis do CI.
 
 ## Evidência reproduzível
 
@@ -21,14 +25,14 @@ Os oito PDFs são estáticos, sem campos AcroForm.
 
 | FormVersion | Anexo | Páginas | SHA-256 | Estado técnico |
 | --- | --- | ---: | --- | --- |
-| `bade-er-2026-v1` | 2-A | 7 | `CCCA17A6C0608B995829A5A4BBDD97953343C3D924E3B74FD00CC0AE76623524` | VERIFIED / TESTED |
-| `bsade-er-2026-v1` | 2-B | 1 | `56F9301CC153FF97C5B4A72BE0C7688BC030F87CED9C861AB6064DD62D012988` | VERIFIED / TESTED |
-| `requerimento-embarcacao-er-2026-v1` | 2-C | 2 | `DAEDFD1D1F7C48C020D7D3169BFD9D36B4EEA122E75FDCC792EB3CC59E691AFF` | VERIFIED / TESTED |
-| `declaracao-residencia-er-2026-v1` | 2-G | 1 | `392DC41E9E2A95409972156A4460F4DF6E74C2F906D4111CC03B1CE7457C8B38` | VERIFIED / TESTED |
-| `declaracao-perda-tie-er-2026-v1` | 2-H | 1 | `D67AAB9B1E878F7877A69AC0B9E6197DE932A61D166626B50141FBE119567093` | VERIFIED / TESTED |
-| `comunicacao-transferencia-er-2026-v1` | 2-I | 1 | `0DF2A7550AF9CBFDCBC27D94128C2BBB0EEFA88BABA6142CB39EDB4FE22EA142` | VERIFIED / TESTED |
-| `autorizacao-transferencia-er-2026-v1` | 2-K | 1 | `52A4CACFFEFD628EF9D95DC84943CCA0CB0FD66A706272380A92F19F4B9EDE5E` | VERIFIED / TESTED |
-| `termo-responsabilidade-er-2026-v1` | 3-C | 2 | `706D23CA1BA72F596AC3C959A2D64363C596877355B9F3A637EE371873E15AA0` | VERIFIED / TESTED |
+| `bade-er-2026-v1` | 2-A | 7 | `CCCA17A6C0608B995829A5A4BBDD97953343C3D924E3B74FD00CC0AE76623524` | VERIFIED / APPROVED |
+| `bsade-er-2026-v1` | 2-B | 1 | `56F9301CC153FF97C5B4A72BE0C7688BC030F87CED9C861AB6064DD62D012988` | VERIFIED / APPROVED |
+| `requerimento-embarcacao-er-2026-v1` | 2-C | 2 | `DAEDFD1D1F7C48C020D7D3169BFD9D36B4EEA122E75FDCC792EB3CC59E691AFF` | VERIFIED / APPROVED |
+| `declaracao-residencia-er-2026-v1` | 2-G | 1 | `392DC41E9E2A95409972156A4460F4DF6E74C2F906D4111CC03B1CE7457C8B38` | VERIFIED / APPROVED |
+| `declaracao-perda-tie-er-2026-v1` | 2-H | 1 | `D67AAB9B1E878F7877A69AC0B9E6197DE932A61D166626B50141FBE119567093` | VERIFIED / APPROVED |
+| `comunicacao-transferencia-er-2026-v1` | 2-I | 1 | `0DF2A7550AF9CBFDCBC27D94128C2BBB0EEFA88BABA6142CB39EDB4FE22EA142` | VERIFIED / APPROVED |
+| `autorizacao-transferencia-er-2026-v1` | 2-K | 1 | `52A4CACFFEFD628EF9D95DC84943CCA0CB0FD66A706272380A92F19F4B9EDE5E` | VERIFIED / APPROVED |
+| `termo-responsabilidade-er-2026-v1` | 3-C | 2 | `706D23CA1BA72F596AC3C959A2D64363C596877355B9F3A637EE371873E15AA0` | VERIFIED / APPROVED |
 
 ## Revisão página a página
 
