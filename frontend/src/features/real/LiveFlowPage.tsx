@@ -380,7 +380,7 @@ export function LiveFlowPage() {
                       className="field__input"
                       aria-label="Método de leitura automática"
                       value={extractionProvider}
-                      disabled={busy || uploadedRequirements.length > 0}
+                      disabled={busy}
                       onChange={(event) =>
                         setExtractionProvider(event.target.value as ExtractionProvider)}
                     >
