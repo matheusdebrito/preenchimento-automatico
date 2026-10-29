@@ -362,7 +362,7 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.motorPower']).toBe('85.00');
     expect(values['vessel.motorBrand']).toBe('YAMAHA');
     expect(values['vessel.mortgaged']).toBe('nao');
-    expect(values['vessel.mortgageCreditor']).toBe('BANCO TESTE');
+    expect(values['vessel.mortgageCreditor']).toBeUndefined();
   });
 
   it('extrai características compartilhadas confirmadas nos modelos TIE/TIEM', () => {
