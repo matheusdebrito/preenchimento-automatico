@@ -85,3 +85,17 @@ export const PLANNED_VESSEL_SERVICES: readonly PlannedService[] = [
   { id: 'comunicacao-venda-embarcacao', title: 'Comunicação de venda',
     summary: 'Comunicação do vendedor sem substituir a transferência de propriedade.' },
 ];
+
+
+export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
+  {
+    id: 'emissao-cha-amador',
+    title: 'Emissão da CHA',
+    summary: 'Preparação do requerimento para emissão da Carteira de Habilitação de Amador.',
+  },
+  {
+    id: 'renovacao-cha-amador',
+    title: 'Renovação da CHA',
+    summary: 'Renovação para Arrais, Mestre ou Capitão, inclusive nos casos de perda, roubo, furto ou dano da cédula.',
+  },
+];
