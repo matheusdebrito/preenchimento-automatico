@@ -113,9 +113,4 @@ export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
     title: 'Renovação com agregação de Motonauta',
     summary: 'Renovação da CHA com inclusão da categoria Motonauta.',
   },
-  {
-    id: 'revisao-prova-capitao-amador',
-    title: 'Revisão de prova de Capitão-Amador',
-    summary: 'Pedido de revisão de questão da prova de Capitão-Amador.',
-  },
 ];
