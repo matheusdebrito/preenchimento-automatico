@@ -458,3 +458,20 @@ head final deve repetir todos os gates antes do merge.
 **Privacidade/escopo:** o arquivo QA enviado pelo usuário não é versionado no repositório. A regressão usa uma observação sintética equivalente com dados fictícios. Proprietário, coproprietário, CPF/CNPJ, hipoteca, alienação, datas e demais campos fora dos mapeamentos ativos continuam não promovidos.
 
 **Validação:** o preflight local não pôde ser executado nesta sessão por indisponibilidade de resolução DNS para `github.com`, portanto não foi contabilizado como aprovado. O CI do PR #23, execução `40765499950`, validou o head de código com `backend-checks`, `postgres-integration`, `pdf-mapping-visual`, `compose-smoke`, `reference-documents` e `ocr-integration` em sucesso; `frontend-checks` foi corretamente ignorado por não haver alteração de frontend. Após este registro documental, o novo head deve repetir o CI completo e somente então pode ser integrado.
+
+
+## 22. Registro de execução — 29/10/2026, unificação barco/moto aquática por serviço
+
+**Decisão de produto:** os cards passam a representar o serviço solicitado, e não uma combinação serviço + tipo de embarcação. O serviço pergunta primeiro `vesselType` (`moto_aquatica` ou `embarcacao`) e seleciona o conjunto NORMAM-212 ou NORMAM-211 sem duplicar cards.
+
+**Perguntas iniciais:** foram removidas do fluxo unificado as perguntas antigas de situação do TIE, autorização já constante no TIE, comunicação opcional do vendedor, escolha comprovante/declaração de residência, coproprietário e procurador. A Comunicação de Venda permanece um serviço próprio. A Declaração de Residência passa a integrar por padrão os pacotes configurados que usam residência. `vesselBand` só aparece para embarcação quando BADE/BSADE precisa ser escolhido. Renovação e 2ª via preservam `dataChanged` porque essa resposta altera o pacote; nessas duas jornadas o comprimento só aparece quando `dataChanged=sim`.
+
+**Roteamento:** moto aquática usa os formulários NORMAM-212 já cadastrados (incluindo BDMOTO); embarcação usa NORMAM-211. O antigo serviço separado `transferencia-moto-aquatica` foi removido do catálogo, preservando os IDs existentes dos nove cards para evitar quebra desnecessária de URLs e integrações.
+
+**Frontend/API:** perguntas condicionais agora fazem parte do contrato do catálogo. O frontend mostra apenas as perguntas cujas condições estão satisfeitas e elimina `vesselBand` obsoleto ao trocar de embarcação para moto aquática. Os endpoints de cotação e criação de job exigem somente perguntas ativas, evitando que uma pergunta escondida bloqueie o processo.
+
+**QA:** a prévia local passa a usar `transferencia-propriedade-embarcacao` e a resposta `vesselType=moto_aquatica`, sem serviço fictício paralelo. Os testes foram atualizados para o pacote atual de transferência de moto aquática.
+
+**Pendência de homologação:** o BDMOTO oficial suporta naturezas adicionais de requerimento, mas o mapeamento DRAFT atual do repositório possui coordenada revisada apenas para `process.transferOwnership`. As marcações de inscrição, transferência de jurisdição e atualização de dados ainda precisam ser mapeadas e visualmente homologadas antes de qualquer serviço correspondente sair de DRAFT. Nenhuma coordenada foi inventada nesta alteração.
+
+**Validação:** foram adicionadas regressões de catálogo, API, frontend e QA e feita revisão estática das relações condicionais. O ambiente desta sessão continua sem resolução DNS para `github.com`, e o CI automático está deliberadamente pausado; por isso typecheck, lint, Vitest e build ainda não foram executados para este head.
