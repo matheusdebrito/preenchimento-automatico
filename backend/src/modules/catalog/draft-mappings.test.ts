@@ -77,6 +77,27 @@ describe('draft form map coordinates', () => {
     expect(loss.placements.some((p) => p.fieldId.startsWith('seller.'))).toBe(false);
   });
 
+  it('mantém as marcações do 2-C e 2-H dentro das caixas impressas revisadas', () => {
+    const request = catalog.mappings.find((m) =>
+      m.formVersionId === 'requerimento-embarcacao-er-2026-v1')!;
+    const requestMarks = request.placements.filter((p) =>
+      p.kind === 'COORDINATES' && p.markWhen !== undefined);
+    const byValue = new Map(requestMarks.map((p) =>
+      [p.kind === 'COORDINATES' ? p.markWhen : undefined, p]));
+    expect((byValue.get('interior') as { x: number } | undefined)?.x).toBe(100);
+    expect((byValue.get('costeira') as { x: number } | undefined)?.x).toBe(168);
+    expect((byValue.get('oceanica') as { x: number } | undefined)?.x).toBe(240);
+    expect((byValue.get('transf_prop') as { x: number } | undefined)?.x).toBe(96);
+    expect((byValue.get('transf_jur') as { x: number } | undefined)?.x).toBe(260);
+
+    const loss = catalog.mappings.find((m) =>
+      m.formVersionId === 'declaracao-perda-tie-er-2026-v1')!;
+    const lostTie = loss.placements.find((p) =>
+      p.kind === 'COORDINATES' && p.fieldId === 'process.lostTie');
+    expect(lostTie?.kind).toBe('COORDINATES');
+    if (lostTie?.kind === 'COORDINATES') expect(lostTie.x).toBe(94);
+  });
+
   it('gera cada modelo oficial com valores fictícios preservando páginas e bytes originais', async () => {
     for (const mapping of catalog.mappings) {
       const version = catalog.versions.find((v) => v.id === mapping.formVersionId)!;
