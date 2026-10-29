@@ -89,6 +89,57 @@ describe('tieDocumentExtractor', () => {
       .toBe('MAR AZUL');
   });
 
+  it('separa proprietário registrado e coproprietário sem atribuir papel de comprador ou vendedor', () => {
+    const source: DocumentObservation = {
+      engine: 'paddleocr',
+      engineVersion: '3.7.0',
+      model: 'PP-OCRv6',
+      elapsedMs: 10,
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'PROPRIETÁRIO / OWNER', confidence: .99,
+            box: [10, 10, 240, 32], polygon: null },
+          { id: '0:1', page: 0, text: 'NOME: MARIA DE SOUZA', confidence: .98,
+            box: [10, 42, 280, 64], polygon: null },
+          { id: '0:2', page: 0, text: 'CPF/CNPJ: 123.456.789-09', confidence: .98,
+            box: [10, 72, 290, 94], polygon: null },
+          { id: '0:3', page: 0, text: 'ENDEREÇO: RUA DAS FLORES', confidence: .97,
+            box: [10, 102, 320, 124], polygon: null },
+          { id: '0:4', page: 0, text: 'NÚMERO: 123', confidence: .97,
+            box: [10, 132, 150, 154], polygon: null },
+          { id: '0:5', page: 0, text: 'CEP: 20000-000', confidence: .97,
+            box: [10, 162, 170, 184], polygon: null },
+          { id: '0:6', page: 0, text: 'CIDADE/ESTADO: RIO DE JANEIRO/RJ', confidence: .97,
+            box: [10, 192, 390, 214], polygon: null },
+          { id: '0:7', page: 0, text: 'CO-PROPRIETÁRIO / CO-OWNER', confidence: .99,
+            box: [10, 240, 310, 262], polygon: null },
+          { id: '0:8', page: 0, text: 'NOME: JOAO DE SOUZA', confidence: .98,
+            box: [10, 272, 270, 294], polygon: null },
+          { id: '0:9', page: 0, text: 'CPF/CNPJ: 529.982.247-25', confidence: .98,
+            box: [10, 302, 290, 324], polygon: null },
+          { id: '0:10', page: 0, text: 'CARACTERÍSTICAS DO CASCO', confidence: .99,
+            box: [10, 350, 310, 372], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['registeredOwner.fullName']).toBe('MARIA DE SOUZA');
+    expect(values['registeredOwner.taxId']).toBe('123.456.789-09');
+    expect(values['registeredOwner.address']).toBe('RUA DAS FLORES');
+    expect(values['registeredOwner.streetNumber']).toBe('123');
+    expect(values['registeredOwner.postalCode']).toBe('20000-000');
+    expect(values['registeredOwner.cityState']).toBe('RIO DE JANEIRO/RJ');
+    expect(values['coOwner.fullName']).toBe('JOAO DE SOUZA');
+    expect(values['coOwner.cpf']).toBe('529.982.247-25');
+    expect(values['person.fullName']).toBeUndefined();
+    expect(values['seller.fullName']).toBeUndefined();
+  });
+
   it('usa janela maior de inscrição somente no layout TIEM legado', () => {
     const legacy: DocumentObservation = {
       engine: 'paddleocr',
