@@ -48,7 +48,7 @@ describe('jornada real isolada da demonstração', () => {
 
     expect(await screen.findByRole('heading',{name:'Serviço de teste'})).toBeTruthy();
     await user.click(screen.getByRole('button',{name:'Conferir documentos necessários'}));
-    expect(await screen.findByRole('heading',{name:'Documentos para leitura automática (opcionais)'})).toBeTruthy();
+    expect(await screen.findByRole('heading',{name:'Documentos para preenchimento automático (opcionais)'})).toBeTruthy();
     const provider = screen.getByLabelText('Método de leitura automática') as HTMLSelectElement;
     expect(provider.value).toBe('paddleocr');
     await user.selectOptions(provider, 'openai');
@@ -241,7 +241,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
     expect(await screen.findByRole('heading',
-      { name: 'Documentos para leitura automática (opcionais)' })).toBeTruthy();
+      { name: 'Documentos para preenchimento automático (opcionais)' })).toBeTruthy();
     await user.click(screen.getByRole('button',
       { name: 'Continuar sem anexos — preencher manualmente' }));
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
