@@ -174,21 +174,26 @@ nota fiscal como documento autônomo, pois não estão no rol do 2.4.1. Se a
 CP/DL/AG escolhida exigir algo adicional, registrar a exigência local com
 referência e tratá-la como condicional, não como regra nacional.
 
-## 5. Perguntas condicionais propostas
+## 5. Roteamento atual dos serviços
 
-As respostas devem ser opções enumeradas e validadas no backend; nenhuma
-expressão arbitrária do cliente será executada.
+Os cards representam **o serviço solicitado**, e não o tipo físico da
+embarcação. A mesma entrada atende moto aquática e embarcação convencional.
 
-| Pergunta | Opções | Efeito |
-| --- | --- | --- |
-| `tieSituation` | `digital_com_qr`, `antigo_sem_validade`, `antigo_com_validade`, `extraviado` | Digital/sem validade: usar 2-D; extraviado: 2-C e possível renovação do TIE |
-| `authorizationStatus` | `assinada_reconhecida`, `pendente` | Se pendente, gerar minuta do 2-D e marcar o pacote como não protocolável até assinatura/reconhecimento |
-| `sellerCommunication` | `sim`, `nao` | Se sim, incluir 2-E (opcional) |
-| `residenceProof` | `conta_consumo`, `declaracao_1c` | Se declaração, incluir 1-C |
-| `representative` | `nao`, `sim` | Se sim, exigir procuração e identificação do outorgado |
-| `coOwner` | `nao`, `sim` | Se sim, exigir assinatura/reconhecimento do co-proprietário no 2-D |
-| `buyerType` | `pessoa_fisica`, `pessoa_juridica` | Seleciona CPF/CNPJ e o documento de identificação correspondente |
-| `jurisdictionChange` | `nao`, `sim` | `sim` está fora do piloto (transferência de jurisdição); orientar serviço separado |
+As respostas são opções enumeradas e validadas no backend; nenhuma expressão
+arbitrária do cliente é executada.
+
+| Pergunta | Opções | Quando aparece | Efeito |
+| --- | --- | --- | --- |
+| `vesselType` | `moto_aquatica`, `embarcacao` | Todos os serviços | Seleciona NORMAM-212/BDMOTO ou NORMAM-211 |
+| `vesselBand` | `ate_12m`, `maior_12_ate_24m` | Somente para `embarcacao` quando BADE/BSADE precisa ser escolhido | Até 12 m usa BSADE; acima de 12 até 24 m usa BADE |
+| `dataChanged` | `sim`, `nao` | Renovação e 2ª via | Inclui boletim de atualização somente quando houve alteração; para embarcação, o comprimento passa a ser solicitado se a resposta for `sim` |
+
+As perguntas antigas de situação do TIE, autorização de transferência,
+comunicação opcional do vendedor, comprovante/declaracão de residência,
+coproprietário e procurador foram retiradas da etapa inicial. Elas não devem
+bloquear o usuário antes do upload. A Comunicação de Venda é um serviço
+próprio, e a Declaração de Residência é incluída por padrão nos serviços em
+que ela faz parte do pacote configurado.
 
 ## 6. Inconsistências e pendências de interpretação
 
