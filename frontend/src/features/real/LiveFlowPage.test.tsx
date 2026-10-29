@@ -264,7 +264,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
     expect(screen.getByText('Nenhum campo preenchido pelo OCR')).toBeTruthy();
     expect(screen.getByText(/Nome: rótulo encontrado, mas valor não validado/)).toBeTruthy();
-    expect(screen.getByText(/texto detectado, mas nome\/CPF\/RG não foram identificados com segurança/)).toBeTruthy();
+    expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/)).toBeTruthy();
     expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(screen.getByText(/Preencha o campo obrigatório: Nome completo/)).toBeTruthy();
