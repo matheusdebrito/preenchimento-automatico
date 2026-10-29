@@ -267,7 +267,10 @@ function extractionPrompt(
     '9. Cada candidate deve apontar para o requirementId do documento em que o valor está visível.',
     '9a. Para cada documento, retorne SOMENTE fieldIds presentes em allowedFieldIds daquele documento.',
     '10. Se documentos divergirem, retorne candidatos separados por documento; o backend resolverá o conflito.',
-    '11. Não produza comentários, explicações ou campos além do schema.',
+    '11. Em RG, CIN ou CNH, quando os fieldIds correspondentes estiverem permitidos, extraia também o número da identidade/documento e o órgão emissor/expedidor que estejam claramente visíveis.',
+    '11a. Para número da identidade, não use CPF, número de segurança, código interno, número de formulário ou outro identificador que não esteja explicitamente associado ao documento de identidade.',
+    '11b. Para órgão emissor, preserve a sigla/texto visível (por exemplo SSP/UF ou DETRAN/UF) e nunca deduza o órgão apenas pela UF, pelo layout ou pelo tipo de documento.',
+    '12. Não produza comentários, explicações ou campos além do schema.',
     'Campos permitidos: ' + JSON.stringify(fieldList),
     'Documentos enviados: ' + JSON.stringify(documentList),
   ].join('\n');
