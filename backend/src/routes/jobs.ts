@@ -27,6 +27,7 @@ import { extractDocumentEvidence } from '../modules/document-understanding/regis
 import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
 import type { FieldEvidence } from '../modules/document-understanding/contracts.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
+import { TemplateGenerationError } from '../modules/pdf/template-error.js';
 import { watermarkQaSample } from '../modules/pdf/qa-watermark.js';
 
 const createSchema = z.object({ serviceId: z.string().max(100),
@@ -515,6 +516,10 @@ export function registerJobRoutes(
           fieldId: error.fieldId,
           reason: error.reason,
         });
+      }
+      if (error instanceof TemplateGenerationError) {
+        req.log.error({ err: error, jobId: job.id, templateError: error.code }, 'pdf_generation_failed');
+        return reply.status(422).send({ error: error.code });
       }
       if (generationPhase === 'credit') {
         if (error instanceof Error && error.message === 'Saldo insuficiente.') {
