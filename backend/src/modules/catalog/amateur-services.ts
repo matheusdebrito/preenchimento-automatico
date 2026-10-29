@@ -140,11 +140,12 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'inscricao-exame-amador',
     title: 'Inscrição para exame de amador',
-    description: 'Inscrição para exame de Arrais, Mestre ou Capitão conforme o art. 5.4.1. A norma lista a documentação exigida, mas não vincula este procedimento ao Anexo 5-H; por isso nenhum formulário é inventado.',
+    description: 'Preenchimento do requerimento para inscrição no exame de Arrais-Amador, Mestre-Amador ou Capitão-Amador. O 5-H é usado conforme orientação operacional vigente da Marinha. Os uploads são apenas fontes opcionais de dados; a aplicação não valida a documentação exigida para protocolo.',
     creditCost: 1,
-    status: 'DRAFT',
+    status: 'AVAILABLE',
     questions: [amateurCategoryQuestion],
-    documentRequirements: commonDocuments,
+    documentRequirements: commonDocuments.filter((item) =>
+      ['applicant-identity', 'residence-proof'].includes(item.id)),
   },
   {
     id: 'renovacao-cha-amador',
@@ -159,6 +160,22 @@ export const amateurServices: readonly ServiceDefinition[] = [
 ];
 
 export const amateurServiceForms: readonly ServiceForm[] = [
+  {
+    serviceId: 'inscricao-exame-amador',
+    formVersionId: 'requerimento-cha-amador-2026-v1',
+    order: 1,
+    fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
+    answerValueMappings: {
+      'process.notes': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Inscrição para exame de Arrais-Amador',
+          mestre: 'Inscrição para exame de Mestre-Amador',
+          capitao: 'Inscrição para exame de Capitão-Amador',
+        },
+      },
+    },
+  },
   {
     serviceId: 'renovacao-cha-amador',
     formVersionId: 'requerimento-cha-amador-2026-v1',
