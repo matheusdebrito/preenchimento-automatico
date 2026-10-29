@@ -89,6 +89,19 @@ describe('tieDocumentExtractor', () => {
       .toBe('MAR AZUL');
   });
 
+  it('tolera degradação real do rótulo bilíngue de inscrição sem confundir casco', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'MOMCIO DE INSCRICAO / REGISTRATION NUMSER',
+      '3810056831',
+      'Nº DO CASCO / HULL NUMBER',
+      'BRABC12345D626',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.registration']).toBe('3810056831');
+    expect(values['vessel.hullId']).toBe('BRABC12345D626');
+  });
+
   it('não escolhe valor quando o mesmo campo diverge no documento', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'INSCRIÇÃO: 3810056831',
