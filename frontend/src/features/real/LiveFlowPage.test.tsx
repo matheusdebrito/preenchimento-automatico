@@ -16,6 +16,12 @@ const service = {
   ],
   formVersionIds: ['requerimento-ma-v1'],
   reviewFields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text' }],
+  reviewForms: [{
+    formVersionId: 'requerimento-ma-v1',
+    formId: 'requerimento-ma',
+    name: 'Requerimento de teste',
+    fields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: false }],
+  }],
 };
 
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); });
@@ -63,7 +69,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByText(/0 MB/)).toBeTruthy();
     expect(uploader.disabled).toBe(false);
     await user.click(screen.getByRole('button',{name:'Analisar documentos e revisar campos'}));
-    expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
+    expect(await screen.findByRole('heading',{name:'Preencha e confira os formulários'})).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA EXEMPLO');
     expect(screen.getByText(/Sugestão de Documento de teste/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Prorrogar sessão temporária' }));
@@ -82,6 +88,84 @@ describe('jornada real isolada da demonstração', () => {
     expect(reviewCall).toBeDefined();
     expect(JSON.parse(reviewCall![1]!.body as string).values['person.fullName']).toBe('MARIA CONFERIDA');
   }, 25000);
+
+  it('permite preenchimento manual por formulário recolhível sem upload', async () => {
+    const groupedService = {
+      ...service,
+      formVersionIds: ['form-a-v1', 'form-b-v1'],
+      reviewFields: [
+        { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+        { id: 'person.cpf', label: 'CPF', valueKind: 'text', required: true },
+      ],
+      reviewForms: [
+        {
+          formVersionId: 'form-a-v1',
+          formId: 'form-a',
+          name: 'Requerimento',
+          fields: [
+            { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+          ],
+        },
+        {
+          formVersionId: 'form-b-v1',
+          formId: 'form-b',
+          name: 'Termo de responsabilidade',
+          fields: [
+            { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+            { id: 'person.cpf', label: 'CPF', valueKind: 'text', required: true },
+          ],
+        },
+      ],
+    };
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) {
+        return json({ service: groupedService });
+      }
+      if (path.endsWith('/quote')) return json({ service: groupedService });
+      if (path === '/api/jobs' && init?.method === 'POST') {
+        return json({ id: 'job-manual', expiresAt: Date.now() + 20 * 60_000 }, 201);
+      }
+      if (path.endsWith('/extract')) {
+        return json({ fields: {}, sources: {}, diagnostics: [] });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', {
+      name: 'Continuar sem anexos — preencher manualmente',
+    }));
+
+    expect(await screen.findByRole('heading', {
+      name: 'Preencha e confira os formulários',
+    })).toBeTruthy();
+
+    const requestButton = screen.getByRole('button', { name: /Requerimento/ });
+    const responsibilityButton = screen.getByRole('button', {
+      name: /Termo de responsabilidade/,
+    });
+    expect(requestButton.getAttribute('aria-expanded')).toBe('true');
+    expect(responsibilityButton.getAttribute('aria-expanded')).toBe('false');
+
+    await user.type(screen.getByLabelText('Nome completo *'), 'MARIA DE SOUZA');
+    await user.click(responsibilityButton);
+    expect(responsibilityButton.getAttribute('aria-expanded')).toBe('true');
+
+    const sharedNames = screen.getAllByLabelText('Nome completo *') as HTMLInputElement[];
+    expect(sharedNames).toHaveLength(2);
+    expect(sharedNames[0]!.value).toBe('MARIA DE SOUZA');
+    expect(sharedNames[1]!.value).toBe('MARIA DE SOUZA');
+    expect(screen.getByText(/valor é compartilhado com outros formulários/i)).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Fechar todos' }));
+    expect(requestButton.getAttribute('aria-expanded')).toBe('false');
+    expect(responsibilityButton.getAttribute('aria-expanded')).toBe('false');
+  });
 
   it('popula nome, CPF e RG do comprador quando a API entrega candidatos válidos', async () => {
     const identityService = {
@@ -127,7 +211,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Identidade do comprador$/) as HTMLInputElement,
       new File(['synthetic'], 'rg-ficticio.jpg', { type: 'image/jpeg' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
-    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA DE SOUZA');
     expect((screen.getByLabelText(/^CPF/) as HTMLInputElement).value).toBe('123.456.789-09');
     expect((screen.getByLabelText(/^RG/) as HTMLInputElement).value).toBe('12.345.678-9');
@@ -159,7 +243,7 @@ describe('jornada real isolada da demonstração', () => {
       { name: 'Documentos para leitura automática (opcionais)' })).toBeTruthy();
     await user.click(screen.getByRole('button',
       { name: 'Continuar sem anexos — preencher manualmente' }));
-    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(screen.getByText(/Você optou por preencher sem documentos/)).toBeTruthy();
     await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA TESTE');
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
@@ -205,7 +289,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
-    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     const date = screen.getByLabelText(/Data da venda/) as HTMLInputElement;
     expect(date.placeholder).toBe('DD/MM/AAAA');
     await user.type(date, '01012026');
@@ -268,7 +352,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(fetcher.mock.calls.filter(([url]) =>
       String(url).includes('/documents/tie'))).toHaveLength(0);
 
-    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(screen.getByText('Nenhum campo preenchido pelo OCR')).toBeTruthy();
     expect(screen.getByText(/Nome: rótulo encontrado, mas valor não validado/)).toBeTruthy();
     expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/)).toBeTruthy();
@@ -334,7 +418,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
-    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(jobsCreated).toBe(1);
     expect(uploadsAttempted).toBe(2);
     await user.click(screen.getByRole('button', { name: 'Cancelar e apagar documentos temporários' }));
@@ -368,7 +452,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['example'], 'image.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
-    expect(await screen.findByRole('heading', { name: 'Confira cada campo' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(1);
@@ -393,7 +477,7 @@ describe('jornada real isolada da demonstração', () => {
     vi.stubGlobal('fetch', fetcher);
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
-    expect(await screen.findByRole('heading',{name:'Confira cada campo'})).toBeTruthy();
+    expect(await screen.findByRole('heading',{name:'Preencha e confira os formulários'})).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('ANA TESTE');
     expect(sessionStorage.getItem('pa:temporary-job:ci-only-service')).toBe(jobId);
     expect(sessionStorage.length).toBe(1);
