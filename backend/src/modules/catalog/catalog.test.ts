@@ -44,9 +44,9 @@ function sharedFormFixture(): CatalogDefinition {
 }
 
 describe('catálogo reutilizável de formulários', () => {
-  it('mantém serviços não homologados em DRAFT e separa versões identificadas de verificadas', () => {
+  it('publica os serviços de barco somente com versões e mapas aprovados', () => {
     expect(catalog.services).toHaveLength(9);
-    expect(catalog.services.every((service) => service.status === 'DRAFT')).toBe(true);
+    expect(catalog.services.every((service) => service.status === 'AVAILABLE')).toBe(true);
     expect(catalog.forms).toHaveLength(14);
     expect(catalog.versions).toHaveLength(14);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(14);
@@ -56,17 +56,17 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings).toHaveLength(14);
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
-      mapping.status === 'TESTED')).toBe(true);
+      mapping.status === 'APPROVED')).toBe(true);
     expect(catalog.mappings.filter((mapping) =>
       !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(51);
+    expect(catalog.serviceForms).toHaveLength(45);
     expect(catalog.services.every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
-  it('cadastra os nove serviços NORMAM-211 sem publicá-los antes dos PDFs e mapas', () => {
+  it('cadastra e publica os nove serviços NORMAM-211 para embarcação/barco', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
       'inscricao-embarcacao',
@@ -80,7 +80,7 @@ describe('catálogo reutilizável de formulários', () => {
       'comunicacao-venda-embarcacao',
     ]) {
       expect(ids.has(id)).toBe(true);
-      expect(catalog.services.find((service) => service.id === id)?.status).toBe('DRAFT');
+      expect(catalog.services.find((service) => service.id === id)?.status).toBe('AVAILABLE');
       expect(catalog.serviceForms.some((relation) => relation.serviceId === id)).toBe(true);
     }
   });
