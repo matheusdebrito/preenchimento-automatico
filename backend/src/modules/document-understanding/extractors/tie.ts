@@ -200,6 +200,15 @@ const countTableCell = {
   maxBelowHorizontalOffsetHeights: 5,
 } as const;
 
+const motorCountCell = {
+  ...countTableCell,
+  // The current low-resolution TIE can place the one-digit engine count lower
+  // inside a tall cell. Keep this wider search scoped to this field only.
+  maxRightDistanceHeights: 12,
+  maxBelowDistanceHeights: 8,
+  maxBelowHorizontalOffsetHeights: 7,
+} as const;
+
 const creditorTableCell = {
   ...compactTableCell,
   maxRightDistanceHeights: 5,
@@ -261,12 +270,12 @@ const legacyOnlyFields = new Set([
 
 const legacyRegistrationCell = {
   ...tightTableCell,
-  // The old TIEM prints the registration lower inside a taller header cell.
-  // Keep this exception scoped to the legacy variant instead of widening the
-  // digital TIE search window.
-  maxRightDistanceHeights: 12,
-  maxBelowDistanceHeights: 5,
-  maxBelowHorizontalOffsetHeights: 6,
+  // The old TIEM scan places the registration lower inside a tall header cell,
+  // and PaddleOCR may shift the detected value vertically. Keep the larger
+  // window scoped to the legacy registration field.
+  maxRightDistanceHeights: 16,
+  maxBelowDistanceHeights: 7,
+  maxBelowHorizontalOffsetHeights: 8,
 } as const;
 
 function conceptsForVariant(variant: TieDocumentVariant): readonly SemanticFieldConcept[] {
@@ -297,6 +306,8 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     // to this long label; geometry and the registration validator remain strict.
     approximateLabels: [
       { text: 'NUMERO DE INSCRICAO / REGISTRATION NUMBER', maxDistance: 5 },
+      // Real TIEM scan: the number symbol can disappear completely.
+      { text: 'N DE INSCRICAO', maxDistance: 1 },
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
@@ -567,10 +578,12 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     approximateLabels: [
       { text: 'QUANTIDADE DE MOTORES', maxDistance: 2 },
+      // Real TIE scan: Q->G and DE->OE are both observed OCR degradations.
+      { text: 'GUANTIDADE OE MOTORES', maxDistance: 0 },
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
-    spatialHint: countTableCell,
+    spatialHint: motorCountCell,
     validate: count,
   },
   {
