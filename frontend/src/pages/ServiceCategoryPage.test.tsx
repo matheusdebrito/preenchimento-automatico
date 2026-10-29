@@ -39,8 +39,17 @@ describe('ServiceCategoryPage', () => {
     expect(screen.getAllByText('Formulário em validação').length).toBeGreaterThan(0);
   });
 
-  it('libera renovação da CHA e mantém inscrição para exame em validação', async () => {
+  it('libera inscrição para exame e renovação da CHA', async () => {
     const { unmount } = renderCategory('/servicos/amadores', [{
+      id: 'inscricao-exame-amador',
+      title: 'Inscrição para exame de amador',
+      description: 'Fluxo homologado',
+      creditCost: 1,
+      questions: [],
+      reviewFields: [],
+      documentRequirements: [],
+      formVersionIds: ['requerimento-cha-amador-2026-v1'],
+    }, {
       id: 'renovacao-cha-amador',
       title: 'Renovação da CHA',
       description: 'Fluxo homologado',
@@ -51,10 +60,11 @@ describe('ServiceCategoryPage', () => {
       formVersionIds: ['requerimento-cha-amador-2026-v1'],
     }]);
     expect(screen.getByRole('heading', { level: 1, name: 'Arrais, Mestre e Capitão' })).toBeTruthy();
-    expect(screen.getByText('Inscrição para exame')).toBeTruthy();
+    const enrollment = await screen.findByRole('link', { name: /Inscrição para exame de amador/ });
+    expect(enrollment.getAttribute('href')).toBe('/preencher-real/inscricao-exame-amador');
     const renewal = await screen.findByRole('link', { name: /Renovação da CHA/ });
     expect(renewal.getAttribute('href')).toBe('/preencher-real/renovacao-cha-amador');
-    expect(screen.getAllByText('Formulário em validação')).toHaveLength(1);
+    expect(screen.queryByText('Formulário em validação')).toBeNull();
     unmount();
 
     renderCategory('/servicos/aquaviarios');
