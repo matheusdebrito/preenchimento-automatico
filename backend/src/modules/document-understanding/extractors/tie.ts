@@ -75,8 +75,23 @@ const serial = (value: string): boolean => {
   return /^[A-Z0-9./-]{4,50}$/i.test(text) && /\d/.test(text);
 };
 
+const normalizeBrazilianDate = (value: string): string | null => {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const yearValue = Number(match[3]);
+  const parsed = new Date(Date.UTC(yearValue, month - 1, day));
+  if (parsed.getUTCFullYear() !== yearValue ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day) return null;
+  return String(day).padStart(2, '0') + '/' +
+    String(month).padStart(2, '0') + '/' + String(yearValue);
+};
 const dateValue = (value: string): boolean =>
-  /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value.trim());
+  normalizeBrazilianDate(value) !== null;
+const normalizeYesNo = (value: string): string =>
+  /^(?:SIM|YES)$/i.test(value.trim()) ? 'sim' : 'nao';
 const yesNo = (value: string): boolean =>
   /^(?:SIM|NAO|NÃO|YES|NO)$/i.test(value.trim());
 const issuePlace = (value: string): boolean =>
@@ -245,6 +260,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     allowSequentialWithGeometry: false,
     spatialHint: compactTableCell,
     validate: dateValue,
+    normalize: (value) => normalizeBrazilianDate(value) ?? value.trim(),
   },
   {
     fieldId: 'vessel.expirationDate',
@@ -256,6 +272,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     allowSequentialWithGeometry: false,
     spatialHint: compactTableCell,
     validate: dateValue,
+    normalize: (value) => normalizeBrazilianDate(value) ?? value.trim(),
   },
   {
     fieldId: 'vessel.name',
@@ -502,6 +519,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     preferredDirections: ['below', 'right'],
     spatialHint: tightTableCell,
     validate: yesNo,
+    normalize: normalizeYesNo,
   },
   {
     fieldId: 'vessel.mortgageCreditor',
@@ -532,6 +550,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     preferredDirections: ['below', 'right'],
     spatialHint: compactTableCell,
     validate: dateValue,
+    normalize: (value) => normalizeBrazilianDate(value) ?? value.trim(),
   },
   {
     fieldId: 'vessel.hullColor',
