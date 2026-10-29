@@ -981,4 +981,82 @@ describe('tieDocumentExtractor', () => {
     expect(evidence.some((item) => item.fieldId === 'vessel.hullColor')).toBe(false);
   });
 
+  it('isola o painel direito de proprietários no TIEM legado', () => {
+    const source: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+            confidence: .99, box: [20, 10, 500, 34], polygon: null },
+
+          // Left vessel panel.
+          { id: '0:1', page: 0, text: 'N DE INSCRICAO',
+            confidence: .96, box: [30, 55, 170, 77], polygon: null },
+          { id: '0:2', page: 0, text: '441M20200001',
+            confidence: .99, box: [45, 85, 170, 107], polygon: null },
+          { id: '0:3', page: 0, text: 'QTD. DE TRIPULANTES',
+            confidence: .97, box: [30, 250, 180, 272], polygon: null },
+          { id: '0:4', page: 0, text: '1',
+            confidence: .99, box: [90, 282, 105, 304], polygon: null },
+          { id: '0:5', page: 0, text: 'QTD. DE PASSAGEIROS',
+            confidence: .97, box: [210, 250, 370, 272], polygon: null },
+          { id: '0:6', page: 0, text: '4',
+            confidence: .99, box: [285, 282, 300, 304], polygon: null },
+
+          // Right owner/co-owner panel, intentionally masked.
+          { id: '0:7', page: 0, text: 'PROPRIETÁRIO',
+            confidence: .99, box: [520, 55, 660, 77], polygon: null },
+          { id: '0:8', page: 0, text: 'NOME',
+            confidence: .97, box: [500, 85, 560, 107], polygon: null },
+          { id: '0:9', page: 0, text: 'XXXXXXXXXXXX',
+            confidence: .96, box: [570, 85, 720, 107], polygon: null },
+          { id: '0:10', page: 0, text: 'BAIRRO',
+            confidence: .97, box: [500, 120, 565, 142], polygon: null },
+          { id: '0:11', page: 0, text: '********',
+            confidence: .96, box: [575, 120, 700, 142], polygon: null },
+          { id: '0:12', page: 0, text: 'CO-PROPRIETÁRIO',
+            confidence: .99, box: [520, 165, 700, 187], polygon: null },
+          { id: '0:13', page: 0, text: 'NOME',
+            confidence: .97, box: [500, 195, 560, 217], polygon: null },
+          { id: '0:14', page: 0, text: 'XXXXXXXXXXXX',
+            confidence: .96, box: [570, 195, 720, 217], polygon: null },
+          { id: '0:15', page: 0, text: 'BAIRRO',
+            confidence: .97, box: [500, 225, 565, 247], polygon: null },
+          { id: '0:16', page: 0, text: '********',
+            confidence: .96, box: [575, 225, 700, 247], polygon: null },
+
+          { id: '0:17', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
+            confidence: .99, box: [500, 330, 760, 352], polygon: null },
+        ],
+      }],
+    };
+
+    expect(classifyTieVariant(source)).toBe('legacy');
+    const evidence = tieDocumentExtractor.extract(source, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.registration']).toBe('441M20200001');
+    expect(values['vessel.crewCount']).toBe('1');
+    expect(values['vessel.passengerCount']).toBe('4');
+    expect(values['registeredOwner.fullName']).toBeUndefined();
+    expect(values['registeredOwner.neighborhood']).toBeUndefined();
+    expect(values['coOwner.fullName']).toBeUndefined();
+    expect(values['coOwner.neighborhood']).toBeUndefined();
+  });
+
+  it('não confunde medida decimal longa com número de inscrição', () => {
+    const source = observation([
+      'N DE INSCRICAO',
+      '85.00',
+      '441M20200001',
+      'CARACTERISTICAS DO CASCO',
+      'NOME FABRICANTE',
+    ]);
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.registration')?.value)
+      .toBe('441M20200001');
+  });
+
 });
