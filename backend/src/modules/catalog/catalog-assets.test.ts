@@ -10,7 +10,13 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../.
 describe('arquivos oficiais registrados no catálogo', () => {
   it('mantém cada PDF presente com assinatura e SHA-256 registrados', () => {
     for (const version of catalog.versions) {
+      if (version.status === 'IDENTIFIED') {
+        expect(version.templatePath, version.id).toBeNull();
+        expect(version.sha256, version.id).toBeNull();
+        continue;
+      }
       expect(version.templatePath, version.id).not.toBeNull();
+      expect(version.sha256, version.id).not.toBeNull();
       if (!version.templatePath) continue;
 
       const filePath = resolve(repositoryRoot, version.templatePath);
