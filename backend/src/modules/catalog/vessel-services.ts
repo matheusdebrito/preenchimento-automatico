@@ -417,7 +417,7 @@ const motoRequest = (
   order,
   conditions: motoConditions(),
   ...(transferOwnership
-    ? { fixedValues: { 'process.transferOwnership': 'true' } }
+    ? { fixedValues: { 'process.transferOwnership': 'X' } }
     : {}),
 });
 
@@ -434,11 +434,11 @@ const motoBdmoto = (
   fixedValues: action === 'inscricao'
     ? { 'process.inscription': 'true' }
     : action === 'transf_prop'
-      ? { 'process.transferOwnership': 'true' }
+      ? { 'process.transferOwnership': 'X' }
       : action === 'transf_jur'
         ? { 'process.transferJurisdiction': 'true' }
         : action === 'transf_prop_jur'
-          ? { 'process.transferOwnership': 'true', 'process.transferJurisdiction': 'true' }
+          ? { 'process.transferOwnership': 'X', 'process.transferJurisdiction': 'true' }
           : { 'process.updateVesselData': 'true' },
 });
 
