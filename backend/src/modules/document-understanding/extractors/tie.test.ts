@@ -89,6 +89,36 @@ describe('tieDocumentExtractor', () => {
       .toBe('MAR AZUL');
   });
 
+  it('usa janela maior de inscrição somente no layout TIEM legado', () => {
+    const legacy: DocumentObservation = {
+      engine: 'paddleocr',
+      engineVersion: '3.7.0',
+      model: 'PP-OCRv6',
+      elapsedMs: 10,
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+            confidence: .99, box: [10, 10, 380, 30], polygon: null },
+          { id: '0:1', page: 0, text: 'N DE INSCRIÇÃO',
+            confidence: .98, box: [10, 60, 150, 80], polygon: null },
+          { id: '0:2', page: 0, text: '441M20200001',
+            confidence: .98, box: [10, 155, 170, 177], polygon: null },
+          { id: '0:3', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
+            confidence: .98, box: [300, 220, 560, 242], polygon: null },
+          { id: '0:4', page: 0, text: 'CREDOR HIPOTECÁRIO',
+            confidence: .98, box: [300, 260, 520, 282], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(legacy, context);
+    expect(classifyTieVariant(legacy)).toBe('legacy');
+    expect(evidence.find((item) => item.fieldId === 'vessel.registration')?.value)
+      .toBe('441M20200001');
+  });
+
   it('tolera degradação real do rótulo bilíngue de inscrição sem confundir casco', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'MOMCIO DE INSCRICAO / REGISTRATION NUMSER',
