@@ -153,6 +153,9 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(legacy.has('vessel.passengerCount')).toBe(true);
     // Masked owner/hull-color values in the public TIEM must remain absent.
     expect(legacy.has('registeredOwner.fullName')).toBe(false);
+    expect(legacy.has('registeredOwner.neighborhood')).toBe(false);
+    expect(legacy.has('coOwner.fullName')).toBe(false);
+    expect(legacy.has('coOwner.neighborhood')).toBe(false);
     expect(legacy.has('vessel.hullColor')).toBe(false);
   }, 120_000);
 
