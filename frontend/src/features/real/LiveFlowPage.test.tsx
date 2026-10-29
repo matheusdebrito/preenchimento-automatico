@@ -221,6 +221,8 @@ describe('jornada real isolada da demonstração', () => {
   }, 25000);
 
   it('permite gerar pela jornada manual sem anexar qualquer documento', async () => {
+    const scrollTo = vi.fn();
+    vi.stubGlobal('scrollTo', scrollTo);
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);
       if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
@@ -243,6 +245,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button',
       { name: 'Continuar sem anexos — preencher manualmente' }));
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
     expect(screen.getByText(/Você optou por preencher sem documentos/)).toBeTruthy();
     await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA TESTE');
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
