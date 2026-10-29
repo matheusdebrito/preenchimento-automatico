@@ -229,7 +229,9 @@ const residencePlacements: readonly CoordinatePlacement[] = [
 const lossPlacements: readonly CoordinatePlacement[] = [
   top('declarant.fullName', 110, 214, 420, 8, 0, true),
   top('declarant.identity', 178, 232, 75, 7),
-  top('declarant.issueDate', 337, 232, 75, 7),
+  top('declarant.issueDate', 331, 230, 18, 7, 0, false, undefined, 'DATE_DAY'),
+  top('declarant.issueDate', 356, 230, 18, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('declarant.issueDate', 382, 230, 28, 7, 0, false, undefined, 'DATE_YEAR'),
   top('declarant.cpf', 457, 232, 75, 7, 0, true),
   top('declarant.nationality', 140, 249, 75, 7),
   top('declarant.birthplace', 292, 249, 80, 7),
