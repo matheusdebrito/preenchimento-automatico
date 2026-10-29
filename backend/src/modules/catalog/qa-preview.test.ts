@@ -30,7 +30,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === QA_PREVIEW_SERVICE_ID)).toBe(true);
     expect(publicService(catalog, QA_PREVIEW_SERVICE_ID)).not.toBeNull();
-    expect(publicServices(catalog)).toHaveLength(9);
+    expect(publicServices(catalog)).toHaveLength(7);
 
     // The QA catalog is an isolated clone. It may promote mappings internally
     // so the local preview can exercise the real forms without publishing them.
@@ -69,7 +69,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
       expect(qa.mappings.find((item) => item.id === mapping.id)?.placements)
         .toEqual(mapping.placements);
     }
-    expect(publicServices(qa)).toHaveLength(9);
+    expect(publicServices(qa)).toHaveLength(7);
   });
 
   it('inclui os anexos condicionais reais quando selecionados', () => {
