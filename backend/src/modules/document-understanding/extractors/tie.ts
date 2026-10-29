@@ -75,6 +75,30 @@ const serial = (value: string): boolean => {
   return /^[A-Z0-9./-]{4,50}$/i.test(text) && /\d/.test(text);
 };
 
+const dateValue = (value: string): boolean =>
+  /^\d{2}\/\d{2}\/\d{4}$/.test(value.trim());
+const yesNo = (value: string): boolean =>
+  /^(?:SIM|NAO|NÃO|YES|NO)$/i.test(value.trim());
+const issuePlace = (value: string): boolean =>
+  value.trim().length >= 2 && value.trim().length <= 80 &&
+  /[A-ZÀ-Ý]/i.test(value) && !labelLike(value);
+
+const tightTableCell = {
+  minConfidence: 0.35,
+  maxRightDistanceHeights: 10,
+  sameRowToleranceHeights: 1.15,
+  maxBelowDistanceHeights: 3.2,
+  maxBelowHorizontalOffsetHeights: 5,
+  maxSequentialLines: 1,
+} as const;
+
+const compactTableCell = {
+  ...tightTableCell,
+  maxRightDistanceHeights: 7,
+  maxBelowDistanceHeights: 2.6,
+  maxBelowHorizontalOffsetHeights: 4,
+} as const;
+
 
 export type TieDocumentVariant = 'digital' | 'legacy' | 'unknown';
 
@@ -116,11 +140,15 @@ const digitalOnlyFields = new Set([
   'vessel.grossTonnage',
   'vessel.breadth',
   'vessel.motorManufacturerBrandModel',
+  'vessel.engineCount',
+  'vessel.issuePlace',
+  'vessel.issueDate',
 ]);
 
 const legacyOnlyFields = new Set([
   'vessel.motorBrand',
   'vessel.motorPower',
+  'vessel.registrationDate',
 ]);
 
 function conceptsForVariant(variant: TieDocumentVariant): readonly SemanticFieldConcept[] {
@@ -150,7 +178,30 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: registration,
+  },
+  {
+    fieldId: 'vessel.registrationDate',
+    anchor: 'DATA DE INSCRICAO',
+    labels: [
+      /^\s*DATA\s+(?:DE\s+)?INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: compactTableCell,
+    validate: dateValue,
+  },
+  {
+    fieldId: 'vessel.expirationDate',
+    anchor: 'VALIDADE',
+    labels: [
+      /^\s*(?:DATA\s+DE\s+VALIDADE(?:\s*\/\s*EXPIRATION\s+DATE)?|VALIDADE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: compactTableCell,
+    validate: dateValue,
   },
   {
     fieldId: 'vessel.name',
@@ -165,6 +216,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       { text: 'NOME DA EMBARCACAO', maxDistance: 3 },
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 100),
   },
   {
@@ -175,6 +227,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: hull,
   },
   {
@@ -185,6 +238,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*ANO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: compactTableCell,
     validate: year,
   },
   {
@@ -194,6 +248,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*COMPRIMENTO(?:\s+TOTAL)?(?:\s*\/\s*LENGTH)?(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: compactTableCell,
     validate: length,
   },
   {
@@ -212,6 +267,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: compactTableCell,
     validate: grossTonnage,
   },
   {
@@ -222,6 +278,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: compactTableCell,
     validate: decimalMeasure,
   },
   {
@@ -232,6 +289,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 80),
   },
   {
@@ -242,6 +300,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: navigationArea,
   },
   {
@@ -262,6 +321,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 80),
   },
   {
@@ -272,6 +332,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: propulsion,
   },
   {
@@ -281,6 +342,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:ATIVIDADE\s*[/|-]\s*ACTIVITY|ATIVIDADE\s*[/|-]\s*USO|ATIVIDADE\s*[/|-]\s*SERVI[CÇ]O|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 80),
   },
   {
@@ -352,6 +414,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD(?:ADE)?\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: compactTableCell,
     validate: count,
   },
   {
@@ -362,7 +425,59 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: compactTableCell,
     validate: count,
+  },
+  {
+    fieldId: 'vessel.engineCount',
+    anchor: 'QUANTIDADE DE MOTORES',
+    labels: [
+      /^\s*(?:QUANTIDADE\s+DE\s+MOTORES(?:\s*\/\s*QUANTITY\s+OF\s+ENGINES)?|QUANTITY\s+OF\s+ENGINES)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: compactTableCell,
+    validate: count,
+  },
+  {
+    fieldId: 'vessel.mortgaged',
+    anchor: 'HIPOTECA / ALIENACAO',
+    labels: [
+      /^\s*(?:HIPOTECAD[AO]\??|ALIENA[CÇ][AÃ]O\s+FIDUCI[AÁ]RIA(?:\s*\/\s*CHATTEL\s+MORTGAGE)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: tightTableCell,
+    validate: yesNo,
+  },
+  {
+    fieldId: 'vessel.mortgageCreditor',
+    anchor: 'CREDOR HIPOTECARIO',
+    labels: [
+      /^\s*CREDOR\s+HIPOTEC[AÁ]RIO(?:\s*\/\s*MORTGAGE\s+CREDITOR)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: tightTableCell,
+    validate: (value) => textValue(value, 2, 100),
+  },
+  {
+    fieldId: 'vessel.issuePlace',
+    anchor: 'LOCAL DE EMISSAO',
+    labels: [
+      /^\s*LOCAL\s+DE\s+EMISS[AÃ]O(?:\s*\/\s*PLACE\s+OF\s+ISSUE)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: tightTableCell,
+    validate: issuePlace,
+  },
+  {
+    fieldId: 'vessel.issueDate',
+    anchor: 'DATA DE EMISSAO',
+    labels: [
+      /^\s*DATA\s+DE\s+EMISS[AÃ]O(?:\s*\/\s*DATE\s+OF\s+ISSUE)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: compactTableCell,
+    validate: dateValue,
   },
   {
     fieldId: 'vessel.authority',
