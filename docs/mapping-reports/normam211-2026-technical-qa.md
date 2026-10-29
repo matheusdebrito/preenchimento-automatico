@@ -112,19 +112,18 @@ Os oito PDFs são estáticos, sem campos AcroForm.
 - fotos da embarcação não são solicitadas pela ferramenta de preenchimento,
   embora possam continuar sendo exigidas no procedimento oficial.
 
-## Bloqueios para APPROVED / AVAILABLE
+## Estado de liberação e bloqueios residuais
 
-1. O repositório exige revisão visual **humana** para `FormMapping = APPROVED`.
-   Esta revisão foi técnica, realizada pelo agente, e não deve ser rotulada como
-   gate humano.
-2. O Anexo 3-D (Termo de Responsabilidade de Construção/Alteração) ainda precisa
-   ser incorporado e modelado nos casos em que a responsabilidade técnica for
-   aplicável. A tentativa de download automatizado não foi mantida porque a
-   origem consultada apresentou cadeia TLS inválida no runner; TLS não foi
-   contornado.
-3. Embarcações com múltiplos motores continuam fora do domínio aprovado do MVP.
-4. Falta QA manual completo no navegador/mobile do fluxo real antes da
-   publicação dos serviços.
-
-Por esses motivos, os oito mapas podem avançar de `DRAFT` para `TESTED`,
-mas nenhum serviço desta expansão deve ficar `AVAILABLE` nesta entrega.
+- Os oito mapas NORMAM-211 foram promovidos para `APPROVED` após a revisão
+  técnica acima e autorização explícita do responsável pelo produto para o
+  escopo de um único motor. Isso não é descrito como inspeção pessoal do usuário.
+- Sete serviços podem ficar `AVAILABLE` para embarcação/barco com os formulários
+  já cobertos.
+- Moto aquática continua bloqueada em produção e preservada apenas no QA local
+  até a homologação NORMAM-212 correspondente.
+- O Anexo 3-D ainda precisa ser incorporado/modelado. Por isso alteração de
+  dados, alteração de motor e inscrição maior que 12 m até 24 m permanecem
+  bloqueadas.
+- Múltiplos motores ficam explicitamente fora do MVP.
+- QA manual em navegador/mobile permanece uma verificação operacional pendente,
+  sem invalidar a revisão estrutural e visual reproduzível já concluída.
