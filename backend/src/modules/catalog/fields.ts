@@ -132,6 +132,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'vessel.communicationVhfNoDsc', label: 'Comunicação VHF sem DSC', valueKind: 'boolean' },
   { id: 'vessel.communicationVhfDsc', label: 'Comunicação VHF com DSC', valueKind: 'boolean' },
   { id: 'vessel.communicationGmdss', label: 'Comunicação GMDSS', valueKind: 'boolean' },
+  { id: 'vessel.inmarsatA', label: 'INMARSAT-A', valueKind: 'text' },
   { id: 'vessel.inmarsatB', label: 'INMARSAT-B', valueKind: 'text' },
   { id: 'vessel.inmarsatM', label: 'INMARSAT-M', valueKind: 'text' },
   { id: 'vessel.inmarsatC', label: 'INMARSAT-C', valueKind: 'text' },
