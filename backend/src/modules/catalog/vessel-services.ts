@@ -219,7 +219,7 @@ export const vesselVersions: readonly FormVersion[] = [
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 3-C',
     regulation: 'NORMAM-211/DPC 2026, Anexo 3-C',
     sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
-    verifiedAt: null, sha256: null, templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'IDENTIFIED',
+    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'STATIC', status: 'IDENTIFIED',
   },
 ];
 
