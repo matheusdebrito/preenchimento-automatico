@@ -142,6 +142,18 @@ describe('motor determinístico de PDF', () => {
       .rejects.toThrow('fora dos limites');
   });
 
+  it('gera o 5-H real usado pela Renovação da CHA', async () => {
+    const output = await fillApprovedTemplate(catalog, 'requerimento-cha-amador-2026-v1', {
+      'person.fullName': 'Maria de Souza',
+      'person.cpf': '529.982.247-25',
+      'person.identity': '12345678',
+      'person.issuer': 'SSP/RJ',
+      'process.amateurRequest': 'emissao_renovacao',
+    });
+    const rendered = await PDFDocument.load(output);
+    expect(rendered.getPages()).toHaveLength(2);
+  });
+
   it('nunca gera os PDFs oficiais enquanto o mapeamento não estiver aprovado', async () => {
     await expect(fillApprovedTemplate(catalog, 'bdmoto-v1', {
       'person.fullName': 'Pessoa de exemplo',
