@@ -37,7 +37,7 @@ function fixture(): CatalogDefinition {
 
 describe('projeção pública do catálogo', () => {
   it('publica os nove serviços de barco e bloqueia moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(9);
+    expect(publicServices(catalog)).toHaveLength(7);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
@@ -86,18 +86,6 @@ describe('projeção pública do catálogo', () => {
           'declaracao-residencia-er-2026-v1'],
       },
       {
-        id: 'alteracao-dados-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
-        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
-          'declaracao-residencia-er-2026-v1'],
-      },
-      {
-        id: 'alteracao-motor-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
-        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
-          'declaracao-residencia-er-2026-v1'],
-      },
-      {
         id: 'comunicacao-venda-embarcacao',
         answers: { vesselType: 'embarcacao' },
         forms: ['comunicacao-transferencia-er-2026-v1'],
@@ -110,17 +98,21 @@ describe('projeção pública do catálogo', () => {
     }
   });
 
-  it('usa BADE e termo de responsabilidade na faixa maior que 12 m quando aplicável', () => {
-    const inscription = publicService(catalog, 'inscricao-embarcacao', {
+  it('bloqueia cenários ainda dependentes do anexo 3-D', () => {
+    expect(publicService(catalog, 'inscricao-embarcacao', {
       vesselType: 'embarcacao',
       vesselBand: 'maior_12_ate_24m',
-    });
-    expect(inscription?.formVersionIds).toEqual([
-      'requerimento-embarcacao-er-2026-v1',
-      'bade-er-2026-v1',
-      'declaracao-residencia-er-2026-v1',
-      'termo-responsabilidade-er-2026-v1',
-    ]);
+    })).toBeNull();
+    expect(publicService(catalog, 'alteracao-dados-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_12m',
+      tieSituation: 'regular',
+    })).toBeNull();
+    expect(publicService(catalog, 'alteracao-motor-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_12m',
+      tieSituation: 'regular',
+    })).toBeNull();
   });
 
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
