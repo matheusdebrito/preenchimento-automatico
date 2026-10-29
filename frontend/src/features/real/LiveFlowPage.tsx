@@ -809,7 +809,17 @@ export function LiveFlowPage() {
                                             if (invalidFieldIds.includes(field.id)) {
                                               const remaining = invalidFieldIds.filter((id) => id !== field.id);
                                               setInvalidFieldIds(remaining);
-                                              if (remaining.length === 0) setError('');
+                                              if (remaining.length === 0) {
+                                                setError('');
+                                              } else {
+                                                const labels = service.reviewFields
+                                                  .filter((item) => remaining.includes(item.id))
+                                                  .map((item) => item.label);
+                                                setError(
+                                                  'Não é possível gerar os formulários. Preencha os campos obrigatórios pendentes: ' +
+                                                  labels.join(', ') + '.',
+                                                );
+                                              }
                                             }
                                           }}
                                         />
