@@ -27,6 +27,11 @@ export interface SpatialSearchHint {
   maxBelowDistanceHeights?: number;
   maxBelowHorizontalOffsetHeights?: number;
   maxSequentialLines?: number;
+  /**
+   * Optional margin required to resolve two different valid values by spatial
+   * evidence. When omitted, distinct values remain ambiguous.
+   */
+  minSelectionScoreGap?: number;
 }
 
 const compactForLabelMatch = (value: string): string =>
@@ -72,26 +77,62 @@ export interface ExtractedCandidate {
   lineIds: readonly string[];
   method: string;
   anchor?: string;
+  /** Internal ranking signal. It is never exposed as OCR confidence. */
+  selectionScore?: number;
 }
 
 const boxHeight = (line: ObservationLine): number =>
   line.box ? Math.max(1, line.box[3] - line.box[1]) : 1;
+
+const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
+
+function geometricSelectionScore(
+  anchor: ObservationLine,
+  candidate: ObservationLine,
+  proximity: number,
+  alignment: number,
+  exactLabel: boolean,
+): number {
+  const confidence = Math.min(anchor.confidence, candidate.confidence);
+  const phrasePenalty = candidate.id.startsWith('phrase:') ? 0.08 : 0;
+  return confidence * 0.45 +
+    (exactLabel ? 1 : 0.82) * 0.20 +
+    clamp01(proximity) * 0.20 +
+    clamp01(alignment) * 0.15 -
+    phrasePenalty;
+}
 
 function horizontalOverlap(a: ObservationLine, b: ObservationLine): number {
   if (!a.box || !b.box) return 0;
   return Math.max(0, Math.min(a.box[2], b.box[2]) - Math.max(a.box[0], b.box[0]));
 }
 
-export function selectUniqueCandidate(candidates: readonly ExtractedCandidate[]): ExtractedCandidate | null {
+export function selectUniqueCandidate(
+  candidates: readonly ExtractedCandidate[],
+  minSelectionScoreGap?: number,
+): ExtractedCandidate | null {
   const unique = new Map<string, ExtractedCandidate>();
+  const rankingScore = (candidate: ExtractedCandidate): number =>
+    candidate.selectionScore ?? candidate.confidence ?? -1;
+
   for (const candidate of candidates) {
     const key = normalizeText(candidate.value);
     const prior = unique.get(key);
-    const score = candidate.confidence ?? -1;
-    const priorScore = prior?.confidence ?? -1;
-    if (!prior || score > priorScore) unique.set(key, candidate);
+    if (!prior || rankingScore(candidate) > rankingScore(prior)) {
+      unique.set(key, candidate);
+    }
   }
-  return unique.size === 1 ? [...unique.values()][0]! : null;
+
+  if (unique.size === 1) return [...unique.values()][0]!;
+  if (unique.size === 0 || minSelectionScoreGap === undefined) return null;
+
+  const ranked = [...unique.values()].sort((a, b) =>
+    rankingScore(b) - rankingScore(a));
+  const best = ranked[0]!;
+  const second = ranked[1]!;
+  return rankingScore(best) - rankingScore(second) >= minSelectionScoreGap
+    ? best
+    : null;
 }
 
 export function anchoredCandidates(
@@ -150,6 +191,7 @@ export function anchoredCandidates(
         candidates.push({
           value: inline, confidence: anchor.confidence, page: anchor.page,
           lineIds: [anchor.id], method: 'anchor-inline', anchor: anchorName,
+          selectionScore: anchor.confidence * 0.6 + (match ? 1 : 0.82) * 0.4,
         });
         if (firstOccurrenceOnly) return candidates;
         continue;
@@ -180,16 +222,29 @@ export function anchoredCandidates(
           const right = sameRow.filter((line) => {
             if (line.confidence < minConfidence || isBoundary(line.text) || !validate(line.text)) return false;
             return line.box![0] < rightBoundaryX;
-          }).sort((a, b) =>
-            Number(a.id.startsWith('phrase:')) - Number(b.id.startsWith('phrase:')) ||
-            a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
+          }).map((line) => {
+            const center = (line.box![1] + line.box![3]) / 2;
+            const distance = Math.max(0, line.box![0] - anchor.box![2]);
+            const verticalOffset = Math.abs(center - centerY);
+            return {
+              line,
+              score: geometricSelectionScore(
+                anchor,
+                line,
+                1 - distance / Math.max(1, height * maxRightDistanceHeights),
+                1 - verticalOffset / Math.max(1, height * sameRowToleranceHeights),
+                Boolean(match),
+              ),
+            };
+          }).sort((a, b) => b.score - a.score)[0];
 
           if (right) {
             candidates.push({
-              value: cleanText(right.text),
-              confidence: Math.min(anchor.confidence, right.confidence),
-              page: anchor.page, lineIds: [anchor.id, right.id],
+              value: cleanText(right.line.text),
+              confidence: Math.min(anchor.confidence, right.line.confidence),
+              page: anchor.page, lineIds: [anchor.id, right.line.id],
               method: 'anchor-right', anchor: anchorName,
+              selectionScore: right.score,
             });
             matched = true;
           }
@@ -212,16 +267,34 @@ export function anchoredCandidates(
           const below = belowRegion.filter((line) => {
             if (line.confidence < minConfidence || isBoundary(line.text) || !validate(line.text)) return false;
             return line.box![1] < belowBoundaryY;
-          }).sort((a, b) =>
-            Number(a.id.startsWith('phrase:')) - Number(b.id.startsWith('phrase:')) ||
-            a.box![1] - b.box![1] || a.box![0] - b.box![0])[0];
+          }).map((line) => {
+            const distance = Math.max(0, line.box![1] - anchor.box![3]);
+            const overlap = horizontalOverlap(anchor, line);
+            const horizontalOffset = overlap > 0
+              ? 0
+              : Math.abs(line.box![0] - anchor.box![0]);
+            return {
+              line,
+              score: geometricSelectionScore(
+                anchor,
+                line,
+                1 - distance / Math.max(1, height * maxBelowDistanceHeights),
+                overlap > 0
+                  ? 1
+                  : 1 - horizontalOffset /
+                    Math.max(1, height * maxBelowHorizontalOffsetHeights),
+                Boolean(match),
+              ),
+            };
+          }).sort((a, b) => b.score - a.score)[0];
 
           if (below) {
             candidates.push({
-              value: cleanText(below.text),
-              confidence: Math.min(anchor.confidence, below.confidence),
-              page: anchor.page, lineIds: [anchor.id, below.id],
+              value: cleanText(below.line.text),
+              confidence: Math.min(anchor.confidence, below.line.confidence),
+              page: anchor.page, lineIds: [anchor.id, below.line.id],
               method: 'anchor-below', anchor: anchorName,
+              selectionScore: below.score,
             });
             matched = true;
           }
@@ -238,6 +311,9 @@ export function anchoredCandidates(
               confidence: Math.min(anchor.confidence, next.confidence),
               page: anchor.page, lineIds: [anchor.id, next.id],
               method: 'anchor-sequential', anchor: anchorName,
+              selectionScore: Math.min(anchor.confidence, next.confidence) * 0.55 +
+                (match ? 1 : 0.82) * 0.20 +
+                (1 - (offset - 1) / Math.max(1, maxSequentialLines)) * 0.15,
             });
             matched = true;
             break;
