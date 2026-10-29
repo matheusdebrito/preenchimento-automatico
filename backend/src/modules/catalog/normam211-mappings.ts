@@ -312,34 +312,6 @@ const authorizationPlacements: readonly CoordinatePlacement[] = [
   top('process.date', 275, 552, 142, 6.2),
 ];
 
-const responsibilityPlacements: readonly CoordinatePlacement[] = [
-  top('person.fullName', 130, 176, 395, 7, 0, true),
-  top('person.nationality', 200, 194, 170, 7),
-  top('person.birthDate', 387, 194, 18, 7, 0, false, undefined, 'DATE_DAY'),
-  top('person.birthDate', 429, 194, 18, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('person.birthDate', 471, 194, 28, 7, 0, false, undefined, 'DATE_YEAR'),
-  top('person.identity', 390, 212, 135, 7),
-  top('person.issuer', 175, 230, 160, 7),
-  top('person.issueDate', 404, 230, 18, 7, 0, false, undefined, 'DATE_DAY'),
-  top('person.issueDate', 440, 230, 18, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('person.issueDate', 476, 230, 28, 7, 0, false, undefined, 'DATE_YEAR'),
-  top('person.cpf', 135, 248, 130, 7, 0, true),
-  top('person.address', 345, 248, 180, 7),
-  top('person.neighborhood', 285, 266, 105, 7),
-  top('person.postalCode', 430, 266, 95, 7),
-  top('person.city', 155, 284, 125, 7),
-  top('person.state', 270, 284, 24, 7),
-  top('person.phone', 385, 284, 140, 7),
-  top('vessel.name', 385, 302, 140, 7, 0, true),
-  top('vessel.classification', 222, 320, 130, 7),
-  top('vessel.authority', 445, 320, 80, 7),
-  top('vessel.registration', 225, 338, 120, 7, 0, true),
-  top('process.place', 125, 751, 145, 7),
-  top('process.date', 302, 751, 25, 7, 0, false, undefined, 'DATE_DAY'),
-  top('process.date', 355, 751, 98, 7, 0, false, undefined, 'DATE_MONTH_NAME_PT_BR'),
-  top('process.date', 480, 751, 45, 7, 0, false, undefined, 'DATE_YEAR'),
-];
-
 export const normam211Mappings: readonly FormMapping[] = [
   { id: 'bade-er-map-v1', formVersionId: 'bade-er-2026-v1', revision: 'v1',
     status: 'APPROVED', placements: badePlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI visual QA + product owner release authorization', reportPath: 'docs/mapping-reports/normam211-2026-technical-qa.md' },
