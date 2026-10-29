@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
+import { pendingMotoAquaticaServiceForms } from './vessel-services.js';
 import { validateCatalog } from './validate-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
 
@@ -46,8 +47,8 @@ function sharedFormFixture(): CatalogDefinition {
 describe('catálogo reutilizável de formulários', () => {
   it('publica os serviços de barco somente com versões e mapas aprovados', () => {
     expect(catalog.services).toHaveLength(14);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(12);
-    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(2);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(11);
+    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(3);
     expect(catalog.forms).toHaveLength(17);
     expect(catalog.versions).toHaveLength(17);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(17);
@@ -95,13 +96,13 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
-  it('publica os quatro serviços de amador homologados e mantém Motonauta dependente do PDF 3-A em validação', () => {
+  it('mantém inscrição para exame em validação e publica somente os serviços de CHA sustentados pelos anexos', () => {
     const enrollment = catalog.services.find((service) => service.id === 'inscricao-exame-amador');
     const renewal = catalog.services.find((service) => service.id === 'renovacao-cha-amador');
     const sailor = catalog.services.find((service) => service.id === 'emissao-cha-veleiro');
     const equivalence = catalog.services.find((service) => service.id === 'concessao-cha-equivalencia');
     const mta = catalog.services.find((service) => service.id === 'renovacao-cha-agregacao-mta');
-    expect(enrollment?.status).toBe('AVAILABLE');
+    expect(enrollment?.status).toBe('DRAFT');
     expect(renewal?.status).toBe('AVAILABLE');
     expect(sailor?.status).toBe('AVAILABLE');
     expect(equivalence?.status).toBe('AVAILABLE');
@@ -111,6 +112,64 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === 'renovacao-cha-amador' &&
       relation.formVersionId === 'declaracao-extravio-cha-amador-2026-v1')).toBe(true);
+  });
+
+  it('mantém a renovação de TIE/TIEM sem BADE/BSADE quando não houve alteração', () => {
+    const relations = catalog.serviceForms.filter((relation) =>
+      relation.serviceId === 'renovacao-tie-embarcacao');
+    const request = relations.find((relation) =>
+      relation.formVersionId === 'requerimento-embarcacao-er-2026-v1');
+    const bsade = relations.find((relation) => relation.formVersionId === 'bsade-er-2026-v1');
+    const bade = relations.find((relation) => relation.formVersionId === 'bade-er-2026-v1');
+    const loss = relations.find((relation) =>
+      relation.formVersionId === 'declaracao-perda-tie-er-2026-v1');
+
+    expect(request?.conditions).toEqual([{ questionId: 'vesselType', equals: 'embarcacao' }]);
+    expect(bsade?.conditions).toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
+    expect(bade?.conditions).toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
+    expect(loss?.conditions).toContainEqual({ questionId: 'tieSituation', equals: 'extraviado' });
+  });
+
+  it('documenta toda a matriz NORMAM-212 antes de liberar Moto Aquática', () => {
+    const byService = new Map<string, Set<string>>();
+    for (const relation of pendingMotoAquaticaServiceForms) {
+      const forms = byService.get(relation.serviceId) ?? new Set<string>();
+      forms.add(relation.formVersionId);
+      byService.set(relation.serviceId, forms);
+      expect(relation.conditions).toContainEqual({
+        questionId: 'vesselType',
+        equals: 'moto_aquatica',
+      });
+    }
+
+    expect(byService.get('inscricao-embarcacao')).toEqual(new Set([
+      'requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1',
+    ]));
+    expect(byService.get('transferencia-propriedade-embarcacao')).toEqual(new Set([
+      'requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
+      'declaracao-residencia-ma-v1', 'declaracao-perda-tie-ma-v1',
+    ]));
+    expect(byService.get('transferencia-jurisdicao-embarcacao')).toEqual(new Set([
+      'requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1',
+      'declaracao-perda-tie-ma-v1',
+    ]));
+    expect(byService.get('renovacao-tie-embarcacao')).toEqual(new Set([
+      'requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1',
+      'declaracao-perda-tie-ma-v1',
+    ]));
+
+    const renewalBdmoto = pendingMotoAquaticaServiceForms.find((relation) =>
+      relation.serviceId === 'renovacao-tie-embarcacao' &&
+      relation.formVersionId === 'bdmoto-v1');
+    expect(renewalBdmoto?.conditions).toContainEqual({
+      questionId: 'dataChanged',
+      equals: 'sim',
+    });
+
+    const vesselType = catalog.services
+      .find((service) => service.id === 'renovacao-tie-embarcacao')
+      ?.questions.find((question) => question.id === 'vesselType');
+    expect(vesselType?.unavailableOptions).toContain('moto_aquatica');
   });
 
   it('usa rótulos simples para rua e número sem alterar os IDs semânticos', () => {
