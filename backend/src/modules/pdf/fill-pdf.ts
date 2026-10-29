@@ -1,6 +1,7 @@
 import { PDFCheckBox, PDFDocument, PDFTextField, StandardFonts, rgb } from 'pdf-lib';
 import type { FieldPlacement } from '../catalog/contracts.js';
 import { FormFieldError } from '../catalog/field-validation.js';
+import { TemplateGenerationError } from './template-error.js';
 
 const MAX_TEMPLATE_BYTES = 12 * 1024 * 1024;
 const MAX_FIELD_CHARS = 500;
@@ -70,7 +71,7 @@ function assertStaticPlacement(
   page: ReturnType<PDFDocument['getPages']>[number], placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
 ): void {
   if (((page.getRotation().angle % 360) + 360) % 360 !== 0) {
-    throw new Error('Página girada requer mapeamento específico: ' + placement.fieldId);
+    throw new TemplateGenerationError('template_rotation_unsupported');
   }
   const crop = page.getCropBox();
   const { x, y, fontSize, maxWidth, fieldId } = placement;
@@ -79,7 +80,7 @@ function assertStaticPlacement(
       x < crop.x || y < crop.y ||
       x + maxWidth > crop.x + crop.width + 0.5 ||
       y + fontSize > crop.y + crop.height + 0.5) {
-    throw new Error('Posição inválida ou fora dos limites: ' + fieldId);
+    throw new TemplateGenerationError('template_layout_invalid');
   }
 }
 
@@ -97,7 +98,7 @@ export async function fillPdf(
 ): Promise<Uint8Array> {
   if (templateBytes.length === 0 || templateBytes.length > MAX_TEMPLATE_BYTES ||
       new TextDecoder('latin1').decode(templateBytes.subarray(0, 5)) !== '%PDF-') {
-    throw new Error('Modelo PDF inválido ou acima do limite.');
+    throw new TemplateGenerationError('template_invalid_pdf');
   }
   const choices = new Map<string, Set<string>>();
   for (const placement of placements) {
@@ -152,14 +153,14 @@ export async function fillPdf(
         }
         field.setText(value);
       } else {
-        throw new Error('Tipo de campo AcroForm não suportado: ' + placement.fieldId);
+        throw new TemplateGenerationError('template_acroform_unsupported');
       }
       changedAcroForm = true;
       continue;
     }
 
     const page = pdf.getPages()[placement.pageIndex];
-    if (!page) throw new Error('Página inexistente: ' + placement.pageIndex);
+    if (!page) throw new TemplateGenerationError('template_page_missing');
     assertStaticPlacement(page, placement);
     // Declarative choice fields: write an X only in the selected box.
     // Never stamp the literal word "sim" or "não" into a tiny checkbox.
@@ -186,7 +187,7 @@ export async function fillPdf(
     try {
       form.updateFieldAppearances(font);
     } catch {
-      throw new Error('Falha ao atualizar a aparência dos campos AcroForm.');
+      throw new TemplateGenerationError('template_acroform_appearance_failed');
     }
   }
   return pdf.save({ useObjectStreams: false });
