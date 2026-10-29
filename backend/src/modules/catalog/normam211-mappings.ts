@@ -362,5 +362,5 @@ export const normam211Mappings: readonly FormMapping[] = [
     status: 'APPROVED', placements: authorizationPlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI visual QA + product owner release authorization', reportPath: 'docs/mapping-reports/normam211-2026-technical-qa.md' },
   { id: 'termo-responsabilidade-er-map-v1',
     formVersionId: 'termo-responsabilidade-er-2026-v1', revision: 'v2',
-    status: 'DRAFT', placements: responsibilityPlacements, reviewedAt: null, reviewer: null, reportPath: null },
+    status: 'DRAFT', placements: [], reviewedAt: null, reviewer: null, reportPath: null },
 ];
