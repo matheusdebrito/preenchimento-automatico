@@ -7,8 +7,8 @@
 
 | Anexo | Páginas | Tamanho | AcroForm | SHA-256 local |
 | --- | ---: | --- | --- | --- |
-| 5-D | 1 | A4 595x842 pt | não | `8A1A941EE655B68D0839B2ABA187CCA70B41D6D9D1AD32E2415F820E71081F0F` |
-| 5-H | 2 | A4 595x842 pt | não | `26B8041A137D2613D6BB184DAF72E63DC2C67A7DB944D44D14E1E884DC8AF503` |
+| 5-D | 1 | A4 595x842 pt | não | `53DD1F6576B3B9C6C4D1B056B18F4333DBCC24C3DE8FB18047B32B6AEBE9850E` |
+| 5-H | 2 | A4 595x842 pt | não | `06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF` |
 
 Ambos estão sem criptografia, sem anexos e sem anotações. A inspeção estrutural foi feita
 com `pdf_inspect.py` e a revisão visual com renderização a 180 dpi.
@@ -41,10 +41,9 @@ Assinatura permanece manual.
 
 ## Estado de homologação
 
-Os mappings estão em `DRAFT`. A geometria foi conferida com amostras sintéticas locais,
-mas os PDFs 5-D/5-H ainda não estão versionados em
-`backend/templates/<form>/v1/original.pdf`. Portanto as FormVersion continuam
-`IDENTIFIED` e não podem ser promovidas para `VERIFIED` ou usadas em produção.
+Os mappings estão em `TESTED`. A geometria foi conferida com amostras sintéticas locais,
+mas os PDFs 5-D/5-H estão versionados em
+`backend/templates/<form>/v1/original.pdf`. As FormVersion foram promovidas para `VERIFIED` após comparação byte a byte entre os uploads locais e os blobs Git versionados. Os mappings permanecem `TESTED`, não `APPROVED`, portanto os serviços ainda não são publicados.
 
 A promoção exige:
 
