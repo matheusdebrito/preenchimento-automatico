@@ -211,9 +211,19 @@ export function registerJobRoutes(
         });
 
         try {
+          const startedAt = Date.now();
           const extracted = await extractDocumentsWithOpenAi(documents, targetFields);
           evidence.push(...extracted.evidence);
           diagnostics.push(...extracted.diagnostics);
+          req.log.info({
+            provider: 'openai',
+            model: extracted.model,
+            documentCount: documents.length,
+            inputTokens: extracted.usage?.inputTokens,
+            outputTokens: extracted.usage?.outputTokens,
+            totalTokens: extracted.usage?.totalTokens,
+            elapsedMs: Date.now() - startedAt,
+          }, 'document_extraction_usage');
         } catch (error) {
           job.stage = 'UPLOADED';
           job.values = {};
