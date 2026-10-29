@@ -84,12 +84,14 @@ describe('OpenAI document extractor', () => {
         label: 'Identidade do comprador',
         documentType: 'identity',
         subjectRole: 'person',
+        allowedFieldIds: ['person.fullName', 'person.cpf'],
       },
       {
         document: tie,
         label: 'TIE/TIEM',
         documentType: 'tie',
         subjectRole: 'vessel',
+        allowedFieldIds: ['vessel.registration'],
       },
     ], [
       {
@@ -170,7 +172,7 @@ describe('OpenAI document extractor', () => {
     const fakeFetch = vi.fn();
 
     await expect(extractDocumentsWithOpenAi([
-      { document: identity, label: 'Identidade' },
+      { document: identity, label: 'Identidade', allowedFieldIds: ['person.fullName'] },
     ], [
       {
         id: 'person.fullName',
@@ -191,7 +193,7 @@ describe('OpenAI document extractor', () => {
     const identity = await fixture('identity.jpg', 'jpeg', 'buyer-identity');
 
     await expect(extractDocumentsWithOpenAi([
-      { document: identity, label: 'Identidade' },
+      { document: identity, label: 'Identidade', allowedFieldIds: ['person.fullName'] },
     ], [
       {
         id: 'person.fullName',
