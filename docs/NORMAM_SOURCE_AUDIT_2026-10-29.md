@@ -124,10 +124,19 @@ O catálogo modela um serviço de Inscrição para Exame com escolha da categori
 Arrais, a norma prevê Atestado de Treinamento Náutico (5-E). Para Mestre, é exigida
 habilitação válida de Arrais; para Capitão, habilitação válida de Mestre.
 
-O item 5.4.1 lista a documentação, mas não vincula a inscrição para exame ao Anexo 5-H.
-Por isso o serviço fica em DRAFT sem formulário gerado, em vez de reutilizar 5-H por
-inferência. O Anexo 5-H permanece identificado para os serviços em que a própria norma
-o cita, como renovação.
+O item 5.4.1 lista a documentação e não cita nominalmente o Anexo 5-H. Porém a orientação
+operacional oficial da DPC informa que o interessado pode preencher e imprimir o
+"Requerimento de Inscrição para o Exame de habilitação", e páginas oficiais de Organizações
+Militares da Marinha identificam o requerimento de inscrição como o Anexo 5-H da
+NORMAM-211. A aplicação, portanto, reutiliza o 5-H já homologado para este serviço sem
+criar um formulário próprio. A opção "Emissão/Renovação" é marcada e a descrição do
+pedido registra explicitamente a categoria escolhida: Arrais-Amador, Mestre-Amador ou
+Capitão-Amador.
+
+Fontes operacionais consultadas em 29/10/2026:
+- DPC, "Para quem quer se tornar um Navegador Amador";
+- COM8DN, "Subseção de Amadores", lista de documentos para inscrição;
+- páginas de Capitanias que disponibilizam requerimento de amador para inscrição.
 
 ### Renovação
 
@@ -140,8 +149,10 @@ Não foi criado serviço separado de “segunda via”. A NORMAM determina que, 
 digital, esses casos sejam tratados por **renovação**, usando o 5-H e o Anexo 5-D (ou
 Boletim de Ocorrência).
 
-Os serviços de amadores ficam DRAFT até os anexos 5-D e 5-H serem extraídos para arquivos
-imutáveis, verificados, mapeados e revisados visualmente.
+Os anexos 5-D e 5-H estão versionados, verificados e com mappings aprovados. Renovação
+da CHA e Inscrição para exame de ARA/MSA/CPA estão liberadas como serviços de
+preenchimento. A aplicação não valida o conjunto de documentos exigidos para protocolo;
+os uploads são apenas fontes opcionais de dados para preencher os formulários.
 
 ## Aquaviários
 
