@@ -19,7 +19,7 @@ export const catalog: CatalogDefinition = {
   fields: [
     { id: 'person.fullName', label: 'Nome completo', valueKind: 'text' },
     { id: 'person.cpf', label: 'CPF', valueKind: 'text', validationRuleId: 'cpf' },
-    { id: 'person.address', label: 'Endereço', valueKind: 'text' },
+    { id: 'person.address', label: 'Rua', valueKind: 'text' },
     { id: 'vessel.hullId', label: 'Identificação do casco', valueKind: 'text' },
     ...additionalFields,
   ],

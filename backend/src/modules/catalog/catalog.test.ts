@@ -88,6 +88,15 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
+  it('usa rótulos simples para rua e número sem alterar os IDs semânticos', () => {
+    expect(catalog.fields.find((field) => field.id === 'person.address')?.label).toBe('Rua');
+    expect(catalog.fields.find((field) => field.id === 'person.streetNumber')?.label).toBe('Número');
+    expect(catalog.fields.find((field) => field.id === 'seller.address')?.label)
+      .toBe('Rua do vendedor');
+    expect(catalog.fields.find((field) => field.id === 'seller.streetNumber')?.label)
+      .toBe('Número do vendedor');
+  });
+
   it('envia todos os documentos dos novos serviços ao pipeline OCR sem inventar campos genéricos', () => {
     const vesselServices = catalog.services;
     expect(vesselServices).toHaveLength(9);
