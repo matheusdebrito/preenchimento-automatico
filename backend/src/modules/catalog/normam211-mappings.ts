@@ -351,6 +351,6 @@ export const normam211Mappings: readonly FormMapping[] = [
     status: 'APPROVED', placements: authorizationPlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI visual QA + product owner release authorization', reportPath: 'docs/mapping-reports/normam211-2026-technical-qa.md' },
   { id: 'termo-responsabilidade-er-map-v1',
     formVersionId: 'termo-responsabilidade-er-2026-v1', revision: 'v2',
-    status: 'DRAFT', placements: responsibilityConstructionPlacements, reviewedAt: null, reviewer: null,
+    status: 'TESTED', placements: responsibilityConstructionPlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI local synthetic visual QA',
     reportPath: 'docs/mapping-reports/normam211-3c-2026-technical-qa.md' },
 ];
