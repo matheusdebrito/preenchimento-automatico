@@ -180,7 +180,7 @@ const digitalOnlyFields = new Set([
   'vessel.grossTonnage',
   'vessel.breadth',
   'vessel.motorManufacturerBrandModel',
-  'vessel.engineCount',
+  'vessel.motorCount',
   'vessel.issuePlace',
   'vessel.issueDate',
 ]);
@@ -483,7 +483,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     validate: count,
   },
   {
-    fieldId: 'vessel.engineCount',
+    fieldId: 'vessel.motorCount',
     anchor: 'QUANTIDADE DE MOTORES',
     labels: [
       /^\s*(?:QUANTIDADE\s+DE\s+MOTORES(?:\s*\/\s*QUANTITY\s+OF\s+ENGINES)?|QUANTITY\s+OF\s+ENGINES)\s*(?:[:#\-–]\s*)?(.*)$/i,
@@ -532,6 +532,16 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     preferredDirections: ['below', 'right'],
     spatialHint: compactTableCell,
     validate: dateValue,
+  },
+  {
+    fieldId: 'vessel.hullColor',
+    anchor: 'COR PREDOMINANTE DO CASCO',
+    labels: [
+      /^\s*COR\s+PREDOMINANTE\s+(?:DO\s+)?CASCO\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['right', 'below'],
+    spatialHint: tightTableCell,
+    validate: (value) => textValue(value, 2, 50),
   },
   {
     fieldId: 'vessel.authority',
