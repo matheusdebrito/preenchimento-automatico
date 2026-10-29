@@ -167,6 +167,17 @@ describe('catálogo reutilizável de formulários', () => {
         questionId: 'vesselType',
         equals: 'moto_aquatica',
       });
+
+      const service = catalog.services.find((item) => item.id === relation.serviceId);
+      expect(service).toBeDefined();
+      for (const condition of relation.conditions ?? []) {
+        const question = service?.questions.find((item) => item.id === condition.questionId);
+        expect(question, relation.serviceId + ':' + condition.questionId).toBeDefined();
+        if (condition.equals !== undefined) {
+          expect(question?.options).toContain(condition.equals);
+        }
+        for (const value of condition.oneOf ?? []) expect(question?.options).toContain(value);
+      }
     }
 
     expect(byService.get('inscricao-embarcacao')).toEqual(new Set([
