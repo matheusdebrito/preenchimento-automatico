@@ -46,8 +46,8 @@ function sharedFormFixture(): CatalogDefinition {
 describe('catálogo reutilizável de formulários', () => {
   it('publica os serviços de barco somente com versões e mapas aprovados', () => {
     expect(catalog.services).toHaveLength(11);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(8);
-    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(3);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(9);
+    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(2);
     expect(catalog.forms).toHaveLength(16);
     expect(catalog.versions).toHaveLength(16);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(16);
@@ -68,7 +68,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(45);
+    expect(catalog.serviceForms).toHaveLength(46);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
@@ -95,10 +95,10 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
-  it('publica renovação da CHA e mantém inscrição para exame em validação', () => {
+  it('publica inscrição para exame e renovação da CHA', () => {
     const enrollment = catalog.services.find((service) => service.id === 'inscricao-exame-amador');
     const renewal = catalog.services.find((service) => service.id === 'renovacao-cha-amador');
-    expect(enrollment?.status).toBe('DRAFT');
+    expect(enrollment?.status).toBe('AVAILABLE');
     expect(renewal?.status).toBe('AVAILABLE');
     expect(catalog.forms.some((form) => form.id === 'requerimento-cha-amador')).toBe(true);
     expect(catalog.forms.some((form) => form.id === 'declaracao-extravio-cha-amador')).toBe(true);
