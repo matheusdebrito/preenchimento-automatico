@@ -257,6 +257,17 @@ export function validateCatalog(data: CatalogDefinition): string[] {
         issues.push('relação: binding inválido: ' + fieldId + ' <- ' + questionId);
       }
     }
+    for (const [fieldId, mapping] of Object.entries(relation.answerValueMappings ?? {})) {
+      const question = questionsByService.get(relation.serviceId)?.get(mapping.questionId);
+      const mappedOptions = Object.keys(mapping.values);
+      if (!fields.has(fieldId) || !question ||
+        mappedOptions.length === 0 ||
+        mappedOptions.some((value) => !question.options.includes(value)) ||
+        Object.values(mapping.values).some((value) => !value.trim() || value.length > 120)) {
+        issues.push('relação: mapeamento de resposta inválido: ' +
+          fieldId + ' <- ' + mapping.questionId);
+      }
+    }
     if (version?.status === 'OUTDATED') issues.push('relação: versão desatualizada ' + relation.formVersionId);
     if (service?.status === 'AVAILABLE' &&
       (version?.status !== 'VERIFIED' || approvedMappings.get(relation.formVersionId) !== 1)) {

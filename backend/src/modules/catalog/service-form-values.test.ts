@@ -25,6 +25,27 @@ describe('serviceFormValues', () => {
     });
   });
 
+  it('converte resposta enumerada em texto revisado para o formulário', () => {
+    const relation: ServiceForm = {
+      serviceId: 'inscricao-exame-amador',
+      formVersionId: 'requerimento-cha-amador-2026-v1',
+      order: 1,
+      answerValueMappings: {
+        'process.notes': {
+          questionId: 'amateurCategory',
+          values: {
+            arrais: 'Inscrição para exame de Arrais-Amador',
+            mestre: 'Inscrição para exame de Mestre-Amador',
+            capitao: 'Inscrição para exame de Capitão-Amador',
+          },
+        },
+      },
+    };
+
+    expect(serviceFormValues(relation, { amateurCategory: 'mestre' }, {}))
+      .toEqual({ 'process.notes': 'Inscrição para exame de Mestre-Amador' });
+  });
+
   it('ignora binding sem resposta em vez de inventar valor', () => {
     const relation: ServiceForm = {
       serviceId: 's',
