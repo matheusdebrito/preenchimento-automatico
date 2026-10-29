@@ -20,6 +20,7 @@ services:
       - no-new-privileges:true
 
   ocr:
+    image: ${OCR_IMAGE:-preenchimento-automatico-ocr:local}
     build:
       context: ./ocr-service
     environment:
