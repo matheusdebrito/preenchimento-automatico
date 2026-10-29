@@ -516,9 +516,11 @@ export function LiveFlowPage() {
                                           : value === 'sim' ? 'Sim'
                                             : value === 'nao' ? 'Não'
                                               : value === 'regular' ? 'Regular'
-                                                : value === 'extraviada_roubada_furtada_danificada'
-                                              ? 'Extraviada, roubada, furtada ou danificada'
-                                              : value.replaceAll('_',' ');
+                                                : value === 'extraviada' ? 'Extraviada'
+                                                  : value === 'roubada' ? 'Roubada'
+                                                    : value === 'furtada' ? 'Furtada'
+                                                      : value === 'danificada' ? 'Danificada'
+                                                        : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
                             {label}{unavailable ? ' (em validação)' : ''}
                           </option>;
