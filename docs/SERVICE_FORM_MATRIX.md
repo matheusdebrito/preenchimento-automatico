@@ -154,10 +154,16 @@ atualizados; não repetir o trabalho de mapeamento por serviço. Os formulários
 Os nove serviços aprovados como próximo catálogo do produto já possuem relações
 `ServiceForm` em estado de rascunho, incluindo escolha BADE/BSADE por faixa de
 comprimento e anexos condicionais de residência/perda. As oito versões
-NORMAM-211 permanecem `IDENTIFIED`, sem template ou mapeamento aprovado; por
-isso nenhuma relação torna esses serviços publicáveis pela API.
+NORMAM-211 estão `VERIFIED/STATIC` e os oito mapas estão `TESTED` após
+renderização fictícia e revisão técnica.
+
+Nenhuma relação torna esses serviços publicáveis pela API porque os mapas ainda
+não são `APPROVED` e os serviços continuam `DRAFT`. O 2-K respeita o domínio
+de um único motor e não infere as caixas SIM/NÃO; o 3-D continua pendente nos
+casos em que responsabilidade técnica for aplicável.
 
 A matriz detalhada e as fontes oficiais estão em
-[NORMAM211_VESSEL_SERVICES.md](NORMAM211_VESSEL_SERVICES.md). O catálogo público
-continua fail-closed: somente `AVAILABLE + VERIFIED + APPROVED` aparece ao
-usuário.
+[NORMAM211_VESSEL_SERVICES.md](NORMAM211_VESSEL_SERVICES.md), com evidência em
+[mapping-reports/normam211-2026-technical-qa.md](mapping-reports/normam211-2026-technical-qa.md).
+O catálogo público continua fail-closed: somente
+`AVAILABLE + VERIFIED + APPROVED` aparece ao usuário.
