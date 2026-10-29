@@ -91,6 +91,8 @@ describe('catálogo reutilizável de formulários', () => {
     const generic = vesselServices.flatMap((service) => service.documentRequirements)
       .filter((requirement) => requirement.extraction?.documentType === 'supporting-document');
     expect(generic.length).toBeGreaterThan(0);
+    expect(vesselServices.flatMap((service) => service.documentRequirements)
+      .some((requirement) => requirement.id === 'vessel-photos')).toBe(false);
   });
 
   it('mantém o domínio do MVP restrito ao único motor aprovado', () => {
