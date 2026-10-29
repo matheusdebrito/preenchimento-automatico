@@ -124,6 +124,11 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(currentDigital.has('vessel.issuePlace')).toBe(true);
     // Preserve the registered owner as document evidence; do not assign a service role here.
     expect(currentDigital.has('registeredOwner.fullName')).toBe(true);
+    expect(currentDigital.has('vessel.motorCount')).toBe(true);
+    expect(currentDigital.has('vessel.motorManufacturerBrandModel')).toBe(true);
+    expect(currentDigital.has('vessel.motorSerial')).toBe(true);
+    // The public reference does not expose a trustworthy creditor value.
+    expect(currentDigital.has('vessel.mortgageCreditor')).toBe(false);
   }, 120_000);
 
   it('lê o TIEM antigo sem confundir inscrição com casco', async () => {
