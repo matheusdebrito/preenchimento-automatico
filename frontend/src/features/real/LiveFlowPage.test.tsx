@@ -16,12 +16,6 @@ const service = {
   ],
   formVersionIds: ['requerimento-ma-v1'],
   reviewFields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text' }],
-  reviewForms: [{
-    formVersionId: 'requerimento-ma-v1',
-    formId: 'requerimento-ma',
-    name: 'Requerimento de teste',
-    fields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: false }],
-  }],
 };
 
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); });
