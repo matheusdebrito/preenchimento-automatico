@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { api, ApiError } from './api.js';
+import { api } from './api.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -51,7 +51,7 @@ describe('api headers', () => {
     await expect(api('/api/jobs/job/extract', {
       method: 'POST',
       body: JSON.stringify({ provider: 'openai' }),
-    })).rejects.toMatchObject<Partial<ApiError>>({
+    })).rejects.toMatchObject({
       status: 503,
       errorCode: 'openai_not_configured',
       message: expect.stringContaining('OpenAI'),
