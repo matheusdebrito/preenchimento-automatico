@@ -73,7 +73,8 @@ semântico do serviço.
 - 3-C: Termo de Responsabilidade de Construção/Alteração. Não integra transferência padrão.
   Na alteração, aparece apenas nas situações específicas descritas na NORMAM; na inscrição
   de médio porte pode substituir a vistoria inicial quando a norma permitir.
-- 2-I: comunicação de venda.
+- 2-I + 2-K: comunicação de venda, pois a NORMAM exige a comunicação acompanhada
+  da autorização de transferência.
 
 A composição é deliberadamente `DRAFT`: páginas locais podem conter
 orientações operacionais adicionais e a exigência final precisa ser
