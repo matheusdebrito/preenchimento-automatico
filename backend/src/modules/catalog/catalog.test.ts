@@ -49,13 +49,13 @@ describe('catálogo reutilizável de formulários', () => {
     expect(pilot?.status).toBe('DRAFT');
     expect(catalog.forms).toHaveLength(14);
     expect(catalog.versions).toHaveLength(14);
-    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(6);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(8);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')
-      .every((version) => version.templatePath === null && version.sha256 === null)).toBe(true);
-    expect(catalog.mappings).toHaveLength(6);
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(14);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(0);
+    expect(catalog.versions.every((version) =>
+      version.templatePath !== null && version.sha256 !== null)).toBe(true);
+    expect(catalog.mappings).toHaveLength(14);
     expect(catalog.mappings.every((mapping) => mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(44);
+    expect(catalog.serviceForms).toHaveLength(46);
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === 'transferencia-moto-aquatica')).toBe(false);
     expect(validateCatalog(catalog)).toEqual([]);
@@ -93,18 +93,24 @@ describe('catálogo reutilizável de formulários', () => {
     expect(generic.length).toBeGreaterThan(0);
   });
 
-  it('mantém o domínio do MVP restrito a um único motor', () => {
+  it('preserva o piloto de moto aquática e suporta até quatro motores nos anexos NORMAM-211', () => {
     const ids = new Set(catalog.fields.map((field) => field.id));
     expect(ids.has('vessel.motorBrand')).toBe(true);
-    expect(ids.has('vessel.motorPower')).toBe(true);
-    expect(ids.has('vessel.motorSerial')).toBe(true);
-    expect([...ids].some((id) => /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id)))
-      .toBe(false);
+    expect(ids.has('vessel.motor2Brand')).toBe(true);
+    expect(ids.has('vessel.motor3Serial')).toBe(true);
+    expect(ids.has('vessel.motor4Power')).toBe(true);
 
-    const placements = catalog.mappings.flatMap((mapping) => mapping.placements);
-    expect(placements.some((placement) =>
-      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(placement.fieldId)))
-      .toBe(false);
+    const legacyMappings = catalog.mappings.filter((mapping) =>
+      !mapping.formVersionId.includes('-er-2026-'));
+    const legacyFields = legacyMappings.flatMap((mapping) =>
+      mapping.placements.map((placement) => placement.fieldId));
+    expect(legacyFields.some((id) =>
+      /^vessel\.motor[2-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
+
+    const authorization = catalog.mappings.find((mapping) =>
+      mapping.formVersionId === 'autorizacao-transferencia-er-2026-v1');
+    expect(authorization?.placements.some((placement) =>
+      placement.fieldId === 'vessel.motor4Serial')).toBe(true);
   });
 
   it('permite a mesma versão do PDF em dois serviços sem duplicar o mapeamento', () => {
