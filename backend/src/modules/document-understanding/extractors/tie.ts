@@ -556,7 +556,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD(?:ADE)?\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
-        spatialHint: compactTableCell,
+    spatialHint: countTableCell,
     validate: count,
   },
   {
@@ -567,7 +567,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
-        spatialHint: compactTableCell,
+    spatialHint: countTableCell,
     validate: count,
   },
   {
