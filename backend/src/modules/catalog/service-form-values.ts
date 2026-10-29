@@ -10,6 +10,12 @@ export function serviceFormValues(
       const value = answers[questionId];
       return value ? [[fieldId, value]] : [];
     }));
+  const mappedValues = Object.fromEntries(Object.entries(relation?.answerValueMappings ?? {})
+    .flatMap(([fieldId, mapping]) => {
+      const answer = answers[mapping.questionId];
+      const value = answer ? mapping.values[answer] : undefined;
+      return value ? [[fieldId, value]] : [];
+    }));
 
-  return { ...reviewedValues, ...boundValues, ...relation?.fixedValues };
+  return { ...reviewedValues, ...boundValues, ...mappedValues, ...relation?.fixedValues };
 }
