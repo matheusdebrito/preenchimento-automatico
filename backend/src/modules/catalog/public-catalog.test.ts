@@ -37,12 +37,33 @@ function fixture(): CatalogDefinition {
 
 describe('projeção pública do catálogo', () => {
   it('publica sete serviços de barco e bloqueia moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(7);
+    expect(publicServices(catalog)).toHaveLength(8);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
       tieSituation: 'regular',
     })).toBeNull();
+  });
+
+  it('publica renovação da CHA com uploads opcionais e pacote condicional 5-D', () => {
+    const regular = publicService(catalog, 'renovacao-cha-amador', {
+      amateurCategory: 'arrais',
+      chaSituation: 'regular',
+    });
+    expect(regular).not.toBeNull();
+    expect(regular?.formVersionIds).toEqual(['requerimento-cha-amador-2026-v1']);
+    expect(regular?.documentRequirements.map((item) => item.id))
+      .toEqual(['applicant-identity', 'residence-proof']);
+    expect(regular?.documentRequirements.every((item) => item.required === false)).toBe(true);
+
+    const lost = publicService(catalog, 'renovacao-cha-amador', {
+      amateurCategory: 'mestre',
+      chaSituation: 'furtada',
+    });
+    expect(lost?.formVersionIds).toEqual([
+      'requerimento-cha-amador-2026-v1',
+      'declaracao-extravio-cha-amador-2026-v1',
+    ]);
   });
 
   it('compõe corretamente os pacotes homologados para embarcação/barco', () => {

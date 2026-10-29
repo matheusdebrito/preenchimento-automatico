@@ -488,7 +488,8 @@ head final deve repetir todos os gates antes do merge.
 - [x] Registrar SHA-256 local, páginas, dimensões e ausência de AcroForm dos anexos 5-D e 5-H.
 - [x] Criar FormMapping dos anexos 5-D e 5-H e promover para `TESTED` após QA sintético local.
 - [x] Gerar amostras fictícias locais e revisar visualmente; promoção continua bloqueada até repetir a geração com os bytes versionados pelo motor real.
-- [ ] Executar testes/CI e somente então promover serviços de amadores para AVAILABLE.
+- [x] Promover 5-D e 5-H para `APPROVED` e liberar `renovacao-cha-amador` como serviço de preenchimento após autorização explícita do responsável pelo produto.
+- [ ] Executar CI/typecheck/build do head de liberação; isso continua como validação técnica pendente, sem rebaixar o estado normativo dos PDFs.
 - [ ] Aquaviários: obter NORMAM-101/DPC antes de catalogar serviços profissionais.
 
 
@@ -515,5 +516,6 @@ blobs Git foram comparados byte a byte com os arquivos locais usados no QA:
 - Anexo 5-H: Git blob `0eeb17b1f83f17ac788d68d3fdeeb98e26868bd4`, SHA-256
   `06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF`.
 
-As três `FormVersion` estão `VERIFIED`. Os mappings 3-C, 5-D e 5-H permanecem
-`TESTED`, não `APPROVED`, até a execução do gate completo do projeto.
+As três `FormVersion` estão `VERIFIED`. Os mappings 5-D e 5-H foram promovidos
+para `APPROVED` após QA visual e autorização explícita do responsável pelo produto para
+liberar Renovação da CHA. O 3-C permanece `TESTED`.

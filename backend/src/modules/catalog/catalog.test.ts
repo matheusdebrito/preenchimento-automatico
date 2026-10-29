@@ -46,8 +46,8 @@ function sharedFormFixture(): CatalogDefinition {
 describe('catálogo reutilizável de formulários', () => {
   it('publica os serviços de barco somente com versões e mapas aprovados', () => {
     expect(catalog.services).toHaveLength(11);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(7);
-    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(4);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(8);
+    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(3);
     expect(catalog.forms).toHaveLength(16);
     expect(catalog.versions).toHaveLength(16);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(16);
@@ -64,7 +64,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       ['requerimento-cha-amador-2026-v1', 'declaracao-extravio-cha-amador-2026-v1']
         .includes(mapping.formVersionId)).every((mapping) =>
-      mapping.status === 'TESTED')).toBe(true);
+      mapping.status === 'APPROVED')).toBe(true);
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'DRAFT')).toBe(true);
@@ -95,11 +95,11 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
-  it('modela serviços de amadores sem publicar antes da homologação dos anexos 5-D/5-H', () => {
+  it('publica renovação da CHA e mantém inscrição para exame em validação', () => {
     const enrollment = catalog.services.find((service) => service.id === 'inscricao-exame-amador');
     const renewal = catalog.services.find((service) => service.id === 'renovacao-cha-amador');
     expect(enrollment?.status).toBe('DRAFT');
-    expect(renewal?.status).toBe('DRAFT');
+    expect(renewal?.status).toBe('AVAILABLE');
     expect(catalog.forms.some((form) => form.id === 'requerimento-cha-amador')).toBe(true);
     expect(catalog.forms.some((form) => form.id === 'declaracao-extravio-cha-amador')).toBe(true);
     expect(catalog.serviceForms.some((relation) =>

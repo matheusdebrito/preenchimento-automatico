@@ -39,12 +39,22 @@ describe('ServiceCategoryPage', () => {
     expect(screen.getAllByText('Formulário em validação').length).toBeGreaterThan(0);
   });
 
-  it('mostra serviços de amadores em validação e mantém Aquaviários em preparação', () => {
-    const { unmount } = renderCategory('/servicos/amadores');
+  it('libera renovação da CHA e mantém inscrição para exame em validação', async () => {
+    const { unmount } = renderCategory('/servicos/amadores', [{
+      id: 'renovacao-cha-amador',
+      title: 'Renovação da CHA',
+      description: 'Fluxo homologado',
+      creditCost: 1,
+      questions: [],
+      reviewFields: [],
+      documentRequirements: [],
+      formVersionIds: ['requerimento-cha-amador-2026-v1'],
+    }]);
     expect(screen.getByRole('heading', { level: 1, name: 'Arrais, Mestre e Capitão' })).toBeTruthy();
     expect(screen.getByText('Inscrição para exame')).toBeTruthy();
-    expect(screen.getByText('Renovação da CHA')).toBeTruthy();
-    expect(screen.getAllByText('Formulário em validação')).toHaveLength(2);
+    const renewal = await screen.findByRole('link', { name: /Renovação da CHA/ });
+    expect(renewal.getAttribute('href')).toBe('/preencher-real/renovacao-cha-amador');
+    expect(screen.getAllByText('Formulário em validação')).toHaveLength(1);
     unmount();
 
     renderCategory('/servicos/aquaviarios');

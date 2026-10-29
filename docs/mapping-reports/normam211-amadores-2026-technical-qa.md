@@ -41,9 +41,9 @@ Assinatura permanece manual.
 
 ## Estado de homologação
 
-Os mappings estão em `TESTED`. A geometria foi conferida com amostras sintéticas locais,
+Os mappings 5-D e 5-H foram promovidos para `APPROVED` após QA visual sintético, verificação dos blobs versionados e autorização explícita do responsável pelo produto para liberar o serviço de preenchimento de Renovação da CHA. A geometria foi conferida com amostras sintéticas locais,
 mas os PDFs 5-D/5-H estão versionados em
-`backend/templates/<form>/v1/original.pdf`. As FormVersion foram promovidas para `VERIFIED` após comparação byte a byte entre os uploads locais e os blobs Git versionados. Os mappings permanecem `TESTED`, não `APPROVED`, portanto os serviços ainda não são publicados.
+`backend/templates/<form>/v1/original.pdf`. As FormVersion foram promovidas para `VERIFIED` após comparação byte a byte entre os uploads locais e os blobs Git versionados. Os mappings 5-D e 5-H estão `APPROVED`. O serviço `renovacao-cha-amador` pode ser publicado; `inscricao-exame-amador` continua `DRAFT` porque não possui formulário oficial associado pela norma.
 
 A promoção exige:
 

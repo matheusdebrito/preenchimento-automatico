@@ -96,6 +96,6 @@ export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
   {
     id: 'renovacao-cha-amador',
     title: 'Renovação da CHA',
-    summary: 'Renovação para Arrais, Mestre ou Capitão, inclusive nos casos de perda, roubo, furto ou dano da cédula.',
+    summary: 'Preenchimento dos formulários de renovação para Arrais, Mestre ou Capitão, inclusive em caso de perda, roubo, furto ou dano da cédula.',
   },
 ];

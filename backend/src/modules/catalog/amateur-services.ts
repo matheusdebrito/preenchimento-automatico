@@ -94,18 +94,6 @@ const commonDocuments: readonly DocumentRequirement[] = [
   },
 ];
 
-const renewalCurrentCha: DocumentRequirement = {
-  id: 'current-cha',
-  label: 'Carteira de Habilitação de Amador (CHA) atual',
-  description: 'Para modelos em cédula, a NORMAM prevê apresentação da CHA original quando disponível.',
-  required: false,
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'person',
-    allowedFieldIds: NO_AUTOMATIC_FIELDS,
-  },
-};
-
 export const amateurForms: readonly FormDefinition[] = [
   {
     id: 'requerimento-cha-amador',
@@ -161,12 +149,12 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'renovacao-cha-amador',
     title: 'Renovação da CHA',
-    description: 'Renovação de Arrais-Amador, Mestre-Amador ou Capitão-Amador. Perda, roubo, furto ou dano da cédula também segue renovação; não há segunda via separada.',
+    description: 'Preenchimento dos formulários de renovação da CHA para Arrais-Amador, Mestre-Amador ou Capitão-Amador. Perda, roubo, furto ou dano da cédula também usa este fluxo. Os uploads são apenas fontes opcionais de dados; a aplicação não valida os documentos exigidos para protocolo na Marinha.',
     creditCost: 1,
-    status: 'DRAFT',
+    status: 'AVAILABLE',
     questions: [amateurCategoryQuestion, chaSituationQuestion],
-    documentRequirements: [renewalCurrentCha, ...commonDocuments.filter((item) =>
-      !['training-certificate-arrais', 'current-cha-prerequisite'].includes(item.id))],
+    documentRequirements: commonDocuments.filter((item) =>
+      ['applicant-identity', 'residence-proof'].includes(item.id)),
   },
 ];
 
