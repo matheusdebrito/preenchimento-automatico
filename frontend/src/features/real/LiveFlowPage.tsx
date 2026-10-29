@@ -806,7 +806,8 @@ export function LiveFlowPage() {
                                               ? formatBrazilianDateInput(event.target.value)
                                               : event.target.value;
                                             setValues((prev) => ({ ...prev, [field.id]:typed }));
-                                            if (invalidFieldIds.includes(field.id)) {
+                                            if (invalidFieldIds.includes(field.id) &&
+                                              (!field.required || typed.trim())) {
                                               const remaining = invalidFieldIds.filter((id) => id !== field.id);
                                               setInvalidFieldIds(remaining);
                                               if (remaining.length === 0) {
