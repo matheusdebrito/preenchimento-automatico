@@ -16,15 +16,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const SESSION_CHECK_TIMEOUT_MS = 10_000;
+
 async function readSession(): Promise<SessionState> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), SESSION_CHECK_TIMEOUT_MS);
   try {
-    const response = await api<{ user: SessionUser }>('/api/auth/me');
+    const response = await api<{ user: SessionUser }>('/api/auth/me', {
+      signal: controller.signal,
+    });
     return { status: 'authenticated', user: response.user };
   } catch (error) {
     return {
       status: error instanceof ApiError && error.status === 401 ? 'guest' : 'unavailable',
       user: null,
     };
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
