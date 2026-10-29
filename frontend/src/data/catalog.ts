@@ -18,7 +18,7 @@ export const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
     description: 'Transferência, inscrição e outros serviços.',
     icon: Ship,
     demoAvailable: true,
-    serviceId: 'transferencia-moto-aquatica',
+    serviceId: 'transferencia-propriedade-embarcacao',
   },
   {
     id: 'amadores',
@@ -46,10 +46,10 @@ export interface ServiceDefinition {
 }
 
 export const PILOT_SERVICE: ServiceDefinition = {
-  id: 'transferencia-moto-aquatica',
+  id: 'transferencia-propriedade-embarcacao',
   categoryId: 'embarcacoes',
-  title: 'Transferência de moto aquática',
-  summary: 'Jet ski — transferência de propriedade.',
+  title: 'Transferência de propriedade',
+  summary: 'Barco ou moto aquática — transferência de propriedade.'
   description:
     'Reúna os documentos do comprador, do vendedor e da embarcação. Você confere cada dado antes de preparar os formulários.',
   creditCost: 1,
