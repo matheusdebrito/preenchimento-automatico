@@ -10,7 +10,7 @@ Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnico
 
 Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, texto OCR ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual inclui consolidar a arquitetura reutilizável, homologar tecnicamente os oito PDFs NORMAM-211 adicionados pelo usuário e evoluir OCR/document understanding, sem liberar produção, cobrar ou publicar dados pessoais. A revisão visual humana para APPROVED e os portões de produção continuam pendentes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
+A autorização atual inclui consolidar a arquitetura reutilizável, auditar os PDFs contra as NORMAM-211/212 completas fornecidas pelo usuário e evoluir OCR/document understanding, sem liberar produção, cobrar ou publicar dados pessoais. A auditoria revogou a antiga aprovação do 3-C incorreto; os portões de produção continuam vinculantes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
 
 ## 1. Quadro geral de progresso
 
@@ -109,24 +109,23 @@ gates normativos, visuais e de produção.
 - [x] Cadastrar `ServiceDefinition`, perguntas, requisitos opcionais de origem e composição condicional `ServiceForm` em DRAFT.
 - [x] Garantir perfil OCR em todos os requisitos da expansão; documentos de apoio usam `supporting-document` e não inventam campos.
 - [x] Exibir no frontend os serviços planejados sem criar links de geração antes da homologação.
-- [x] Preservar os oito PDFs NORMAM-211 adicionados pelo usuário em templates imutáveis.
-- [x] Registrar SHA-256, páginas, dimensões, tipo PDF e mover as oito versões para `VERIFIED/STATIC`.
-- [x] Criar os mapeamentos de campos dos oito formulários.
-- [x] Gerar amostras fictícias, renderizar todas as páginas e concluir revisão visual técnica do agente; mapas em `TESTED`.
+- [x] Preservar os modelos oficiais já homologados e substituir o 3-C incorreto pelo Termo de Responsabilidade de Construção/Alteração.
+- [x] Manter sete versões/mapas NORMAM-211 em `VERIFIED/APPROVED`.
+- [x] Revogar a antiga aprovação do 3-C, descartar suas coordenadas e retornar a versão corrigida para `IDENTIFIED/DRAFT`.
+- [x] Corrigir BADE/BSADE: BSADE até 6 m; BADE acima de 6 m.
 - [x] Manter o domínio do MVP em um único motor e impedir reintrodução silenciosa de motor2/3/4.
 - [x] Remover fotos da embarcação do upload da aplicação; exigência oficial permanece apenas na documentação do procedimento.
-- [x] Promover os oito `FormMapping` NORMAM-211 para `APPROVED` após revisão visual técnica reproduzível e autorização explícita do responsável pelo produto; não registrar isso como inspeção pessoal página a página pelo usuário.
-- [ ] Incorporar/modelar o Anexo 3-D nos casos em que responsabilidade técnica for aplicável; não contornar TLS inválido da origem.
+- [ ] Validar bytes, mapear e homologar visualmente o 3-C correto antes de liberar os cenários que dependem dele.
 - [x] Fixar o MVP em um único motor; Motor 2–4 e caixas relacionadas permanecem fora do domínio e serão tratados em evolução futura.
-- [x] Liberar sete serviços para embarcação/barco; manter alteração de dados, alteração de motor, moto aquática e inscrição >12 m em validação enquanto dependências específicas (especialmente 3-D/NORMAM-212) não estiverem cobertas.
+- [x] Manter sete serviços para embarcação/barco; alteração de dados, alteração de motor, moto aquática e inscrição >12 m permanecem em validação enquanto 3-C/NORMAM-212 não estiverem homologados.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
-**Aceite parcial atual:** os oito PDFs estão `VERIFIED/STATIC` e os oito mapas
-NORMAM-211 estão `APPROVED` com relatório técnico reproduzível. Sete serviços
-estão liberados para embarcação/barco. Permanecem fail-closed: moto aquática,
-alteração de dados, alteração de motor e inscrição >12 m até 24 m enquanto o
-3-D/NORMAM-212 aplicável não estiver incorporado. QA manual em navegador/celular
+**Aceite parcial atual:** sete mapas NORMAM-211 permanecem `APPROVED`. O
+3-C correto está `IDENTIFIED/DRAFT` e sua antiga homologação foi revogada.
+Sete serviços permanecem liberados nos cenários cobertos. Permanecem fail-closed:
+moto aquática, alteração de dados, alteração de motor, inscrição >12 m e inscrição
+de embarcação construída pelo próprio interessado. QA manual em navegador/celular
 continua pendente.
 
 ## 3.2. Registro de execução — 28/10/2026, catálogo dos serviços NORMAM-211
@@ -202,12 +201,11 @@ TIE/TIEM passou a reconhecer tipo, área de navegação, pontal, material do cas
 e tipo de propulsão nos layouts confirmados. O modelo `tie digital 2.pdf`
 entrou no teste de referência. Revisão humana permanece obrigatória.
 
-**Pendências que impedem publicação:** os oito mapas estão `TESTED`, não
-`APPROVED`; revisão visual humana ainda é obrigatória. O Anexo 3-D deve ser
-incorporado nos casos em que responsabilidade técnica for aplicável. A origem
-consultada apresentou cadeia TLS inválida no runner e a automação recusou
-contornar TLS. QA completo em navegador/mobile e decisão para múltiplos motores
-também permanecem abertos. Os nove serviços continuam `DRAFT`.
+**Correção posterior:** esse registro é histórico. A auditoria de 29/10/2026
+contra a NORMAM-211 completa confirmou sete mapas anteriores e invalidou o antigo
+3-C. O formulário correto é o Anexo 3-C - Termo de Responsabilidade de
+Construção/Alteração. O estado vigente está documentado em
+`docs/NORMAM_SOURCE_AUDIT_2026-10-29.md`.
 
 **CI:** durante a homologação, falhas reais do preview foram usadas como gate e
 corrigidas, em vez de relaxar testes. O workflow passou a cancelar runs
