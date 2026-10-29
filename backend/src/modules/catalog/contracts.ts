@@ -93,6 +93,11 @@ export interface DocumentExtractionProfile {
   documentType: 'identity' | 'tie' | 'residence-proof' | 'sale-document' | 'supporting-document';
   /** Semantic owner of the extracted values. */
   subjectRole: 'person' | 'seller' | 'vessel' | 'representative' | 'declarant' | 'coOwner';
+  /**
+   * Authoritative allow-list for fields that this specific source document may
+   * provide. The extraction provider must enforce this server-side.
+   */
+  allowedFieldIds: readonly string[];
 }
 
 export interface DocumentRequirement {
