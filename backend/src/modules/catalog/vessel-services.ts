@@ -90,14 +90,6 @@ const vesselProof: DocumentRequirement = {
   extraction: { documentType: 'sale-document', subjectRole: 'person' },
 };
 
-const vesselPhotos: DocumentRequirement = {
-  id: 'vessel-photos',
-  label: 'Fotos da embarcação, quando exigidas no processo',
-  description: 'Fotos também passam pela leitura OCR, mas podem não conter texto útil.',
-  required: false,
-  extraction: { documentType: 'supporting-document', subjectRole: 'vessel' },
-};
-
 const motorProof: DocumentRequirement = {
   id: 'motor-document',
   label: 'Documento comprobatório do motor',
@@ -211,7 +203,6 @@ function requirements(options: {
   tie?: boolean;
   seller?: boolean;
   origin?: boolean;
-  photos?: boolean;
   motor?: boolean;
   residence?: boolean;
   representative?: boolean;
@@ -226,7 +217,6 @@ function requirements(options: {
     ...(options.tie ? [currentTie] : []),
     ...(options.seller ? [sellerIdentity] : []),
     ...(options.origin ? [vesselProof] : []),
-    ...(options.photos ? [vesselPhotos] : []),
     ...(options.motor ? [motorProof] : []),
   ];
 }
@@ -241,7 +231,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
     questions: questions(),
-    documentRequirements: requirements({ origin: true, photos: true }),
+    documentRequirements: requirements({ origin: true }),
   },
   {
     id: 'transferencia-propriedade-embarcacao',
@@ -273,7 +263,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
     questions: questions({ tie: true, dataChanged: true }),
-    documentRequirements: requirements({ tie: true, photos: true }),
+    documentRequirements: requirements({ tie: true }),
   },
   {
     id: 'segunda-via-tie-embarcacao',
@@ -281,7 +271,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
     questions: questions({ dataChanged: true }),
-    documentRequirements: requirements({ photos: true }),
+    documentRequirements: requirements(),
   },
   {
     id: 'alteracao-dados-embarcacao',
