@@ -264,7 +264,7 @@ function requirements(options: {
   ];
 }
 
-const scopeNote = 'Primeira expansão para embarcações de esporte e recreio de até 24 m, ' +
+const scopeNote = 'Serviço para embarcação ou moto aquática, conforme a opção selecionada, ' +
   'sem protocolo automático e com revisão humana obrigatória.';
 
 export const vesselServices: readonly ServiceDefinition[] = [
@@ -278,7 +278,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
   {
     id: 'transferencia-propriedade-embarcacao',
-    title: 'Transferência de propriedade de embarcação',
+    title: 'Transferência de propriedade',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
     questions: questions({ tie: true }),
