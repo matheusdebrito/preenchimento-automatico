@@ -54,7 +54,12 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.versions.every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
     expect(catalog.mappings).toHaveLength(14);
-    expect(catalog.mappings.every((mapping) => mapping.status === 'DRAFT')).toBe(true);
+    expect(catalog.mappings.filter((mapping) =>
+      mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
+      mapping.status === 'TESTED')).toBe(true);
+    expect(catalog.mappings.filter((mapping) =>
+      !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
+      mapping.status === 'DRAFT')).toBe(true);
     expect(catalog.serviceForms).toHaveLength(46);
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === 'transferencia-moto-aquatica')).toBe(false);
