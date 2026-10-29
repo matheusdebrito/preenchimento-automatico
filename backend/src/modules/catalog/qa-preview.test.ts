@@ -5,11 +5,8 @@ import { validateCatalog } from './validate-catalog.js';
 import { publicService, publicServices } from './public-catalog.js';
 
 const answers = {
+  vesselType: 'moto_aquatica',
   tieSituation: 'regular',
-  transferAuthorization: 'consta_tie',
-  sellerCommunication: 'nao',
-  residenceProof: 'comprovante',
-  coOwner: 'nao',
   representative: 'nao',
 };
 
@@ -32,7 +29,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status)
       .toBe('DRAFT');
     expect(catalog.serviceForms.some((relation) =>
-      relation.serviceId === QA_PREVIEW_SERVICE_ID)).toBe(false);
+      relation.serviceId === QA_PREVIEW_SERVICE_ID)).toBe(true);
     expect(publicService(catalog, QA_PREVIEW_SERVICE_ID)).toBeNull();
     expect(publicServices(catalog)).toHaveLength(0);
 
@@ -40,7 +37,8 @@ describe('prévia local do MESMO serviço de transferência', () => {
     // so the local preview can exercise the real forms without publishing them.
     expect(qa.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
     expect(qa.services).toHaveLength(catalog.services.length);
-    expect(qa.services[0]?.id).toBe(QA_PREVIEW_SERVICE_ID);
+    expect(qa.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.id)
+      .toBe(QA_PREVIEW_SERVICE_ID);
   });
 
   it('usa perguntas, requisitos e todas as posições reais com amostras sem créditos', () => {
@@ -48,7 +46,10 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(validateCatalog(qa)).toEqual([]);
     const preview = publicService(qa, QA_PREVIEW_SERVICE_ID, answers);
     expect(preview?.creditCost).toBe(0);
-    expect(preview?.formVersionIds).toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
+    expect(preview?.formVersionIds).toEqual([
+      'requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
+      'declaracao-residencia-ma-v1',
+    ]);
     expect(preview?.questions).toEqual(catalog.services[0]?.questions);
     expect(preview?.documentRequirements).toContainEqual(expect.objectContaining({
       id: 'seller-identity', required: false,
@@ -74,13 +75,11 @@ describe('prévia local do MESMO serviço de transferência', () => {
   it('inclui os anexos condicionais reais quando selecionados', () => {
     const qa = qaPreviewCatalog();
     const selected = publicService(qa, QA_PREVIEW_SERVICE_ID, {
-      ...answers, tieSituation: 'extraviado', transferAuthorization: 'anexo_2d',
-      sellerCommunication: 'sim', residenceProof: 'declaracao_1c',
+      ...answers, tieSituation: 'extraviado',
     });
     expect(selected?.formVersionIds).toEqual([
       'requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
-      'comunicacao-transferencia-ma-v1', 'declaracao-perda-tie-ma-v1',
-      'declaracao-residencia-ma-v1',
+      'declaracao-residencia-ma-v1', 'declaracao-perda-tie-ma-v1',
     ]);
   });
 });
