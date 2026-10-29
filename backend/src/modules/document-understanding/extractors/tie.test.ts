@@ -268,7 +268,7 @@ describe('tieDocumentExtractor', () => {
 
     expect(values['vessel.registration']).toBe('4019909971');
     expect(values['vessel.expirationDate']).toBe('31/07/2028');
-    expect(values['vessel.engineCount']).toBe('1');
+    expect(values['vessel.motorCount']).toBe('1');
     expect(values['vessel.mortgaged']).toBe('NÃO');
     expect(values['vessel.issuePlace']).toBe('São Sebastião');
     expect(values['vessel.issueDate']).toBe('31/07/2023');
