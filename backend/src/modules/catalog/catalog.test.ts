@@ -64,7 +64,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(46);
+    expect(catalog.serviceForms).toHaveLength(45);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
@@ -92,9 +92,9 @@ describe('catálogo reutilizável de formulários', () => {
   });
 
   it('modela serviços de amadores sem publicar antes da homologação dos anexos 5-D/5-H', () => {
-    const emission = catalog.services.find((service) => service.id === 'emissao-cha-amador');
+    const enrollment = catalog.services.find((service) => service.id === 'inscricao-exame-amador');
     const renewal = catalog.services.find((service) => service.id === 'renovacao-cha-amador');
-    expect(emission?.status).toBe('DRAFT');
+    expect(enrollment?.status).toBe('DRAFT');
     expect(renewal?.status).toBe('DRAFT');
     expect(catalog.forms.some((form) => form.id === 'requerimento-cha-amador')).toBe(true);
     expect(catalog.forms.some((form) => form.id === 'declaracao-extravio-cha-amador')).toBe(true);
