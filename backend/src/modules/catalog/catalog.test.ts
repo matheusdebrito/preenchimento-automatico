@@ -45,8 +45,8 @@ function sharedFormFixture(): CatalogDefinition {
 
 describe('catálogo reutilizável de formulários', () => {
   it('mantém serviços não homologados em DRAFT e separa versões identificadas de verificadas', () => {
-    const pilot = catalog.services.find((service) => service.id === 'transferencia-moto-aquatica');
-    expect(pilot?.status).toBe('DRAFT');
+    expect(catalog.services).toHaveLength(9);
+    expect(catalog.services.every((service) => service.status === 'DRAFT')).toBe(true);
     expect(catalog.forms).toHaveLength(14);
     expect(catalog.versions).toHaveLength(14);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(14);
@@ -60,9 +60,9 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(46);
-    expect(catalog.serviceForms.some((relation) =>
-      relation.serviceId === 'transferencia-moto-aquatica')).toBe(false);
+    expect(catalog.serviceForms).toHaveLength(51);
+    expect(catalog.services.every((service) =>
+      service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
@@ -86,8 +86,7 @@ describe('catálogo reutilizável de formulários', () => {
   });
 
   it('envia todos os documentos dos novos serviços ao pipeline OCR sem inventar campos genéricos', () => {
-    const vesselServices = catalog.services.filter((service) =>
-      service.id !== 'transferencia-moto-aquatica');
+    const vesselServices = catalog.services;
     expect(vesselServices).toHaveLength(9);
     for (const service of vesselServices) {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
