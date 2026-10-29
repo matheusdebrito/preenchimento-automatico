@@ -1,8 +1,7 @@
-import { ArrowRight, ChevronRight, ShieldCheck, ShipWheel, Waves } from 'lucide-react';
+import { ChevronRight, ShieldCheck, ShipWheel, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppFooter } from '../components/layout/AppFooter';
 import { AppHeader } from '../components/layout/AppHeader';
-import { Button } from '../components/ui/Button';
 import { SERVICE_CATEGORIES } from '../data/catalog';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
@@ -29,15 +28,6 @@ export function HomePage() {
                 com preenchimento assistido.
               </p>
               <div className="hero__actions">
-                <Button
-                  to="#categories-title"
-                  variant="inverse"
-                  size="lg"
-                  icon={<ArrowRight aria-hidden="true" />}
-                  iconPosition="end"
-                >
-                  Ver categorias
-                </Button>
                 <span className="hero__note">
                   <ShieldCheck aria-hidden="true" />
                   Você confere tudo antes de gerar

@@ -41,11 +41,10 @@ describe('HomePage', () => {
     expect(screen.queryByText('Transferência de propriedade')).toBeNull();
   });
 
-  it('usa o CTA do hero para levar às categorias, não a um serviço específico', () => {
+  it('não exibe CTA redundante para categorias no hero', () => {
     renderHome();
 
-    const startLink = screen.getByRole('link', { name: /Ver categorias/ });
-    expect(startLink.getAttribute('href')).toBe('/#categories-title');
+    expect(screen.queryByRole('link', { name: /Ver categorias/ })).toBeNull();
   });
 
   it('mantém o aviso de processamento temporário dos documentos', () => {
