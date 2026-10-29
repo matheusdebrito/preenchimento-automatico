@@ -324,11 +324,11 @@ const bsade = (
   ...(action ? { fixedValues: action === 'inscricao'
     ? { 'process.inscription': 'true' }
     : action === 'transf_prop'
-      ? { 'process.transferOwnership': 'true' }
+      ? { 'process.transferProperty': 'true' }
       : action === 'transf_jur'
         ? { 'process.transferJurisdiction': 'true' }
         : action === 'transf_prop_jur'
-          ? { 'process.transferOwnership': 'true', 'process.transferJurisdiction': 'true' }
+          ? { 'process.transferProperty': 'true', 'process.transferJurisdiction': 'true' }
           : { 'process.updateVesselData': 'true' } } : {}),
 });
 const bade = (
