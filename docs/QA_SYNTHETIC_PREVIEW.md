@@ -17,12 +17,11 @@ exige conferência da Capitania aplicável.
 
 ## Por que não existe mais um segundo serviço fictício?
 
-O modo `DEV_QA_PREVIEW=true` passa a usar o próprio identificador
-`transferencia-moto-aquatica`, com **as mesmas perguntas, requisitos de upload,
-regras de seleção e posições de todos os seis mapas** do catálogo oficial.
-Assim, o que for corrigido ou testado no serviço de transferência se aplica ao
-mesmo fluxo usado futuramente. Não há duplicação de mapeamentos ou campos só
-para o QA.
+O modo `DEV_QA_PREVIEW=true` usa o próprio identificador unificado
+`transferencia-propriedade-embarcacao`. O usuário escolhe **Moto aquática**
+ou **Embarcação** na primeira etapa e o catálogo seleciona as relações de
+formulário correspondentes. Não existe um segundo card nem um serviço paralelo
+só para moto aquática, e o QA não duplica mapeamentos ou campos.
 
 A camada de desenvolvimento adapta os status `DRAFT` *somente em memória*
 para permitir gerar prévias, preservando o catálogo original sem aprovação.
@@ -39,13 +38,11 @@ continua obrigatória antes de tornar o serviço oficial disponível.
    PostgreSQL. Não enviar o `.env` ao GitHub.
 3. Executar `docker compose up -d --build` e abrir
    `http://127.0.0.1:8080` no próprio computador.
-4. Entrar com conta sintética e selecionar **Transferência de moto aquática**.
-   Esse é o único acesso ao serviço de transferência; a demonstração paralela
-   foi retirada da navegação. A interface exibirá o aviso de QA local.
-5. Responder **todas as perguntas reais**. Uma combinação simples para testar
-   os anexos 2-A/2-B: TIE regular, autorização já consta no TIE, sem comunicação
-   opcional do vendedor, comprovante de residência, sem coproprietário e sem
-   representante.
+4. Entrar com conta sintética e selecionar **Transferência de propriedade**.
+   Esse é o único card do serviço para barco ou moto aquática.
+5. Em **Tipo de embarcação**, escolher **Moto aquática** para testar a rota
+   NORMAM-212. Ao escolher **Embarcação**, a interface também solicita o
+   comprimento quando ele for necessário para decidir entre BSADE e BADE.
 6. **Escolher quantos arquivos enviar (inclusive nenhum).** Todos os
    uploads são opcionais: pode anexar somente um RG fictício, anexar outros
    documentos fictícios ou clicar **Continuar sem anexos — preencher
@@ -57,16 +54,18 @@ continua obrigatória antes de tornar o serviço oficial disponível.
    reconhecidas e indica quando não encontrou um campo. Sem arquivos, todos
    os campos são preenchidos manualmente. Os obrigatórios e valores inválidos
    continuam sendo verificados antes da geração.
-8. Gerar as prévias condicionais, baixar cada PDF e conferir campo por campo,
-   posição, acentos, texto cortado, assinaturas vazias e marca AMOSTRA em todas
-   as páginas. Os anexos 2-A/2-B são selecionados por padrão; 2-C, 2-D,
-   2-E e 1-C aparecem somente se as respostas exigirem seus vínculos de QA.
+8. Gerar as prévias, baixar cada PDF e conferir campo por campo, posição,
+   acentos, texto cortado, assinaturas vazias e marca AMOSTRA em todas as
+   páginas. Na transferência de **Moto aquática**, o pacote atual inclui
+   Requerimento 2-A, BDMOTO 2-B, Autorização 2-D e Declaração de Residência
+   1-C. A Comunicação de Venda 2-E permanece em seu serviço próprio.
 9. Desligar `DEV_QA_PREVIEW` após os testes e reconstruir os containers.
 
 ## Cenários de regressão prioritários
 
-- **Sem anexos:** responder às perguntas, prosseguir diretamente à revisão,
-  preencher manualmente os campos obrigatórios e gerar 2-A/2-B de AMOSTRA.
+- **Sem anexos:** escolher o tipo de embarcação, prosseguir diretamente à
+  revisão, preencher manualmente os campos obrigatórios e gerar o pacote
+  correspondente em AMOSTRA.
 - **Somente RG fictício:** anexar apenas o documento do comprador, verificar
   sugestões de nome/CPF quando reconhecidas, completar os dados do vendedor,
   moto aquática e endereço manualmente; não devem ser pedidos outros uploads.
