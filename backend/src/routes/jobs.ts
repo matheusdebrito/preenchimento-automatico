@@ -109,7 +109,9 @@ export function registerJobRoutes(
     });
     const relevantQuestions = service.questions.filter((question) =>
       (question.conditions ?? []).every((condition) =>
-        parsed.data.answers[condition.questionId] === condition.equals));
+        condition.equals !== undefined
+          ? parsed.data.answers[condition.questionId] === condition.equals
+          : condition.oneOf?.includes(parsed.data.answers[condition.questionId] ?? '') === true));
     if (service.formVersionIds.length === 0 ||
       relevantQuestions.some((question) => !parsed.data.answers[question.id])) {
       return reply.status(422).send({ error: 'incomplete_service_selection' });
