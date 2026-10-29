@@ -841,10 +841,10 @@ function inlineOwnerFallback(
     });
   };
 
+  // Without an explicit co-owner section, a second generic "NOME:" in the
+  // document is not enough evidence to assign a co-owner role.
   add('registeredOwner.fullName', names[0]);
   add('registeredOwner.taxId', taxes[0]);
-  add('coOwner.fullName', names[1]);
-  add('coOwner.cpf', taxes[1]);
   return result;
 }
 
@@ -863,6 +863,25 @@ function runTieExtraction(
       ownerEvidence.push(fallback);
     }
   }
+
+  const hasRegisteredOwnerIdentity = ownerEvidence.some((item) =>
+    item.fieldId === 'registeredOwner.fullName' ||
+    item.fieldId === 'registeredOwner.taxId');
+  const hasCoOwnerIdentity = ownerEvidence.some((item) =>
+    item.fieldId === 'coOwner.fullName' ||
+    item.fieldId === 'coOwner.cpf');
+
+  for (let index = ownerEvidence.length - 1; index >= 0; index--) {
+    const fieldId = ownerEvidence[index]!.fieldId;
+    if (fieldId.startsWith('registeredOwner.') && !hasRegisteredOwnerIdentity) {
+      ownerEvidence.splice(index, 1);
+      continue;
+    }
+    if (fieldId.startsWith('coOwner.') && !hasCoOwnerIdentity) {
+      ownerEvidence.splice(index, 1);
+    }
+  }
+
   const evidence = [...semantic.evidence, ...ownerEvidence];
 
   const mortgageStatus = evidence.find((item) => item.fieldId === 'vessel.mortgaged');
@@ -892,12 +911,19 @@ function runTieExtraction(
 
   assessments.push(...owners.assessments.map((assessment) => {
     const fallback = ownerEvidence.find((item) => item.fieldId === assessment.fieldId);
-    return fallback
+    if (fallback) {
+      return {
+        fieldId: assessment.fieldId,
+        status: 'FOUND' as const,
+        confidence: fallback.confidence,
+        method: fallback.method,
+      };
+    }
+    return assessment.status === 'FOUND'
       ? {
           fieldId: assessment.fieldId,
-          status: 'FOUND' as const,
-          confidence: fallback.confidence,
-          method: fallback.method,
+          status: 'NOT_FOUND' as const,
+          confidence: null,
         }
       : assessment;
   }));
