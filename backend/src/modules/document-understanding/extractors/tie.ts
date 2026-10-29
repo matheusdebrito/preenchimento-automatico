@@ -151,12 +151,26 @@ const legacyOnlyFields = new Set([
   'vessel.registrationDate',
 ]);
 
+const legacyRegistrationCell = {
+  ...tightTableCell,
+  // The old TIEM prints the registration lower inside a taller header cell.
+  // Keep this exception scoped to the legacy variant instead of widening the
+  // digital TIE search window.
+  maxRightDistanceHeights: 12,
+  maxBelowDistanceHeights: 5,
+  maxBelowHorizontalOffsetHeights: 6,
+} as const;
+
 function conceptsForVariant(variant: TieDocumentVariant): readonly SemanticFieldConcept[] {
   if (variant === 'digital') {
     return tieFieldConcepts.filter((concept) => !legacyOnlyFields.has(concept.fieldId));
   }
   if (variant === 'legacy') {
-    return tieFieldConcepts.filter((concept) => !digitalOnlyFields.has(concept.fieldId));
+    return tieFieldConcepts
+      .filter((concept) => !digitalOnlyFields.has(concept.fieldId))
+      .map((concept) => concept.fieldId === 'vessel.registration'
+        ? { ...concept, spatialHint: legacyRegistrationCell }
+        : concept);
   }
   return tieFieldConcepts;
 }
