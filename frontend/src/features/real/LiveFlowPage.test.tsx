@@ -21,6 +21,28 @@ const service = {
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); });
 
 describe('jornada real isolada da demonstração', () => {
+  it('exibe opções ainda não homologadas como desabilitadas', async () => {
+    const serviceWithUnavailableOption = {
+      ...service,
+      questions: [{
+        id: 'vesselType',
+        label: 'Tipo de embarcação',
+        options: ['embarcacao', 'moto_aquatica'],
+        unavailableOptions: ['moto_aquatica'],
+      }],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input) === '/api/services/ci-only-service'
+        ? json({ service: serviceWithUnavailableOption })
+        : json({ error: 'not_found' }, 404)));
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    const select = await screen.findByLabelText('Tipo de embarcação') as HTMLSelectElement;
+    const moto = [...select.options].find((option) => option.value === 'moto_aquatica');
+    expect(moto?.disabled).toBe(true);
+    expect(moto?.textContent).toContain('em validação');
+  });
+
   it('navega pelo ciclo upload, OCR, revisão e download com API simulada', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);
