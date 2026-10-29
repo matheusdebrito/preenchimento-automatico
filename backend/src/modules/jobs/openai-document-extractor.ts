@@ -192,7 +192,7 @@ function outputSchema(fieldIds: readonly string[], requirementIds: readonly stri
           required: ['fieldId', 'value', 'sourceRequirementId', 'confidence'],
           properties: {
             fieldId: { type: 'string', enum: fieldIds },
-            value: { type: 'string', minLength: 1, maxLength: 500 },
+            value: { type: 'string' },
             sourceRequirementId: { type: 'string', enum: requirementIds },
             confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
           },
