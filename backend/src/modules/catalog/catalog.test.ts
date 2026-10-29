@@ -220,6 +220,25 @@ describe('catálogo reutilizável de formulários', () => {
     expect(validateCatalog(fixture).join(' ')).toContain('resposta fora das opções');
   });
 
+  it('aceita condição oneOf somente com opções declaradas', () => {
+    const fixture = sharedFormFixture();
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      conditions: [{ questionId: 'mode', oneOf: ['yes', 'no'] }],
+    }];
+    expect(validateCatalog(fixture)).toEqual([]);
+
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      conditions: [{ questionId: 'mode', oneOf: ['yes', 'maybe'] }],
+    }];
+    expect(validateCatalog(fixture).join(' ')).toContain('respostas fora das opções em oneOf');
+  });
+
   it('não permite versão desatualizada em serviço ativo', () => {
     const fixture = sharedFormFixture();
     fixture.versions = [{ ...fixture.versions[0]!, status: 'OUTDATED' }];
