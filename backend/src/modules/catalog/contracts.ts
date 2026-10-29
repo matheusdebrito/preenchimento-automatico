@@ -140,6 +140,11 @@ export interface ServiceForm {
   fixedValues?: Readonly<Record<string, string>>;
   /** Copy an already validated service answer into a semantic PDF field. */
   answerBindings?: Readonly<Record<string, string>>;
+  /** Map a validated enumerated answer to reviewed presentation text for a PDF field. */
+  answerValueMappings?: Readonly<Record<string, {
+    questionId: string;
+    values: Readonly<Record<string, string>>;
+  }>>;
   /** All conditions must match; absent means unconditional. */
   conditions?: readonly ServiceCondition[];
 }
