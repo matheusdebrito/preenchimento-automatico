@@ -847,4 +847,88 @@ describe('tieDocumentExtractor', () => {
       .toBe('441M20200001');
   });
 
+  it('não confunde data curta de inscrição com o número de inscrição do TIEM', () => {
+    const source: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+            confidence: .99, box: [20, 10, 500, 34], polygon: null },
+          { id: '0:1', page: 0, text: 'N DE INSCRICAO',
+            confidence: .96, box: [20, 50, 170, 72], polygon: null },
+          { id: '0:2', page: 0, text: 'DATA INSCRICAO',
+            confidence: .96, box: [190, 50, 330, 72], polygon: null },
+          { id: '0:3', page: 0, text: '441M20200001',
+            confidence: .98, box: [30, 84, 165, 106], polygon: null },
+          { id: '0:4', page: 0, text: '28/09/95',
+            confidence: .98, box: [205, 84, 285, 106], polygon: null },
+          { id: '0:5', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
+            confidence: .99, box: [500, 220, 820, 244], polygon: null },
+          { id: '0:6', page: 0, text: 'NOME FABRICANTE',
+            confidence: .99, box: [20, 260, 190, 284], polygon: null },
+        ],
+      }],
+    };
+
+    expect(classifyTieVariant(source)).toBe('legacy');
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.registration')?.value)
+      .toBe('441M20200001');
+    expect(evidence.find((item) => item.fieldId === 'vessel.registration')?.value)
+      .not.toBe('28/09/95');
+  });
+
+  it('separa contagens de tripulantes e passageiros em colunas vizinhas', () => {
+    const source: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+            confidence: .99, box: [20, 10, 500, 34], polygon: null },
+          { id: '0:1', page: 0, text: 'QTD. DE TRIPULANTES',
+            confidence: .97, box: [20, 100, 180, 122], polygon: null },
+          { id: '0:2', page: 0, text: 'QTD. DE PASSAGEIROS',
+            confidence: .97, box: [230, 100, 390, 122], polygon: null },
+          { id: '0:3', page: 0, text: '1',
+            confidence: .99, box: [90, 134, 105, 156], polygon: null },
+          { id: '0:4', page: 0, text: '4',
+            confidence: .99, box: [300, 134, 315, 156], polygon: null },
+          { id: '0:5', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
+            confidence: .99, box: [500, 220, 820, 244], polygon: null },
+          { id: '0:6', page: 0, text: 'NOME FABRICANTE',
+            confidence: .99, box: [20, 260, 190, 284], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.crewCount')?.value).toBe('1');
+    expect(evidence.find((item) => item.fieldId === 'vessel.passengerCount')?.value).toBe('4');
+  });
+
+  it('não promove credor hipotecário sem status positivo de hipoteca', () => {
+    const source = observation([
+      'CREDOR HIPOTECÁRIO',
+      'SAO SEBASTIAO',
+    ]);
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.some((item) => item.fieldId === 'vessel.mortgageCreditor'))
+      .toBe(false);
+  });
+
+  it('mantém credor hipotecário quando o status de hipoteca é SIM', () => {
+    const source = observation([
+      'HIPOTECADA: SIM',
+      'CREDOR HIPOTECÁRIO',
+      'BANCO EXEMPLO SA',
+    ]);
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.mortgageCreditor')?.value)
+      .toBe('BANCO EXEMPLO SA');
+  });
+
 });
