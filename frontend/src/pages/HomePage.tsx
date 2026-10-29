@@ -133,8 +133,9 @@ export function HomePage() {
               <p className="eyebrow">Embarcações de esporte e recreio</p>
               <h2 id="vessel-services-title">Serviços de embarcações</h2>
               <p>
-                Os fluxos abaixo seguem a NORMAM-211/DPC 2026. Serviços homologados ficam
-                disponíveis para preenchimento; os demais permanecem identificados como em validação.
+                Os fluxos abaixo usam a NORMAM-211/DPC ou a NORMAM-212/DPC conforme o tipo
+                selecionado. Serviços homologados ficam disponíveis para preenchimento; os demais
+                permanecem identificados como em validação.
               </p>
             </div>
             <div className="category-grid">
