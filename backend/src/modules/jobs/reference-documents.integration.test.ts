@@ -122,6 +122,8 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(currentDigital.has('vessel.expirationDate')).toBe(true);
     expect(currentDigital.has('vessel.issueDate')).toBe(true);
     expect(currentDigital.has('vessel.issuePlace')).toBe(true);
+    // Preserve the registered owner as document evidence; do not assign a service role here.
+    expect(currentDigital.has('registeredOwner.fullName')).toBe(true);
   }, 120_000);
 
   it('lê o TIEM antigo sem confundir inscrição com casco', async () => {
@@ -141,6 +143,9 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(legacy.has('vessel.activity')).toBe(true);
     expect(legacy.has('vessel.crewCount')).toBe(true);
     expect(legacy.has('vessel.passengerCount')).toBe(true);
+    // Masked owner/hull-color values in the public TIEM must remain absent.
+    expect(legacy.has('registeredOwner.fullName')).toBe(false);
+    expect(legacy.has('vessel.hullColor')).toBe(false);
   }, 120_000);
 
   it.skip('lê o comprovante e preserva CEP/logradouro sem usar nome do titular', async () => {
