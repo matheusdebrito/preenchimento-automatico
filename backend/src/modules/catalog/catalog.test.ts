@@ -45,8 +45,10 @@ function sharedFormFixture(): CatalogDefinition {
 
 describe('catálogo reutilizável de formulários', () => {
   it('mantém serviços não homologados em DRAFT e separa versões identificadas de verificadas', () => {
-    const pilot = catalog.services.find((service) => service.id === 'transferencia-moto-aquatica');
-    expect(pilot?.status).toBe('DRAFT');
+    expect(catalog.services).toHaveLength(9);
+    expect(catalog.services.every((service) => service.status === 'DRAFT')).toBe(true);
+    expect(catalog.services.some((service) =>
+      service.id === 'transferencia-moto-aquatica')).toBe(false);
     expect(catalog.forms).toHaveLength(14);
     expect(catalog.versions).toHaveLength(14);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(14);
@@ -60,13 +62,11 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(46);
-    expect(catalog.serviceForms.some((relation) =>
-      relation.serviceId === 'transferencia-moto-aquatica')).toBe(false);
+    expect(catalog.serviceForms).toHaveLength(67);
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
-  it('cadastra os nove serviços NORMAM-211 sem publicá-los antes dos PDFs e mapas', () => {
+  it('cadastra nove cards únicos e roteia NORMAM-211/NORMAM-212 pela resposta inicial', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
       'inscricao-embarcacao',
@@ -82,12 +82,35 @@ describe('catálogo reutilizável de formulários', () => {
       expect(ids.has(id)).toBe(true);
       expect(catalog.services.find((service) => service.id === id)?.status).toBe('DRAFT');
       expect(catalog.serviceForms.some((relation) => relation.serviceId === id)).toBe(true);
+      const service = catalog.services.find((item) => item.id === id)!;
+      expect(service.questions[0]).toEqual({
+        id: 'vesselType',
+        label: 'Tipo de embarcação',
+        options: ['moto_aquatica', 'embarcacao'],
+      });
     }
+    const transfer = catalog.services.find((service) =>
+      service.id === 'transferencia-propriedade-embarcacao')!;
+    const band = transfer.questions.find((question) => question.id === 'vesselBand');
+    expect(band?.conditions).toEqual([
+      { questionId: 'vesselType', equals: 'embarcacao' },
+    ]);
+    const transferForms = catalog.serviceForms.filter((relation) =>
+      relation.serviceId === transfer.id);
+    expect(transferForms.some((relation) =>
+      relation.formVersionId === 'bdmoto-v1' &&
+      relation.conditions?.some((condition) =>
+        condition.questionId === 'vesselType' && condition.equals === 'moto_aquatica')))
+      .toBe(true);
+    expect(transferForms.some((relation) =>
+      relation.formVersionId === 'bsade-er-2026-v1' &&
+      relation.conditions?.some((condition) =>
+        condition.questionId === 'vesselType' && condition.equals === 'embarcacao')))
+      .toBe(true);
   });
 
   it('envia todos os documentos dos novos serviços ao pipeline OCR sem inventar campos genéricos', () => {
-    const vesselServices = catalog.services.filter((service) =>
-      service.id !== 'transferencia-moto-aquatica');
+    const vesselServices = catalog.services;
     expect(vesselServices).toHaveLength(9);
     for (const service of vesselServices) {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
@@ -98,6 +121,21 @@ describe('catálogo reutilizável de formulários', () => {
     expect(generic.length).toBeGreaterThan(0);
     expect(vesselServices.flatMap((service) => service.documentRequirements)
       .some((requirement) => requirement.id === 'vessel-photos')).toBe(false);
+  });
+
+  it('rejeita pergunta condicional que dependa dela mesma', () => {
+    const fixture = sharedFormFixture();
+    fixture.services = [{
+      ...fixture.services[0]!,
+      questions: [{
+        id: 'kind',
+        label: 'Tipo',
+        options: ['a', 'b'],
+        conditions: [{ questionId: 'kind', equals: 'a' }],
+      }],
+    }, fixture.services[1]!];
+
+    expect(validateCatalog(fixture).join(' ')).toContain('não pode depender da própria resposta');
   });
 
   it('mantém origem de campos explícita em todo perfil de extração', () => {
