@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Camera, FileCheck2, FileText, UploadCloud } from 'lucide-react';
+import { Camera, ChevronDown, FileCheck2, FileText, UploadCloud } from 'lucide-react';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { Notice } from '../../components/ui/Notice';
 import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
 import { formatBrazilianDateInput } from '../../lib/date-mask';
-import type { LiveService } from '../../lib/api';
+import type { LiveReviewForm, LiveService } from '../../lib/api';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
@@ -22,6 +22,20 @@ type ExtractionDiagnostic = {
   nameStage?: 'name_recognized' | 'name_not_mapped' |
     'label_seen_name_rejected' | 'label_not_detected';
 };
+
+function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
+  if (service.reviewForms?.length) return service.reviewForms;
+  return [{
+    formVersionId: 'all-fields',
+    formId: 'all-fields',
+    name: 'Dados dos formulários',
+    fields: service.reviewFields,
+  }];
+}
+
+function reviewInputId(formVersionId: string, fieldId: string): string {
+  return 'review-' + formVersionId + '-' + fieldId;
+}
 
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
@@ -41,8 +55,31 @@ export function LiveFlowPage() {
   const [busy, setBusy] = useState(false);
   const [extractionProvider, setExtractionProvider] =
     useState<ExtractionProvider>('paddleocr');
+  const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const cancelRequested = useRef(false);
+
+  const reviewForms = service ? groupedReviewForms(service) : [];
+  const allReviewFormsOpen = reviewForms.length > 0 &&
+    reviewForms.every((form) => openReviewFormIds.includes(form.formVersionId));
+
+  const openFirstReviewForm = (currentService: LiveService) => {
+    const first = groupedReviewForms(currentService)[0];
+    setOpenReviewFormIds(first ? [first.formVersionId] : []);
+  };
+
+  const revealReviewField = (fieldId: string) => {
+    const form = reviewForms.find((item) =>
+      item.fields.some((field) => field.id === fieldId));
+    if (!form) return;
+    setOpenReviewFormIds((current) =>
+      current.includes(form.formVersionId)
+        ? current
+        : [...current, form.formVersionId]);
+    requestAnimationFrame(() => {
+      document.getElementById(reviewInputId(form.formVersionId, fieldId))?.focus();
+    });
+  };
 
   useEffect(() => {
     if (!serviceId) return;
@@ -80,7 +117,11 @@ export function LiveFlowPage() {
             setSources(Object.fromEntries(
               Object.entries(status.sources ?? {}).filter(([id]) => visible.has(id))));
             setDiagnostics(status.diagnostics ?? []);
-            if (status.status === 'GENERATED') setDownloads(status.downloads ?? []);
+            if (status.status === 'GENERATED') {
+              setDownloads(status.downloads ?? []);
+            } else {
+              openFirstReviewForm(quoted.service);
+            }
             setStep(status.status === 'GENERATED' ? 'download' : 'review');
           } else {
             setStep('files');
@@ -147,6 +188,7 @@ export function LiveFlowPage() {
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
     setInvalidFieldId(null);
+    if (service) openFirstReviewForm(service);
     setStep('review');
   };
 
@@ -264,6 +306,7 @@ export function LiveFlowPage() {
       setSources({});
       setDiagnostics([]);
       setInvalidFieldId(null);
+      setOpenReviewFormIds([]);
       setDownloads([]);
       setStep('questions');
     } catch {
@@ -282,7 +325,7 @@ export function LiveFlowPage() {
     if (missing) {
       setInvalidFieldId(missing.id);
       setError('Preencha o campo obrigatório: ' + missing.label + '.');
-      document.getElementById('review-' + missing.id)?.focus();
+      revealReviewField(missing.id);
       return;
     }
 
@@ -318,7 +361,7 @@ export function LiveFlowPage() {
               : 'revise o formato e o valor.';
         setInvalidFieldId(issue.fieldId);
         setError('Confira ' + label + ': ' + tip);
-        document.getElementById('review-' + issue.fieldId)?.focus();
+        revealReviewField(issue.fieldId);
       } else {
         setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
       }
