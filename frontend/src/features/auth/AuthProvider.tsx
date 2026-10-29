@@ -35,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshSession = useCallback(async () => {
     const version = ++requestVersion.current;
+    setSession((current) => current.status === 'authenticated'
+      ? current
+      : { status: 'loading', user: null });
     const result = await readSession();
     if (version === requestVersion.current) setSession(result);
   }, []);
