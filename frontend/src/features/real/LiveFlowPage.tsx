@@ -42,6 +42,25 @@ function firstReviewFormIds(service: LiveService): string[] {
   return first ? [first.formVersionId] : [];
 }
 
+function visibleServiceQuestions(
+  service: LiveService,
+  answers: Readonly<Record<string, string>>,
+) {
+  return service.questions.filter((question) =>
+    (question.conditions ?? []).every((condition) =>
+      answers[condition.questionId] === condition.equals));
+}
+
+function serviceOptionLabel(value: string): string {
+  if (value === 'moto_aquatica') return 'Moto aquática';
+  if (value === 'embarcacao') return 'Embarcação';
+  if (value === 'ate_12m') return 'Até 12 metros';
+  if (value === 'maior_12_ate_24m') return 'Mais de 12 até 24 metros';
+  if (value === 'sim') return 'Sim';
+  if (value === 'nao') return 'Não';
+  return value.replaceAll('_', ' ');
+}
+
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
   const { serviceId } = useParams();
@@ -152,7 +171,8 @@ export function LiveFlowPage() {
   }, [serviceId]);
 
   const quote = async () => {
-    if (!service || service.questions.some((question) => !answers[question.id])) {
+    const questions = service ? visibleServiceQuestions(service, answers) : [];
+    if (!service || questions.some((question) => !answers[question.id])) {
       setError('Responda às perguntas sobre o seu caso.');
       return;
     }
@@ -392,26 +412,36 @@ export function LiveFlowPage() {
             <Notice tone="info">Os formulários só serão liberados após validação oficial e revisão do preenchimento. <Link to="/preencher/servico">Conhecer demonstração</Link>.</Notice>
           ) : (
             <section className="card card--padded live-form">
-              <p className="eyebrow">{service.id === 'transferencia-moto-aquatica' && service.creditCost === 0
-                ? 'Simulação técnica: sem cobrança de créditos'
-                : 'Custo: ' + service.creditCost + ' crédito por processo'}</p>
-              {service.id === 'transferencia-moto-aquatica' && service.creditCost === 0 ? (
-                <Notice tone="danger" role="alert">
-                  SOMENTE QA LOCAL do serviço de transferência: utilize documentos e fotos inteiramente fictícios.
-                  Os PDFs gerados terão marca d’água AMOSTRA e não podem ser usados em processos oficiais.
-                </Notice>
-              ) : null}
+              <p className="eyebrow">
+                {'Custo: ' + service.creditCost + ' crédito por processo'}
+              </p>
               <Notice tone="info">Ferramenta independente. Não protocola documentos na Marinha e não substitui assinaturas, reconhecimento de firmas ou conferência.</Notice>
               {step === 'questions' ? (
                 <>
                   <h2>Dados do serviço</h2>
-                  {service.questions.map((question) => (
+                  {visibleServiceQuestions(service, answers).map((question) => (
                     <label key={question.id} className="field">
                       <span className="field__label">{question.label}</span>
-                      <select className="field__input" required value={answers[question.id] ?? ''}
-                        onChange={(event) => setAnswers((prev) => ({ ...prev, [question.id]:event.target.value }))}>
+                      <select
+                        className="field__input"
+                        required
+                        value={answers[question.id] ?? ''}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setAnswers((prev) => {
+                            const next = { ...prev, [question.id]: value };
+                            if (question.id === 'vesselType' && value !== 'embarcacao') {
+                              delete next.vesselBand;
+                            }
+                            return next;
+                          });
+                          setError('');
+                        }}
+                      >
                         <option value="">Selecione</option>
-                        {question.options.map((value) => <option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}
+                        {question.options.map((value) => (
+                          <option key={value} value={value}>{serviceOptionLabel(value)}</option>
+                        ))}
                       </select>
                     </label>
                   ))}
@@ -765,9 +795,10 @@ export function LiveFlowPage() {
               {step === 'download' && jobId ? (
                 <>
                   <h2>Formulários gerados</h2>
-                  <Notice tone="success">{service.id === 'transferencia-moto-aquatica' && service.creditCost === 0
-                    ? 'Amostras preparadas. Nenhum crédito foi cobrado. Não utilize estes PDFs oficialmente.'
-                    : 'Pacote preparado. Um único crédito foi reservado no processo e será mantido após o download. Se a entrega não ocorrer, poderá ser estornado.'}</Notice>
+                  <Notice tone="success">
+                    Pacote preparado. Um único crédito foi reservado no processo e será mantido
+                    após o download. Se a entrega não ocorrer, poderá ser estornado.
+                  </Notice>
                   {downloads.map((version) => (
                     <a className="btn btn--secondary" key={version}
                       href={'/api/jobs/' + jobId + '/download/' + encodeURIComponent(version)} download>
