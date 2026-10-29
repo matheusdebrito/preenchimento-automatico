@@ -3,10 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StoredDocument } from './job-store.js';
-import {
-  extractDocumentsWithOpenAi,
-  OpenAiDocumentError,
-} from './openai-document-extractor.js';
+import { extractDocumentsWithOpenAi } from './openai-document-extractor.js';
 
 const roots: string[] = [];
 
