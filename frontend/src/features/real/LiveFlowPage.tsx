@@ -321,8 +321,11 @@ export function LiveFlowPage() {
     if (!jobId || !service) return;
     setError('');
     setInvalidFieldId(null);
-    const missing = service.reviewFields.find((field) =>
-      field.required && !values[field.id]?.trim());
+    const missing = reviewForms
+      .flatMap((form) => form.fields)
+      .find((field) => field.required && !values[field.id]?.trim()) ??
+      service.reviewFields.find((field) =>
+        field.required && !values[field.id]?.trim());
     if (missing) {
       setInvalidFieldId(missing.id);
       setError('Preencha o campo obrigatório: ' + missing.label + '.');
