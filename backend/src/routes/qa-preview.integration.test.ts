@@ -57,11 +57,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const owner = registered.json<{user:{id:string}}>().user.id;
       const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
 
-      const answers = {
-        tieSituation: 'regular', transferAuthorization: 'consta_tie',
-        sellerCommunication: 'nao', residenceProof: 'comprovante',
-        coOwner: 'nao', representative: 'nao',
-      };
+      const answers = { vesselType: 'moto_aquatica' };
       const created = await app.inject({
         method: 'POST', url: '/api/jobs', headers: { cookie },
         payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers },
@@ -254,11 +250,10 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
       const created = await app.inject({
         method: 'POST', url: '/api/jobs', headers: { cookie },
-        payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers: {
-          tieSituation: 'regular', transferAuthorization: 'consta_tie',
-          sellerCommunication: 'nao', residenceProof: 'comprovante',
-          coOwner: 'nao', representative: 'nao',
-        } },
+        payload: {
+          serviceId: QA_PREVIEW_SERVICE_ID,
+          answers: { vesselType: 'moto_aquatica' },
+        },
       });
       expect(created.statusCode, created.body).toBe(201);
       const jobId = created.json<{id:string}>().id;
@@ -305,11 +300,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       expect(registered.statusCode, registered.body).toBe(201);
       const owner = registered.json<{user:{id:string}}>().user.id;
       const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
-      const answers = {
-        tieSituation: 'regular', transferAuthorization: 'consta_tie',
-        sellerCommunication: 'nao', residenceProof: 'comprovante',
-        coOwner: 'nao', representative: 'nao',
-      };
+      const answers = { vesselType: 'moto_aquatica' };
       const service = publicService(qa, QA_PREVIEW_SERVICE_ID, answers);
       expect(service).not.toBeNull();
       expect(service?.documentRequirements.every((item) => !item.required)).toBe(true);
