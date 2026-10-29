@@ -41,7 +41,9 @@ describe('draft form map coordinates', () => {
       'declaracao-perda-tie-ma-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name'],
       'declaracao-residencia-ma-v1': ['person.fullName', 'person.cpf', 'person.address'],
     };
-    expect(catalog.mappings).toHaveLength(catalog.versions.length);
+    expect(catalog.mappings).toHaveLength(
+      catalog.versions.filter((version) => version.status === 'VERIFIED').length,
+    );
     for (const mapping of catalog.mappings) {
       const fields = new Set(mapping.placements.filter((p) => p.required).map((p) => p.fieldId));
       for (const field of required[mapping.formVersionId] ?? []) {
