@@ -159,6 +159,11 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'process.place', label: 'Local do requerimento', valueKind: 'text' },
   { id: 'process.date', label: 'Data do requerimento', valueKind: 'date' },
   { id: 'process.lostTie', label: 'Declaração referente ao TIE perdido/extraviado', valueKind: 'boolean' },
+  { id: 'amateur.chaNumber', label: 'Número da CHA', valueKind: 'text' },
+  { id: 'amateur.category', label: 'Categoria da CHA', valueKind: 'text' },
+  { id: 'amateur.chaIssueDate', label: 'Data de emissão da CHA', valueKind: 'date' },
+  { id: 'process.amateurRequest', label: 'Serviço solicitado para a CHA', valueKind: 'text' },
+  { id: 'process.chaLossReason', label: 'Motivo da perda/dano da CHA', valueKind: 'text' },
   { id: 'declarant.placeDate', label: 'Local e data da declaração', valueKind: 'text' },
   { id: 'vessel.tonnageMethod', label: 'Método de arqueação', valueKind: 'text' },
 ];

@@ -2,12 +2,19 @@ import type { CatalogDefinition } from './contracts.js';
 import { additionalFields } from './fields.js';
 import { draftMappings } from './draft-mappings.js';
 import { normam211Mappings } from './normam211-mappings.js';
+import { amateurMappings } from './amateur-mappings.js';
 import {
   vesselForms,
   vesselVersions,
   vesselServices,
   vesselServiceForms,
 } from './vessel-services.js';
+import {
+  amateurForms,
+  amateurVersions,
+  amateurServices,
+  amateurServiceForms,
+} from './amateur-services.js';
 
 /**
  * This is configuration, not evidence of applicable official forms.
@@ -25,6 +32,7 @@ export const catalog: CatalogDefinition = {
   ],
   forms: [
     ...vesselForms,
+    ...amateurForms,
     {
       id: 'requerimento-ma',
       name: 'Requerimento para inscrição ou transferência de propriedade e/ou jurisdição de moto aquática ou do seu proprietário',
@@ -58,6 +66,7 @@ export const catalog: CatalogDefinition = {
   ],
   versions: [
     ...vesselVersions,
+    ...amateurVersions,
     {
       id: 'requerimento-ma-v1',
       formId: 'requerimento-ma',
@@ -140,9 +149,10 @@ export const catalog: CatalogDefinition = {
       status: 'VERIFIED',
     },
   ],
-  mappings: [...draftMappings, ...normam211Mappings],
+  mappings: [...draftMappings, ...normam211Mappings, ...amateurMappings],
   services: [
     ...vesselServices,
+    ...amateurServices,
   ],
-  serviceForms: [...vesselServiceForms],
+  serviceForms: [...vesselServiceForms, ...amateurServiceForms],
 };

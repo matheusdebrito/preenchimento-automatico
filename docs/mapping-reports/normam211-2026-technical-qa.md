@@ -1,11 +1,19 @@
 # Homologação técnica dos anexos NORMAM-211/DPC 2026
 
+> **Correção normativa de 29/10/2026:** a auditoria posterior contra a NORMAM-211/DPC
+> completa fornecida pelo responsável pelo produto identificou que o PDF antes tratado como
+> Anexo 3-C não corresponde ao 3-C vigente desta publicação. O 3-C correto é o **Termo de
+> Responsabilidade de Construção/Alteração**. A aprovação histórica descrita abaixo continua
+> válida apenas para os sete outros formulários. A versão e o mapeamento do 3-C foram
+> rebaixados para `IDENTIFIED/DRAFT` e as coordenadas antigas foram descartadas. Consulte
+> `docs/NORMAM_SOURCE_AUDIT_2026-10-29.md`.
+>
 **Data técnica:** 29/10/2026  
 **Escopo:** oito PDFs oficiais adicionados ao repositório para serviços de embarcações de esporte e recreio.  
-**Resultado técnico:** `FormVersion = VERIFIED` e revisão visual técnica concluída.  
+**Resultado técnico histórico:** sete formulários permanecem `VERIFIED/APPROVED`; o antigo 3-C foi invalidado após a auditoria normativa.  
 **Decisão de produto em 29/10/2026:** o responsável pelo produto autorizou a
-liberação do escopo de um único motor com base nesta evidência. Os oito mapas
-NORMAM-211 foram promovidos para `APPROVED`. Isso não afirma que o usuário
+liberação do escopo de um único motor com base nesta evidência. Sete desses mapas
+permanecem `APPROVED`; a antiga aprovação do 3-C foi revogada. Isso não afirma que o usuário
 tenha inspecionado pessoalmente cada página; a inspeção visual registrada abaixo
 foi realizada pelo agente sobre os artefatos reproduzíveis do CI.
 
@@ -32,7 +40,7 @@ Os oito PDFs são estáticos, sem campos AcroForm.
 | `declaracao-perda-tie-er-2026-v1` | 2-H | 1 | `D67AAB9B1E878F7877A69AC0B9E6197DE932A61D166626B50141FBE119567093` | VERIFIED / APPROVED |
 | `comunicacao-transferencia-er-2026-v1` | 2-I | 1 | `0DF2A7550AF9CBFDCBC27D94128C2BBB0EEFA88BABA6142CB39EDB4FE22EA142` | VERIFIED / APPROVED |
 | `autorizacao-transferencia-er-2026-v1` | 2-K | 1 | `52A4CACFFEFD628EF9D95DC84943CCA0CB0FD66A706272380A92F19F4B9EDE5E` | VERIFIED / APPROVED |
-| `termo-responsabilidade-er-2026-v1` | 3-C | 2 | `706D23CA1BA72F596AC3C959A2D64363C596877355B9F3A637EE371873E15AA0` | VERIFIED / APPROVED |
+| `termo-responsabilidade-er-2026-v1` | 3-C | - | - | IDENTIFIED / DRAFT - substituído após auditoria normativa |
 
 ## Revisão página a página
 
@@ -91,12 +99,15 @@ Os oito PDFs são estáticos, sem campos AcroForm.
   ausência de dado não pode ser inferida como `NÃO`, e o domínio aprovado não
   possui `motor1Choice`.
 
-### 3-C — Termo de responsabilidade
+### 3-C — Termo de Responsabilidade de Construção/Alteração
 
-- uso limitado a inscrição/transferência de propriedade na composição atual;
-- data de nascimento, data de expedição e data final são segmentadas de acordo
-  com o layout;
-- página 2 não possui campos do requerente mapeados e permanece intacta.
+- o PDF anteriormente revisado não corresponde ao 3-C da publicação completa usada como
+  fonte normativa atual;
+- suas coordenadas foram descartadas e não podem ser reaproveitadas;
+- o PDF correto foi identificado a partir da NORMAM-211, mas só voltará a `VERIFIED`
+  depois da validação de bytes, novo mapeamento, geração sintética e revisão visual;
+- ele não faz parte do pacote padrão de transferência de propriedade.
+
 
 ## Regras de segurança/correção preservadas
 
@@ -114,16 +125,15 @@ Os oito PDFs são estáticos, sem campos AcroForm.
 
 ## Estado de liberação e bloqueios residuais
 
-- Os oito mapas NORMAM-211 foram promovidos para `APPROVED` após a revisão
-  técnica acima e autorização explícita do responsável pelo produto para o
-  escopo de um único motor. Isso não é descrito como inspeção pessoal do usuário.
+- Sete mapas NORMAM-211 permanecem `APPROVED`. A aprovação antiga do 3-C foi
+  revogada porque o documento de referência estava semanticamente incorreto.
 - Sete serviços podem ficar `AVAILABLE` para embarcação/barco com os formulários
   já cobertos.
 - Moto aquática continua bloqueada em produção e preservada apenas no QA local
   até a homologação NORMAM-212 correspondente.
-- O Anexo 3-D ainda precisa ser incorporado/modelado. Por isso alteração de
-  dados, alteração de motor e inscrição maior que 12 m até 24 m permanecem
-  bloqueadas.
+- O formulário pendente relevante é o Anexo 3-C correto (Construção/Alteração), não o
+  3-D. Alteração de dados, alteração de motor e inscrição de médio porte permanecem
+  bloqueadas até modelar sua aplicabilidade e homologar o novo mapa.
 - Múltiplos motores ficam explicitamente fora do MVP.
 - QA manual em navegador/mobile permanece uma verificação operacional pendente,
   sem invalidar a revisão estrutural e visual reproduzível já concluída.

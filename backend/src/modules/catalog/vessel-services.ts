@@ -27,7 +27,15 @@ const vesselTypeQuestion: ServiceQuestion = {
 const vesselBandQuestion: ServiceQuestion = {
   id: 'vesselBand',
   label: 'Comprimento da embarcação',
-  options: ['ate_12m', 'maior_12_ate_24m'],
+  options: ['ate_6m', 'maior_6_ate_12m', 'maior_12_menor_24m'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+};
+
+const builtByApplicantQuestion: ServiceQuestion = {
+  id: 'builtByApplicant',
+  label: 'A embarcação foi construída pelo próprio interessado?',
+  options: ['nao', 'sim'],
+  unavailableOptions: ['sim'],
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
@@ -160,7 +168,7 @@ export const vesselForms: readonly FormDefinition[] = [
     description: 'NORMAM-211/DPC 2026 - Anexo 2-I.' },
   { id: 'autorizacao-transferencia-er', name: 'Autorização para Transferência de Propriedade',
     description: 'NORMAM-211/DPC 2026 - Anexo 2-K.' },
-  { id: 'termo-responsabilidade-er', name: 'Termo de Responsabilidade para Inscrição/Transferência',
+  { id: 'termo-responsabilidade-er', name: 'Termo de Responsabilidade de Construção/Alteração',
     description: 'NORMAM-211/DPC 2026 - Anexo 3-C.' },
 ];
 
@@ -218,8 +226,8 @@ export const vesselVersions: readonly FormVersion[] = [
     id: 'termo-responsabilidade-er-2026-v1', formId: 'termo-responsabilidade-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 3-C',
     regulation: 'NORMAM-211/DPC 2026, Anexo 3-C',
-    sourceUrl: 'https://www.marinha.mil.br/cfpa/sites/www.marinha.mil.br.cfpa/files/2026-02/ANEXO%203-C%20%28TERMO%20DE%20RESPONSABILIDADE%29.pdf',
-    verifiedAt: '2026-10-29', sha256: '706D23CA1BA72F596AC3C959A2D64363C596877355B9F3A637EE371873E15AA0', templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
+    sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
+    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'STATIC', status: 'IDENTIFIED',
   },
 ];
 
@@ -228,15 +236,23 @@ function questions(options: {
   tie?: boolean;
   dataChanged?: boolean;
   blockMediumBand?: boolean;
+  constructionCase?: boolean;
 } = {}): readonly ServiceQuestion[] {
-  const bandQuestion = options.blockMediumBand
-    ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_ate_24m'] }
+  const baseBandQuestion = options.blockMediumBand
+    ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_menor_24m'] }
     : vesselBandQuestion;
+  const bandQuestion = options.dataChanged
+    ? { ...baseBandQuestion, conditions: [
+        { questionId: 'vesselType', equals: 'embarcacao' },
+        { questionId: 'dataChanged', equals: 'sim' },
+      ] }
+    : baseBandQuestion;
   return [
     vesselTypeQuestion,
-    ...(options.band === false ? [] : [bandQuestion]),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion] : []),
+    ...(options.band === false ? [] : [bandQuestion]),
+    ...(options.constructionCase ? [builtByApplicantQuestion] : []),
   ];
 }
 
@@ -264,7 +280,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Inscrição inicial de embarcação',
     description: scopeNote,
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ blockMediumBand: true }),
+    questions: questions({ blockMediumBand: true, constructionCase: true }),
     documentRequirements: requirements({ origin: true }),
   },
   {
@@ -301,8 +317,8 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
   {
     id: 'segunda-via-tie-embarcacao',
-    title: '2ª via do TIE/TIEM por perda, roubo ou extravio',
-    description: scopeNote,
+    title: 'Renovação do TIE/TIEM por perda, roubo ou extravio',
+    description: scopeNote + ' O TIE digital não possui segunda via; perda ou extravio do modelo antigo segue o fluxo de renovação.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ dataChanged: true }),
     documentRequirements: requirements(),
@@ -310,7 +326,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados ou características da embarcação',
-    description: 'Em validação até incorporar o termo de responsabilidade aplicável às alterações.',
+    description: 'Em validação normativa. O Anexo 3-C só se aplica em situações específicas de construção/alteração; não deve ser incluído automaticamente.',
     creditCost: 1, status: 'DRAFT',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, origin: true }),
@@ -346,7 +362,7 @@ const bsade = (
   order,
   conditions: [
     { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'vesselBand', equals: 'ate_12m' },
+    { questionId: 'vesselBand', equals: 'ate_6m' },
     ...extraConditions,
   ],
   ...(action ? { fixedValues: action === 'inscricao'
@@ -369,7 +385,7 @@ const bade = (
   order,
   conditions: [
     { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'vesselBand', equals: 'maior_12_ate_24m' },
+    { questionId: 'vesselBand', oneOf: ['maior_6_ate_12m', 'maior_12_menor_24m'] },
     ...extraConditions,
   ],
 });
@@ -378,11 +394,7 @@ const request = (serviceId: string, order: number, action: string): ServiceForm 
   formVersionId: 'requerimento-embarcacao-er-2026-v1',
   order,
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
-  fixedValues: {
-    'process.vesselAction': action,
-    ...(action === 'segunda_via'
-      ? { 'process.otherServiceDescription': '2ª via do TIE/TIEM' } : {}),
-  },
+  fixedValues: { 'process.vesselAction': action },
 });
 const residence = (serviceId: string, order: number): ServiceForm => ({
   serviceId,
@@ -400,32 +412,24 @@ const lostTie = (serviceId: string, order: number): ServiceForm => ({
     { questionId: 'tieSituation', equals: 'extraviado' },
   ],
 });
-const responsibility = (serviceId: string, order: number): ServiceForm => ({
-  serviceId,
-  formVersionId: 'termo-responsabilidade-er-2026-v1',
-  order,
-  conditions: [
-    { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'vesselBand', equals: 'maior_12_ate_24m' },
-  ],
-});
-
 export const vesselServiceForms: readonly ServiceForm[] = [
   request('inscricao-embarcacao', 1, 'inscricao'),
-  bsade('inscricao-embarcacao', 2, 'inscricao'), bade('inscricao-embarcacao', 3),
-  residence('inscricao-embarcacao', 4), responsibility('inscricao-embarcacao', 5),
+  bsade('inscricao-embarcacao', 2, 'inscricao'),
+  bade('inscricao-embarcacao', 3),
+  residence('inscricao-embarcacao', 4),
 
   request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
-  bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'), bade('transferencia-propriedade-embarcacao', 3),
+  bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
+  bade('transferencia-propriedade-embarcacao', 3),
   { serviceId: 'transferencia-propriedade-embarcacao',
     formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
   residence('transferencia-propriedade-embarcacao', 5),
   lostTie('transferencia-propriedade-embarcacao', 6),
-  responsibility('transferencia-propriedade-embarcacao', 7),
 
   request('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
-  bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'), bade('transferencia-jurisdicao-embarcacao', 3),
+  bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'),
+  bade('transferencia-jurisdicao-embarcacao', 3),
   residence('transferencia-jurisdicao-embarcacao', 4),
   lostTie('transferencia-jurisdicao-embarcacao', 5),
 
@@ -437,7 +441,6 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
   residence('transferencia-propriedade-jurisdicao-embarcacao', 5),
   lostTie('transferencia-propriedade-jurisdicao-embarcacao', 6),
-  responsibility('transferencia-propriedade-jurisdicao-embarcacao', 7),
 
   request('renovacao-tie-embarcacao', 1, 'renovacao'),
   bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados',
@@ -447,7 +450,7 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   residence('renovacao-tie-embarcacao', 4),
   lostTie('renovacao-tie-embarcacao', 5),
 
-  request('segunda-via-tie-embarcacao', 1, 'segunda_via'),
+  request('segunda-via-tie-embarcacao', 1, 'renovacao'),
   { serviceId: 'segunda-via-tie-embarcacao',
     formVersionId: 'declaracao-perda-tie-er-2026-v1', order: 2,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
@@ -459,15 +462,20 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   residence('segunda-via-tie-embarcacao', 5),
 
   request('alteracao-dados-embarcacao', 1, 'alteracao_dados'),
-  bsade('alteracao-dados-embarcacao', 2, 'alteracao_dados'), bade('alteracao-dados-embarcacao', 3),
+  bsade('alteracao-dados-embarcacao', 2, 'alteracao_dados'),
+  bade('alteracao-dados-embarcacao', 3),
   residence('alteracao-dados-embarcacao', 4), lostTie('alteracao-dados-embarcacao', 5),
 
   request('alteracao-motor-embarcacao', 1, 'troca_motor'),
-  bsade('alteracao-motor-embarcacao', 2, 'troca_motor'), bade('alteracao-motor-embarcacao', 3),
+  bsade('alteracao-motor-embarcacao', 2, 'troca_motor'),
+  bade('alteracao-motor-embarcacao', 3),
   residence('alteracao-motor-embarcacao', 4), lostTie('alteracao-motor-embarcacao', 5),
 
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 1,
+    conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
+  { serviceId: 'comunicacao-venda-embarcacao',
+    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 2,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
 ];
 
@@ -497,6 +505,9 @@ export const pendingMotoAquaticaServiceForms: readonly ServiceForm[] = [
 
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-ma-v1', order: 2,
+    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
+  { serviceId: 'comunicacao-venda-embarcacao',
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
 ];
 

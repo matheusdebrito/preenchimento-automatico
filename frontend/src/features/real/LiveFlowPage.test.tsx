@@ -43,6 +43,41 @@ describe('jornada real isolada da demonstração', () => {
     expect(moto?.textContent).toContain('em validação');
   });
 
+  it('exibe faixas normativas e respeita condições oneOf no formulário', async () => {
+    const conditionalService = {
+      ...service,
+      questions: [{
+        id: 'vesselBand',
+        label: 'Comprimento da embarcação',
+        options: ['ate_6m', 'maior_6_ate_12m', 'maior_12_menor_24m'],
+      }, {
+        id: 'detail',
+        label: 'Detalhe para BADE',
+        options: ['sim', 'nao'],
+        conditions: [{
+          questionId: 'vesselBand',
+          oneOf: ['maior_6_ate_12m', 'maior_12_menor_24m'],
+        }],
+      }],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input) === '/api/services/ci-only-service'
+        ? json({ service: conditionalService })
+        : json({ error: 'not_found' }, 404)));
+
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    const band = await screen.findByLabelText('Comprimento da embarcação') as HTMLSelectElement;
+    expect([...band.options].map((option) => option.textContent)).toEqual(expect.arrayContaining([
+      'Até 6 m', 'Maior que 6 m até 12 m', 'Maior que 12 m e menor que 24 m',
+    ]));
+    expect(screen.queryByLabelText('Detalhe para BADE')).toBeNull();
+
+    await user.selectOptions(band, 'maior_6_ate_12m');
+    expect(screen.getByLabelText('Detalhe para BADE')).toBeTruthy();
+  });
+
   it('navega pelo ciclo upload, OCR, revisão e download com API simulada', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);

@@ -49,46 +49,46 @@ describe('projeção pública do catálogo', () => {
     const cases = [
       {
         id: 'inscricao-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m' },
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m' },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'declaracao-residencia-er-2026-v1'],
       },
       {
         id: 'transferencia-propriedade-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular' },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
       },
       {
         id: 'transferencia-jurisdicao-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular' },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'declaracao-residencia-er-2026-v1'],
       },
       {
         id: 'transferencia-propriedade-jurisdicao-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', tieSituation: 'regular' },
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular' },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
       },
       {
         id: 'renovacao-tie-embarcacao',
         answers: {
-          vesselType: 'embarcacao', vesselBand: 'ate_12m',
+          vesselType: 'embarcacao', vesselBand: 'ate_6m',
           tieSituation: 'regular', dataChanged: 'nao',
         },
         forms: ['requerimento-embarcacao-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
       },
       {
         id: 'segunda-via-tie-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_12m', dataChanged: 'nao' },
+        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m', dataChanged: 'nao' },
         forms: ['requerimento-embarcacao-er-2026-v1', 'declaracao-perda-tie-er-2026-v1',
           'declaracao-residencia-er-2026-v1'],
       },
       {
         id: 'comunicacao-venda-embarcacao',
         answers: { vesselType: 'embarcacao' },
-        forms: ['comunicacao-transferencia-er-2026-v1'],
+        forms: ['comunicacao-transferencia-er-2026-v1', 'autorizacao-transferencia-er-2026-v1'],
       },
     ] as const;
 
@@ -98,19 +98,36 @@ describe('projeção pública do catálogo', () => {
     }
   });
 
-  it('bloqueia cenários ainda dependentes do anexo 3-D', () => {
+  it('seleciona BSADE até 6 m e BADE acima de 6 m conforme a NORMAM-211', () => {
+    expect(publicService(catalog, 'transferencia-jurisdicao-embarcacao', {
+      vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+    })?.formVersionIds).toContain('bsade-er-2026-v1');
+
+    const small = publicService(catalog, 'transferencia-jurisdicao-embarcacao', {
+      vesselType: 'embarcacao', vesselBand: 'maior_6_ate_12m', tieSituation: 'regular',
+    })?.formVersionIds;
+    expect(small).toContain('bade-er-2026-v1');
+    expect(small).not.toContain('bsade-er-2026-v1');
+
+    const medium = publicService(catalog, 'transferencia-jurisdicao-embarcacao', {
+      vesselType: 'embarcacao', vesselBand: 'maior_12_menor_24m', tieSituation: 'regular',
+    })?.formVersionIds;
+    expect(medium).toContain('bade-er-2026-v1');
+  });
+
+  it('bloqueia cenários ainda dependentes do anexo 3-C', () => {
     expect(publicService(catalog, 'inscricao-embarcacao', {
       vesselType: 'embarcacao',
-      vesselBand: 'maior_12_ate_24m',
+      vesselBand: 'maior_12_menor_24m',
     })).toBeNull();
     expect(publicService(catalog, 'alteracao-dados-embarcacao', {
       vesselType: 'embarcacao',
-      vesselBand: 'ate_12m',
+      vesselBand: 'ate_6m',
       tieSituation: 'regular',
     })).toBeNull();
     expect(publicService(catalog, 'alteracao-motor-embarcacao', {
       vesselType: 'embarcacao',
-      vesselBand: 'ate_12m',
+      vesselBand: 'ate_6m',
       tieSituation: 'regular',
     })).toBeNull();
   });

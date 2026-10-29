@@ -89,7 +89,9 @@ export interface ServiceQuestion {
 
 export interface ServiceCondition {
   questionId: string;
-  equals: string;
+  /** Exactly one of equals/oneOf must be defined. */
+  equals?: string;
+  oneOf?: readonly string[];
 }
 
 export interface DocumentExtractionProfile {

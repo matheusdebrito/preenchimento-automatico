@@ -20,7 +20,7 @@ export const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
   {
     id: 'amadores',
     title: 'Arrais, Mestre e Capitão',
-    description: 'Inscrição, renovação e segunda via.',
+    description: 'Inscrição, emissão e renovação da CHA.',
     icon: IdCard,
     route: '/servicos/amadores',
   },
@@ -76,12 +76,26 @@ export const PLANNED_VESSEL_SERVICES: readonly PlannedService[] = [
     summary: 'Mudança conjunta de proprietário e jurisdição.' },
   { id: 'renovacao-tie-embarcacao', title: 'Renovação do TIE/TIEM',
     summary: 'Preparação dos formulários para renovação do título.' },
-  { id: 'segunda-via-tie-embarcacao', title: '2ª via do TIE/TIEM',
-    summary: 'Perda, roubo ou extravio do título de inscrição.' },
+  { id: 'segunda-via-tie-embarcacao', title: 'Renovação por perda ou extravio do TIE/TIEM',
+    summary: 'Para documento antigo perdido, roubado ou extraviado; TIE digital pode ser reimpresso pelo Gov.br.' },
   { id: 'alteracao-dados-embarcacao', title: 'Alteração de dados da embarcação',
     summary: 'Atualização de características ou dados cadastrais.' },
   { id: 'alteracao-motor-embarcacao', title: 'Troca, instalação ou retirada de motor',
     summary: 'Alteração de características relacionada ao motor propulsor.' },
   { id: 'comunicacao-venda-embarcacao', title: 'Comunicação de venda',
     summary: 'Comunicação do vendedor sem substituir a transferência de propriedade.' },
+];
+
+
+export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
+  {
+    id: 'inscricao-exame-amador',
+    title: 'Inscrição para exame',
+    summary: 'Documentação para inscrição nos exames de Arrais, Mestre ou Capitão, sem inventar formulário não indicado pela norma.',
+  },
+  {
+    id: 'renovacao-cha-amador',
+    title: 'Renovação da CHA',
+    summary: 'Renovação para Arrais, Mestre ou Capitão, inclusive nos casos de perda, roubo, furto ou dano da cédula.',
+  },
 ];

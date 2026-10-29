@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { AppFooter } from '../components/layout/AppFooter';
 import { AppHeader } from '../components/layout/AppHeader';
 import { Badge } from '../components/ui/Badge';
-import { PLANNED_VESSEL_SERVICES, SERVICE_CATEGORIES } from '../data/catalog';
+import { PLANNED_AMATEUR_SERVICES, PLANNED_VESSEL_SERVICES, SERVICE_CATEGORIES } from '../data/catalog';
 import { api } from '../lib/api';
 import type { LiveService } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -27,6 +27,7 @@ export function ServiceCategoryPage() {
 
   const planned = useMemo(() => {
     if (categoryId === 'embarcacoes') return PLANNED_VESSEL_SERVICES;
+    if (categoryId === 'amadores') return PLANNED_AMATEUR_SERVICES;
     return [];
   }, [categoryId]);
 

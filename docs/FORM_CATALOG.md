@@ -274,9 +274,10 @@ classificados como `VERIFIED/STATIC`. Os oito mapas foram implementados,
 renderizados com dados fictícios e revisados tecnicamente, avançando para
 `TESTED`.
 
-Os serviços permanecem `DRAFT`: `TESTED` não substitui a revisão visual
-humana exigida para `APPROVED`. Também permanecem bloqueios de escopo para o
-Anexo 3-D quando aplicável, múltiplos motores e QA real em navegador/mobile.
+A auditoria contra a NORMAM-211 completa invalidou a aprovação do antigo 3-C.
+Sete mapas permanecem aprovados; o 3-C correto (Termo de Responsabilidade de
+Construção/Alteração) está novamente em `DRAFT` até remapeamento. Também
+permanecem bloqueios de escopo para múltiplos motores e QA real em navegador/mobile.
 
 Inventário, fontes, composição e gates:
 [NORMAM211_VESSEL_SERVICES.md](NORMAM211_VESSEL_SERVICES.md). Evidência visual:

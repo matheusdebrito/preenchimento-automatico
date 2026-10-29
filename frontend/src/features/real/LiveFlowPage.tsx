@@ -495,7 +495,9 @@ export function LiveFlowPage() {
                   <h2>Dados do serviço</h2>
                   {service.questions.filter((question) =>
                     (question.conditions ?? []).every((condition) =>
-                      answers[condition.questionId] === condition.equals)).map((question) => (
+                      condition.equals !== undefined
+                        ? answers[condition.questionId] === condition.equals
+                        : condition.oneOf?.includes(answers[condition.questionId] ?? '') === true)).map((question) => (
                     <label key={question.id} className="field">
                       <span className="field__label">{question.label}</span>
                       <select className="field__input" required value={answers[question.id] ?? ''}
@@ -505,9 +507,20 @@ export function LiveFlowPage() {
                           const unavailable = question.unavailableOptions?.includes(value) ?? false;
                           const label = value === 'moto_aquatica' ? 'Moto aquática'
                             : value === 'embarcacao' ? 'Embarcação / barco'
-                              : value === 'ate_12m' ? 'Até 12 m'
-                                : value === 'maior_12_ate_24m' ? 'Maior que 12 m até 24 m'
-                                  : value.replaceAll('_',' ');
+                              : value === 'ate_6m' ? 'Até 6 m'
+                                : value === 'maior_6_ate_12m' ? 'Maior que 6 m até 12 m'
+                                  : value === 'maior_12_menor_24m' ? 'Maior que 12 m e menor que 24 m'
+                                    : value === 'arrais' ? 'Arrais-Amador'
+                                      : value === 'mestre' ? 'Mestre-Amador'
+                                        : value === 'capitao' ? 'Capitão-Amador'
+                                          : value === 'sim' ? 'Sim'
+                                            : value === 'nao' ? 'Não'
+                                              : value === 'regular' ? 'Regular'
+                                                : value === 'extraviada' ? 'Extraviada'
+                                                  : value === 'roubada' ? 'Roubada'
+                                                    : value === 'furtada' ? 'Furtada'
+                                                      : value === 'danificada' ? 'Danificada'
+                                                        : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
                             {label}{unavailable ? ' (em validação)' : ''}
                           </option>;
