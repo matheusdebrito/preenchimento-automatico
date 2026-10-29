@@ -88,7 +88,7 @@ describe('projeção pública do catálogo', () => {
       {
         id: 'comunicacao-venda-embarcacao',
         answers: { vesselType: 'embarcacao' },
-        forms: ['comunicacao-transferencia-er-2026-v1'],
+        forms: ['comunicacao-transferencia-er-2026-v1', 'autorizacao-transferencia-er-2026-v1'],
       },
     ] as const;
 
