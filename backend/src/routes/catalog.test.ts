@@ -23,12 +23,19 @@ describe('API catalog', () => {
   });
 
   it('não disponibiliza cotações para serviço não homologado', async () => {
-    const result = await app.inject({method:'POST',url:'/api/services/transferencia-moto-aquatica/quote',payload:{answers:{}}});
+    const result = await app.inject({
+      method:'POST',
+      url:'/api/services/transferencia-propriedade-embarcacao/quote',
+      payload:{answers:{vesselType:'moto_aquatica'}},
+    });
     expect(result.statusCode).toBe(404);
   });
 
-  it('não publica o piloto como disponível', async () => {
-    const result = await app.inject({ method: 'GET', url: '/api/services/transferencia-moto-aquatica' });
+  it('remove a rota duplicada específica de moto aquática', async () => {
+    const result = await app.inject({
+      method: 'GET',
+      url: '/api/services/transferencia-moto-aquatica',
+    });
     expect(result.statusCode).toBe(404);
     expect(result.body).not.toContain('backend/templates');
   });
