@@ -370,35 +370,61 @@ function documentOriginEvidence(
   fieldId: string,
 ): FieldEvidence | null {
   for (const page of observation.pages) {
-    const anchorIndex = page.lines.findIndex((line) =>
+    const anchors = page.lines.filter((line) =>
       /^\s*DOC\.?\s*ORIGEM\s*$/i.test(line.text.trim()));
-    if (anchorIndex < 0) continue;
-    const anchor = page.lines[anchorIndex]!;
-    const selected: ObservationLine[] = [];
 
-    for (let offset = 1; offset <= 3; offset++) {
-      const line = page.lines[anchorIndex + offset];
-      if (!line) break;
-      if (/^\s*CPF\b/i.test(line.text)) break;
-      const value = clean(line.text);
-      if (value.length < 2 || value.length > 100 || !/[A-Z0-9]/i.test(value)) continue;
-      selected.push(line);
+    for (const anchor of anchors) {
+      let selected: ObservationLine[] = [];
+
+      if (anchor.box) {
+        const height = boxHeight(anchor);
+        const cpfBoundaryY = page.lines
+          .filter((line) => line.box && line.box[1] > anchor.box![3] &&
+            /^\s*CPF\b/i.test(line.text))
+          .map((line) => line.box![1])
+          .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
+        const maxY = Math.min(cpfBoundaryY, anchor.box[3] + height * 8);
+
+        selected = page.lines
+          .filter((line) => {
+            if (line === anchor || !line.box || line.confidence < 0.4) return false;
+            if (line.box[1] < anchor.box![3] - height * 0.2 || line.box[1] >= maxY) return false;
+            if (/^\s*(?:CPF|NATURALIDADE|DATA\s+DE\s+NASCIMENTO)\b/i.test(line.text)) {
+              return false;
+            }
+            const value = clean(line.text);
+            if (value.length < 2 || value.length > 100 || !/[A-Z0-9]/i.test(value)) return false;
+            return horizontalOverlap(anchor, line) > 0 ||
+              Math.abs(line.box[0] - anchor.box![0]) <= height * 8;
+          })
+          .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0])
+          .slice(0, 3);
+      } else {
+        const anchorIndex = page.lines.indexOf(anchor);
+        for (let offset = 1; offset <= 3; offset++) {
+          const line = page.lines[anchorIndex + offset];
+          if (!line || /^\s*CPF\b/i.test(line.text)) break;
+          const value = clean(line.text);
+          if (value.length < 2 || value.length > 100 || !/[A-Z0-9]/i.test(value)) continue;
+          selected.push(line);
+        }
+      }
+
+      const value = clean(selected.map((line) => line.text).join(' '));
+      if (!value || value.length > 180) continue;
+      return {
+        fieldId,
+        value,
+        confidence: Math.min(anchor.confidence, ...selected.map((line) => line.confidence)),
+        documentId: context.documentId,
+        sourceId: context.sourceId,
+        page: anchor.page,
+        method: anchor.box ? 'anchor-below-grouped' : 'anchor-sequential',
+        anchor: 'DOC ORIGEM',
+        lineIds: [anchor.id, ...selected.map((line) => line.id)],
+        status: 'REVIEW_REQUIRED',
+      };
     }
-
-    const value = clean(selected.map((line) => line.text).join(' '));
-    if (!value || value.length > 180) continue;
-    return {
-      fieldId,
-      value,
-      confidence: Math.min(anchor.confidence, ...selected.map((line) => line.confidence)),
-      documentId: context.documentId,
-      sourceId: context.sourceId,
-      page: anchor.page,
-      method: 'anchor-sequential',
-      anchor: 'DOC ORIGEM',
-      lineIds: [anchor.id, ...selected.map((line) => line.id)],
-      status: 'REVIEW_REQUIRED',
-    };
   }
   return null;
 }
