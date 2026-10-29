@@ -513,8 +513,10 @@ export function LiveFlowPage() {
                                     : value === 'arrais' ? 'Arrais-Amador'
                                       : value === 'mestre' ? 'Mestre-Amador'
                                         : value === 'capitao' ? 'Capitão-Amador'
-                                          : value === 'regular' ? 'Regular'
-                                            : value === 'extraviada_roubada_furtada_danificada'
+                                          : value === 'sim' ? 'Sim'
+                                            : value === 'nao' ? 'Não'
+                                              : value === 'regular' ? 'Regular'
+                                                : value === 'extraviada_roubada_furtada_danificada'
                                               ? 'Extraviada, roubada, furtada ou danificada'
                                               : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
