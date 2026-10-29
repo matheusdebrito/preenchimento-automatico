@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
-import { publicService, publicServices } from './public-catalog.js';
+import { activeServiceQuestions, publicService, publicServices } from './public-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
 
 function fixture(): CatalogDefinition {
@@ -36,9 +36,26 @@ function fixture(): CatalogDefinition {
 }
 
 describe('projeção pública do catálogo', () => {
-  it('não publica o piloto em DRAFT', () => {
+  it('não publica serviços DRAFT nem a antiga rota duplicada de moto aquática', () => {
     expect(publicServices(catalog)).toEqual([]);
     expect(publicService(catalog, 'transferencia-moto-aquatica')).toBeNull();
+  });
+
+  it('ativa pergunta de comprimento somente para embarcação', () => {
+    const questions = [
+      { id: 'vesselType', label: 'Tipo', options: ['moto_aquatica', 'embarcacao'] },
+      {
+        id: 'vesselBand',
+        label: 'Comprimento',
+        options: ['ate_12m', 'maior_12_ate_24m'],
+        conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+      },
+    ];
+    expect(activeServiceQuestions(questions, {})).toEqual([questions[0]]);
+    expect(activeServiceQuestions(questions, { vesselType: 'moto_aquatica' }))
+      .toEqual([questions[0]]);
+    expect(activeServiceQuestions(questions, { vesselType: 'embarcacao' }))
+      .toEqual(questions);
   });
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();
