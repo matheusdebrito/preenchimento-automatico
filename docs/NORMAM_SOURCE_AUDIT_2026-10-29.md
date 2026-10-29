@@ -118,13 +118,16 @@ A auditoria normativa não substitui a homologação visual das coordenadas.
 
 A NORMAM-211 também rege ARA/MSA/CPA.
 
-### Inscrição/emissão
+### Inscrição para exame
 
-O catálogo passou a modelar um serviço de Inscrição/Emissão de CHA com escolha da
-categoria. Para Arrais, a norma prevê Atestado de Treinamento Náutico (5-E). Para Mestre,
-é exigida habilitação válida de Arrais; para Capitão, habilitação válida de Mestre.
+O catálogo modela um serviço de Inscrição para Exame com escolha da categoria. Para
+Arrais, a norma prevê Atestado de Treinamento Náutico (5-E). Para Mestre, é exigida
+habilitação válida de Arrais; para Capitão, habilitação válida de Mestre.
 
-O formulário geral identificado para serviços de amadores é o Anexo 5-H.
+O item 5.4.1 lista a documentação, mas não vincula a inscrição para exame ao Anexo 5-H.
+Por isso o serviço fica em DRAFT sem formulário gerado, em vez de reutilizar 5-H por
+inferência. O Anexo 5-H permanece identificado para os serviços em que a própria norma
+o cita, como renovação.
 
 ### Renovação
 
