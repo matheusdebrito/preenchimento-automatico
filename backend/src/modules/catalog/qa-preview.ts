@@ -1,36 +1,20 @@
-import type { CatalogDefinition, ServiceForm } from './contracts.js';
+import type { CatalogDefinition } from './contracts.js';
 import { catalog } from './catalog.js';
 
 /**
- * Local-only overlay of the REAL pilot service, never a parallel fake service.
- * It reuses the same questions, document requirements and all six original
- * mapping placements. This temporary override is NOT persisted or exported by
- * the official catalog, and every output is watermarked as an unusable sample.
- * NODE_ENV=development + DEV_QA_PREVIEW=true are required at startup.
+ * Local-only overlay of the REAL unified transfer service.
+ * It enables the same catalog entry used for boat/jet-ski routing while keeping
+ * production metadata DRAFT. Every generated output remains watermarked as an
+ * unusable sample. NODE_ENV=development + DEV_QA_PREVIEW=true are required.
  */
-export const QA_PREVIEW_SERVICE_ID = 'transferencia-moto-aquatica';
-
-const qaFormRelations: readonly ServiceForm[] = [
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'requerimento-ma-v1',
-    order: 1, fixedValues: { 'process.transferOwnership': 'X' } },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'bdmoto-v1',
-    order: 2, fixedValues: { 'process.transferOwnership': 'X' } },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'autorizacao-transferencia-ma-v1',
-    order: 3, conditions: [{ questionId: 'transferAuthorization', equals: 'anexo_2d' }] },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'comunicacao-transferencia-ma-v1',
-    order: 4, conditions: [{ questionId: 'sellerCommunication', equals: 'sim' }] },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'declaracao-perda-tie-ma-v1',
-    order: 5, conditions: [{ questionId: 'tieSituation', equals: 'extraviado' }] },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'declaracao-residencia-ma-v1',
-    order: 6, conditions: [{ questionId: 'residenceProof', equals: 'declaracao_1c' }] },
-];
+export const QA_PREVIEW_SERVICE_ID = 'transferencia-propriedade-embarcacao';
 
 export function qaPreviewCatalog(): CatalogDefinition {
   return {
     ...catalog,
     mappings: catalog.mappings.map((mapping) => ({
       ...mapping,
-      // Adapter only: the production catalog and human approval remain DRAFT.
+      // Adapter only: the production catalog and human approval remain DRAFT/TESTED.
       status: 'APPROVED' as const,
       reviewedAt: '2026-10-27',
       reviewer: 'QA LOCAL SOMENTE - NAO HOMOLOGADO',
@@ -39,12 +23,10 @@ export function qaPreviewCatalog(): CatalogDefinition {
     services: catalog.services.map((service) =>
       service.id === QA_PREVIEW_SERVICE_ID ? {
         ...service,
-        title: service.title,
-        description: 'Mesmo fluxo, perguntas e formulários do serviço piloto, somente ' +
-          'com dados inventados. PDFs marcados como AMOSTRA e não válidos para protocolo.',
+        description: 'Mesmo fluxo unificado de transferência, somente com dados inventados. ' +
+          'Escolha Moto aquática ou Embarcação; PDFs são marcados como AMOSTRA e não valem para protocolo.',
         status: 'AVAILABLE' as const,
         creditCost: 0,
       } : service),
-    serviceForms: [...catalog.serviceForms, ...qaFormRelations],
   };
 }
