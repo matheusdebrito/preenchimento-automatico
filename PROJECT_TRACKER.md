@@ -481,7 +481,7 @@ head final deve repetir todos os gates antes do merge.
 
 - [x] Confirmar na NORMAM-211 que ARA/MSA/CPA pertencem ao escopo da norma.
 - [x] Identificar Anexo 5-H (Requerimento) e Anexo 5-D (extravio/furto/roubo/dano da CHA).
-- [x] Catalogar Inscrição para exame de amador e Renovação da CHA em DRAFT; não vincular 5-H à inscrição sem suporte do art. 5.4.1.
+- [x] Catalogar Inscrição para exame de amador e Renovação da CHA; a NORMAM 5.4.1 não cita o 5-H nominalmente, mas orientação operacional oficial da DPC/OMs da Marinha confirma seu uso no requerimento de inscrição.
 - [x] Não criar “segunda via” separada: perda/dano de cédula segue renovação.
 - [x] Modelar dependência de categoria: Arrais usa atestado 5-E; Mestre exige Arrais válido; Capitão exige Mestre válido.
 - [x] Versionar 5-D e 5-H como templates imutáveis no repositório; blobs Git comparados byte a byte com os PDFs enviados pelo usuário.
@@ -489,6 +489,7 @@ head final deve repetir todos os gates antes do merge.
 - [x] Criar FormMapping dos anexos 5-D e 5-H e promover para `TESTED` após QA sintético local.
 - [x] Gerar amostras fictícias locais e revisar visualmente; promoção continua bloqueada até repetir a geração com os bytes versionados pelo motor real.
 - [x] Promover 5-D e 5-H para `APPROVED` e liberar `renovacao-cha-amador` como serviço de preenchimento após autorização explícita do responsável pelo produto.
+- [x] Liberar `inscricao-exame-amador` reutilizando o 5-H homologado; categoria escolhida é escrita na descrição do pedido e identidade/residência permanecem uploads opcionais para preenchimento.
 - [ ] Executar CI/typecheck/build do head de liberação; isso continua como validação técnica pendente, sem rebaixar o estado normativo dos PDFs.
 - [ ] Aquaviários: obter NORMAM-101/DPC antes de catalogar serviços profissionais.
 
