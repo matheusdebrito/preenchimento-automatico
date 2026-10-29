@@ -142,6 +142,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'process.otherServiceDescription', label: 'Descrição de outro serviço', valueKind: 'text' },
   { id: 'process.place', label: 'Local do requerimento', valueKind: 'text' },
   { id: 'process.date', label: 'Data do requerimento', valueKind: 'date' },
+  { id: 'process.lostTie', label: 'Declaração referente ao TIE perdido/extraviado', valueKind: 'boolean' },
   { id: 'declarant.placeDate', label: 'Local e data da declaração', valueKind: 'text' },
   { id: 'vessel.tonnageMethod', label: 'Método de arqueação', valueKind: 'text' },
 ];
