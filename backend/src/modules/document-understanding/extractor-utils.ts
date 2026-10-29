@@ -107,6 +107,15 @@ function horizontalOverlap(a: ObservationLine, b: ObservationLine): number {
   return Math.max(0, Math.min(a.box[2], b.box[2]) - Math.max(a.box[0], b.box[0]));
 }
 
+function looksMaskedPlaceholder(value: string): boolean {
+  const compact = value.replace(/\s+/g, '');
+  if (compact.length < 3) return false;
+  if (/^[Xx*._•-]+$/.test(compact)) return true;
+  const maskChars = compact.match(/[*._•]/g)?.length ?? 0;
+  const alnum = compact.match(/[A-Z0-9]/gi)?.length ?? 0;
+  return maskChars >= 3 && maskChars >= alnum;
+}
+
 export function selectUniqueCandidate(
   candidates: readonly ExtractedCandidate[],
   minSelectionScoreGap?: number,
@@ -178,9 +187,16 @@ export function anchoredCandidates(
       const matchesAnyLabel = (value: string): boolean =>
         matchesConfiguredLabel(value);
       const isBoundary = (value: string): boolean =>
-        matchesAnyLabel(value) || isFieldBoundary(value);
+        matchesAnyLabel(value) || isFieldBoundary(value) ||
+        looksMaskedPlaceholder(value);
 
       const inline = cleanText(match?.[1] ?? '');
+      if (inline && looksMaskedPlaceholder(inline)) {
+        // A visible mask is evidence that this field is intentionally absent.
+        // Do not skip past it and promote unrelated text farther in the page.
+        if (firstOccurrenceOnly) return candidates;
+        continue;
+      }
       const syntheticPhrase = anchor.id.startsWith('phrase:');
       const preferBelow = preferredDirections[0] === 'below';
       // A synthetic same-row phrase may join a label with unrelated text at
@@ -261,7 +277,16 @@ export function anchoredCandidates(
                 height * maxBelowHorizontalOffsetHeights;
           });
           const belowBoundaryY = belowRegion
-            .filter((line) => isBoundary(line.text))
+            .filter((line) => {
+              if (!isBoundary(line.text) || !line.box) return false;
+              // Labels from a neighboring column must not close this field's
+              // vertical cell. Only same-column/overlapping boundaries do.
+              const overlap = horizontalOverlap(anchor, line);
+              const anchorCenterX = (anchor.box![0] + anchor.box![2]) / 2;
+              const lineCenterX = (line.box[0] + line.box[2]) / 2;
+              return overlap > 0 ||
+                Math.abs(lineCenterX - anchorCenterX) <= height * 1.5;
+            })
             .map((line) => line.box![1])
             .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
           const below = belowRegion.filter((line) => {
