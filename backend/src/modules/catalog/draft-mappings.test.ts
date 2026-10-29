@@ -63,17 +63,14 @@ describe('draft form map coordinates', () => {
     }
   });
 
-  it('mantém limites por formulário e nunca deriva declarante de vendedor', () => {
-    const motoTransfer = catalog.mappings.find((m) =>
-      m.formVersionId === 'autorizacao-transferencia-ma-v1')!;
-    const motoFields = new Set(motoTransfer.placements.map((placement) => placement.fieldId));
-    expect(motoFields.has('vessel.motorBrand')).toBe(true);
-    expect([...motoFields].some((id) =>
-      /^vessel\.motor[2-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
-
-    const vesselTransfer = catalog.mappings.find((m) =>
-      m.formVersionId === 'autorizacao-transferencia-er-2026-v1')!;
-    expect(vesselTransfer.placements.some((p) => p.fieldId === 'vessel.motor4Serial')).toBe(true);
+  it('mantém um único motor em todos os mapas e nunca deriva declarante de vendedor', () => {
+    const fields = catalog.mappings.flatMap((mapping) =>
+      mapping.placements.map((placement) => placement.fieldId));
+    expect(fields).toContain('vessel.motorBrand');
+    expect(fields).toContain('vessel.motorPower');
+    expect(fields).toContain('vessel.motorSerial');
+    expect(fields.some((id) =>
+      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
 
     const loss = catalog.mappings.find((m) => m.formVersionId === 'declaracao-perda-tie-ma-v1')!;
     expect(loss.placements.some((p) => p.fieldId === 'declarant.fullName')).toBe(true);
@@ -89,8 +86,7 @@ describe('draft form map coordinates', () => {
       for (const placement of mapping.placements) {
         if (!placement.required) continue;
         const id = placement.fieldId;
-        values[id] = id.includes('motor') && id.endsWith('Choice') ? 'nao' :
-          id.endsWith('.cpf') ? '123.456.789-09' :
+        values[id] = id.endsWith('.cpf') ? '123.456.789-09' :
           id.endsWith('fullName') ? 'MARIA TESTE' :
           id.endsWith('registration') ? '123456789' :
           id.endsWith('hullId') ? 'BR-ABC-12345' :
