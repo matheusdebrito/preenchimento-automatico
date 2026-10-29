@@ -98,4 +98,24 @@ export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
     title: 'Renovação da CHA',
     summary: 'Preenchimento dos formulários de renovação para Arrais, Mestre ou Capitão, inclusive em caso de perda, roubo, furto ou dano da cédula.',
   },
+  {
+    id: 'emissao-cha-veleiro',
+    title: 'Emissão de CHA de Veleiro',
+    summary: 'Preenchimento do requerimento para emissão da habilitação de Veleiro.',
+  },
+  {
+    id: 'concessao-cha-equivalencia',
+    title: 'Concessão por equivalência profissional',
+    summary: 'Requerimento de CHA de Arrais, Mestre ou Capitão por equivalência profissional.',
+  },
+  {
+    id: 'renovacao-cha-agregacao-mta',
+    title: 'Renovação com agregação de Motonauta',
+    summary: 'Renovação da CHA com inclusão da categoria Motonauta.',
+  },
+  {
+    id: 'revisao-prova-capitao-amador',
+    title: 'Revisão de prova de Capitão-Amador',
+    summary: 'Pedido de revisão de questão da prova de Capitão-Amador.',
+  },
 ];

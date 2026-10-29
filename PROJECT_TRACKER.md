@@ -491,6 +491,10 @@ head final deve repetir todos os gates antes do merge.
 - [x] Promover 5-D e 5-H para `APPROVED` e liberar `renovacao-cha-amador` como serviço de preenchimento após autorização explícita do responsável pelo produto.
 - [x] Liberar `inscricao-exame-amador` reutilizando o 5-H homologado; categoria escolhida é escrita na descrição do pedido e identidade/residência permanecem uploads opcionais para preenchimento.
 - [ ] Executar CI/typecheck/build do head de liberação; isso continua como validação técnica pendente, sem rebaixar o estado normativo dos PDFs.
+- [x] Catalogar e liberar Emissão de CHA de Veleiro usando o 5-H aprovado; 5-G é documento emitido pela entidade de treinamento e não é gerado para o candidato.
+- [x] Catalogar e liberar Concessão de CHA por equivalência profissional usando a opção 1 do 5-H.
+- [x] Catalogar Renovação com agregação de Motonauta em DRAFT; 5-H opção 3 revisada e Anexo 3-A mapeado, aguardando versionamento do PDF no repositório.
+- [x] Catalogar Pedido de revisão de prova de Capitão-Amador em DRAFT; 5-H opção 12 revisada e Apêndice I do 5-A mapeado, aguardando versionamento do PDF.
 - [ ] Aquaviários: obter NORMAM-101/DPC antes de catalogar serviços profissionais.
 
 

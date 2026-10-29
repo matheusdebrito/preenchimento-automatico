@@ -66,3 +66,18 @@ o requerimento de inscrição como Anexo 5-H da NORMAM-211.
 O serviço marca a opção 2 - Emissão/Renovação e escreve na descrição do pedido a
 categoria selecionada (Arrais-Amador, Mestre-Amador ou Capitão-Amador). Não é criado
 nenhum formulário alternativo ou não oficial.
+
+
+## Revisão v2 do 5-H - expansão de serviços de amadores
+
+Em 29/10/2026 o mapping do 5-H foi ampliado sem alterar o PDF versionado. Foram
+adicionadas e revisadas visualmente as marcações das opções 1, 3 e 12, preservando a
+opção 2 já homologada:
+
+- 1: concessão por correspondência/equivalência profissional;
+- 2: emissão/renovação;
+- 3: renovação de ARA/MSA/CPA com agregação de MTA;
+- 12: pedido de revisão de prova de Capitão-Amador.
+
+As amostras sintéticas locais confirmaram o X dentro dos respectivos quadrículos. A
+revisão do mapping passou para v2 e permanece APPROVED.

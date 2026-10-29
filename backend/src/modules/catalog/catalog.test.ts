@@ -45,16 +45,16 @@ function sharedFormFixture(): CatalogDefinition {
 
 describe('catálogo reutilizável de formulários', () => {
   it('publica os serviços de barco somente com versões e mapas aprovados', () => {
-    expect(catalog.services).toHaveLength(11);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(9);
-    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(2);
-    expect(catalog.forms).toHaveLength(16);
-    expect(catalog.versions).toHaveLength(16);
+    expect(catalog.services).toHaveLength(15);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(11);
+    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(4);
+    expect(catalog.forms).toHaveLength(18);
+    expect(catalog.versions).toHaveLength(18);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(16);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(0);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(2);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED').every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
-    expect(catalog.mappings).toHaveLength(16);
+    expect(catalog.mappings).toHaveLength(18);
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.includes('-er-2026-') &&
       mapping.formVersionId !== 'termo-responsabilidade-er-2026-v1').every((mapping) =>
@@ -68,7 +68,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(46);
+    expect(catalog.serviceForms).toHaveLength(52);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
@@ -95,11 +95,19 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
-  it('publica inscrição para exame e renovação da CHA', () => {
+  it('publica os quatro serviços de amador homologados e mantém dois dependentes de PDF em validação', () => {
     const enrollment = catalog.services.find((service) => service.id === 'inscricao-exame-amador');
     const renewal = catalog.services.find((service) => service.id === 'renovacao-cha-amador');
+    const sailor = catalog.services.find((service) => service.id === 'emissao-cha-veleiro');
+    const equivalence = catalog.services.find((service) => service.id === 'concessao-cha-equivalencia');
+    const mta = catalog.services.find((service) => service.id === 'renovacao-cha-agregacao-mta');
+    const review = catalog.services.find((service) => service.id === 'revisao-prova-capitao-amador');
     expect(enrollment?.status).toBe('AVAILABLE');
     expect(renewal?.status).toBe('AVAILABLE');
+    expect(sailor?.status).toBe('AVAILABLE');
+    expect(equivalence?.status).toBe('AVAILABLE');
+    expect(mta?.status).toBe('DRAFT');
+    expect(review?.status).toBe('DRAFT');
     expect(catalog.forms.some((form) => form.id === 'requerimento-cha-amador')).toBe(true);
     expect(catalog.forms.some((form) => form.id === 'declaracao-extravio-cha-amador')).toBe(true);
     expect(catalog.serviceForms.some((relation) =>
