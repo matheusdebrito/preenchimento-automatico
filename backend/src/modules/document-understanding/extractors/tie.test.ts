@@ -269,7 +269,7 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.registration']).toBe('4019909971');
     expect(values['vessel.expirationDate']).toBe('31/07/2028');
     expect(values['vessel.motorCount']).toBe('1');
-    expect(values['vessel.mortgaged']).toBe('NÃO');
+    expect(values['vessel.mortgaged']).toBe('nao');
     expect(values['vessel.issuePlace']).toBe('São Sebastião');
     expect(values['vessel.issueDate']).toBe('31/07/2023');
   });
@@ -295,9 +295,10 @@ describe('tieDocumentExtractor', () => {
 
     expect(values['vessel.registration']).toBe('441M20200001');
     expect(values['vessel.registrationDate']).toBe('28/01/1995');
+    expect(values['vessel.expirationDate']).toBe('05/12/2019');
     expect(values['vessel.motorPower']).toBe('85.00');
     expect(values['vessel.motorBrand']).toBe('YAMAHA');
-    expect(values['vessel.mortgaged']).toBe('NÃO');
+    expect(values['vessel.mortgaged']).toBe('nao');
     expect(values['vessel.mortgageCreditor']).toBe('BANCO TESTE');
   });
 
