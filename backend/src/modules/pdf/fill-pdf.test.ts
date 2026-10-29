@@ -63,6 +63,22 @@ describe('motor determinístico de PDF', () => {
     // The X is visibly tested by rendered PDF regression; this asserts both options fit.
   });
 
+  it('aceita somente aliases revisados em escolhas estáticas', async () => {
+    const input = await syntheticPdf();
+    const placements = [
+      { kind: 'COORDINATES' as const, fieldId: 'area', required: true,
+        pageIndex: 0, x: 50, y: 600, fontSize: 12, maxWidth: 12,
+        markWhen: 'interior', markAliases: ['navegação interior'] },
+      { kind: 'COORDINATES' as const, fieldId: 'area', required: true,
+        pageIndex: 0, x: 90, y: 600, fontSize: 12, maxWidth: 12,
+        markWhen: 'costeira', markAliases: ['navegação costeira'] },
+    ];
+    const output = await fillPdf(input, placements, { area: 'NAVEGAÇÃO INTERIOR' });
+    expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
+    await expect(fillPdf(input, placements, { area: 'área desconhecida' }))
+      .rejects.toThrow('Opção não prevista');
+  });
+
   it('aceita false em checkbox estático unilateral deixando a caixa em branco', async () => {
     const input = await syntheticPdf();
     const placement = [{
