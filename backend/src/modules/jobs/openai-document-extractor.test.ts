@@ -59,6 +59,18 @@ describe('OpenAI document extractor', () => {
                 confidence: 'high',
               },
               {
+                fieldId: 'person.identity',
+                value: '12.345.678-9',
+                sourceRequirementId: 'buyer-identity',
+                confidence: 'high',
+              },
+              {
+                fieldId: 'person.issuer',
+                value: 'SSP/RJ',
+                sourceRequirementId: 'buyer-identity',
+                confidence: 'high',
+              },
+              {
                 fieldId: 'vessel.registration',
                 value: '441M20200001',
                 sourceRequirementId: 'tie',
@@ -96,7 +108,7 @@ describe('OpenAI document extractor', () => {
         label: 'Identidade do comprador',
         documentType: 'identity',
         subjectRole: 'person',
-        allowedFieldIds: ['person.fullName', 'person.cpf'],
+        allowedFieldIds: ['person.fullName', 'person.cpf', 'person.identity', 'person.issuer'],
       },
       {
         document: tie,
@@ -118,6 +130,18 @@ describe('OpenAI document extractor', () => {
         valueKind: 'text',
         validationRuleId: 'cpf',
         required: true,
+      },
+      {
+        id: 'person.identity',
+        label: 'Identidade',
+        valueKind: 'text',
+        required: false,
+      },
+      {
+        id: 'person.issuer',
+        label: 'Órgão emissor',
+        valueKind: 'text',
+        required: false,
       },
       {
         id: 'vessel.registration',
@@ -154,6 +178,9 @@ describe('OpenAI document extractor', () => {
       .toHaveLength(1);
     expect(JSON.stringify(body)).not.toContain(identity.path);
     expect(JSON.stringify(body)).not.toContain(tie.path);
+    expect(JSON.stringify(body)).toContain('número da identidade/documento');
+    expect(JSON.stringify(body)).toContain('órgão emissor/expedidor');
+    expect(JSON.stringify(body)).toContain('nunca deduza o órgão apenas pela UF');
 
     const values = Object.fromEntries(result.evidence.map((item) => [
       item.fieldId, item.value,
@@ -161,6 +188,8 @@ describe('OpenAI document extractor', () => {
     expect(values['person.fullName']).toBe('MARIA DE SOUZA');
     // Invalid CPF from an external model response must never be promoted.
     expect(values['person.cpf']).toBeUndefined();
+    expect(values['person.identity']).toBe('12.345.678-9');
+    expect(values['person.issuer']).toBe('SSP/RJ');
     expect(values['vessel.registration']).toBe('441M20200001');
     expect(result.evidence.filter((item) => item.fieldId === 'person.fullName'))
       .toEqual([expect.objectContaining({
@@ -177,7 +206,7 @@ describe('OpenAI document extractor', () => {
         requirementId: 'buyer-identity',
         engine: 'openai',
         outcome: 'suggested',
-        suggestionCount: 1,
+        suggestionCount: 3,
       }),
       expect.objectContaining({
         requirementId: 'tie',
