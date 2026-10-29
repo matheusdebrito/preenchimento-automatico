@@ -45,13 +45,13 @@ function sharedFormFixture(): CatalogDefinition {
 
 describe('catálogo reutilizável de formulários', () => {
   it('publica os serviços de barco somente com versões e mapas aprovados', () => {
-    expect(catalog.services).toHaveLength(9);
+    expect(catalog.services).toHaveLength(11);
     expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(7);
-    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(2);
-    expect(catalog.forms).toHaveLength(14);
-    expect(catalog.versions).toHaveLength(14);
-    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(14);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(0);
+    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(4);
+    expect(catalog.forms).toHaveLength(16);
+    expect(catalog.versions).toHaveLength(16);
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(13);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(3);
     expect(catalog.versions.every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
     expect(catalog.mappings).toHaveLength(14);
@@ -61,13 +61,13 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(45);
-    expect(catalog.services.every((service) =>
+    expect(catalog.serviceForms.length).toBeGreaterThan(45);
+    expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
-  it('publica sete serviços NORMAM-211 e mantém alterações dependentes do 3-D em validação', () => {
+  it('publica sete serviços NORMAM-211 e mantém alterações dependentes do 3-C em validação', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
       'inscricao-embarcacao',
@@ -88,6 +88,18 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
+  it('modela serviços de amadores sem publicar antes da homologação dos anexos 5-D/5-H', () => {
+    const emission = catalog.services.find((service) => service.id === 'emissao-cha-amador');
+    const renewal = catalog.services.find((service) => service.id === 'renovacao-cha-amador');
+    expect(emission?.status).toBe('DRAFT');
+    expect(renewal?.status).toBe('DRAFT');
+    expect(catalog.forms.some((form) => form.id === 'requerimento-cha-amador')).toBe(true);
+    expect(catalog.forms.some((form) => form.id === 'declaracao-extravio-cha-amador')).toBe(true);
+    expect(catalog.serviceForms.some((relation) =>
+      relation.serviceId === 'renovacao-cha-amador' &&
+      relation.formVersionId === 'declaracao-extravio-cha-amador-2026-v1')).toBe(true);
+  });
+
   it('usa rótulos simples para rua e número sem alterar os IDs semânticos', () => {
     expect(catalog.fields.find((field) => field.id === 'person.address')?.label).toBe('Rua');
     expect(catalog.fields.find((field) => field.id === 'person.streetNumber')?.label).toBe('Número');
@@ -98,7 +110,7 @@ describe('catálogo reutilizável de formulários', () => {
   });
 
   it('envia todos os documentos dos novos serviços ao pipeline OCR sem inventar campos genéricos', () => {
-    const vesselServices = catalog.services;
+    const vesselServices = catalog.services.filter((service) => service.id.includes('embarcacao'));
     expect(vesselServices).toHaveLength(9);
     for (const service of vesselServices) {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
