@@ -69,7 +69,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(50);
+    expect(catalog.serviceForms).toHaveLength(52);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
@@ -112,6 +112,33 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === 'renovacao-cha-amador' &&
       relation.formVersionId === 'declaracao-extravio-cha-amador-2026-v1')).toBe(true);
+  });
+
+  it('associa o Anexo 3-C somente a alterações estruturais enquanto o serviço permanece em DRAFT', () => {
+    for (const serviceId of ['alteracao-dados-embarcacao', 'alteracao-motor-embarcacao']) {
+      const service = catalog.services.find((item) => item.id === serviceId);
+      expect(service?.status).toBe('DRAFT');
+      expect(service?.questions.some((question) =>
+        question.id === 'structuralAlteration')).toBe(true);
+
+      const term = catalog.serviceForms.find((relation) =>
+        relation.serviceId === serviceId &&
+        relation.formVersionId === 'termo-responsabilidade-er-2026-v1');
+      expect(term?.conditions).toContainEqual({
+        questionId: 'structuralAlteration',
+        equals: 'sim',
+      });
+    }
+
+    const motor = catalog.services.find((service) =>
+      service.id === 'alteracao-motor-embarcacao');
+    expect(motor?.questions.some((question) =>
+      question.id === 'rowToMotorConversion')).toBe(true);
+    expect(motor?.documentRequirements.some((requirement) =>
+      requirement.id === 'row-to-motor-technical-declaration' &&
+      requirement.conditions?.some((condition) =>
+        condition.questionId === 'rowToMotorConversion' && condition.equals === 'sim')))
+      .toBe(true);
   });
 
   it('mantém a renovação de TIE/TIEM sem BADE/BSADE quando não houve alteração', () => {
