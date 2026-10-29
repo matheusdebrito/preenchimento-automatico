@@ -160,6 +160,10 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Fechar todos' }));
     expect(requestButton.getAttribute('aria-expanded')).toBe('false');
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('false');
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(await screen.findByText(/Preencha o campo obrigatório: CPF/)).toBeTruthy();
+    expect(responsibilityButton.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('popula nome, CPF e RG do comprador quando a API entrega candidatos válidos', async () => {
