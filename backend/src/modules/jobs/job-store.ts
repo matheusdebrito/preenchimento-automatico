@@ -18,7 +18,7 @@ export interface ExtractionDiagnostic {
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
   suggestionCount: number;
   /** OCR engine used for this document. */
-  engine?: 'paddleocr' | 'pdf-text';
+  engine?: 'paddleocr' | 'pdf-text' | 'openai';
   /** QA only: status of the holder-name recognition, never the name itself. */
   nameStage?: 'name_recognized' | 'name_not_mapped' |
     'label_seen_name_rejected' | 'label_not_detected';
