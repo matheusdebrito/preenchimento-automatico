@@ -22,7 +22,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
       expect(mapping.status).toBe(originalStatuses.get(mapping.id));
     }
     expect([...originalStatuses.values()].filter((status) => status === 'APPROVED'))
-      .toHaveLength(8);
+      .toHaveLength(9);
     expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status)
       .toBe(originalServiceStatus);
     expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status)
@@ -30,7 +30,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === QA_PREVIEW_SERVICE_ID)).toBe(true);
     expect(publicService(catalog, QA_PREVIEW_SERVICE_ID)).not.toBeNull();
-    expect(publicServices(catalog)).toHaveLength(7);
+    expect(publicServices(catalog)).toHaveLength(12);
 
     // The QA catalog is an isolated clone. It may promote mappings internally
     // only when the corresponding PDF version is already VERIFIED.
@@ -77,7 +77,7 @@ describe('prévia local do MESMO serviço de transferência', () => {
       expect(qa.mappings.find((item) => item.id === mapping.id)?.placements)
         .toEqual(mapping.placements);
     }
-    expect(publicServices(qa)).toHaveLength(7);
+    expect(publicServices(qa)).toHaveLength(12);
   });
 
   it('inclui os anexos condicionais reais quando selecionados', () => {
