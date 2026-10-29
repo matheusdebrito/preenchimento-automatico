@@ -143,9 +143,7 @@ os binários oficiais da Marinha/GitHub. Não foram inventadas coordenadas, hash
 ou PDFs. O próximo passo documental é baixar os oito anexos oficiais, inspecionar
 com renderização, mapear e revisar visualmente antes de qualquer `AVAILABLE`.
 
-**Validação:** alterações ainda aguardam CI da branch/PR. Não considerar esta
-expansão testada até typecheck, lint, testes, build, PostgreSQL, PDF e Compose
-do head final concluírem com sucesso.
+**Validação:** o primeiro CI do PR #24 revelou dois testes antigos que pressupunham que toda `FormVersion` já possuía PDF/hash e que toda versão possuía `FormMapping`. Eles foram corrigidos para preservar o contrato correto: somente versões `VERIFIED` exigem asset/hash e somente versões verificadas atualmente mapeadas entram nos testes de coordenadas. Um segundo CI encontrou apenas a expectativa textual antiga do diagnóstico frontend (`nome/CPF/RG`), atualizada para a mensagem genérica de qualquer documento. O head de implementação `ef9ade1d` passou integralmente na execução `40791885589`: `backend-checks`, `frontend-checks`, `postgres-integration`, `pdf-mapping-visual`, `compose-smoke`, `reference-documents` e `ocr-integration` em sucesso. Após este registro documental, o head final deve repetir o CI antes do merge.
 
 ## 4. Registro de execução — 27/10/2026, correção do nome
 
