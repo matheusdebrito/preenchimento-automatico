@@ -2,7 +2,11 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { catalog } from '../modules/catalog/catalog.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
-import { publicService, publicServices } from '../modules/catalog/public-catalog.js';
+import {
+  activeServiceQuestions,
+  publicService,
+  publicServices,
+} from '../modules/catalog/public-catalog.js';
 import { validateCatalog } from '../modules/catalog/validate-catalog.js';
 
 export function registerCatalogRoutes(app: FastifyInstance, definitions: CatalogDefinition = catalog): void {
@@ -27,8 +31,11 @@ export function registerCatalogRoutes(app: FastifyInstance, definitions: Catalog
     const parsed = z.object({ answers: z.record(z.string().max(100), z.string().max(100)) }).safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
     const service = publicService(definitions, request.params.id, parsed.data.answers);
+    const activeQuestions = service
+      ? activeServiceQuestions(service.questions, parsed.data.answers)
+      : [];
     if (!service || service.formVersionIds.length === 0 ||
-      service.questions.some((question) => !parsed.data.answers[question.id])) {
+      activeQuestions.some((question) => !parsed.data.answers[question.id])) {
       return reply.status(404).send({ error: 'not_available' });
     }
     return { service };
