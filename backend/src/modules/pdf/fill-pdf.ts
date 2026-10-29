@@ -1,5 +1,6 @@
 import { PDFCheckBox, PDFDocument, PDFTextField, StandardFonts, rgb } from 'pdf-lib';
 import type { FieldPlacement } from '../catalog/contracts.js';
+import { FormFieldError } from '../catalog/field-validation.js';
 
 const MAX_TEMPLATE_BYTES = 12 * 1024 * 1024;
 const MAX_FIELD_CHARS = 500;
@@ -12,7 +13,7 @@ const MAX_FIELD_CHARS = 500;
 function prepareValue(raw: string, fieldId: string): string {
   const value = raw.trim().normalize('NFC');
   if (/[\r\n]/.test(value)) {
-    throw new Error('Quebra de linha não permitida: ' + fieldId);
+    throw new FormFieldError('invalid_field_value', fieldId, 'unsupported_character');
   }
   if (Array.from(value).length > MAX_FIELD_CHARS ||
       [...value].some((char) => {
@@ -22,7 +23,7 @@ function prepareValue(raw: string, fieldId: string): string {
           (cp >= 0x202a && cp <= 0x202e) ||
           (cp >= 0x2066 && cp <= 0x2069) || cp === 0xfeff;
       })) {
-    throw new Error('Campo contém caracteres ou comprimento inválidos: ' + fieldId);
+    throw new FormFieldError('invalid_field_value', fieldId, 'text_too_long');
   }
   return value;
 }
@@ -50,7 +51,7 @@ function transformStaticValue(
 ): string {
   if (!placement.valueTransform) return value;
   const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
-  if (!match) throw new Error('Data inválida para formatação PDF: ' + placement.fieldId);
+  if (!match) throw new FormFieldError('invalid_field_value', placement.fieldId, 'invalid_date');
   const [, day, monthText, year] = match;
   const month = Number(monthText);
   if (month < 1 || month > 12) {
@@ -113,7 +114,7 @@ export async function fillPdf(
       if (!options.has(normalized)) {
         const unilateralBoolean = options.size === 1 && options.has('true') && normalized === 'false';
         if (!unilateralBoolean) {
-          throw new Error('Opção não prevista no formulário: ' + fieldId);
+          throw new FormFieldError('invalid_field_value', fieldId, 'invalid_choice');
         }
       }
     }
@@ -126,12 +127,12 @@ export async function fillPdf(
   for (const placement of placements) {
     const raw = values[placement.fieldId];
     if (typeof raw !== 'string') {
-      if (placement.required) throw new Error('Campo obrigatório ausente: ' + placement.fieldId);
+      if (placement.required) throw new FormFieldError('missing_required_fields', placement.fieldId, 'required');
       continue;
     }
     const value = prepareValue(raw, placement.fieldId);
     if (value === '') {
-      if (placement.required) throw new Error('Campo obrigatório vazio: ' + placement.fieldId);
+      if (placement.required) throw new FormFieldError('missing_required_fields', placement.fieldId, 'required');
       continue;
     }
 
@@ -139,7 +140,7 @@ export async function fillPdf(
       const field = form.getField(placement.pdfFieldName);
       if (field instanceof PDFCheckBox) {
         if (value !== 'true' && value !== 'false') {
-          throw new Error('Checkbox requer true ou false: ' + placement.fieldId);
+          throw new FormFieldError('invalid_field_value', placement.fieldId, 'invalid_boolean');
         }
         if (value === 'true') field.check();
         else field.uncheck();
@@ -147,7 +148,7 @@ export async function fillPdf(
         try {
           font.encodeText(value);
         } catch {
-          throw new Error('Caractere não suportado pela fonte PDF: ' + placement.fieldId);
+          throw new FormFieldError('invalid_field_value', placement.fieldId, 'unsupported_character');
         }
         field.setText(value);
       } else {
@@ -173,7 +174,7 @@ export async function fillPdf(
       throw new Error('Caractere não suportado pela fonte PDF: ' + placement.fieldId);
     }
     if (width > placement.maxWidth + 0.01) {
-      throw new Error('Texto excede área do campo: ' + placement.fieldId);
+      throw new FormFieldError('invalid_field_value', placement.fieldId, 'text_overflow');
     }
     page.drawText(printed, {
       x: placement.x, y: placement.y, size: placement.fontSize,
