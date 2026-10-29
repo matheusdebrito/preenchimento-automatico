@@ -90,8 +90,8 @@ export const PLANNED_VESSEL_SERVICES: readonly PlannedService[] = [
 export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
   {
     id: 'emissao-cha-amador',
-    title: 'Emissão da CHA',
-    summary: 'Preparação do requerimento para emissão da Carteira de Habilitação de Amador.',
+    title: 'Inscrição/Emissão da CHA',
+    summary: 'Inscrição para Arrais, Mestre ou Capitão e preparação do requerimento para emissão da CHA.',
   },
   {
     id: 'renovacao-cha-amador',
