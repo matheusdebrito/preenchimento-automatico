@@ -802,4 +802,49 @@ describe('tieDocumentExtractor', () => {
     expect(evidence.some((item) => item.fieldId === 'vessel.motorSerial')).toBe(false);
   });
 
+  it('recupera quantidade de motores com rótulo degradado e valor baixo na célula', () => {
+    const source: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'GUANTIDADE OE MOTORES/',
+            confidence: .86, box: [20, 20, 250, 42], polygon: null },
+          { id: '0:1', page: 0, text: '1',
+            confidence: .96, box: [40, 165, 55, 187], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.motorCount')?.value)
+      .toBe('1');
+  });
+
+  it('recupera inscrição do TIEM quando o símbolo de número some e o valor fica baixo na célula', () => {
+    const source: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+            confidence: .99, box: [20, 10, 500, 34], polygon: null },
+          { id: '0:1', page: 0, text: 'N DE INSCRICAO',
+            confidence: .88, box: [20, 50, 180, 72], polygon: null },
+          { id: '0:2', page: 0, text: '441M20200001',
+            confidence: .97, box: [30, 198, 210, 220], polygon: null },
+          { id: '0:3', page: 0, text: 'CARACTERÍSTICAS DO CASCO',
+            confidence: .99, box: [600, 300, 900, 324], polygon: null },
+          { id: '0:4', page: 0, text: 'NOME FABRICANTE',
+            confidence: .99, box: [20, 340, 190, 364], polygon: null },
+        ],
+      }],
+    };
+
+    expect(classifyTieVariant(source)).toBe('legacy');
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.find((item) => item.fieldId === 'vessel.registration')?.value)
+      .toBe('441M20200001');
+  });
+
 });
