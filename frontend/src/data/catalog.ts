@@ -6,9 +6,7 @@ export interface ServiceCategory {
   title: string;
   description: string;
   icon: LucideIcon;
-  /** Can open the preview; does NOT mean an officially available service. */
-  demoAvailable: boolean;
-  serviceId?: string;
+  route: string;
 }
 
 export const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
@@ -17,22 +15,21 @@ export const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
     title: 'Embarcações e jet skis',
     description: 'Transferência, inscrição e outros serviços.',
     icon: Ship,
-    demoAvailable: true,
-    serviceId: 'transferencia-propriedade-embarcacao',
+    route: '/servicos/embarcacoes',
   },
   {
     id: 'amadores',
     title: 'Arrais, Mestre e Capitão',
     description: 'Inscrição, renovação e segunda via.',
     icon: IdCard,
-    demoAvailable: false,
+    route: '/servicos/amadores',
   },
   {
     id: 'aquaviarios',
     title: 'Aquaviários',
     description: 'CIR, certificados e documentos profissionais.',
     icon: Anchor,
-    demoAvailable: false,
+    route: '/servicos/aquaviarios',
   },
 ];
 

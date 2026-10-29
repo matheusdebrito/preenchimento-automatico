@@ -177,6 +177,45 @@
   color: var(--color-teal-strong);
 }
 
+.service-category-page {
+  min-height: 60vh;
+}
+.service-category-back {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-bottom: 1.25rem;
+  color: var(--color-teal-strong);
+  font-size: .9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.service-category-back:hover {
+  text-decoration: underline;
+}
+.service-category-back svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.service-category-heading {
+  max-width: 48rem;
+}
+.service-category-heading .icon-badge {
+  margin-bottom: .35rem;
+}
+.service-category-empty {
+  display: grid;
+  max-width: 46rem;
+  gap: .6rem;
+}
+.service-category-empty h2 {
+  color: var(--color-navy);
+  font-size: 1.2rem;
+}
+.service-category-empty p {
+  color: var(--color-muted-strong);
+}
+
 .how-list {
   display: grid;
   gap: 1rem;
