@@ -218,17 +218,12 @@ export const vesselVersions: readonly FormVersion[] = [
 
 function questions(options: {
   band?: boolean;
-  tie?: boolean;
   dataChanged?: boolean;
-  residence?: boolean;
-  representative?: boolean;
 } = {}): readonly ServiceQuestion[] {
   return [
+    vesselTypeQuestion,
     ...(options.band === false ? [] : [vesselBandQuestion]),
-    ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion] : []),
-    ...(options.residence === false ? [] : [residenceQuestion]),
-    ...(options.representative === false ? [] : [representativeQuestion]),
   ];
 }
 
@@ -238,13 +233,10 @@ function requirements(options: {
   origin?: boolean;
   motor?: boolean;
   residence?: boolean;
-  representative?: boolean;
 } = {}): readonly DocumentRequirement[] {
-  const base = commonApplicantDocuments.filter((item) => {
-    if (item.id === 'residence-proof' && options.residence === false) return false;
-    if (item.id === 'power-of-attorney' && options.representative === false) return false;
-    return true;
-  });
+  const base = options.residence === false
+    ? commonApplicantDocuments.filter((item) => item.id !== 'residence-proof')
+    : commonApplicantDocuments;
   return [
     ...base,
     ...(options.tie ? [currentTie] : []),
@@ -254,13 +246,13 @@ function requirements(options: {
   ];
 }
 
-const scopeNote = 'Primeira expansão para embarcações de esporte e recreio de até 24 m, ' +
-  'sem protocolo automático e com revisão humana obrigatória.';
+const scopeNote = 'Serviço para moto aquática (NORMAM-212) ou embarcação de esporte/recreio ' +
+  'de até 24 m (NORMAM-211), sem protocolo automático e com revisão humana obrigatória.';
 
 export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'inscricao-embarcacao',
-    title: 'Inscrição inicial de embarcação',
+    title: 'Inscrição inicial',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
     questions: questions(),
@@ -268,18 +260,18 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
   {
     id: 'transferencia-propriedade-embarcacao',
-    title: 'Transferência de propriedade de embarcação',
+    title: 'Transferência de propriedade',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
+    questions: questions(),
     documentRequirements: requirements({ tie: true, seller: true, origin: true }),
   },
   {
     id: 'transferencia-jurisdicao-embarcacao',
-    title: 'Transferência de jurisdição de embarcação',
+    title: 'Transferência de jurisdição',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
+    questions: questions(),
     documentRequirements: requirements({ tie: true }),
   },
   {
@@ -287,7 +279,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Transferência de propriedade e jurisdição',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
+    questions: questions(),
     documentRequirements: requirements({ tie: true, seller: true, origin: true }),
   },
   {
@@ -295,7 +287,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Renovação do TIE/TIEM',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true, dataChanged: true }),
+    questions: questions({ dataChanged: true }),
     documentRequirements: requirements({ tie: true }),
   },
   {
@@ -308,10 +300,10 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
   {
     id: 'alteracao-dados-embarcacao',
-    title: 'Alteração de dados ou características da embarcação',
+    title: 'Alteração de dados ou características',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
+    questions: questions(),
     documentRequirements: requirements({ tie: true, origin: true }),
   },
   {
@@ -319,20 +311,35 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Troca, instalação ou retirada de motor',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
+    questions: questions(),
     documentRequirements: requirements({ tie: true, motor: true }),
   },
   {
     id: 'comunicacao-venda-embarcacao',
-    title: 'Comunicação de venda de embarcação',
-    description: 'Comunicação do vendedor conforme a NORMAM-211/DPC. Não efetiva por si só a transferência.',
+    title: 'Comunicação de venda',
+    description: 'Comunicação do vendedor. O formulário é selecionado conforme o tipo informado.',
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ band: false, residence: false }),
+    questions: questions({ band: false }),
     documentRequirements: requirements({
       tie: true, seller: true, origin: true, residence: false,
     }),
   },
 ];
+
+const boatCondition = { questionId: 'vesselType', equals: 'embarcacao' } as const;
+const motoCondition = { questionId: 'vesselType', equals: 'moto_aquatica' } as const;
+
+function boatConditions(
+  extra: ServiceForm['conditions'] = [],
+): NonNullable<ServiceForm['conditions']> {
+  return [boatCondition, ...extra];
+}
+
+function motoConditions(
+  extra: ServiceForm['conditions'] = [],
+): NonNullable<ServiceForm['conditions']> {
+  return [motoCondition, ...extra];
+}
 
 const bsade = (
   serviceId: string,
@@ -343,7 +350,10 @@ const bsade = (
   serviceId,
   formVersionId: 'bsade-er-2026-v1',
   order,
-  conditions: [{ questionId: 'vesselBand', equals: 'ate_12m' }, ...extraConditions],
+  conditions: boatConditions([
+    { questionId: 'vesselBand', equals: 'ate_12m' },
+    ...extraConditions,
+  ]),
   ...(action ? { fixedValues: action === 'inscricao'
     ? { 'process.inscription': 'true' }
     : action === 'transf_prop'
@@ -354,6 +364,7 @@ const bsade = (
           ? { 'process.transferProperty': 'true', 'process.transferJurisdiction': 'true' }
           : { 'process.updateVesselData': 'true' } } : {}),
 });
+
 const bade = (
   serviceId: string,
   order: number,
@@ -362,95 +373,190 @@ const bade = (
   serviceId,
   formVersionId: 'bade-er-2026-v1',
   order,
-  conditions: [{ questionId: 'vesselBand', equals: 'maior_12_ate_24m' }, ...extraConditions],
+  conditions: boatConditions([
+    { questionId: 'vesselBand', equals: 'maior_12_ate_24m' },
+    ...extraConditions,
+  ]),
 });
-const request = (serviceId: string, order: number, action: string): ServiceForm => ({
+
+const boatRequest = (serviceId: string, order: number, action: string): ServiceForm => ({
   serviceId,
   formVersionId: 'requerimento-embarcacao-er-2026-v1',
   order,
+  conditions: boatConditions(),
   fixedValues: {
     'process.vesselAction': action,
     ...(action === 'segunda_via'
       ? { 'process.otherServiceDescription': '2ª via do TIE/TIEM' } : {}),
   },
 });
-const residence = (serviceId: string, order: number): ServiceForm => ({
+
+const boatResidence = (serviceId: string, order: number): ServiceForm => ({
   serviceId,
   formVersionId: 'declaracao-residencia-er-2026-v1',
   order,
-  conditions: [{ questionId: 'residenceProof', equals: 'declaracao_2g' }],
+  conditions: boatConditions(),
 });
-const lostTie = (serviceId: string, order: number): ServiceForm => ({
-  serviceId,
-  formVersionId: 'declaracao-perda-tie-er-2026-v1',
-  order,
-  fixedValues: { 'process.lostTie': 'true' },
-  conditions: [{ questionId: 'tieSituation', equals: 'extraviado' }],
-});
+
 const responsibility = (serviceId: string, order: number): ServiceForm => ({
   serviceId,
   formVersionId: 'termo-responsabilidade-er-2026-v1',
   order,
-  conditions: [{ questionId: 'vesselBand', equals: 'maior_12_ate_24m' }],
+  conditions: boatConditions([
+    { questionId: 'vesselBand', equals: 'maior_12_ate_24m' },
+  ]),
+});
+
+const motoRequest = (
+  serviceId: string,
+  order: number,
+  transferOwnership = false,
+): ServiceForm => ({
+  serviceId,
+  formVersionId: 'requerimento-ma-v1',
+  order,
+  conditions: motoConditions(),
+  ...(transferOwnership
+    ? { fixedValues: { 'process.transferOwnership': 'true' } }
+    : {}),
+});
+
+const motoBdmoto = (
+  serviceId: string,
+  order: number,
+  action: 'inscricao' | 'transf_prop' | 'transf_jur' | 'transf_prop_jur' | 'alteracao_dados',
+  extraConditions: ServiceForm['conditions'] = [],
+): ServiceForm => ({
+  serviceId,
+  formVersionId: 'bdmoto-v1',
+  order,
+  conditions: motoConditions(extraConditions),
+  fixedValues: action === 'inscricao'
+    ? { 'process.inscription': 'true' }
+    : action === 'transf_prop'
+      ? { 'process.transferOwnership': 'true' }
+      : action === 'transf_jur'
+        ? { 'process.transferJurisdiction': 'true' }
+        : action === 'transf_prop_jur'
+          ? { 'process.transferOwnership': 'true', 'process.transferJurisdiction': 'true' }
+          : { 'process.updateVesselData': 'true' },
+});
+
+const motoResidence = (serviceId: string, order: number): ServiceForm => ({
+  serviceId,
+  formVersionId: 'declaracao-residencia-ma-v1',
+  order,
+  conditions: motoConditions(),
 });
 
 export const vesselServiceForms: readonly ServiceForm[] = [
-  request('inscricao-embarcacao', 1, 'inscricao'),
-  bsade('inscricao-embarcacao', 2, 'inscricao'), bade('inscricao-embarcacao', 3),
-  residence('inscricao-embarcacao', 4), responsibility('inscricao-embarcacao', 5),
+  // Inscrição
+  boatRequest('inscricao-embarcacao', 10, 'inscricao'),
+  bsade('inscricao-embarcacao', 20, 'inscricao'),
+  bade('inscricao-embarcacao', 30),
+  boatResidence('inscricao-embarcacao', 40),
+  responsibility('inscricao-embarcacao', 50),
+  motoRequest('inscricao-embarcacao', 110),
+  motoBdmoto('inscricao-embarcacao', 120, 'inscricao'),
+  motoResidence('inscricao-embarcacao', 130),
 
-  request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
-  bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'), bade('transferencia-propriedade-embarcacao', 3),
+  // Transferência de propriedade
+  boatRequest('transferencia-propriedade-embarcacao', 10, 'transf_prop'),
+  bsade('transferencia-propriedade-embarcacao', 20, 'transf_prop'),
+  bade('transferencia-propriedade-embarcacao', 30),
   { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4 },
-  residence('transferencia-propriedade-embarcacao', 5),
-  lostTie('transferencia-propriedade-embarcacao', 6),
-  responsibility('transferencia-propriedade-embarcacao', 7),
+    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 40,
+    conditions: boatConditions() },
+  boatResidence('transferencia-propriedade-embarcacao', 50),
+  responsibility('transferencia-propriedade-embarcacao', 60),
+  motoRequest('transferencia-propriedade-embarcacao', 110, true),
+  motoBdmoto('transferencia-propriedade-embarcacao', 120, 'transf_prop'),
+  { serviceId: 'transferencia-propriedade-embarcacao',
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 130,
+    conditions: motoConditions() },
+  motoResidence('transferencia-propriedade-embarcacao', 140),
 
-  request('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
-  bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'), bade('transferencia-jurisdicao-embarcacao', 3),
-  residence('transferencia-jurisdicao-embarcacao', 4),
-  lostTie('transferencia-jurisdicao-embarcacao', 5),
+  // Transferência de jurisdição
+  boatRequest('transferencia-jurisdicao-embarcacao', 10, 'transf_jur'),
+  bsade('transferencia-jurisdicao-embarcacao', 20, 'transf_jur'),
+  bade('transferencia-jurisdicao-embarcacao', 30),
+  boatResidence('transferencia-jurisdicao-embarcacao', 40),
+  motoRequest('transferencia-jurisdicao-embarcacao', 110),
+  motoBdmoto('transferencia-jurisdicao-embarcacao', 120, 'transf_jur'),
+  motoResidence('transferencia-jurisdicao-embarcacao', 130),
 
-  request('transferencia-propriedade-jurisdicao-embarcacao', 1, 'transf_prop_jur'),
-  bsade('transferencia-propriedade-jurisdicao-embarcacao', 2, 'transf_prop_jur'),
-  bade('transferencia-propriedade-jurisdicao-embarcacao', 3),
+  // Transferência de propriedade e jurisdição
+  boatRequest('transferencia-propriedade-jurisdicao-embarcacao', 10, 'transf_prop_jur'),
+  bsade('transferencia-propriedade-jurisdicao-embarcacao', 20, 'transf_prop_jur'),
+  bade('transferencia-propriedade-jurisdicao-embarcacao', 30),
   { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
-    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4 },
-  residence('transferencia-propriedade-jurisdicao-embarcacao', 5),
-  lostTie('transferencia-propriedade-jurisdicao-embarcacao', 6),
-  responsibility('transferencia-propriedade-jurisdicao-embarcacao', 7),
+    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 40,
+    conditions: boatConditions() },
+  boatResidence('transferencia-propriedade-jurisdicao-embarcacao', 50),
+  responsibility('transferencia-propriedade-jurisdicao-embarcacao', 60),
+  motoRequest('transferencia-propriedade-jurisdicao-embarcacao', 110, true),
+  motoBdmoto('transferencia-propriedade-jurisdicao-embarcacao', 120, 'transf_prop_jur'),
+  { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 130,
+    conditions: motoConditions() },
+  motoResidence('transferencia-propriedade-jurisdicao-embarcacao', 140),
 
-  request('renovacao-tie-embarcacao', 1, 'renovacao'),
-  bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados',
+  // Renovação. BDMOTO/BADE/BSADE só entra quando houve alteração de dados.
+  boatRequest('renovacao-tie-embarcacao', 10, 'renovacao'),
+  bsade('renovacao-tie-embarcacao', 20, 'alteracao_dados',
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  bade('renovacao-tie-embarcacao', 3,
+  bade('renovacao-tie-embarcacao', 30,
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  residence('renovacao-tie-embarcacao', 4),
-  lostTie('renovacao-tie-embarcacao', 5),
+  boatResidence('renovacao-tie-embarcacao', 40),
+  motoRequest('renovacao-tie-embarcacao', 110),
+  motoBdmoto('renovacao-tie-embarcacao', 120, 'alteracao_dados',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  motoResidence('renovacao-tie-embarcacao', 130),
 
-  request('segunda-via-tie-embarcacao', 1, 'segunda_via'),
+  // Segunda via
+  boatRequest('segunda-via-tie-embarcacao', 10, 'segunda_via'),
   { serviceId: 'segunda-via-tie-embarcacao',
-    formVersionId: 'declaracao-perda-tie-er-2026-v1', order: 2,
+    formVersionId: 'declaracao-perda-tie-er-2026-v1', order: 20,
+    conditions: boatConditions(),
     fixedValues: { 'process.lostTie': 'true' } },
-  bsade('segunda-via-tie-embarcacao', 3, 'alteracao_dados',
+  bsade('segunda-via-tie-embarcacao', 30, 'alteracao_dados',
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  bade('segunda-via-tie-embarcacao', 4,
+  bade('segunda-via-tie-embarcacao', 40,
     [{ questionId: 'dataChanged', equals: 'sim' }]),
-  residence('segunda-via-tie-embarcacao', 5),
+  boatResidence('segunda-via-tie-embarcacao', 50),
+  motoRequest('segunda-via-tie-embarcacao', 110),
+  { serviceId: 'segunda-via-tie-embarcacao',
+    formVersionId: 'declaracao-perda-tie-ma-v1', order: 120,
+    conditions: motoConditions() },
+  motoBdmoto('segunda-via-tie-embarcacao', 130, 'alteracao_dados',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  motoResidence('segunda-via-tie-embarcacao', 140),
 
-  request('alteracao-dados-embarcacao', 1, 'alteracao_dados'),
-  bsade('alteracao-dados-embarcacao', 2, 'alteracao_dados'), bade('alteracao-dados-embarcacao', 3),
-  residence('alteracao-dados-embarcacao', 4), lostTie('alteracao-dados-embarcacao', 5),
+  // Alteração de dados
+  boatRequest('alteracao-dados-embarcacao', 10, 'alteracao_dados'),
+  bsade('alteracao-dados-embarcacao', 20, 'alteracao_dados'),
+  bade('alteracao-dados-embarcacao', 30),
+  boatResidence('alteracao-dados-embarcacao', 40),
+  motoRequest('alteracao-dados-embarcacao', 110),
+  motoBdmoto('alteracao-dados-embarcacao', 120, 'alteracao_dados'),
+  motoResidence('alteracao-dados-embarcacao', 130),
 
-  request('alteracao-motor-embarcacao', 1, 'troca_motor'),
-  bsade('alteracao-motor-embarcacao', 2, 'troca_motor'), bade('alteracao-motor-embarcacao', 3),
-  residence('alteracao-motor-embarcacao', 4), lostTie('alteracao-motor-embarcacao', 5),
+  // Alteração de motor é atualização de dados no BDMOTO.
+  boatRequest('alteracao-motor-embarcacao', 10, 'troca_motor'),
+  bsade('alteracao-motor-embarcacao', 20, 'troca_motor'),
+  bade('alteracao-motor-embarcacao', 30),
+  boatResidence('alteracao-motor-embarcacao', 40),
+  motoRequest('alteracao-motor-embarcacao', 110),
+  motoBdmoto('alteracao-motor-embarcacao', 120, 'alteracao_dados'),
+  motoResidence('alteracao-motor-embarcacao', 130),
 
+  // Comunicação de venda é um serviço próprio e não entra no fluxo de transferência.
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 1 },
+    formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 10,
+    conditions: boatConditions() },
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 2 },
+    formVersionId: 'comunicacao-transferencia-ma-v1', order: 110,
+    conditions: motoConditions() },
 ];
 
 export const vesselServiceIds = vesselServices.map((service) => service.id);
