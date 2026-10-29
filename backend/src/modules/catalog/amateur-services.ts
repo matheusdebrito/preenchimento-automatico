@@ -21,7 +21,7 @@ const amateurCategoryQuestion: ServiceQuestion = {
 const chaSituationQuestion: ServiceQuestion = {
   id: 'chaSituation',
   label: 'Situação da CHA',
-  options: ['regular', 'extraviada_roubada_furtada_danificada'],
+  options: ['regular', 'extraviada', 'roubada', 'furtada', 'danificada'],
 };
 
 const commonDocuments: readonly DocumentRequirement[] = [
@@ -187,6 +187,6 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     serviceId: 'renovacao-cha-amador',
     formVersionId: 'declaracao-extravio-cha-amador-2026-v1',
     order: 2,
-    conditions: [{ questionId: 'chaSituation', equals: 'extraviada_roubada_furtada_danificada' }],
+    conditions: [{ questionId: 'chaSituation', oneOf: ['extraviada', 'roubada', 'furtada', 'danificada'] }],
   },
 ];
