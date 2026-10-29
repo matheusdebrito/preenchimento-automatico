@@ -55,6 +55,18 @@ const grossTonnage = (value: string): boolean =>
 const count = (value: string): boolean => /^\d{1,4}$/.test(value.trim());
 const power = (value: string): boolean =>
   /^\d{1,4}(?:[.,]\d{1,2})?\s*(?:HP|CV|KW)?$/i.test(value.trim());
+const navigationArea = (value: string): boolean => {
+  const text = value.trim();
+  const normalized = normalizeText(text);
+  return text.length >= 2 && text.length <= 80 && /[A-ZÀ-Ý]/i.test(text) &&
+    !/^(?:AREA\s+DE\s+NAVEGACAO|NAVIGATION\s+AREA)$/.test(normalized);
+};
+const propulsion = (value: string): boolean => {
+  const text = value.trim();
+  const normalized = normalizeText(text);
+  return text.length >= 2 && text.length <= 80 && /[A-ZÀ-Ý]/i.test(text) &&
+    !/^(?:TIPO\s+DE\s+PROPULSAO|TYPE\s+OF\s+PROPULSION|PROPULSAO)$/.test(normalized);
+};
 const serial = (value: string): boolean => {
   const text = value.trim();
   const normalized = normalizeText(text);
@@ -224,7 +236,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
-    validate: (value) => textValue(value, 2, 80),
+    validate: navigationArea,
   },
   {
     fieldId: 'vessel.depth',
@@ -254,7 +266,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
-    validate: (value) => textValue(value, 2, 80),
+    validate: propulsion,
   },
   {
     fieldId: 'vessel.activity',
