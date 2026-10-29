@@ -20,7 +20,7 @@ const motorStructuralMarker = (value: string): boolean =>
 const labelLike = (value: string): boolean => {
   const normalized = normalizeText(value);
   return motorStructuralMarker(normalized) ||
-    /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|USO|ACTIVITY|QTD|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS|FORMATO)\b/
+    /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|USO|ACTIVITY|QTD|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS|FORMATO|TIPO|TYPE|AREA|NAVEGACAO|NAVIGATION|PONTAL|DEPTH|MATERIAL|PROPULSAO|PROPULSION)\b/
       .test(normalized);
 };
 
@@ -205,6 +205,56 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
     validate: decimalMeasure,
+  },
+  {
+    fieldId: 'vessel.type',
+    anchor: 'TIPO DA EMBARCACAO',
+    labels: [
+      /^\s*(?:TIPO\s+(?:DA\s+)?EMBARCA[CÇ][AÃ]O(?:\s*\/\s*TYPE\s+OF\s+VESSEL)?|TYPE\s+OF\s+VESSEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: (value) => textValue(value, 2, 80),
+  },
+  {
+    fieldId: 'vessel.navigationArea',
+    anchor: 'AREA DE NAVEGACAO',
+    labels: [
+      /^\s*(?:[ÁA]REA\s+DE\s+NAVEGA[CÇ][AÃ]O(?:\s*\/\s*NAVIGATION\s+AREA)?|NAVIGATION\s+AREA)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: (value) => textValue(value, 2, 80),
+  },
+  {
+    fieldId: 'vessel.depth',
+    anchor: 'PONTAL / DEPTH',
+    labels: [
+      /^\s*(?:PONTAL(?:\s*\/\s*DEPTH)?|DEPTH)(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: decimalMeasure,
+  },
+  {
+    fieldId: 'vessel.hullMaterial',
+    anchor: 'MATERIAL DO CASCO',
+    labels: [
+      /^\s*(?:MAT\.?\s*CONSTRU[CÇ][AÃ]O\s+CASCO|MATERIAL\s+(?:DE\s+CONSTRU[CÇ][AÃ]O\s+)?(?:DO\s+)?CASCO(?:\s*\/\s*HULL\s+MATERIAL)?|HULL\s+MATERIAL)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: (value) => textValue(value, 2, 80),
+  },
+  {
+    fieldId: 'vessel.propulsionType',
+    anchor: 'TIPO DE PROPULSAO',
+    labels: [
+      /^\s*(?:TIPO\s+DE\s+PROPULS[AÃ]O(?:\s*\/\s*TYPE\s+OF\s+PROPULSION)?|TYPE\s+OF\s+PROPULSION)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: (value) => textValue(value, 2, 80),
   },
   {
     fieldId: 'vessel.activity',
