@@ -20,7 +20,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável, homologar t
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] Concluída; evidências anteriores preservadas |
 | 02 | PDFs oficiais e versões, sem aprovar mapeamento | 01 | [x] Concluída; portão humano anterior preservado |
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — 8 mapas NORMAM-211 APPROVED; 6 mapas NORMAM-212 ainda DRAFT |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — 7 mapas NORMAM-211 APPROVED; 3-C corrigido voltou a DRAFT; 6 mapas NORMAM-212 ainda DRAFT |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
 | 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade, TIE/TIEM e residência usam extração estruturada/semântica; venda ainda usa adaptador legado; corpus amplo pendente |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável, homologar t
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 7 serviços NORMAM-211 liberados para barco; 3-D, moto aquática e QA manual ainda delimitam o restante |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — auditoria contra NORMAM-211/212 completa em andamento; 7 serviços de barco ativos, 3-C corrigido pendente de remapeamento, amadores catalogados em DRAFT, moto aquática e QA manual pendentes |
 
 **Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
@@ -81,6 +81,22 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [ ] Homologar o OCR junto ao restante do serviço sem remover revisão humana nem confundir qualidade OCR com aprovação dos formulários.
 
 **Aceite:** extração rastreável, resultados conservadores e falhas tratadas; confiança medida e revisão humana preservada. A fase continua aberta.
+
+## 3.0.1. Auditoria normativa de 29/10/2026
+
+A NORMAM-211/DPC e a NORMAM-212/DPC completas foram incorporadas como fonte
+primária da revisão. A auditoria corrigiu três premissas antigas:
+
+- Anexo 3-C da NORMAM-211 = Termo de Responsabilidade de Construção/Alteração;
+- BSADE é usado para embarcação miúda (até 6 m); acima de 6 m o fluxo usa BADE;
+- perda/roubo/extravio do TIE digital ou da CHA digital não deve ser exposto como
+  uma “segunda via” autônoma quando a própria norma direciona para impressão/renovação.
+
+Também foram identificadas referências internas inconsistentes na própria publicação
+(2-L/2-K e 3-D/2-C, entre outras). O produto seguirá o título e conteúdo do anexo
+efetivamente publicado e registrará a divergência, sem inventar numeração.
+
+Relatório: `docs/NORMAM_SOURCE_AUDIT_2026-10-29.md`.
 
 ## 3.1. Fase 18 — checklist atual de expansão NORMAM-211
 
@@ -460,3 +476,18 @@ head final deve repetir todos os gates antes do merge.
 **Privacidade/escopo:** o arquivo QA enviado pelo usuário não é versionado no repositório. A regressão usa uma observação sintética equivalente com dados fictícios. Proprietário, coproprietário, CPF/CNPJ, hipoteca, alienação, datas e demais campos fora dos mapeamentos ativos continuam não promovidos.
 
 **Validação:** o preflight local não pôde ser executado nesta sessão por indisponibilidade de resolução DNS para `github.com`, portanto não foi contabilizado como aprovado. O CI do PR #23, execução `40765499950`, validou o head de código com `backend-checks`, `postgres-integration`, `pdf-mapping-visual`, `compose-smoke`, `reference-documents` e `ocr-integration` em sucesso; `frontend-checks` foi corretamente ignorado por não haver alteração de frontend. Após este registro documental, o novo head deve repetir o CI completo e somente então pode ser integrado.
+
+
+## 3.2. Expansão de amadores - NORMAM-211
+
+- [x] Confirmar na NORMAM-211 que ARA/MSA/CPA pertencem ao escopo da norma.
+- [x] Identificar Anexo 5-H (Requerimento) e Anexo 5-D (extravio/furto/roubo/dano da CHA).
+- [x] Catalogar Inscrição/Emissão da CHA e Renovação da CHA em DRAFT.
+- [x] Não criar “segunda via” separada: perda/dano de cédula segue renovação.
+- [x] Modelar dependência de categoria: Arrais usa atestado 5-E; Mestre exige Arrais válido; Capitão exige Mestre válido.
+- [ ] Extrair 5-D e 5-H para templates imutáveis no repositório.
+- [ ] Registrar SHA-256 e validar estrutura PDF.
+- [ ] Criar FormMapping dos anexos 5-D e 5-H.
+- [ ] Gerar amostras fictícias e revisar visualmente.
+- [ ] Executar testes/CI e somente então promover serviços de amadores para AVAILABLE.
+- [ ] Aquaviários: obter NORMAM-101/DPC antes de catalogar serviços profissionais.
