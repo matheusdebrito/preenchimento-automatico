@@ -114,7 +114,7 @@ export const amateurMappings: readonly FormMapping[] = [
     status: 'APPROVED',
     placements: requestPlacements,
     reviewedAt: '2026-10-29',
-    reviewer: 'OpenAI visual QA of 5-H options 1, 2, 3 and 12 + product owner authorization',
+    reviewer: 'OpenAI visual QA of 5-H options 1, 2 and 3 + product owner authorization',
     reportPath: 'docs/mapping-reports/normam211-amadores-2026-technical-qa.md',
   },
   {
