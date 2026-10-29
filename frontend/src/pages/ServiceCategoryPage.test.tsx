@@ -80,6 +80,8 @@ describe('ServiceCategoryPage', () => {
       .toBe('/preencher-real/emissao-cha-veleiro');
     expect((await screen.findByRole('link', { name: /Concessão de CHA por equivalência profissional/ })).getAttribute('href'))
       .toBe('/preencher-real/concessao-cha-equivalencia');
+    expect((await screen.findByRole('link', { name: /Renovação da CHA com agregação de Motonauta/ })).getAttribute('href'))
+      .toBe('/preencher-real/renovacao-cha-agregacao-mta');
     expect(screen.queryByText('Formulário em validação')).toBeNull();
     unmount();
 
