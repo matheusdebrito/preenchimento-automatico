@@ -6,7 +6,13 @@ import type {
   FieldEvidence,
   ObservationLine,
 } from '../contracts.js';
-import type { CandidateDirection } from '../extractor-utils.js';
+import {
+  anchoredCandidates,
+  selectUniqueCandidate,
+  type CandidateDirection,
+  type ExtractedCandidate,
+  type SpatialSearchHint,
+} from '../extractor-utils.js';
 
 const normalize = (value: string) => value.normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
@@ -218,14 +224,14 @@ function findName(observation: DocumentObservation): NameCandidate | null {
 }
 
 
-interface LabelValueCandidate {
-  value: string;
-  confidence: number;
-  page: number;
-  lineIds: readonly string[];
-  method: 'anchor-inline' | 'anchor-right' | 'anchor-below' | 'anchor-sequential';
-  anchor: string;
-}
+const IDENTITY_SPATIAL_HINT: SpatialSearchHint = {
+  minConfidence: 0.45,
+  maxRightDistanceHeights: 10,
+  sameRowToleranceHeights: 1.25,
+  maxBelowDistanceHeights: 4,
+  maxBelowHorizontalOffsetHeights: 5,
+  maxSequentialLines: 2,
+};
 
 function validIdentityNumber(value: string): boolean {
   const text = clean(value);
@@ -261,118 +267,20 @@ function labelledValue(
   anchorName: string,
   isValid: (value: string) => boolean,
   preferredDirections: readonly CandidateDirection[] = [],
-): LabelValueCandidate | null {
-  const found: LabelValueCandidate[] = [];
-
-  for (const page of observation.pages) {
-    const lines = [...page.lines];
-    const positioned = lines.filter((line) => line.box)
-      .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0]);
-
-    for (let index = 0; index < lines.length; index++) {
-      const anchor = lines[index]!;
-      const match = label.exec(anchor.text);
-      if (!match) continue;
-
-      const inline = clean(match[1] ?? '');
-      if (inline && isValid(inline)) {
-        found.push({
-          value: inline,
-          confidence: anchor.confidence,
-          page: anchor.page,
-          lineIds: [anchor.id],
-          method: 'anchor-inline',
-          anchor: anchorName,
-        });
-        continue;
-      }
-
-      const defaultDirections: readonly CandidateDirection[] = ['right', 'below', 'sequential'];
-      const directions = [...new Set([...preferredDirections, ...defaultDirections])];
-      let matched = false;
-
-      for (const direction of directions) {
-        if (direction === 'right' && anchor.box) {
-          const height = boxHeight(anchor);
-          const centerY = (anchor.box[1] + anchor.box[3]) / 2;
-          const right = positioned
-            .filter((line) => {
-              if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
-              const center = (line.box[1] + line.box[3]) / 2;
-              return line.box[0] >= anchor.box![2] - height * 0.5 &&
-                line.box[0] - anchor.box![2] <= height * 10 &&
-                Math.abs(center - centerY) <= height * 1.25;
-            })
-            .sort((a, b) => a.box![0] - b.box![0] || b.confidence - a.confidence)[0];
-
-          if (right) {
-            found.push({
-              value: clean(right.text),
-              confidence: Math.min(anchor.confidence, right.confidence),
-              page: anchor.page,
-              lineIds: [anchor.id, right.id],
-              method: 'anchor-right',
-              anchor: anchorName,
-            });
-            matched = true;
-          }
-        }
-
-        if (direction === 'below' && anchor.box && !matched) {
-          const height = boxHeight(anchor);
-          const below = positioned
-            .filter((line) => {
-              if (line === anchor || !line.box || line.confidence < 0.45 || !isValid(line.text)) return false;
-              const dy = line.box[1] - anchor.box![3];
-              if (dy < -height * 0.2 || dy > height * 3.5) return false;
-              const overlap = horizontalOverlap(anchor, line);
-              const xDelta = Math.abs(line.box[0] - anchor.box![0]);
-              return overlap > 0 || xDelta <= height * 5;
-            })
-            .sort((a, b) => a.box![1] - b.box![1] || b.confidence - a.confidence)[0];
-
-          if (below) {
-            found.push({
-              value: clean(below.text),
-              confidence: Math.min(anchor.confidence, below.confidence),
-              page: anchor.page,
-              lineIds: [anchor.id, below.id],
-              method: 'anchor-below',
-              anchor: anchorName,
-            });
-            matched = true;
-          }
-        }
-
-        if (direction === 'sequential' && !matched) {
-          for (let offset = 1; offset <= 2; offset++) {
-            const next = lines[index + offset];
-            if (!next || !isValid(next.text)) continue;
-            found.push({
-              value: clean(next.text),
-              confidence: Math.min(anchor.confidence, next.confidence),
-              page: anchor.page,
-              lineIds: [anchor.id, next.id],
-              method: 'anchor-sequential',
-              anchor: anchorName,
-            });
-            matched = true;
-            break;
-          }
-        }
-
-        if (matched) break;
-      }
-    }
-  }
-
-  const unique = new Map<string, LabelValueCandidate>();
-  for (const candidate of found) {
-    const key = normalize(candidate.value);
-    const prior = unique.get(key);
-    if (!prior || candidate.confidence > prior.confidence) unique.set(key, candidate);
-  }
-  return unique.size === 1 ? [...unique.values()][0]! : null;
+  spatialHint: SpatialSearchHint = IDENTITY_SPATIAL_HINT,
+): ExtractedCandidate | null {
+  return selectUniqueCandidate(anchoredCandidates(
+    observation,
+    [label],
+    anchorName,
+    isValid,
+    preferredDirections,
+    () => false,
+    true,
+    false,
+    [],
+    spatialHint,
+  ));
 }
 
 function labelledEvidence(
@@ -383,9 +291,10 @@ function labelledEvidence(
   anchor: string,
   validator: (value: string) => boolean,
   preferredDirections: readonly CandidateDirection[] = [],
+  spatialHint: SpatialSearchHint = IDENTITY_SPATIAL_HINT,
 ): FieldEvidence | null {
   const candidate = labelledValue(
-    observation, label, anchor, validator, preferredDirections);
+    observation, label, anchor, validator, preferredDirections, spatialHint);
   if (!candidate) return null;
   return {
     fieldId,
@@ -395,10 +304,103 @@ function labelledEvidence(
     sourceId: context.sourceId,
     page: candidate.page,
     method: candidate.method,
-    anchor: candidate.anchor,
+    ...(candidate.anchor ? { anchor: candidate.anchor } : {}),
     lineIds: candidate.lineIds,
     status: 'REVIEW_REQUIRED',
   };
+}
+
+function parentageEvidence(
+  observation: DocumentObservation,
+  context: ExtractionContext,
+  prefix: string,
+): FieldEvidence[] {
+  const found: ObservationLine[] = [];
+  for (const page of observation.pages) {
+    const positioned = page.lines.filter((line) => line.box)
+      .sort((a, b) => a.box![1] - b.box![1] || a.box![0] - b.box![0]);
+    const anchors = page.lines.filter((line) =>
+      /^\s*FILIA[CÇ][AÃ]O\s*$/i.test(line.text.trim()));
+
+    for (const anchor of anchors) {
+      if (anchor.box) {
+        const height = boxHeight(anchor);
+        const candidates = positioned.filter((line) => {
+          if (line === anchor || !line.box || line.confidence < 0.45) return false;
+          const dy = line.box[1] - anchor.box![3];
+          if (dy < -height * 0.25 || dy > height * 10) return false;
+          if (/^(?:NATURALIDADE|DATA\s+DE\s+NASCIMENTO|DOC\.?\s*ORIGEM|CPF)\b/i
+            .test(normalize(line.text))) return false;
+          return validName(line.text) &&
+            (horizontalOverlap(anchor, line) > 0 ||
+              Math.abs(line.box[0] - anchor.box![0]) <= height * 8);
+        });
+        found.push(...candidates.slice(0, 2));
+      } else {
+        const index = page.lines.indexOf(anchor);
+        for (let offset = 1; offset <= 4 && found.length < 2; offset++) {
+          const line = page.lines[index + offset];
+          if (!line) break;
+          if (/^(?:NATURALIDADE|DATA\s+DE\s+NASCIMENTO|DOC\.?\s*ORIGEM|CPF)\b/i
+            .test(normalize(line.text))) break;
+          if (validName(line.text)) found.push(line);
+        }
+      }
+    }
+  }
+
+  const unique = [...new Map(found.map((line) => [normalize(line.text), line])).values()].slice(0, 2);
+  return unique.map((line, index) => ({
+    fieldId: prefix + '.parent' + (index + 1) + 'Name',
+    value: clean(line.text),
+    confidence: line.confidence,
+    documentId: context.documentId,
+    sourceId: context.sourceId,
+    page: line.page,
+    method: 'anchor-below',
+    anchor: 'FILIACAO',
+    lineIds: [line.id],
+    status: 'REVIEW_REQUIRED' as const,
+  }));
+}
+
+function documentOriginEvidence(
+  observation: DocumentObservation,
+  context: ExtractionContext,
+  fieldId: string,
+): FieldEvidence | null {
+  for (const page of observation.pages) {
+    const anchorIndex = page.lines.findIndex((line) =>
+      /^\s*DOC\.?\s*ORIGEM\s*$/i.test(line.text.trim()));
+    if (anchorIndex < 0) continue;
+    const anchor = page.lines[anchorIndex]!;
+    const selected: ObservationLine[] = [];
+
+    for (let offset = 1; offset <= 3; offset++) {
+      const line = page.lines[anchorIndex + offset];
+      if (!line) break;
+      if (/^\s*CPF\b/i.test(line.text)) break;
+      const value = clean(line.text);
+      if (value.length < 2 || value.length > 100 || !/[A-Z0-9]/i.test(value)) continue;
+      selected.push(line);
+    }
+
+    const value = clean(selected.map((line) => line.text).join(' '));
+    if (!value || value.length > 180) continue;
+    return {
+      fieldId,
+      value,
+      confidence: Math.min(anchor.confidence, ...selected.map((line) => line.confidence)),
+      documentId: context.documentId,
+      sourceId: context.sourceId,
+      page: anchor.page,
+      method: 'anchor-sequential',
+      anchor: 'DOC ORIGEM',
+      lineIds: [anchor.id, ...selected.map((line) => line.id)],
+      status: 'REVIEW_REQUIRED',
+    };
+  }
+  return null;
 }
 
 function cpfEvidence(
@@ -455,6 +457,11 @@ export const identityDocumentExtractor: DocumentExtractor = {
     const cpf = cpfEvidence(observation, context, prefix + '.cpf');
     if (cpf) evidence.push(cpf);
 
+    evidence.push(...parentageEvidence(observation, context, prefix));
+    const documentOrigin = documentOriginEvidence(
+      observation, context, prefix + '.documentOrigin');
+    if (documentOrigin) evidence.push(documentOrigin);
+
     const identity = labelledEvidence(
       observation,
       context,
@@ -462,6 +469,7 @@ export const identityDocumentExtractor: DocumentExtractor = {
       /^\s*(?:REGISTRO\s+GERAL|REG\.?\s*GERAL|N[ÚU]MERO\s+DA\s+IDENTIDADE|N[ÚU]MERO\s+DE\s+IDENTIDADE|IDENTIDADE|RG)\s*(?:[:#\-–]\s*)?(.*)$/i,
       'IDENTIDADE',
       validIdentityNumber,
+      ['right', 'below'],
     );
     if (identity) evidence.push(identity);
 
@@ -483,7 +491,7 @@ export const identityDocumentExtractor: DocumentExtractor = {
       /^\s*(?:DATA\s+(?:DE\s+)?(?:EMISS[AÃ]O|EXPEDI[CÇ][AÃ]O)|ISSUING\s+DATE)\s*(?:[:#\-–]\s*)?(.*)$/i,
       'DATA DE EMISSAO',
       isValidBrazilianDate,
-      ['below', 'right'],
+      ['right', 'below'],
     );
     if (issueDate) evidence.push(issueDate);
 
@@ -494,7 +502,7 @@ export const identityDocumentExtractor: DocumentExtractor = {
       /^\s*(?:DATA\s+(?:DE\s+)?NASCIMENTO|NASCIMENTO|DATE\s+OF\s+BIRTH)\s*(?:[:#\-–]\s*)?(.*)$/i,
       'DATA DE NASCIMENTO',
       isValidBrazilianDate,
-      ['below', 'right'],
+      ['right', 'below'],
     );
     if (birthDate) evidence.push(birthDate);
 
@@ -527,7 +535,8 @@ export const identityDocumentExtractor: DocumentExtractor = {
     const prefix = context.subjectRole;
     const evidence = identityDocumentExtractor.extract(observation, context);
     const byField = new Map(evidence.map((item) => [item.fieldId, item]));
-    return ['fullName', 'cpf', 'identity', 'issuer', 'issueDate', 'birthDate', 'nationality', 'birthplace']
+    return ['fullName', 'cpf', 'identity', 'issuer', 'issueDate', 'birthDate', 'nationality', 'birthplace',
+      'parent1Name', 'parent2Name', 'documentOrigin']
       .map((name) => {
       const fieldId = prefix + '.' + name;
       const item = byField.get(fieldId);
