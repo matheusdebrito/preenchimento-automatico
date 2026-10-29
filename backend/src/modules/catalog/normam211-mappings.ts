@@ -11,6 +11,7 @@ function top(
   pageIndex = 0,
   required = false,
   markWhen?: string,
+  valueTransform?: CoordinatePlacement['valueTransform'],
 ): CoordinatePlacement {
   return {
     kind: 'COORDINATES',
@@ -22,6 +23,7 @@ function top(
     fontSize,
     maxWidth,
     ...(markWhen === undefined ? {} : { markWhen }),
+    ...(valueTransform === undefined ? {} : { valueTransform }),
   };
 }
 
@@ -164,8 +166,8 @@ const bsadePlacements: readonly CoordinatePlacement[] = [
   top('vessel.motor3Brand', 135, 592, 65, 5.5),
   top('vessel.motor3Power', 250, 592, 100, 5.5),
   top('vessel.motor3Serial', 395, 592, 125, 5.5),
-  top('process.place', 115, 605, 80, 5.5),
-  top('process.date', 120, 617, 80, 5.5),
+  top('process.place', 72, 620, 58, 5.5),
+  top('process.date', 138, 620, 62, 5.5),
 ];
 
 const requestPlacements: readonly CoordinatePlacement[] = [
@@ -187,20 +189,20 @@ const requestPlacements: readonly CoordinatePlacement[] = [
   top('vessel.length', 165, 419, 80, 6.5),
   top('vessel.hullId', 330, 419, 95, 6.2),
   top('vessel.classification', 480, 419, 55, 5.5),
-  top('vessel.navigationArea', 110, 455, 10, 8, 0, false, 'interior'),
-  top('vessel.navigationArea', 175, 455, 10, 8, 0, false, 'costeira'),
-  top('vessel.navigationArea', 243, 455, 10, 8, 0, false, 'oceanica'),
-  top('process.vesselAction', 90, 530, 10, 8, 0, false, 'inscricao'),
-  top('process.vesselAction', 320, 566, 10, 8, 0, false, 'transf_prop'),
-  top('process.vesselAction', 446, 566, 10, 8, 0, false, 'transf_jur'),
-  top('process.vesselAction', 90, 584, 10, 8, 0, false, 'transf_prop_jur'),
-  top('process.vesselAction', 90, 645, 10, 8, 0, false, 'renovacao'),
-  top('process.vesselAction', 90, 673, 10, 8, 0, false, 'alteracao_dados'),
-  top('process.vesselAction', 90, 709, 10, 8, 0, false, 'troca_motor'),
-  top('process.vesselAction', 90, 143, 10, 8, 1, false, 'segunda_via'),
+  top('vessel.navigationArea', 69, 455, 10, 8, 0, false, 'interior'),
+  top('vessel.navigationArea', 123, 455, 10, 8, 0, false, 'costeira'),
+  top('vessel.navigationArea', 180, 455, 10, 8, 0, false, 'oceanica'),
+  top('process.vesselAction', 69, 530, 10, 8, 0, false, 'inscricao'),
+  top('process.vesselAction', 69, 566, 10, 8, 0, false, 'transf_prop'),
+  top('process.vesselAction', 198, 566, 10, 8, 0, false, 'transf_jur'),
+  top('process.vesselAction', 69, 584, 10, 8, 0, false, 'transf_prop_jur'),
+  top('process.vesselAction', 69, 645, 10, 8, 0, false, 'renovacao'),
+  top('process.vesselAction', 69, 673, 10, 8, 0, false, 'alteracao_dados'),
+  top('process.vesselAction', 69, 709, 10, 8, 0, false, 'troca_motor'),
+  top('process.vesselAction', 69, 143, 10, 8, 1, false, 'segunda_via'),
   top('process.otherServiceDescription', 100, 177, 420, 7, 1),
-  top('process.place', 90, 254, 185, 7, 1),
-  top('process.date', 285, 254, 125, 7, 1),
+  top('process.place', 90, 236, 100, 7, 1),
+  top('process.date', 200, 236, 76, 7, 1),
 ];
 
 const residencePlacements: readonly CoordinatePlacement[] = [
@@ -214,8 +216,10 @@ const residencePlacements: readonly CoordinatePlacement[] = [
   top('person.address', 272, 366, 250, 7, 0, true),
   top('person.streetNumber', 110, 388, 45, 7),
   top('person.apartment', 170, 388, 90, 7),
-  top('process.place', 300, 644, 105, 7),
-  top('process.date', 422, 644, 108, 7),
+  top('process.place', 300, 644, 85, 7),
+  top('process.date', 400, 644, 25, 7, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 446, 644, 25, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('process.date', 486, 644, 45, 7, 0, false, undefined, 'DATE_YEAR'),
 ];
 
 const lossPlacements: readonly CoordinatePlacement[] = [
@@ -228,11 +232,13 @@ const lossPlacements: readonly CoordinatePlacement[] = [
   top('declarant.phone', 195, 266, 100, 7),
   top('declarant.mobile', 382, 266, 120, 7),
   top('declarant.email', 130, 283, 140, 7),
-  top('process.lostTie', 153, 360, 10, 8, 0, false, 'true'),
+  top('process.lostTie', 69, 360, 10, 8, 0, false, 'true'),
   top('vessel.name', 135, 422, 170, 7, 0, true),
   top('vessel.registration', 400, 422, 120, 7, 0, true),
-  top('process.place', 300, 628, 110, 7),
-  top('process.date', 424, 628, 105, 7),
+  top('process.place', 300, 628, 85, 7),
+  top('process.date', 400, 628, 25, 7, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 442, 628, 25, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('process.date', 486, 628, 45, 7, 0, false, undefined, 'DATE_YEAR'),
 ];
 
 const communicationPlacements: readonly CoordinatePlacement[] = [
@@ -266,7 +272,9 @@ const communicationPlacements: readonly CoordinatePlacement[] = [
   top('person.state', 345, 522, 35, 6.5),
   top('person.postalCode', 430, 522, 90, 6.5),
   top('process.place', 92, 566, 170, 7),
-  top('process.date', 272, 566, 205, 7),
+  top('process.date', 274, 566, 25, 7, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 325, 566, 100, 7, 0, false, undefined, 'DATE_MONTH_NAME_PT_BR'),
+  top('process.date', 466, 566, 28, 7, 0, false, undefined, 'DATE_YEAR_2'),
 ];
 
 const authorizationPlacements: readonly CoordinatePlacement[] = [
@@ -327,14 +335,16 @@ const responsibilityPlacements: readonly CoordinatePlacement[] = [
   top('person.neighborhood', 285, 266, 105, 7),
   top('person.postalCode', 430, 266, 95, 7),
   top('person.city', 155, 284, 125, 7),
-  top('person.state', 290, 284, 30, 7),
+  top('person.state', 270, 284, 24, 7),
   top('person.phone', 385, 284, 140, 7),
   top('vessel.name', 385, 302, 140, 7, 0, true),
   top('vessel.classification', 222, 320, 130, 7),
   top('vessel.authority', 445, 320, 80, 7),
   top('vessel.registration', 225, 338, 120, 7, 0, true),
-  top('process.place', 350, 741, 110, 7),
-  top('process.date', 465, 741, 70, 7),
+  top('process.place', 125, 751, 145, 7),
+  top('process.date', 302, 751, 25, 7, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 355, 751, 98, 7, 0, false, undefined, 'DATE_MONTH_NAME_PT_BR'),
+  top('process.date', 480, 751, 45, 7, 0, false, undefined, 'DATE_YEAR'),
 ];
 
 export const normam211Mappings: readonly FormMapping[] = [
