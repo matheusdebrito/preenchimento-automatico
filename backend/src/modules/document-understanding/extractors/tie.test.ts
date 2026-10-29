@@ -931,4 +931,32 @@ describe('tieDocumentExtractor', () => {
       .toBe('BANCO EXEMPLO SA');
   });
 
+  it('não atribui segundo NOME genérico como coproprietário sem seção explícita', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NOME: MARIA DE SOUZA',
+      'CPF/CNPJ: 529.982.247-25',
+      'NOME: JOAO ALEATORIO',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['registeredOwner.fullName']).toBe('MARIA DE SOUZA');
+    expect(values['coOwner.fullName']).toBeUndefined();
+  });
+
+  it('não mantém endereço órfão de proprietário quando a identidade está ausente', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'PROPRIETÁRIO / OWNER',
+      'NOME: *************',
+      'BAIRRO: CENTRO',
+      'CO-PROPRIETÁRIO / CO-OWNER',
+      'NOME: *************',
+      'BAIRRO: JARDIM',
+      'CARACTERÍSTICAS DO CASCO',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['registeredOwner.neighborhood']).toBeUndefined();
+    expect(values['coOwner.neighborhood']).toBeUndefined();
+  });
+
 });
