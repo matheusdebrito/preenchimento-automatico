@@ -142,6 +142,12 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*N\s*[°ºO.]?\s*INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*REGISTRO\s+DA\s+EMBARCA[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    // Real-reference regression: PaddleOCR may degrade this bilingual label to
+    // "MOMCIO DE INSCRICAO / REGISTRATION NUMSER". Keep fuzzy matching scoped
+    // to this long label; geometry and the registration validator remain strict.
+    approximateLabels: [
+      { text: 'NUMERO DE INSCRICAO / REGISTRATION NUMBER', maxDistance: 5 },
+    ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
     validate: registration,
