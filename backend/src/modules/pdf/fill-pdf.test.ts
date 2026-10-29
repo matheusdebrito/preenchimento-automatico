@@ -76,6 +76,23 @@ describe('motor determinístico de PDF', () => {
       .rejects.toThrow('Opção não prevista');
   });
 
+  it('formata a mesma data canônica em partes exigidas pelo formulário', async () => {
+    const input = await syntheticPdf();
+    const output = await fillPdf(input, [
+      { kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+        x: 50, y: 600, fontSize: 10, maxWidth: 20, valueTransform: 'DATE_DAY' },
+      { kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+        x: 90, y: 600, fontSize: 10, maxWidth: 80, valueTransform: 'DATE_MONTH_NAME_PT_BR' },
+      { kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+        x: 190, y: 600, fontSize: 10, maxWidth: 30, valueTransform: 'DATE_YEAR_2' },
+    ], { date: '29/10/2026' });
+    expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
+    await expect(fillPdf(input, [{
+      kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+      x: 50, y: 600, fontSize: 10, maxWidth: 20, valueTransform: 'DATE_DAY',
+    }], { date: '2026-10-29' })).rejects.toThrow('Data inválida');
+  });
+
   it('identifica tipos reais de AcroForm em vez de confundir texto true com checkbox', async () => {
     const original = await PDFDocument.create();
     const page = original.addPage([595, 842]);
