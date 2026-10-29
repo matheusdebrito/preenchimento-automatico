@@ -11,7 +11,12 @@ describe('draft form map coordinates', () => {
   it('all draft placements refer to known semantic fields and remain unpublished', () => {
     expect(catalog.mappings).toHaveLength(14);
     expect(validateCatalog(catalog)).toEqual([]);
-    expect(catalog.mappings.every((m) => m.status === 'DRAFT')).toBe(true);
+    expect(catalog.mappings.filter((m) =>
+      m.formVersionId.includes('-er-2026-')).every((m) =>
+      m.status === 'TESTED')).toBe(true);
+    expect(catalog.mappings.filter((m) =>
+      !m.formVersionId.includes('-er-2026-')).every((m) =>
+      m.status === 'DRAFT')).toBe(true);
     expect(catalog.services[0]?.status).toBe('DRAFT');
   });
   it('positions stay within the dimensions of the real official PDF pages', async () => {
