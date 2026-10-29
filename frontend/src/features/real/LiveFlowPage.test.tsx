@@ -184,7 +184,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('false');
 
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
-    expect(await screen.findByText(/Preencha o campo obrigatório: CPF/)).toBeTruthy();
+    expect(await screen.findByText(/campos obrigatórios pendentes: CPF/i)).toBeTruthy();
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -455,7 +455,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/)).toBeTruthy();
     expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
-    expect(screen.getByText(/Preencha o campo obrigatório: Nome completo/)).toBeTruthy();
+    expect(screen.getByText(/campos obrigatórios pendentes: Nome completo/i)).toBeTruthy();
     expect(reviewAttempts).toBe(0);
 
     await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA DE SOUZA');
