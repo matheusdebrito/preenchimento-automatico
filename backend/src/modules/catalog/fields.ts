@@ -45,6 +45,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'seller.birthplace', label: 'Naturalidade do vendedor', valueKind: 'text' },
   { id: 'process.transferOwnership', label: 'Transferência de propriedade', valueKind: 'text' },
   { id: 'process.inscription', label: 'Inscrição da embarcação', valueKind: 'boolean' },
+  { id: 'process.transferProperty', label: 'Transferência de propriedade da embarcação', valueKind: 'boolean' },
   { id: 'process.transferJurisdiction', label: 'Transferência de jurisdição', valueKind: 'boolean' },
   { id: 'process.updateVesselData', label: 'Atualização de dados da embarcação/proprietário', valueKind: 'boolean' },
   { id: 'process.vesselAction', label: 'Serviço solicitado para a embarcação', valueKind: 'text' },
