@@ -413,13 +413,17 @@ export function LiveFlowPage() {
                       <select className="field__input" required value={answers[question.id] ?? ''}
                         onChange={(event) => setAnswers((prev) => ({ ...prev, [question.id]:event.target.value }))}>
                         <option value="">Selecione</option>
-                        {question.options.map((value) => <option key={value} value={value}>{
-                          value === 'moto_aquatica' ? 'Moto aquática'
+                        {question.options.map((value) => {
+                          const unavailable = question.unavailableOptions?.includes(value) ?? false;
+                          const label = value === 'moto_aquatica' ? 'Moto aquática'
                             : value === 'embarcacao' ? 'Embarcação / barco'
                               : value === 'ate_12m' ? 'Até 12 m'
                                 : value === 'maior_12_ate_24m' ? 'Maior que 12 m até 24 m'
-                                  : value.replaceAll('_',' ')
-                        }</option>)}
+                                  : value.replaceAll('_',' ');
+                          return <option key={value} value={value} disabled={unavailable}>
+                            {label}{unavailable ? ' (em validação)' : ''}
+                          </option>;
+                        })}
                       </select>
                     </label>
                   ))}
