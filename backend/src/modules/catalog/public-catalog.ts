@@ -123,7 +123,7 @@ export function publicService(
     title: service.title,
     description: service.description,
     creditCost: service.creditCost,
-    questions: service.questions.filter((question) => matches(question.conditions, answers)),
+    questions: service.questions,
     documentRequirements: service.documentRequirements.filter((requirement) =>
       matches(requirement.conditions, answers)),
     formVersionIds: versionIds,
