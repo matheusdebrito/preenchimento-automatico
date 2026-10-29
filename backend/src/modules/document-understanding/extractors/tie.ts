@@ -138,6 +138,15 @@ const addressText = (value: string): boolean =>
   !/^(?:ENDERECO|NUMERO|COMPLEMENTO|BAIRRO|CEP|CIDADE|ESTADO)\b/i
     .test(normalizeText(value));
 
+const creditorText = (value: string): boolean => {
+  const text = value.trim();
+  if (!textValue(text, 2, 100)) return false;
+  const letters = text.match(/[A-ZÀ-Ý]/gi) ?? [];
+  return letters.length >= 2 &&
+    !/^(?:NOME|CPF|CNPJ|DATA|LOCAL|CREDOR|ALIENACAO|SIM|NAO)\b/i
+      .test(normalizeText(text));
+};
+
 const tightTableCell = {
   minConfidence: 0.35,
   maxRightDistanceHeights: 10,
@@ -423,11 +432,16 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*MOTOR\s*1\s*\/\s*ENGINE\s*1\s+(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    approximateLabels: [
+      { text: 'FABRICANTE MARCA MODELO MANUFACTURER BRAND MODEL', maxDistance: 3 },
+    ],
     boundaries: [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
       /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
     ],
+    preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+    spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 100),
   },
   {
@@ -468,8 +482,10 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     approximateLabels: [
       { text: 'N DO 1 MOTOR SERIE', maxDistance: 3 },
       { text: '1 MOTOR SERIE', maxDistance: 2 },
+      { text: 'N DE SERIE DO MOTOR ENGINE SERIAL NUMBER', maxDistance: 3 },
     ],
     preferredDirections: ['below', 'right'],
+    spatialHint: tightTableCell,
     firstOccurrenceOnly: true,
     boundaries: [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
@@ -505,6 +521,9 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     labels: [
       /^\s*(?:QUANTIDADE\s+DE\s+MOTORES(?:\s*\/\s*QUANTITY\s+OF\s+ENGINES)?|QUANTITY\s+OF\s+ENGINES)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    approximateLabels: [
+      { text: 'QUANTIDADE DE MOTORES', maxDistance: 2 },
+    ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
     spatialHint: compactTableCell,
@@ -529,7 +548,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     spatialHint: tightTableCell,
-    validate: (value) => textValue(value, 2, 100),
+    validate: creditorText,
   },
   {
     fieldId: 'vessel.issuePlace',
