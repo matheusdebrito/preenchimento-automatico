@@ -5,7 +5,7 @@ import { AppFooter } from '../components/layout/AppFooter';
 import { AppHeader } from '../components/layout/AppHeader';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { SERVICE_CATEGORIES } from '../data/catalog';
+import { PLANNED_VESSEL_SERVICES, SERVICE_CATEGORIES } from '../data/catalog';
 import { api } from '../lib/api';
 import type { LiveService } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -123,6 +123,36 @@ export function HomePage() {
                   </Link>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        <section className="home-section home-section--flush-top" aria-labelledby="vessel-services-title">
+          <div className="container">
+            <div className="section-heading">
+              <p className="eyebrow">Embarcações de esporte e recreio</p>
+              <h2 id="vessel-services-title">Serviços em preparação</h2>
+              <p>
+                Os fluxos abaixo já estão catalogados conforme a NORMAM-211/DPC 2026.
+                Eles serão liberados individualmente depois da verificação do PDF oficial
+                e da revisão visual do preenchimento.
+              </p>
+            </div>
+            <div className="category-grid">
+              {PLANNED_VESSEL_SERVICES.map((service) => (
+                <article key={service.id} className="category-card category-card--soon">
+                  <span className="icon-badge" aria-hidden="true">
+                    <ShipWheel />
+                  </span>
+                  <div className="category-card__content">
+                    <h3 className="category-card__title">{service.title}</h3>
+                    <p className="category-card__description">{service.summary}</p>
+                    <div className="category-card__meta">
+                      <Badge tone="soon">Formulário em validação</Badge>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>
