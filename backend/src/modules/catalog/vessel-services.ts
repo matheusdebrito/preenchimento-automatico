@@ -8,7 +8,6 @@ import type {
 } from './contracts.js';
 import {
   APPLICANT_IDENTITY_FIELDS,
-  DPEM_DOCUMENT_FIELDS,
   MOTOR_DOCUMENT_FIELDS,
   NO_AUTOMATIC_FIELDS,
   RESIDENCE_PROOF_FIELDS,
@@ -71,37 +70,6 @@ const commonApplicantDocuments: readonly DocumentRequirement[] = [
       documentType: 'residence-proof',
       subjectRole: 'person',
       allowedFieldIds: RESIDENCE_PROOF_FIELDS,
-    },
-  },
-  {
-    id: 'power-of-attorney',
-    label: 'Procuração e identificação do representante',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'representative',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
-    id: 'gru-receipt',
-    label: 'Comprovante de pagamento da GRU',
-    description: 'Documento de apoio. O sistema não emite nem quita a GRU.',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
-    id: 'dpem-proof',
-    label: 'Comprovante/seguro DPEM, quando aplicável',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'vessel',
-      allowedFieldIds: DPEM_DOCUMENT_FIELDS,
     },
   },
 ];
