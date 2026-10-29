@@ -21,6 +21,55 @@ const service = {
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); });
 
 describe('jornada real isolada da demonstração', () => {
+  it('mostra comprimento somente quando o tipo escolhido é embarcação', async () => {
+    const routedService = {
+      ...service,
+      questions: [
+        {
+          id: 'vesselType',
+          label: 'Tipo de embarcação',
+          options: ['moto_aquatica', 'embarcacao'],
+        },
+        {
+          id: 'vesselBand',
+          label: 'Comprimento da embarcação',
+          options: ['ate_12m', 'maior_12_ate_24m'],
+          conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+        },
+      ],
+    };
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) {
+        return json({ service: routedService });
+      }
+      if (path.endsWith('/quote')) return json({ service: routedService });
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    expect(await screen.findByLabelText('Tipo de embarcação')).toBeTruthy();
+    expect(screen.queryByLabelText('Comprimento da embarcação')).toBeNull();
+
+    await user.selectOptions(screen.getByLabelText('Tipo de embarcação'), 'embarcacao');
+    expect(screen.getByLabelText('Comprimento da embarcação')).toBeTruthy();
+
+    await user.selectOptions(screen.getByLabelText('Tipo de embarcação'), 'moto_aquatica');
+    expect(screen.queryByLabelText('Comprimento da embarcação')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    expect(await screen.findByRole('heading', {
+      name: 'Documentos para preenchimento automático (opcionais)',
+    })).toBeTruthy();
+    const quoteCall = fetcher.mock.calls.find(([url]) => String(url).endsWith('/quote'));
+    const body = JSON.parse(String(quoteCall?.[1]?.body ?? '{}')) as {
+      answers?: Record<string, string>;
+    };
+    expect(body.answers).toEqual({ vesselType: 'moto_aquatica' });
+  });
+
   it('navega pelo ciclo upload, OCR, revisão e download com API simulada', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);
