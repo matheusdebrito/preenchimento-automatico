@@ -27,6 +27,32 @@ function prepareValue(raw: string, fieldId: string): string {
   return value;
 }
 
+const MONTHS_PT_BR = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+] as const;
+
+function transformStaticValue(
+  value: string,
+  placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
+): string {
+  if (!placement.valueTransform) return value;
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) throw new Error('Data inválida para formatação PDF: ' + placement.fieldId);
+  const [, day, monthText, year] = match;
+  const month = Number(monthText);
+  if (month < 1 || month > 12) {
+    throw new Error('Data inválida para formatação PDF: ' + placement.fieldId);
+  }
+  switch (placement.valueTransform) {
+    case 'DATE_DAY': return day!;
+    case 'DATE_MONTH_NUMBER': return monthText!;
+    case 'DATE_MONTH_NAME_PT_BR': return MONTHS_PT_BR[month - 1]!;
+    case 'DATE_YEAR': return year!;
+    case 'DATE_YEAR_2': return year!.slice(-2);
+  }
+}
+
 function assertStaticPlacement(
   page: ReturnType<PDFDocument['getPages']>[number], placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
 ): void {
@@ -123,7 +149,8 @@ export async function fillPdf(
     // Declarative choice fields: write an X only in the selected box.
     // Never stamp the literal word "sim" or "não" into a tiny checkbox.
     if (placement.markWhen !== undefined && value !== placement.markWhen) continue;
-    const printed = placement.markWhen === undefined ? value : 'X';
+    const transformed = transformStaticValue(value, placement);
+    const printed = placement.markWhen === undefined ? transformed : 'X';
     let width: number;
     try {
       width = font.widthOfTextAtSize(printed, placement.fontSize);
