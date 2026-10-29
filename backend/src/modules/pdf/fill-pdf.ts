@@ -71,7 +71,11 @@ export async function fillPdf(
   for (const [fieldId, options] of choices) {
     const value = values[fieldId];
     if (typeof value === 'string' && value.trim() && !options.has(value.trim())) {
-      throw new Error('Opção não prevista no formulário: ' + fieldId);
+      const normalized = value.trim();
+      const unilateralBoolean = options.size === 1 && options.has('true') && normalized === 'false';
+      if (!unilateralBoolean) {
+        throw new Error('Opção não prevista no formulário: ' + fieldId);
+      }
     }
   }
   const pdf = await PDFDocument.load(templateBytes, { updateMetadata: false });
