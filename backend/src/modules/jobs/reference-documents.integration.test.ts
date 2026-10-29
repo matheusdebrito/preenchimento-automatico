@@ -103,6 +103,18 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(digital.has('vessel.motorSerial')).toBe(false);
     expect(digital.has('vessel.passengerCount')).toBe(true);
 
+    const currentDigital = await inspect(
+      'documentos/tie/tie digital 2.pdf', 'tie-current', 'tie', 'vessel');
+    expect(currentDigital.has('vessel.registration')).toBe(true);
+    expect(currentDigital.has('vessel.name')).toBe(true);
+    expect(currentDigital.has('vessel.type')).toBe(true);
+    expect(currentDigital.has('vessel.navigationArea')).toBe(true);
+    expect(currentDigital.has('vessel.depth')).toBe(true);
+    expect(currentDigital.has('vessel.hullMaterial')).toBe(true);
+    expect(currentDigital.has('vessel.activity')).toBe(true);
+    expect(currentDigital.has('vessel.crewCount')).toBe(true);
+    expect(currentDigital.has('vessel.passengerCount')).toBe(true);
+
     const legacy = await inspect(
       'documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
     expect(legacy.has('vessel.registration')).toBe(true);
