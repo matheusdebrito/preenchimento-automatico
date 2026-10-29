@@ -64,6 +64,18 @@ describe('HomePage', () => {
     expect(screen.queryByRole('heading', { name: 'Teste técnico com dados fictícios' })).toBeNull();
   });
 
+  it('libera o card de embarcação somente quando o backend publica o serviço', async () => {
+    renderHome([{
+      id: 'inscricao-embarcacao', title: 'Inscrição inicial de embarcação',
+      description: 'Fluxo homologado', creditCost: 1, questions: [],
+      reviewFields: [], documentRequirements: [], formVersionIds: ['requerimento-embarcacao-er-2026-v1'],
+    }]);
+
+    const service = await screen.findByRole('link', { name: /Inscrição inicial de embarcação/ });
+    expect(service.getAttribute('href')).toBe('/preencher-real/inscricao-embarcacao');
+    expect(screen.getByText('Preencher — 1 crédito')).toBeTruthy();
+  });
+
   it('distingue demonstração visual e processamento temporário no servidor', () => {
     renderHome();
 
