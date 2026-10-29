@@ -305,17 +305,16 @@ A API utiliza limites de arquivos, autorização por sessão, validação de ori
 
 O catálogo técnico agora inclui nove serviços de embarcações de esporte e
 recreio: inscrição inicial, transferências de propriedade/jurisdição,
-renovação/segunda via do TIE/TIEM, alteração de dados, alteração de motor e
+renovação do TIE/TIEM (incluindo perda/extravio do modelo antigo), alteração de dados, alteração de motor e
 comunicação de venda. Os modelos oficiais 2-A, 2-B, 2-C, 2-G, 2-H, 2-I, 2-K e
 3-C foram identificados em fontes oficiais de 2026.
 
-Esses serviços **ainda não estão liberados para geração**. Os oito PDFs foram
-preservados, hashados e classificados como `VERIFIED/STATIC`; os oito mapas já
-passaram pela homologação técnica automatizada e revisão visual do agente e estão
-`TESTED`. O projeto mantém o gate fail-closed: falta revisão visual humana para
-`APPROVED`, QA real no navegador/mobile e resolução das limitações registradas
-(3-D quando aplicável e múltiplos motores). A página inicial continua exibindo
-“Formulário em validação”.
+Uma auditoria posterior contra a NORMAM-211/DPC completa corrigiu a identificação
+do Anexo 3-C: ele é o **Termo de Responsabilidade de Construção/Alteração**.
+Sete mapas NORMAM-211 permanecem homologados; o 3-C foi rebaixado para
+`IDENTIFIED/DRAFT` e precisa ser remapeado. O catálogo também corrige a regra de
+porte: BSADE somente até 6 m; acima de 6 m usa BADE. Os serviços de alteração e
+a inscrição de médio porte continuam fail-closed até completar essa homologação.
 
 Todos os documentos de origem cadastrados para essa expansão entram no pipeline
 OCR quando enviados. Tipos já estruturados podem sugerir campos; documentos de
@@ -328,3 +327,13 @@ Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 ## Planejamento e expansão
 
 O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a preparação comercial/produção (10–17) e a expansão (18). Apenas o trabalho técnico do MVP foi autorizado para execução contínua; pagamentos reais, infraestrutura externa e lançamento público requerem novas decisões. **Sem assinaturas ou planos empresariais nesta versão.**
+
+
+## Serviços de amadores NORMAM-211
+
+A NORMAM-211 também cobre Arrais-Amador, Mestre-Amador e Capitão-Amador. O
+catálogo já modela, em `DRAFT`, **Inscrição/Emissão da CHA** e **Renovação da
+CHA**. Perda, roubo, furto ou dano da cédula não é exposto como uma “segunda via”
+separada: a norma direciona esses casos para renovação, com o Anexo 5-D quando
+aplicável. Os anexos 5-D e 5-H precisam ser versionados, mapeados e revisados
+antes da liberação.
