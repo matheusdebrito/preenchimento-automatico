@@ -45,7 +45,6 @@ const requestPlacements: readonly CoordinatePlacement[] = [
   top('process.amateurRequest', 89, 355, 10, 9, 0, false, 'equivalencia_profissional'),
   top('process.amateurRequest', 89, 370, 10, 9, 0, false, 'emissao_renovacao'),
   top('process.amateurRequest', 89, 385, 10, 9, 0, false, 'renovacao_agregacao_mta'),
-  top('process.amateurRequest', 89, 678, 10, 9, 0, false, 'revisao_prova_capitao'),
   top('process.notes', 210, 96, 315, 7, 1),
   top('process.place', 92, 301, 140, 7, 1),
   top('process.date', 315, 301, 20, 7, 1, false, undefined, 'DATE_DAY'),
@@ -107,28 +106,6 @@ const motonautaRequestPlacements: readonly CoordinatePlacement[] = [
   top('person.cpf', 95, 369, 145, 7, 1),
 ];
 
-const reviewPlacements: readonly CoordinatePlacement[] = [
-  top('person.fullName', 182, 217, 340, 7, 0, true),
-  top('person.cpf', 116, 231, 132, 7, 0, true),
-  top('person.identity', 425, 231, 100, 7),
-  top('person.issuer', 160, 251, 90, 7),
-  top('person.email', 289, 251, 235, 7),
-  top('person.phone', 135, 271, 120, 7),
-  top('person.mobile', 317, 271, 130, 7),
-  top('process.reviewExamDate', 215, 314, 22, 7, 0, true, undefined, 'DATE_DAY'),
-  top('process.reviewExamDate', 258, 314, 24, 7, 0, true, undefined, 'DATE_MONTH_NUMBER'),
-  top('process.reviewExamDate', 305, 314, 36, 7, 0, true, undefined, 'DATE_YEAR'),
-  top('process.reviewQuestionNumber', 201, 329, 30, 7, 0, true),
-  top('process.reviewOfficialAnswer', 201, 348, 30, 7, 0, true),
-  top('process.reviewCandidateAnswer', 201, 366, 30, 7, 0, true),
-  top('process.reviewGrounds', 105, 430, 410, 7, 0, true),
-  top('process.reviewBibliography', 105, 118, 410, 7, 1),
-  top('process.place', 95, 330, 125, 7, 1),
-  top('process.date', 232, 330, 20, 7, 1, false, undefined, 'DATE_DAY'),
-  top('process.date', 280, 330, 65, 7, 1, false, undefined, 'DATE_MONTH_NAME_PT_BR'),
-  top('process.date', 365, 330, 38, 7, 1, false, undefined, 'DATE_YEAR'),
-];
-
 export const amateurMappings: readonly FormMapping[] = [
   {
     id: 'requerimento-cha-amador-map-v1',
@@ -156,16 +133,6 @@ export const amateurMappings: readonly FormMapping[] = [
     revision: 'v1',
     status: 'DRAFT',
     placements: motonautaRequestPlacements,
-    reviewedAt: null,
-    reviewer: null,
-    reportPath: 'docs/mapping-reports/amateur-expansion-2026-technical-qa.md',
-  },
-  {
-    id: 'pedido-revisao-prova-capitao-map-v1',
-    formVersionId: 'pedido-revisao-prova-capitao-2026-v1',
-    revision: 'v1',
-    status: 'DRAFT',
-    placements: reviewPlacements,
     reviewedAt: null,
     reviewer: null,
     reportPath: 'docs/mapping-reports/amateur-expansion-2026-technical-qa.md',
