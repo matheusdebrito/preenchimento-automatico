@@ -285,14 +285,6 @@ jobs:
       - name: Inspect NORMAM-211 PDF structure and hashes
         working-directory: backend
         run: node scripts/inspect-normam211.mjs
-      - name: Fetch current Anexo 3-D for technical-responsibility review
-        shell: bash
-        run: |
-          mkdir -p docs/_normam211_inspection/3-D
-          curl --fail --location --retry 3 --connect-timeout 20 \
-            'https://www.marinha.mil.br/delguaira/sites/www.marinha.mil.br.delguaira/files/upload/TERMO%20DE%20RESPONSABILIDADE%20DE%20CONSTRU%C3%87%C3%83O%20OU%20ALTERA%C3%87%C3%83O%203-D.pdf' \
-            -o docs/_normam211_inspection/3-D/anexo-3-d.pdf
-          test "$(head -c 5 docs/_normam211_inspection/3-D/anexo-3-d.pdf)" = "%PDF-"
       - name: Render and extract every NORMAM-211 annex
         shell: bash
         run: |
