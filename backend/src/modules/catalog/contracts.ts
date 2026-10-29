@@ -81,6 +81,8 @@ export interface ServiceQuestion {
   label: string;
   /** Only explicitly enumerated answers may be used in rules. */
   options: readonly string[];
+  /** All conditions must match for the question to be relevant. */
+  conditions?: readonly ServiceCondition[];
 }
 
 export interface ServiceCondition {

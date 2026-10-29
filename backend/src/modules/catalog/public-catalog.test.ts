@@ -38,7 +38,7 @@ function fixture(): CatalogDefinition {
 describe('projeção pública do catálogo', () => {
   it('não publica o piloto em DRAFT', () => {
     expect(publicServices(catalog)).toEqual([]);
-    expect(publicService(catalog, 'transferencia-moto-aquatica')).toBeNull();
+    expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).toBeNull();
   });
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();

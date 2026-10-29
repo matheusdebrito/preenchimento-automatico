@@ -58,9 +58,8 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
 
       const answers = {
-        tieSituation: 'regular', transferAuthorization: 'consta_tie',
-        sellerCommunication: 'nao', residenceProof: 'comprovante',
-        coOwner: 'nao', representative: 'nao',
+        vesselType: 'moto_aquatica', tieSituation: 'regular',
+        representative: 'nao',
       };
       const created = await app.inject({
         method: 'POST', url: '/api/jobs', headers: { cookie },
@@ -83,7 +82,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const png = await readFile(prefix + '.png');
       expect(classifyDocument(png, 'image/png')).toBe('png');
       const buyerUpload = await app.inject({
-        method: 'POST', url: '/api/jobs/' + jobId + '/documents/buyer-identity',
+        method: 'POST', url: '/api/jobs/' + jobId + '/documents/applicant-identity',
         headers: { cookie, 'content-type': 'image/png' }, payload: png,
       });
       expect(buyerUpload.statusCode, buyerUpload.body).toBe(201);
@@ -148,7 +147,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         requirementId:string;outcome:string;suggestionCount:number;
       }[]}>().diagnostics;
       expect(diagnostics).toEqual(expect.arrayContaining([
-        expect.objectContaining({ requirementId: 'buyer-identity', outcome: 'suggested' }),
+        expect.objectContaining({ requirementId: 'applicant-identity', outcome: 'suggested' }),
         expect.objectContaining({ requirementId: 'tie', outcome: 'suggested' }),
       ]));
       const restored = await app.inject({
@@ -196,8 +195,10 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         headers: { cookie },
         payload: { confirmed: true, values: {
           ...fields.fields, 'person.fullName': 'MARIA DE SOUZA',
-          'vessel.name': 'MAR TESTE', 'person.cpf': '123.456.789-09',
-          'person.address': 'RUA DAS FLORES',
+          'vessel.name': 'MAR TESTE', 'vessel.registration': 'RJ123456',
+          'vessel.hullId': 'BR-TESTE-123456', 'person.cpf': '123.456.789-09',
+          'person.address': 'RUA DAS FLORES', 'seller.fullName': 'JOAO VENDEDOR',
+          'seller.cpf': '987.654.321-00',
         } },
       });
       expect(reviewed.statusCode, reviewed.body).toBe(200);
@@ -208,7 +209,10 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       });
       expect(generated.statusCode, generated.body).toBe(200);
       const versions = generated.json<{downloads:string[]}>().downloads;
-      expect(versions).toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
+      expect(versions).toEqual([
+        'requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
+        'declaracao-residencia-ma-v1',
+      ]);
       expect(await creditBalance(pool, owner)).toBe(0);
 
       // Check BOTH PDF files, every page watermark, and actual filled semantic
@@ -255,9 +259,8 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const created = await app.inject({
         method: 'POST', url: '/api/jobs', headers: { cookie },
         payload: { serviceId: QA_PREVIEW_SERVICE_ID, answers: {
-          tieSituation: 'regular', transferAuthorization: 'consta_tie',
-          sellerCommunication: 'nao', residenceProof: 'comprovante',
-          coOwner: 'nao', representative: 'nao',
+          vesselType: 'moto_aquatica', tieSituation: 'regular',
+          representative: 'nao',
         } },
       });
       expect(created.statusCode, created.body).toBe(201);
@@ -306,9 +309,8 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       const owner = registered.json<{user:{id:string}}>().user.id;
       const cookie = String(registered.headers['set-cookie']).split(';')[0]!;
       const answers = {
-        tieSituation: 'regular', transferAuthorization: 'consta_tie',
-        sellerCommunication: 'nao', residenceProof: 'comprovante',
-        coOwner: 'nao', representative: 'nao',
+        vesselType: 'moto_aquatica', tieSituation: 'regular',
+        representative: 'nao',
       };
       const service = publicService(qa, QA_PREVIEW_SERVICE_ID, answers);
       expect(service).not.toBeNull();
@@ -343,7 +345,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
             'CPF: 123.456.789-09',
           ]);
           const uploaded = await app.inject({
-            method: 'POST', url: '/api/jobs/' + jobId + '/documents/buyer-identity',
+            method: 'POST', url: '/api/jobs/' + jobId + '/documents/applicant-identity',
             headers: { cookie, 'content-type': 'application/pdf' },
             payload: Buffer.from(bytes),
           });
@@ -378,7 +380,10 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
         });
         expect(generated.statusCode, generated.body).toBe(200);
         expect(generated.json<{downloads:string[]}>().downloads)
-          .toEqual(['requerimento-ma-v1', 'bdmoto-v1']);
+          .toEqual([
+            'requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
+            'declaracao-residencia-ma-v1',
+          ]);
         expect(await creditBalance(pool, owner)).toBe(0);
       }
     } finally {

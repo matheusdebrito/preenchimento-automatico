@@ -392,10 +392,10 @@ export function LiveFlowPage() {
             <Notice tone="info">Os formulários só serão liberados após validação oficial e revisão do preenchimento. <Link to="/preencher/servico">Conhecer demonstração</Link>.</Notice>
           ) : (
             <section className="card card--padded live-form">
-              <p className="eyebrow">{service.id === 'transferencia-moto-aquatica' && service.creditCost === 0
+              <p className="eyebrow">{service.id === 'transferencia-propriedade-embarcacao' && service.creditCost === 0
                 ? 'Simulação técnica: sem cobrança de créditos'
                 : 'Custo: ' + service.creditCost + ' crédito por processo'}</p>
-              {service.id === 'transferencia-moto-aquatica' && service.creditCost === 0 ? (
+              {service.id === 'transferencia-propriedade-embarcacao' && service.creditCost === 0 ? (
                 <Notice tone="danger" role="alert">
                   SOMENTE QA LOCAL do serviço de transferência: utilize documentos e fotos inteiramente fictícios.
                   Os PDFs gerados terão marca d’água AMOSTRA e não podem ser usados em processos oficiais.
@@ -405,13 +405,21 @@ export function LiveFlowPage() {
               {step === 'questions' ? (
                 <>
                   <h2>Dados do serviço</h2>
-                  {service.questions.map((question) => (
+                  {service.questions.filter((question) =>
+                    (question.conditions ?? []).every((condition) =>
+                      answers[condition.questionId] === condition.equals)).map((question) => (
                     <label key={question.id} className="field">
                       <span className="field__label">{question.label}</span>
                       <select className="field__input" required value={answers[question.id] ?? ''}
                         onChange={(event) => setAnswers((prev) => ({ ...prev, [question.id]:event.target.value }))}>
                         <option value="">Selecione</option>
-                        {question.options.map((value) => <option key={value} value={value}>{value.replaceAll('_',' ')}</option>)}
+                        {question.options.map((value) => <option key={value} value={value}>{
+                          value === 'moto_aquatica' ? 'Moto aquática'
+                            : value === 'embarcacao' ? 'Embarcação / barco'
+                              : value === 'ate_12m' ? 'Até 12 m'
+                                : value === 'maior_12_ate_24m' ? 'Maior que 12 m até 24 m'
+                                  : value.replaceAll('_',' ')
+                        }</option>)}
                       </select>
                     </label>
                   ))}
@@ -765,7 +773,7 @@ export function LiveFlowPage() {
               {step === 'download' && jobId ? (
                 <>
                   <h2>Formulários gerados</h2>
-                  <Notice tone="success">{service.id === 'transferencia-moto-aquatica' && service.creditCost === 0
+                  <Notice tone="success">{service.id === 'transferencia-propriedade-embarcacao' && service.creditCost === 0
                     ? 'Amostras preparadas. Nenhum crédito foi cobrado. Não utilize estes PDFs oficialmente.'
                     : 'Pacote preparado. Um único crédito foi reservado no processo e será mantido após o download. Se a entrega não ocorrer, poderá ser estornado.'}</Notice>
                   {downloads.map((version) => (

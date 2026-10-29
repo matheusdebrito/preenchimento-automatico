@@ -107,8 +107,11 @@ export function registerJobRoutes(
     if (!service) return reply.status(409).send({
       error: 'not_available', message: 'Serviço ainda não homologado.',
     });
+    const relevantQuestions = service.questions.filter((question) =>
+      (question.conditions ?? []).every((condition) =>
+        parsed.data.answers[condition.questionId] === condition.equals));
     if (service.formVersionIds.length === 0 ||
-      service.questions.some((question) => !parsed.data.answers[question.id])) {
+      relevantQuestions.some((question) => !parsed.data.answers[question.id])) {
       return reply.status(422).send({ error: 'incomplete_service_selection' });
     }
     try {

@@ -51,14 +51,14 @@ describe('HomePage', () => {
 
   it('exibe um único serviço real em QA, sem abrir a demonstração paralela', async () => {
     renderHome([{
-      id: 'transferencia-moto-aquatica', title: 'Transferência de moto aquática',
+      id: 'transferencia-propriedade-embarcacao', title: 'Transferência de propriedade',
       description: 'Amostra local', creditCost: 0, questions: [],
       reviewFields: [], documentRequirements: [], formVersionIds: ['bdmoto-v1'],
     }]);
-    const pilot = await screen.findByRole('link', { name: /Transferência de moto aquática/ });
-    expect(pilot.getAttribute('href')).toBe('/preencher-real/transferencia-moto-aquatica');
+    const pilot = await screen.findByRole('link', { name: /Transferência de propriedade/ });
+    expect(pilot.getAttribute('href')).toBe('/preencher-real/transferencia-propriedade-embarcacao');
     expect(screen.getByRole('link', { name: /Começar agora/ }).getAttribute('href'))
-      .toBe('/preencher-real/transferencia-moto-aquatica');
+      .toBe('/preencher-real/transferencia-propriedade-embarcacao');
     expect(screen.getAllByText(/Prévia local para revisão — sem créditos/)).toHaveLength(1);
     expect(document.querySelectorAll('a[href="/preencher/servico"]')).toHaveLength(0);
     expect(screen.queryByRole('heading', { name: 'Teste técnico com dados fictícios' })).toBeNull();

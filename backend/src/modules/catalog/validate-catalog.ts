@@ -184,6 +184,7 @@ export function validateCatalog(data: CatalogDefinition): string[] {
         question.options.some((option) => !option.trim())) {
         issues.push('serviço ' + service.id + ': opções inválidas para ' + question.id);
       }
+      validateConditions(question.conditions, questions, 'pergunta ' + question.id, issues);
     }
     buildIndex(service.documentRequirements, 'documento de ' + service.id, issues);
     for (const requirement of service.documentRequirements) {

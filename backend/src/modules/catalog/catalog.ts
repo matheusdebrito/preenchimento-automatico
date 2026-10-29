@@ -3,13 +3,6 @@ import { additionalFields } from './fields.js';
 import { draftMappings } from './draft-mappings.js';
 import { normam211Mappings } from './normam211-mappings.js';
 import {
-  APPLICANT_IDENTITY_FIELDS,
-  RESIDENCE_PROOF_FIELDS,
-  SALE_DOCUMENT_FIELDS,
-  SELLER_IDENTITY_FIELDS,
-  TIE_FIELDS,
-} from './document-field-policies.js';
-import {
   vesselForms,
   vesselVersions,
   vesselServices,
@@ -149,69 +142,6 @@ export const catalog: CatalogDefinition = {
   ],
   mappings: [...draftMappings, ...normam211Mappings],
   services: [
-    {
-      id: 'transferencia-moto-aquatica',
-      title: 'Transferência de moto aquática',
-      description: 'Piloto de transferência de propriedade de moto aquática. '
-        + 'Não inclui transferência de jurisdição, emissão de TIE ou protocolo oficial.',
-      creditCost: 1,
-      status: 'DRAFT',
-      questions: [
-        { id: 'tieSituation', label: 'Situação do TIE atual', options: ['regular', 'extraviado'] },
-        { id: 'transferAuthorization', label: 'A autorização de transferência já consta no TIE?',
-          options: ['consta_tie', 'anexo_2d'] },
-        { id: 'sellerCommunication', label: 'Deseja preparar a comunicação opcional do vendedor?',
-          options: ['sim', 'nao'] },
-        { id: 'residenceProof', label: 'Comprovação de residência do comprador',
-          options: ['comprovante', 'declaracao_1c'] },
-        { id: 'coOwner', label: 'Existe coproprietário na moto aquática?',
-          options: ['sim', 'nao'] },
-        { id: 'representative', label: 'O processo será feito por procurador?',
-          options: ['sim', 'nao'] },
-      ],
-      documentRequirements: [
-        // Source documents help OCR, but are NEVER prerequisites for filling PDF fields.
-        // The user can provide a single photo, several files or type everything.
-        { id: 'buyer-identity', label: 'Identidade do comprador', required: false,
-          extraction: {
-            documentType: 'identity',
-            subjectRole: 'person',
-            allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
-          } },
-        { id: 'seller-identity', label: 'Identidade do vendedor', required: false,
-          extraction: {
-            documentType: 'identity',
-            subjectRole: 'seller',
-            allowedFieldIds: SELLER_IDENTITY_FIELDS,
-          } },
-        { id: 'tie', label: 'Título de inscrição da moto aquática',
-          description: 'Envie se disponível. Se foi extraviado, informe a situação na etapa anterior.',
-          required: false, extraction: {
-            documentType: 'tie',
-            subjectRole: 'vessel',
-            allowedFieldIds: TIE_FIELDS,
-          } },
-        { id: 'residence-proof', label: 'Comprovante de residência',
-          required: false, extraction: {
-            documentType: 'residence-proof',
-            subjectRole: 'person',
-            allowedFieldIds: RESIDENCE_PROOF_FIELDS,
-          },
-          conditions: [{ questionId: 'residenceProof', equals: 'comprovante' }] },
-        { id: 'sale-document', label: 'Dados da venda ou nota fiscal',
-          description: 'Documento de origem para auxiliar na conferência dos dados da venda.',
-          required: false, extraction: {
-            documentType: 'sale-document',
-            subjectRole: 'person',
-            allowedFieldIds: SALE_DOCUMENT_FIELDS,
-          } },
-        { id: 'power-of-attorney', label: 'Procuração e identificação do representante',
-          required: false, conditions: [{ questionId: 'representative', equals: 'sim' }] },
-        { id: 'gru-receipt', label: 'Comprovante de pagamento da GRU',
-          description: 'Exigência para o processo oficial; não é cobrado nem emitido neste sistema.',
-          required: false },
-      ],
-    },
     ...vesselServices,
   ],
   serviceForms: [...vesselServiceForms],
