@@ -49,6 +49,14 @@ describe('projeção pública do catálogo', () => {
     expect(result?.reviewFields).toEqual([
       { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: true },
     ]);
+    expect(result?.reviewForms).toEqual([{
+      formVersionId: 'form-v1',
+      formId: 'form',
+      name: 'Teste',
+      fields: [
+        { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: true },
+      ],
+    }]);
     expect(JSON.stringify(result)).not.toContain('backend/templates');
   });
   it('falha fechado com condições inválidas ou mapeamento não aprovado', () => {
