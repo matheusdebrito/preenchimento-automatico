@@ -105,9 +105,9 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 
 ### Simulação local de OCR e PDFs com dados fictícios
 
-Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e escolha **Transferência de moto aquática** na página inicial. Agora existe um único caminho de preenchimento: a demonstração antiga foi retirada da navegação e as rotas legadas redirecionam para a página inicial. Depois desative a flag e reconstrua os containers.
+Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e escolha **Transferência de propriedade** na página inicial. Na etapa **Dados do serviço**, escolha **Moto aquática** ou **Embarcação**; o mesmo card roteia para o conjunto de formulários correspondente. Depois desative a flag e reconstrua os containers.
 
-O modo QA é recusado em produção, não consome créditos e usa **o mesmo serviço `transferencia-moto-aquatica`**: perguntas, requisitos reais e as posições dos seis anexos. Os anexos 2-A e 2-B entram sempre, e 2-C/2-D/2-E/1-C entram quando suas condições são selecionadas. O catálogo de produção mantém o serviço e os mapeamentos `DRAFT`; só o ambiente local permite prévias com **AMOSTRA em todas as páginas**. **Não use documentos pessoais reais**, pois os PDFs não são homologados nem válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). Para a revisão de amanhã, leia [as pendências priorizadas de 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md), com os portões documentais e os testes ainda necessários.
+O modo QA é recusado em produção, não consome créditos e usa o mesmo serviço unificado `transferencia-propriedade-embarcacao`. Para **Moto aquática**, a prévia usa os formulários NORMAM-212 associados ao serviço; para **Embarcação**, usa os formulários NORMAM-211 e solicita o comprimento apenas quando ele é necessário para escolher BADE/BSADE. O catálogo de produção continua `DRAFT`/não homologado; só o ambiente local permite prévias com **AMOSTRA em todas as páginas**. **Não use documentos pessoais reais**, pois os PDFs não são homologados nem válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md).
 
 ### Uploads necessários para preencher formulários
 
@@ -132,17 +132,17 @@ opcional; dados não reconhecidos podem ser digitados manualmente.
 ### Preenchimento sem anexos ou com apenas um RG
 
 Os uploads de identidade, TIE, residência, venda e demais documentos são
-**opcionais para a ferramenta de preenchimento**. Após responder às perguntas,
-o usuário pode seguir **sem anexos**, anexar só um RG para obter sugestões
-conservadoras do OCR ou enviar múltiplos arquivos. O backend aceita extrair
+**opcionais para a ferramenta de preenchimento**. Após escolher o **tipo de embarcação** e responder somente às perguntas
+que realmente alteram o pacote de formulários, o usuário pode seguir **sem anexos**,
+anexar só um RG para obter sugestões conservadoras do OCR ou enviar múltiplos arquivos. O backend aceita extrair
 um conjunto vazio de documentos e abre a revisão com valores em branco. A
 revisão exige apenas os **campos mapeados como obrigatórios nos PDFs
 selecionados** e verifica CPF, datas e tipos; os documentos de origem não
 são requisito de geração.
 
-No QA local há um único caminho para `transferencia-moto-aquatica`, sem a
-antiga demonstração paralela. Os testes usam dados integralmente fictícios
-e os PDFs permanecem com marca **AMOSTRA**, sem custos. Instruções:
+No QA local há um único caminho para `transferencia-propriedade-embarcacao`,
+com seleção **Moto aquática / Embarcação** no próprio serviço. Os testes usam dados
+integralmente fictícios e os PDFs permanecem com marca **AMOSTRA**, sem custos. Instruções:
 [roteiro de QA](docs/QA_SYNTHETIC_PREVIEW.md). O comportamento das fotos
 reais do usuário **não foi confirmado** sem amostras adequadas.
 
