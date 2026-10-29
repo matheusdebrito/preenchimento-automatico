@@ -20,7 +20,7 @@ export const SERVICE_CATEGORIES: readonly ServiceCategory[] = [
   {
     id: 'amadores',
     title: 'Arrais, Mestre e Capitão',
-    description: 'Inscrição, renovação e segunda via.',
+    description: 'Inscrição, emissão e renovação da CHA.',
     icon: IdCard,
     route: '/servicos/amadores',
   },
