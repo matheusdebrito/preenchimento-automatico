@@ -55,7 +55,7 @@ function transformStaticValue(
   const [, day, monthText, year] = match;
   const month = Number(monthText);
   if (month < 1 || month > 12) {
-    throw new Error('Data inválida para formatação PDF: ' + placement.fieldId);
+    throw new FormFieldError('invalid_field_value', placement.fieldId, 'invalid_date');
   }
   switch (placement.valueTransform) {
     case 'DATE_DAY': return day!;
@@ -171,7 +171,7 @@ export async function fillPdf(
     try {
       width = font.widthOfTextAtSize(printed, placement.fontSize);
     } catch {
-      throw new Error('Caractere não suportado pela fonte PDF: ' + placement.fieldId);
+      throw new FormFieldError('invalid_field_value', placement.fieldId, 'unsupported_character');
     }
     if (width > placement.maxWidth + 0.01) {
       throw new FormFieldError('invalid_field_value', placement.fieldId, 'text_overflow');
