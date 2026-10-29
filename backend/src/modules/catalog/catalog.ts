@@ -141,7 +141,6 @@ export const catalog: CatalogDefinition = {
   ],
   mappings: draftMappings,
   services: [
-    ...vesselServices,
     {
       id: 'transferencia-moto-aquatica',
       title: 'Transferência de moto aquática',
@@ -185,6 +184,7 @@ export const catalog: CatalogDefinition = {
           required: false },
       ],
     },
+    ...vesselServices,
   ],
   serviceForms: [...vesselServiceForms],
 };
