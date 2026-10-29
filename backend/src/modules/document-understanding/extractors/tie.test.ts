@@ -89,6 +89,25 @@ describe('tieDocumentExtractor', () => {
       .toBe('MAR AZUL');
   });
 
+  it('recupera motor 1 quando o OCR degrada rótulos bilíngues do TIE', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO',
+      'GUANTIDADE OE MOTORES/',
+      '1',
+      'MOTOR 1 / ENGINE 1',
+      'FABRICANTE - MARCA - MODELO / MANUTACTURER - BRAND - MODEL',
+      'SUZUKI',
+      'NP DE SERIE DO MOTOR / ENGINE SERIAL NUMBER',
+      '20001P-342139',
+      'MOTOR 2 / ENGINE 2',
+    ]), context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.motorCount']).toBe('1');
+    expect(values['vessel.motorManufacturerBrandModel']).toBe('SUZUKI');
+    expect(values['vessel.motorSerial']).toBe('20001P-342139');
+  });
+
   it('separa proprietário registrado e coproprietário sem atribuir papel de comprador ou vendedor', () => {
     const source: DocumentObservation = {
       engine: 'paddleocr',
