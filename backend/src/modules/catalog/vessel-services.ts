@@ -31,6 +31,14 @@ const vesselBandQuestion: ServiceQuestion = {
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
+const builtByApplicantQuestion: ServiceQuestion = {
+  id: 'builtByApplicant',
+  label: 'A embarcação foi construída pelo próprio interessado?',
+  options: ['nao', 'sim'],
+  unavailableOptions: ['sim'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+};
+
 const tieSituationQuestion: ServiceQuestion = {
   id: 'tieSituation',
   label: 'Situação do TIE/TIEM atual',
@@ -228,15 +236,23 @@ function questions(options: {
   tie?: boolean;
   dataChanged?: boolean;
   blockMediumBand?: boolean;
+  constructionCase?: boolean;
 } = {}): readonly ServiceQuestion[] {
-  const bandQuestion = options.blockMediumBand
+  const baseBandQuestion = options.blockMediumBand
     ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_menor_24m'] }
     : vesselBandQuestion;
+  const bandQuestion = options.dataChanged
+    ? { ...baseBandQuestion, conditions: [
+        { questionId: 'vesselType', equals: 'embarcacao' },
+        { questionId: 'dataChanged', equals: 'sim' },
+      ] }
+    : baseBandQuestion;
   return [
     vesselTypeQuestion,
-    ...(options.band === false ? [] : [bandQuestion]),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion] : []),
+    ...(options.band === false ? [] : [bandQuestion]),
+    ...(options.constructionCase ? [builtByApplicantQuestion] : []),
   ];
 }
 
@@ -264,7 +280,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Inscrição inicial de embarcação',
     description: scopeNote,
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ blockMediumBand: true }),
+    questions: questions({ blockMediumBand: true, constructionCase: true }),
     documentRequirements: requirements({ origin: true }),
   },
   {
