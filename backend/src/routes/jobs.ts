@@ -5,7 +5,11 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { catalog } from '../modules/catalog/catalog.js';
 import { publicService } from '../modules/catalog/public-catalog.js';
-import { isValidCpf, isValidBrazilianDate } from '../modules/catalog/field-validation.js';
+import {
+  FormFieldError,
+  isValidBrazilianDate,
+  isValidCpf,
+} from '../modules/catalog/field-validation.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
 import { QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
 import { serviceFormValues } from '../modules/catalog/service-form-values.js';
@@ -415,7 +419,18 @@ export function registerJobRoutes(
     if (!job) return reply.status(404).send({ error: 'not_found' });
     if (job.stage !== 'REVIEW') return reply.status(409).send({ error: 'invalid_state' });
     const parsed = reviewSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
+    if (!parsed.success) {
+      const valueIssue = parsed.error.issues.find((issue) =>
+        issue.path[0] === 'values' && typeof issue.path[1] === 'string');
+      if (valueIssue && typeof valueIssue.path[1] === 'string') {
+        return reply.status(422).send({
+          error: 'invalid_field_value',
+          fieldId: valueIssue.path[1],
+          reason: 'text_too_long',
+        });
+      }
+      return reply.status(400).send({ error: 'invalid' });
+    }
     const service = publicService(definitions, job.serviceId, job.answers);
     if (!service) return reply.status(409).send({ error: 'service_unavailable' });
     const allowedFields = new Set(service.reviewFields.map((field) => field.id));
@@ -427,20 +442,25 @@ export function registerJobRoutes(
     if (missingField) {
       // Only public catalog metadata is returned, never private field content.
       return reply.status(422).send({
-        error: 'missing_required_fields', fieldId: missingField.id,
+        error: 'missing_required_fields', fieldId: missingField.id, reason: 'required',
       });
     }
     const fieldsById = new Map(definitions.fields.map((field) => [field.id, field]));
     for (const [fieldId, raw] of Object.entries(parsed.data.values)) {
       if (!raw.trim()) continue;
       const field = fieldsById.get(fieldId);
-      const invalid = (field?.validationRuleId === 'cpf' && !isValidCpf(raw)) ||
-        (field?.validationRuleId === 'simNao' && !['sim', 'nao'].includes(raw)) ||
-        (field?.valueKind === 'date' && !isValidBrazilianDate(raw)) ||
-        (field?.valueKind === 'boolean' && !['true', 'false'].includes(raw));
-      if (invalid) {
-        // The field identifier is safe catalog metadata, never sensitive content.
-        return reply.status(422).send({ error: 'invalid_field_value', fieldId });
+      const reason = field?.validationRuleId === 'cpf' && !isValidCpf(raw)
+        ? 'invalid_cpf'
+        : field?.validationRuleId === 'simNao' && !['sim', 'nao'].includes(raw)
+          ? 'invalid_choice'
+          : field?.valueKind === 'date' && !isValidBrazilianDate(raw)
+            ? 'invalid_date'
+            : field?.valueKind === 'boolean' && !['true', 'false'].includes(raw)
+              ? 'invalid_boolean'
+              : null;
+      if (reason) {
+        // Field ID and reason are catalog metadata; never return the private value.
+        return reply.status(422).send({ error: 'invalid_field_value', fieldId, reason });
       }
     }
     job.values = { ...parsed.data.values };
@@ -467,6 +487,7 @@ export function registerJobRoutes(
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     job.stage = 'GENERATING';
     const generated = new Map<string, string>();
+    let generationPhase: 'pdf' | 'credit' = 'pdf';
     try {
       for (const id of service.formVersionIds) {
         const relation = definitions.serviceForms.find((item) =>
@@ -480,16 +501,30 @@ export function registerJobRoutes(
         await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
         generated.set(id, path);
       }
+      generationPhase = 'credit';
       if (!sample) await chargeJobCredit(pool!, userId, job.id, job.createdAt);
       job.outputs = generated;
       job.stage = 'GENERATED';
       return { downloads: [...generated.keys()], reused: false };
-    } catch {
+    } catch (error) {
       job.stage = 'REVIEW';
       for (const path of generated.values()) await rm(path, { force: true });
-      return reply.status(422).send({
-        error: 'generation_failed', message: 'Verifique campos, saldo e modelo homologado.',
-      });
+      if (error instanceof FormFieldError) {
+        return reply.status(422).send({
+          error: error.code,
+          fieldId: error.fieldId,
+          reason: error.reason,
+        });
+      }
+      if (generationPhase === 'credit') {
+        if (error instanceof Error && error.message === 'Saldo insuficiente.') {
+          return reply.status(402).send({ error: 'insufficient_credits' });
+        }
+        req.log.error({ err: error, jobId: job.id }, 'job_credit_charge_failed');
+        return reply.status(503).send({ error: 'credit_charge_failed' });
+      }
+      req.log.error({ err: error, jobId: job.id }, 'pdf_generation_failed');
+      return reply.status(422).send({ error: 'template_generation_failed' });
     } finally {
       store.endOperation(job);
     }

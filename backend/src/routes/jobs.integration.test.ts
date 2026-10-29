@@ -169,6 +169,11 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const incomplete = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
       headers:{cookie},payload:{confirmed:true,values:{'person.cpf':'123.456.789-09'}}});
     expect(incomplete.statusCode).toBe(422);
+    expect(incomplete.json()).toMatchObject({
+      error: 'missing_required_fields',
+      fieldId: 'person.fullName',
+      reason: 'required',
+    });
 
     const unexpectedField = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
       headers:{cookie},payload:{confirmed:true,values:{
@@ -191,6 +196,11 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const invalidGenerate = await app.inject({method:'POST',
       url:'/api/jobs/'+jobId+'/generate',headers:{cookie},payload:{}});
     expect(invalidGenerate.statusCode).toBe(422);
+    expect(invalidGenerate.json()).toMatchObject({
+      error: 'invalid_field_value',
+      fieldId: 'person.fullName',
+      reason: 'unsupported_character',
+    });
     expect(await creditBalance(pool,userId)).toBe(3);
     const validAgain = await app.inject({method:'PATCH',url:'/api/jobs/'+jobId+'/review',
       headers:{cookie},payload:{confirmed:true,values:{

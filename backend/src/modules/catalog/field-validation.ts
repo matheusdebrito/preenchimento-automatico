@@ -1,5 +1,25 @@
 import type { FieldDefinition, FieldPlacement } from './contracts.js';
 
+export type FormFieldErrorReason =
+  | 'required'
+  | 'invalid_cpf'
+  | 'invalid_date'
+  | 'invalid_boolean'
+  | 'invalid_choice'
+  | 'unsupported_character'
+  | 'text_too_long'
+  | 'text_overflow';
+
+export class FormFieldError extends Error {
+  constructor(
+    public readonly code: 'missing_required_fields' | 'invalid_field_value',
+    public readonly fieldId: string,
+    public readonly reason: FormFieldErrorReason,
+  ) {
+    super(code + ':' + fieldId + ':' + reason);
+  }
+}
+
 /** Arithmetic validation, not verification of ownership or CPF authenticity. */
 export function isValidCpf(value: string): boolean {
   const digits = value.replace(/[. -]/g, '');
@@ -38,16 +58,16 @@ export function validateMappedFieldValues(
     const value = values[fieldId];
     if (value === undefined || value.trim() === '') continue; // Required validation stays in fillPdf.
     if (field.validationRuleId === 'cpf' && !isValidCpf(value)) {
-      throw new Error('CPF com formato ou dígitos inválidos: ' + fieldId);
+      throw new FormFieldError('invalid_field_value', fieldId, 'invalid_cpf');
     }
     if (field.validationRuleId === 'simNao' && !['sim', 'nao'].includes(value)) {
-      throw new Error('Escolha deve ser sim ou nao: ' + fieldId);
+      throw new FormFieldError('invalid_field_value', fieldId, 'invalid_choice');
     }
     if (field.valueKind === 'date' && !isValidBrazilianDate(value)) {
-      throw new Error('Data deve ser válida no formato DD/MM/AAAA: ' + fieldId);
+      throw new FormFieldError('invalid_field_value', fieldId, 'invalid_date');
     }
     if (field.valueKind === 'boolean' && !['true', 'false'].includes(value)) {
-      throw new Error('Booleano deve ser true ou false: ' + fieldId);
+      throw new FormFieldError('invalid_field_value', fieldId, 'invalid_boolean');
     }
   }
 }
