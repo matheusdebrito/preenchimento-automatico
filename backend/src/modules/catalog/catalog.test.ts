@@ -80,6 +80,19 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
+  it('envia todos os documentos dos novos serviços ao pipeline OCR sem inventar campos genéricos', () => {
+    const vesselServices = catalog.services.filter((service) =>
+      service.id !== 'transferencia-moto-aquatica');
+    expect(vesselServices).toHaveLength(9);
+    for (const service of vesselServices) {
+      expect(service.documentRequirements.length).toBeGreaterThan(0);
+      expect(service.documentRequirements.every((requirement) => requirement.extraction)).toBe(true);
+    }
+    const generic = vesselServices.flatMap((service) => service.documentRequirements)
+      .filter((requirement) => requirement.extraction?.documentType === 'supporting-document');
+    expect(generic.length).toBeGreaterThan(0);
+  });
+
   it('mantém o domínio do MVP restrito a um único motor', () => {
     const ids = new Set(catalog.fields.map((field) => field.id));
     expect(ids.has('vessel.motorBrand')).toBe(true);
