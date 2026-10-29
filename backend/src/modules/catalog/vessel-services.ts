@@ -442,7 +442,7 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   residence('renovacao-tie-embarcacao', 5),
   lostTie('renovacao-tie-embarcacao', 6),
 
-  request('segunda-via-tie-embarcacao', 1, 'segunda_via'),
+  request('segunda-via-tie-embarcacao', 1, 'renovacao'),
   { serviceId: 'segunda-via-tie-embarcacao',
     formVersionId: 'declaracao-perda-tie-er-2026-v1', order: 2,
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
