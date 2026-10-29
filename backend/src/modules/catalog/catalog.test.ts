@@ -46,12 +46,12 @@ function sharedFormFixture(): CatalogDefinition {
 describe('catálogo reutilizável de formulários', () => {
   it('publica os serviços de barco somente com versões e mapas aprovados', () => {
     expect(catalog.services).toHaveLength(14);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(11);
-    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(3);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(12);
+    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(2);
     expect(catalog.forms).toHaveLength(17);
     expect(catalog.versions).toHaveLength(17);
-    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(16);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(1);
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(17);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(0);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED').every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
     expect(catalog.mappings).toHaveLength(17);
@@ -105,7 +105,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(renewal?.status).toBe('AVAILABLE');
     expect(sailor?.status).toBe('AVAILABLE');
     expect(equivalence?.status).toBe('AVAILABLE');
-    expect(mta?.status).toBe('DRAFT');
+    expect(mta?.status).toBe('AVAILABLE');
     expect(catalog.forms.some((form) => form.id === 'requerimento-cha-amador')).toBe(true);
     expect(catalog.forms.some((form) => form.id === 'declaracao-extravio-cha-amador')).toBe(true);
     expect(catalog.serviceForms.some((relation) =>

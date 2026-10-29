@@ -64,6 +64,12 @@ describe('ServiceCategoryPage', () => {
       description: 'Fluxo homologado',
       creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
       formVersionIds: ['requerimento-cha-amador-2026-v1'],
+    }, {
+      id: 'renovacao-cha-agregacao-mta',
+      title: 'Renovação da CHA com agregação de Motonauta',
+      description: 'Fluxo homologado',
+      creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+      formVersionIds: ['requerimento-cha-amador-2026-v1', 'requerimento-motonauta-2026-v1'],
     }]);
     expect(screen.getByRole('heading', { level: 1, name: 'Arrais, Mestre e Capitão' })).toBeTruthy();
     expect((await screen.findByRole('link', { name: /Inscrição para exame de amador/ })).getAttribute('href'))
@@ -74,7 +80,9 @@ describe('ServiceCategoryPage', () => {
       .toBe('/preencher-real/emissao-cha-veleiro');
     expect((await screen.findByRole('link', { name: /Concessão de CHA por equivalência profissional/ })).getAttribute('href'))
       .toBe('/preencher-real/concessao-cha-equivalencia');
-    expect(screen.getAllByText('Formulário em validação')).toHaveLength(1);
+    expect((await screen.findByRole('link', { name: /Renovação da CHA com agregação de Motonauta/ })).getAttribute('href'))
+      .toBe('/preencher-real/renovacao-cha-agregacao-mta');
+    expect(screen.queryByText('Formulário em validação')).toBeNull();
     unmount();
 
     renderCategory('/servicos/aquaviarios');

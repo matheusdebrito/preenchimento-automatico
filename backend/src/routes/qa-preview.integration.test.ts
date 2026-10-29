@@ -49,7 +49,7 @@ describePg('QA local: foto fictícia -> OCR -> conferência -> PDFs AMOSTRA', ()
       expect(publicResponse.statusCode).toBe(200);
       const listed = publicResponse.json<{services:{id:string}[]}>().services;
       expect(listed.map((service) => service.id)).toContain(QA_PREVIEW_SERVICE_ID);
-      expect(listed).toHaveLength(7);
+      expect(listed).toHaveLength(12);
 
       const registered = await app.inject({
         method: 'POST', url: '/api/auth/register', payload: { email, password },

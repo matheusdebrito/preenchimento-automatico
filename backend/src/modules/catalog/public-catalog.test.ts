@@ -37,7 +37,7 @@ function fixture(): CatalogDefinition {
 
 describe('projeção pública do catálogo', () => {
   it('publica sete serviços de barco e bloqueia moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(11);
+    expect(publicServices(catalog)).toHaveLength(12);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
@@ -66,9 +66,14 @@ describe('projeção pública do catálogo', () => {
     });
     expect(equivalence?.formVersionIds).toEqual(['requerimento-cha-amador-2026-v1']);
 
-    expect(publicService(catalog, 'renovacao-cha-agregacao-mta', {
+    const mta = publicService(catalog, 'renovacao-cha-agregacao-mta', {
       amateurCategory: 'arrais', motonautaDeclaration: 'sim',
-    })).toBeNull();
+    });
+    expect(mta).not.toBeNull();
+    expect(mta?.formVersionIds).toEqual([
+      'requerimento-cha-amador-2026-v1',
+      'requerimento-motonauta-2026-v1',
+    ]);
   });
 
   it('publica renovação da CHA com uploads opcionais e pacote condicional 5-D', () => {

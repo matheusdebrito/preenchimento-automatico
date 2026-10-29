@@ -152,11 +152,11 @@ export const amateurVersions: readonly FormVersion[] = [
     officialRevision: 'NORMAM-212/DPC 2026 - Anexo 3-A',
     regulation: 'NORMAM-212/DPC 2026, Anexo 3-A',
     sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-212.pdf',
-    verifiedAt: null,
-    sha256: null,
-    templatePath: null,
+    verifiedAt: '2026-10-29',
+    sha256: '43288872ACFFA54A36A2292A21ED3029E33809CD4B444741A3A0C2C1DCAFEF52',
+    templatePath: 'backend/templates/requerimento-motonauta/v1/original.pdf',
     pdfKind: 'STATIC',
-    status: 'IDENTIFIED',
+    status: 'VERIFIED',
   },
 ];
 
@@ -204,9 +204,9 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'renovacao-cha-agregacao-mta',
     title: 'Renovação da CHA com agregação de Motonauta',
-    description: 'Fluxo identificado nas NORMAM-211 e NORMAM-212. Depende da homologação do requerimento 3-A da NORMAM-212 antes da liberação.',
+    description: 'Preenchimento do requerimento 5-H e do Anexo 3-A da NORMAM-212 para renovação da CHA de Arrais, Mestre ou Capitão com agregação da categoria Motonauta.',
     creditCost: 1,
-    status: 'DRAFT',
+    status: 'AVAILABLE',
     questions: [amateurCategoryQuestion, motonautaDeclarationQuestion],
     documentRequirements: commonDocuments.filter((item) =>
       ['applicant-identity', 'residence-proof'].includes(item.id)),

@@ -161,8 +161,8 @@ categoria pretendida na descrição do pedido. Está AVAILABLE.
 
 O Anexo 5-H oferece a opção 3 para renovação de ARA/MSA/CPA com agregação de MTA.
 A NORMAM-212, art. 3.4, exige também o Anexo 3-A e a declaração de que o interessado
-conduz ou já conduziu moto aquática. O serviço está catalogado em DRAFT até o 3-A ser
-versionado e homologado.
+conduz ou já conduziu moto aquática. O Anexo 3-A foi versionado, teve seu hash conferido
+e o mapping v2 foi revisado visualmente nas duas páginas. O serviço está AVAILABLE.
 
 ### Perda, roubo, furto ou dano
 

@@ -98,12 +98,12 @@ const motonautaRequestPlacements: readonly CoordinatePlacement[] = [
   top('person.email', 340, 339, 195, 7),
   top('process.motonautaRequest', 89, 435, 10, 9, 0, false, 'renovacao_agregacao_mta'),
   top('process.motonautaDeclaration', 145, 452, 10, 9, 0, false, 'sim'),
-  top('process.notes', 205, 129, 325, 7, 1),
-  top('process.place', 92, 325, 145, 7, 1),
-  top('process.date', 315, 325, 20, 7, 1, false, undefined, 'DATE_DAY'),
-  top('process.date', 355, 325, 20, 7, 1, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('process.date', 400, 325, 35, 7, 1, false, undefined, 'DATE_YEAR'),
-  top('person.cpf', 95, 369, 145, 7, 1),
+  top('process.notes', 205, 203, 325, 7, 1),
+  top('process.place', 92, 367, 145, 7, 1),
+  top('process.date', 315, 367, 20, 7, 1, false, undefined, 'DATE_DAY'),
+  top('process.date', 355, 367, 20, 7, 1, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('process.date', 400, 367, 35, 7, 1, false, undefined, 'DATE_YEAR'),
+  top('person.cpf', 95, 416, 145, 7, 1),
 ];
 
 export const amateurMappings: readonly FormMapping[] = [
@@ -130,11 +130,11 @@ export const amateurMappings: readonly FormMapping[] = [
   {
     id: 'requerimento-motonauta-map-v1',
     formVersionId: 'requerimento-motonauta-2026-v1',
-    revision: 'v1',
-    status: 'DRAFT',
+    revision: 'v2',
+    status: 'APPROVED',
     placements: motonautaRequestPlacements,
-    reviewedAt: null,
-    reviewer: null,
+    reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA with versioned Anexo 3-A + product owner authorization',
     reportPath: 'docs/mapping-reports/amateur-expansion-2026-technical-qa.md',
   },
 ];
