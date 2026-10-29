@@ -143,6 +143,33 @@ Fontes operacionais consultadas em 29/10/2026:
 A renovação de CHA usa o Anexo 5-H e os documentos previstos no item 5.5.4, incluindo
 CHA atual quando aplicável, atestado médico (dispensável com CNH válida), residência e GRU.
 
+### Emissão de CHA de Veleiro
+
+O item 5.5.2 usa o Anexo 5-H para requerer a emissão da CHA-VLA. O Anexo 5-G é a
+declaração de conclusão do curso emitida pela marina, clube, entidade desportiva náutica ou
+estabelecimento de treinamento. Como a aplicação preenche formulários do interessado, o
+5-G não é gerado automaticamente pelo serviço. O serviço de Veleiro reutiliza o 5-H
+homologado e está AVAILABLE.
+
+### Concessão por equivalência profissional
+
+O item 5.5.3 determina o uso do Anexo 5-H para concessão de CHA por equivalência
+profissional nas categorias ARA, MSA e CPA. O serviço usa a opção 1 do 5-H e registra a
+categoria pretendida na descrição do pedido. Está AVAILABLE.
+
+### Renovação com agregação de Motonauta
+
+O Anexo 5-H oferece a opção 3 para renovação de ARA/MSA/CPA com agregação de MTA.
+A NORMAM-212, art. 3.4, exige também o Anexo 3-A e a declaração de que o interessado
+conduz ou já conduziu moto aquática. O serviço está catalogado em DRAFT até o 3-A ser
+versionado e homologado.
+
+### Revisão de prova de Capitão-Amador
+
+O Anexo 5-A prevê pedido de revisão e traz formulário próprio em seu Apêndice I. O 5-H
+também possui a opção 12 específica para esse pedido. O serviço está catalogado em DRAFT
+até o formulário do Apêndice I ser versionado e homologado.
+
 ### Perda, roubo, furto ou dano
 
 Não foi criado serviço separado de “segunda via”. A NORMAM determina que, com a CHA
