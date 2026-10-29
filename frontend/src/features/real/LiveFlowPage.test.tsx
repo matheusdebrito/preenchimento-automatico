@@ -78,6 +78,94 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByLabelText('Detalhe para BADE')).toBeTruthy();
   });
 
+  it('não exige pergunta condicional oculta e descarta resposta que deixou de ser relevante', async () => {
+    const conditionalService = {
+      ...service,
+      questions: [{
+        id: 'vesselBand',
+        label: 'Comprimento da embarcação',
+        options: ['ate_6m', 'maior_6_ate_12m'],
+      }, {
+        id: 'detail',
+        label: 'Detalhe para BADE',
+        options: ['sim', 'nao'],
+        conditions: [{ questionId: 'vesselBand', equals: 'maior_6_ate_12m' }],
+      }],
+    };
+    const quoteBodies: unknown[] = [];
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) {
+        return json({ service: conditionalService });
+      }
+      if (path.endsWith('/quote')) {
+        quoteBodies.push(JSON.parse(init?.body as string));
+        return json({ service: conditionalService });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    const band = await screen.findByLabelText('Comprimento da embarcação');
+    await user.selectOptions(band, 'maior_6_ate_12m');
+    await user.selectOptions(screen.getByLabelText('Detalhe para BADE'), 'sim');
+    await user.selectOptions(band, 'ate_6m');
+
+    expect(screen.queryByLabelText('Detalhe para BADE')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+
+    expect(await screen.findByRole('heading', {
+      name: 'Documentos para preenchimento automático (opcionais)',
+    })).toBeTruthy();
+    expect(quoteBodies).toEqual([{ answers: { vesselBand: 'ate_6m' } }]);
+  });
+
+  it('permite voltar entre perguntas, documentos e revisão sem reaproveitar job incompatível', async () => {
+    let deleted = 0;
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
+      if (path.endsWith('/quote')) return json({ service });
+      if (path === '/api/jobs' && init?.method === 'POST') {
+        return json({ id: 'job-back', expiresAt: Date.now() + 20 * 60_000 }, 201);
+      }
+      if (path.endsWith('/extract')) return json({ fields: {}, sources: {}, diagnostics: [] });
+      if (path === '/api/jobs/job-back' && init?.method === 'DELETE') {
+        deleted++;
+        return json({ removed: true });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Dados do serviço' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    expect(await screen.findByRole('heading', {
+      name: 'Documentos para preenchimento automático (opcionais)',
+    })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(await screen.findByRole('heading', { name: 'Dados do serviço' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', {
+      name: 'Continuar sem anexos — preencher manualmente',
+    }));
+    expect(await screen.findByRole('heading', {
+      name: 'Preencha e confira os formulários',
+    })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Voltar' }));
+    expect(await screen.findByRole('heading', {
+      name: 'Documentos para preenchimento automático (opcionais)',
+    })).toBeTruthy();
+    expect(deleted).toBe(1);
+  });
+
   it('navega pelo ciclo upload, OCR, revisão e download com API simulada', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);
