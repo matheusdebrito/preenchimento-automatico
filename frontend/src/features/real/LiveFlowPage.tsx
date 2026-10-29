@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Camera, ChevronDown, FileCheck2, FileText, UploadCloud } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Camera, ChevronDown, FileCheck2, FileText, UploadCloud } from 'lucide-react';
 import { PageLayout } from '../../components/layout/PageLayout';
 import { Notice } from '../../components/ui/Notice';
 import { Button } from '../../components/ui/Button';
@@ -125,9 +125,38 @@ function groupReviewFields(fields: readonly LiveReviewField[]): readonly ReviewF
     .map(({ id, title, fields }) => ({ id, title, fields }));
 }
 
+function questionConditionsMatch(
+  question: LiveService['questions'][number],
+  answers: Readonly<Record<string, string>>,
+): boolean {
+  return (question.conditions ?? []).every((condition) =>
+    condition.equals !== undefined
+      ? answers[condition.questionId] === condition.equals
+      : condition.oneOf?.includes(answers[condition.questionId] ?? '') === true);
+}
+
+function pruneHiddenAnswers(
+  service: LiveService,
+  answers: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const next = { ...answers };
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const question of service.questions) {
+      if (Object.hasOwn(next, question.id) && !questionConditionsMatch(question, next)) {
+        delete next[question.id];
+        changed = true;
+      }
+    }
+  }
+  return next;
+}
+
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
   const { serviceId } = useParams();
+  const navigate = useNavigate();
   const [service, setService] = useState<LiveService | null>(null);
   const [step, setStep] = useState<Step>('questions');
   const [answers, setAnswers] = useState<Record<string,string>>({});
@@ -237,7 +266,11 @@ export function LiveFlowPage() {
   }, [serviceId]);
 
   const quote = async () => {
-    if (!service || service.questions.some((question) => !answers[question.id])) {
+    if (!service) return;
+    const relevantAnswers = pruneHiddenAnswers(service, answers);
+    const relevantQuestions = service.questions.filter((question) =>
+      questionConditionsMatch(question, relevantAnswers));
+    if (relevantQuestions.some((question) => !relevantAnswers[question.id])) {
       setError('Responda às perguntas sobre o seu caso.');
       return;
     }
@@ -245,8 +278,9 @@ export function LiveFlowPage() {
     try {
       const result = await api<{service:LiveService}>(
         '/api/services/' + encodeURIComponent(service.id) + '/quote',
-        { method: 'POST', body: JSON.stringify({ answers }) },
+        { method: 'POST', body: JSON.stringify({ answers: relevantAnswers }) },
       );
+      setAnswers(relevantAnswers);
       setService(result.service);
       setStep('files');
     } catch { setError('Não foi possível validar os requisitos do serviço.'); }
@@ -372,6 +406,51 @@ export function LiveFlowPage() {
     }
   };
 
+  const resetTemporaryJobForBack = async (target: 'questions' | 'files') => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      if (jobId) {
+        try {
+          await api<{removed:boolean}>('/api/jobs/' + jobId, { method:'DELETE' });
+        } catch (issue) {
+          if (!(issue instanceof ApiError && issue.status === 404)) throw issue;
+        }
+      }
+      if (serviceId) forgetTemporaryJob(serviceId);
+      setJobId(null);
+      setExpiresAt(null);
+      setUploadedRequirements([]);
+      setValues({});
+      setSources({});
+      setDiagnostics([]);
+      setInvalidFieldIds([]);
+      setOpenReviewFormIds([]);
+      setDownloads([]);
+      if (target === 'questions') setFiles({});
+      setStep(target);
+    } catch {
+      setError('Não foi possível voltar com segurança. Tente novamente.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const backFromFiles = () => {
+    if (jobId) {
+      void resetTemporaryJobForBack('questions');
+      return;
+    }
+    setError('');
+    setFiles({});
+    setStep('questions');
+  };
+
+  const backFromReview = () => {
+    void resetTemporaryJobForBack('files');
+  };
+
   const cancel = async () => {
     // Cancellation is intentionally allowed while OCR is running on the files
     // step. It remains blocked during generation/download accounting.
@@ -492,16 +571,19 @@ export function LiveFlowPage() {
               <Notice tone="info">Ferramenta independente. Não protocola documentos na Marinha e não substitui assinaturas, reconhecimento de firmas ou conferência.</Notice>
               {step === 'questions' ? (
                 <>
+                  <Button variant="ghost" icon={<ArrowLeft aria-hidden="true" />}
+                    onClick={() => navigate(-1)}>Voltar</Button>
                   <h2>Dados do serviço</h2>
                   {service.questions.filter((question) =>
-                    (question.conditions ?? []).every((condition) =>
-                      condition.equals !== undefined
-                        ? answers[condition.questionId] === condition.equals
-                        : condition.oneOf?.includes(answers[condition.questionId] ?? '') === true)).map((question) => (
+                    questionConditionsMatch(question, pruneHiddenAnswers(service, answers))).map((question) => (
                     <label key={question.id} className="field">
                       <span className="field__label">{question.label}</span>
                       <select className="field__input" required value={answers[question.id] ?? ''}
-                        onChange={(event) => setAnswers((prev) => ({ ...prev, [question.id]:event.target.value }))}>
+                        onChange={(event) => setAnswers((prev) =>
+                          pruneHiddenAnswers(service, {
+                            ...prev,
+                            [question.id]: event.target.value,
+                          }))}>
                         <option value="">Selecione</option>
                         {question.options.map((value) => {
                           const unavailable = question.unavailableOptions?.includes(value) ?? false;
@@ -533,6 +615,8 @@ export function LiveFlowPage() {
               ) : null}
               {step === 'files' ? (
                 <>
+                  <Button variant="ghost" icon={<ArrowLeft aria-hidden="true" />}
+                    disabled={busy} onClick={backFromFiles}>Voltar</Button>
                   <h2>Documentos para preenchimento automático (opcionais)</h2>
                   <p>Você pode anexar um documento, vários ou nenhum. A leitura automática
                     serve apenas para sugerir dados. Se preferir, continue sem anexos e
@@ -633,6 +717,8 @@ export function LiveFlowPage() {
               ) : null}
               {step === 'review' ? (
                 <>
+                  <Button variant="ghost" icon={<ArrowLeft aria-hidden="true" />}
+                    disabled={busy} onClick={backFromReview}>Voltar</Button>
                   <h2>Preencha e confira os formulários</h2>
                   <p>
                     Os campos estão organizados pelos formulários que serão gerados.
@@ -898,6 +984,8 @@ export function LiveFlowPage() {
               ) : null}
               {step === 'download' && jobId ? (
                 <>
+                  <Button variant="ghost" icon={<ArrowLeft aria-hidden="true" />}
+                    onClick={() => navigate(-1)}>Voltar</Button>
                   <h2>Formulários gerados</h2>
                   <Notice tone="success">{service.id === 'transferencia-propriedade-embarcacao' && service.creditCost === 0
                     ? 'Amostras preparadas. Nenhum crédito foi cobrado. Não utilize estes PDFs oficialmente.'
