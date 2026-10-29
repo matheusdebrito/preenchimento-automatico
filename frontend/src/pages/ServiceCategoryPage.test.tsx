@@ -39,10 +39,12 @@ describe('ServiceCategoryPage', () => {
     expect(screen.getAllByText('Formulário em validação').length).toBeGreaterThan(0);
   });
 
-  it('abre páginas próprias para Arrais e Aquaviários mesmo antes dos serviços serem cadastrados', () => {
+  it('mostra serviços de amadores em validação e mantém Aquaviários em preparação', () => {
     const { unmount } = renderCategory('/servicos/amadores');
     expect(screen.getByRole('heading', { level: 1, name: 'Arrais, Mestre e Capitão' })).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 2, name: 'Serviços em preparação' })).toBeTruthy();
+    expect(screen.getByText('Emissão da CHA')).toBeTruthy();
+    expect(screen.getByText('Renovação da CHA')).toBeTruthy();
+    expect(screen.getAllByText('Formulário em validação')).toHaveLength(2);
     unmount();
 
     renderCategory('/servicos/aquaviarios');
