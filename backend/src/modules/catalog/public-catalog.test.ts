@@ -36,7 +36,7 @@ function fixture(): CatalogDefinition {
 }
 
 describe('projeção pública do catálogo', () => {
-  it('publica os nove serviços de barco e bloqueia moto aquática', () => {
+  it('publica sete serviços de barco e bloqueia moto aquática', () => {
     expect(publicServices(catalog)).toHaveLength(7);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
