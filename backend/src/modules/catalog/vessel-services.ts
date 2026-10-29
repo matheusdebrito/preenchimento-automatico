@@ -220,10 +220,19 @@ function questions(options: {
   band?: boolean;
   dataChanged?: boolean;
 } = {}): readonly ServiceQuestion[] {
+  const bandQuestion = options.dataChanged
+    ? {
+        ...vesselBandQuestion,
+        conditions: [
+          { questionId: 'vesselType', equals: 'embarcacao' },
+          { questionId: 'dataChanged', equals: 'sim' },
+        ],
+      }
+    : vesselBandQuestion;
   return [
     vesselTypeQuestion,
-    ...(options.band === false ? [] : [vesselBandQuestion]),
     ...(options.dataChanged ? [dataChangedQuestion] : []),
+    ...(options.band === false ? [] : [bandQuestion]),
   ];
 }
 
