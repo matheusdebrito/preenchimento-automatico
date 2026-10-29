@@ -138,6 +138,8 @@ export interface ServiceForm {
   order: number;
   /** Static values supplied by the service, never trusted from the browser. */
   fixedValues?: Readonly<Record<string, string>>;
+  /** Copy an already validated service answer into a semantic PDF field. */
+  answerBindings?: Readonly<Record<string, string>>;
   /** All conditions must match; absent means unconditional. */
   conditions?: readonly ServiceCondition[];
 }
