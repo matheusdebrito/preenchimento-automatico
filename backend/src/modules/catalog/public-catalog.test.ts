@@ -37,12 +37,23 @@ function fixture(): CatalogDefinition {
 
 describe('projeção pública do catálogo', () => {
   it('publica sete serviços de barco e bloqueia moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(8);
+    expect(publicServices(catalog)).toHaveLength(9);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
       tieSituation: 'regular',
     })).toBeNull();
+  });
+
+  it('publica inscrição para exame com 5-H e uploads opcionais', () => {
+    const enrollment = publicService(catalog, 'inscricao-exame-amador', {
+      amateurCategory: 'capitao',
+    });
+    expect(enrollment).not.toBeNull();
+    expect(enrollment?.formVersionIds).toEqual(['requerimento-cha-amador-2026-v1']);
+    expect(enrollment?.documentRequirements.map((item) => item.id))
+      .toEqual(['applicant-identity', 'residence-proof']);
+    expect(enrollment?.documentRequirements.every((item) => item.required === false)).toBe(true);
   });
 
   it('publica renovação da CHA com uploads opcionais e pacote condicional 5-D', () => {
