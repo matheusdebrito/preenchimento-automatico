@@ -12,6 +12,7 @@ function top(
   required = false,
   markWhen?: string,
   valueTransform?: CoordinatePlacement['valueTransform'],
+  markAliases?: readonly string[],
 ): CoordinatePlacement {
   return {
     kind: 'COORDINATES',
@@ -24,6 +25,7 @@ function top(
     maxWidth,
     ...(markWhen === undefined ? {} : { markWhen }),
     ...(valueTransform === undefined ? {} : { valueTransform }),
+    ...(markAliases === undefined ? {} : { markAliases }),
   };
 }
 
@@ -180,9 +182,12 @@ const requestPlacements: readonly CoordinatePlacement[] = [
   top('vessel.length', 165, 419, 80, 6.5),
   top('vessel.hullId', 330, 419, 95, 6.2),
   top('vessel.classification', 480, 419, 55, 5.5),
-  top('vessel.navigationArea', 69, 455, 10, 8, 0, false, 'interior'),
-  top('vessel.navigationArea', 123, 455, 10, 8, 0, false, 'costeira'),
-  top('vessel.navigationArea', 180, 455, 10, 8, 0, false, 'oceanica'),
+  top('vessel.navigationArea', 69, 455, 10, 8, 0, false, 'interior', undefined,
+    ['navegação interior']),
+  top('vessel.navigationArea', 123, 455, 10, 8, 0, false, 'costeira', undefined,
+    ['navegação costeira', 'mar aberto costeira']),
+  top('vessel.navigationArea', 180, 455, 10, 8, 0, false, 'oceanica', undefined,
+    ['navegação oceânica', 'navegação oceanica', 'mar aberto oceânica', 'mar aberto oceanica']),
   top('process.vesselAction', 69, 530, 10, 8, 0, false, 'inscricao'),
   top('process.vesselAction', 69, 566, 10, 8, 0, false, 'transf_prop'),
   top('process.vesselAction', 198, 566, 10, 8, 0, false, 'transf_jur'),
