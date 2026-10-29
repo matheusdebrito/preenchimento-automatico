@@ -54,7 +54,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(3);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED').every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
-    expect(catalog.mappings).toHaveLength(14);
+    expect(catalog.mappings).toHaveLength(16);
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.includes('-er-2026-') &&
       mapping.formVersionId !== 'termo-responsabilidade-er-2026-v1').every((mapping) =>
