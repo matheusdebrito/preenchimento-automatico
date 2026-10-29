@@ -109,7 +109,8 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(currentDigital.has('vessel.name')).toBe(true);
     expect(currentDigital.has('vessel.type')).toBe(true);
     expect(currentDigital.has('vessel.navigationArea')).toBe(true);
-    expect(currentDigital.has('vessel.depth')).toBe(true);
+    // This TIE layout does not print a PONTAL / DEPTH field; absence is correct.
+    expect(currentDigital.has('vessel.depth')).toBe(false);
     expect(currentDigital.has('vessel.hullMaterial')).toBe(true);
     expect(currentDigital.has('vessel.activity')).toBe(true);
     expect(currentDigital.has('vessel.crewCount')).toBe(true);
