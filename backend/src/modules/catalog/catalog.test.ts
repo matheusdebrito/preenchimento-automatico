@@ -114,19 +114,19 @@ describe('catálogo reutilizável de formulários', () => {
       relation.formVersionId === 'declaracao-extravio-cha-amador-2026-v1')).toBe(true);
   });
 
-  it('associa o Anexo 3-C somente a alterações estruturais enquanto o serviço permanece em DRAFT', () => {
+  it('associa o Anexo 3-C somente aos casos previstos no item 2.12.1 enquanto o serviço permanece em DRAFT', () => {
     for (const serviceId of ['alteracao-dados-embarcacao', 'alteracao-motor-embarcacao']) {
       const service = catalog.services.find((item) => item.id === serviceId);
       expect(service?.status).toBe('DRAFT');
       expect(service?.questions.some((question) =>
-        question.id === 'structuralAlteration')).toBe(true);
+        question.id === 'responsibilityTermCase')).toBe(true);
 
       const term = catalog.serviceForms.find((relation) =>
         relation.serviceId === serviceId &&
         relation.formVersionId === 'termo-responsabilidade-er-2026-v1');
       expect(term?.conditions).toContainEqual({
-        questionId: 'structuralAlteration',
-        equals: 'sim',
+        questionId: 'responsibilityTermCase',
+        oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
       });
     }
 
