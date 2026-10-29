@@ -385,7 +385,7 @@ export function LiveFlowPage() {
                         setExtractionProvider(event.target.value as ExtractionProvider)}
                     >
                       <option value="paddleocr">PaddleOCR local</option>
-                      <option value="openai">OpenAI GPT-5.4 mini — maior precisão visual</option>
+                      <option value="openai">OpenAI — GPT-5.4 mini por padrão</option>
                     </select>
                     <span className="field__hint">
                       OpenAI envia os documentos à API externa para análise. PaddleOCR processa
@@ -509,7 +509,7 @@ export function LiveFlowPage() {
                               <span className="live-ocr-name-stage">
                                 {' · Leitura: ' + (
                                   item.engine === 'pdf-text' ? 'texto digital do PDF'
-                                    : item.engine === 'openai' ? 'OpenAI GPT-5.4 mini'
+                                    : item.engine === 'openai' ? 'OpenAI'
                                       : 'PaddleOCR'
                                 )}
                               </span>
