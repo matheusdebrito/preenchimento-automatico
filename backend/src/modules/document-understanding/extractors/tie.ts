@@ -184,6 +184,7 @@ const tightTableCell = {
   maxBelowDistanceHeights: 3.2,
   maxBelowHorizontalOffsetHeights: 5,
   maxSequentialLines: 1,
+  minSelectionScoreGap: 0.12,
 } as const;
 
 const compactTableCell = {
