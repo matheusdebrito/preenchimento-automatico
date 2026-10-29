@@ -220,6 +220,25 @@ describe('catálogo reutilizável de formulários', () => {
     expect(validateCatalog(fixture).join(' ')).toContain('resposta fora das opções');
   });
 
+  it('valida bindings entre respostas do serviço e campos semânticos', () => {
+    const fixture = sharedFormFixture();
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      answerBindings: { 'person.fullName': 'mode' },
+    }];
+    expect(validateCatalog(fixture)).toEqual([]);
+
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      answerBindings: { 'person.fullName': 'missing-question' },
+    }];
+    expect(validateCatalog(fixture).join(' ')).toContain('binding inválido');
+  });
+
   it('aceita condição oneOf somente com opções declaradas', () => {
     const fixture = sharedFormFixture();
     fixture.serviceForms = [{
