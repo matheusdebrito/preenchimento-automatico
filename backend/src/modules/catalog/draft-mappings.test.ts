@@ -9,7 +9,7 @@ import { resolve } from 'node:path';
 
 describe('draft form map coordinates', () => {
   it('all draft placements refer to known semantic fields and remain unpublished', () => {
-    expect(catalog.mappings).toHaveLength(6);
+    expect(catalog.mappings).toHaveLength(14);
     expect(validateCatalog(catalog)).toEqual([]);
     expect(catalog.mappings.every((m) => m.status === 'DRAFT')).toBe(true);
     expect(catalog.services[0]?.status).toBe('DRAFT');
@@ -32,7 +32,7 @@ describe('draft form map coordinates', () => {
       }
     }
   });
-  it('mantém os 6 formulários independentes com campos essenciais explícitos', () => {
+  it('mantém cada formulário independente com campos essenciais explícitos', () => {
     const required: Record<string, readonly string[]> = {
       'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
       'bdmoto-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
@@ -40,6 +40,14 @@ describe('draft form map coordinates', () => {
       'comunicacao-transferencia-ma-v1': ['person.fullName', 'seller.fullName', 'person.cpf', 'seller.cpf'],
       'declaracao-perda-tie-ma-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name'],
       'declaracao-residencia-ma-v1': ['person.fullName', 'person.cpf', 'person.address'],
+      'bade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
+      'bsade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration', 'vessel.hullId'],
+      'requerimento-embarcacao-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'declaracao-residencia-er-2026-v1': ['person.fullName', 'person.cpf', 'person.address'],
+      'declaracao-perda-tie-er-2026-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name', 'vessel.registration'],
+      'comunicacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'autorizacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'termo-responsabilidade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
     };
     expect(catalog.mappings).toHaveLength(
       catalog.versions.filter((version) => version.status === 'VERIFIED').length,
@@ -55,14 +63,17 @@ describe('draft form map coordinates', () => {
     }
   });
 
-  it('mantém um único motor no MVP e nunca deriva declarante de vendedor', () => {
-    const transfer = catalog.mappings.find((m) => m.formVersionId === 'autorizacao-transferencia-ma-v1')!;
-    const fields = new Set(transfer.placements.map((placement) => placement.fieldId));
-    expect(fields.has('vessel.motorBrand')).toBe(true);
-    expect(fields.has('vessel.motorPower')).toBe(true);
-    expect(fields.has('vessel.motorSerial')).toBe(true);
-    expect([...fields].some((id) => /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id)))
-      .toBe(false);
+  it('mantém limites por formulário e nunca deriva declarante de vendedor', () => {
+    const motoTransfer = catalog.mappings.find((m) =>
+      m.formVersionId === 'autorizacao-transferencia-ma-v1')!;
+    const motoFields = new Set(motoTransfer.placements.map((placement) => placement.fieldId));
+    expect(motoFields.has('vessel.motorBrand')).toBe(true);
+    expect([...motoFields].some((id) =>
+      /^vessel\.motor[2-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
+
+    const vesselTransfer = catalog.mappings.find((m) =>
+      m.formVersionId === 'autorizacao-transferencia-er-2026-v1')!;
+    expect(vesselTransfer.placements.some((p) => p.fieldId === 'vessel.motor4Serial')).toBe(true);
 
     const loss = catalog.mappings.find((m) => m.formVersionId === 'declaracao-perda-tie-ma-v1')!;
     expect(loss.placements.some((p) => p.fieldId === 'declarant.fullName')).toBe(true);
@@ -96,7 +107,7 @@ describe('draft form map coordinates', () => {
     }
   }, 30_000);
 
-  it('impede a impressão de nome excessivo em cada um dos seis modelos', async () => {
+  it('impede a impressão de texto excessivo em cada modelo mapeado', async () => {
     for (const mapping of catalog.mappings) {
       const version = catalog.versions.find((v) => v.id === mapping.formVersionId)!;
       const original = await readFile(resolve(process.cwd(), '..', version.templatePath!));
