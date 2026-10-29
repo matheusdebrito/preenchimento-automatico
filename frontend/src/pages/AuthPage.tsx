@@ -43,17 +43,11 @@ export function AuthPage() {
   if (session.status === 'authenticated') {
     return <Navigate to={safeNext} replace />;
   }
-  if (session.status === 'loading' || session.status === 'unavailable') {
+  if (session.status === 'loading') {
     return (
       <PageLayout>
         <div className="page"><div className="container page-stack">
-          {session.status === 'loading'
-            ? <Notice tone="info" role="status">Verificando sua sessão…</Notice>
-            : <Notice tone="danger" role="alert">
-                Não foi possível consultar sua sessão. Verifique a conexão e
-                <button type="button" className="live-text-button"
-                  onClick={() => void refreshSession()}>tente novamente</button>.
-              </Notice>}
+          <Notice tone="info" role="status">Verificando sua sessão…</Notice>
         </div></div>
       </PageLayout>
     );
@@ -63,6 +57,19 @@ export function AuthPage() {
     <PageLayout>
       <div className="page">
         <div className="container page-stack">
+          {session.status === 'unavailable' ? (
+            <Notice tone="danger" role="alert">
+              Não foi possível consultar sua sessão agora. Você ainda pode tentar entrar normalmente.
+              {' '}
+              <button
+                type="button"
+                className="live-text-button"
+                onClick={() => void refreshSession()}
+              >
+                Tentar novamente
+              </button>
+            </Notice>
+          ) : null}
           <div className="card card--padded live-auth">
             <h1>{register ? 'Criar conta' : 'Entrar na minha conta'}</h1>
             <p>Seus documentos são processados temporariamente. A conta guarda apenas dados operacionais e créditos.</p>
