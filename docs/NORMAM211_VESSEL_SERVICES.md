@@ -103,7 +103,7 @@ fica sem sugestão e o usuário preenche/revisa manualmente.
 5. criar `FormMapping`;
 6. gerar amostras inteiramente fictícias;
 7. renderizar todas as páginas e revisar visualmente;
-8. marcar a versão `VERIFIED` após inspeção e o mapa `TESTED` após QA técnico;
+8. marcar a versão `VERIFIED` após inspeção e o mapa `APPROVED` após evidência visual e decisão de liberação;
 9. promover o mapa a `APPROVED` somente após revisão visual humana registrada;
 10. executar CI e QA do fluxo completo em navegador/mobile;
 11. somente então alterar o serviço de `DRAFT` para `AVAILABLE`.
@@ -115,8 +115,10 @@ aceitação do processo pela Marinha.
 ## Homologação técnica de 29/10/2026
 
 - oito versões: `VERIFIED/STATIC`;
-- oito mapas: `TESTED`, com relatório reproduzível;
-- todos os nove serviços: `DRAFT`;
+- oito mapas: `APPROVED`, com relatório reproduzível;
+- sete serviços: `AVAILABLE` para embarcação/barco;
+- alteração de dados e alteração de motor: `DRAFT`;
+- inscrição >12 m até 24 m e moto aquática: opções bloqueadas até completar os anexos aplicáveis;
 - domínio de motor: permanece restrito a um único motor canônico;
 - 2-K: Motor 2–4 e caixas SIM/NÃO permanecem manuais até decisão de domínio;
 - 3-D: ainda precisa ser incorporado nos casos de construção/alteração em que
