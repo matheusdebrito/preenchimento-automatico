@@ -493,7 +493,7 @@ head final deve repetir todos os gates antes do merge.
 - [ ] Executar CI/typecheck/build do head de liberação; isso continua como validação técnica pendente, sem rebaixar o estado normativo dos PDFs.
 - [x] Catalogar e liberar Emissão de CHA de Veleiro usando o 5-H aprovado; 5-G é documento emitido pela entidade de treinamento e não é gerado para o candidato.
 - [x] Catalogar e liberar Concessão de CHA por equivalência profissional usando a opção 1 do 5-H.
-- [x] Catalogar Renovação com agregação de Motonauta em DRAFT; 5-H opção 3 revisada e Anexo 3-A mapeado. Caminho canônico preparado em `backend/templates/requerimento-motonauta/v1/`; falta versionar `original.pdf`, conferir SHA-256 e repetir a geração/QA antes da liberação.
+- [x] Liberar Renovação com agregação de Motonauta: Anexo 3-A versionado em `backend/templates/requerimento-motonauta/v1/original.pdf`, Git blob conferido contra o PDF usado no QA, SHA-256 registrado, mapping v2 revisado visualmente nas duas páginas e serviço promovido para `AVAILABLE`.
 - [x] Remover Pedido de revisão de prova de Capitão-Amador do escopo do produto por decisão do responsável.
 - [ ] Aquaviários: obter NORMAM-101/DPC antes de catalogar serviços profissionais.
 
