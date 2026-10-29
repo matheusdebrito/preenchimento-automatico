@@ -528,13 +528,29 @@ export function LiveFlowPage() {
       if (issue instanceof ApiError && issue.fieldId) {
         const field = service.reviewFields.find((item) => item.id === issue.fieldId);
         const label = field?.label ?? 'o campo informado';
-        const tip = issue.errorCode === 'missing_required_fields'
+        const tip = issue.fieldReason === 'required'
           ? 'é obrigatório e precisa ser preenchido.'
-          : field?.valueKind === 'date'
-            ? 'use uma data válida no formato DD/MM/AAAA.'
-            : issue.fieldId.endsWith('.cpf')
-              ? 'informe um CPF válido com os dígitos verificadores.'
-              : 'revise o formato e o valor.';
+          : issue.fieldReason === 'invalid_cpf'
+            ? 'informe um CPF válido com os dígitos verificadores.'
+            : issue.fieldReason === 'invalid_date'
+              ? 'use uma data válida no formato DD/MM/AAAA.'
+              : issue.fieldReason === 'invalid_boolean'
+                ? 'selecione uma opção válida.'
+                : issue.fieldReason === 'invalid_choice'
+                  ? 'selecione uma das opções permitidas.'
+                  : issue.fieldReason === 'unsupported_character'
+                    ? 'contém um caractere não suportado pelo formulário.'
+                    : issue.fieldReason === 'text_too_long'
+                      ? 'possui texto longo demais ou caracteres inválidos.'
+                      : issue.fieldReason === 'text_overflow'
+                        ? 'possui texto maior do que o espaço disponível no formulário.'
+                        : issue.errorCode === 'missing_required_fields'
+                          ? 'é obrigatório e precisa ser preenchido.'
+                          : field?.valueKind === 'date'
+                            ? 'use uma data válida no formato DD/MM/AAAA.'
+                            : issue.fieldId.endsWith('.cpf')
+                              ? 'informe um CPF válido com os dígitos verificadores.'
+                              : 'revise o formato e o valor.';
         setInvalidFieldIds([issue.fieldId]);
         setError('Confira ' + label + ': ' + tip);
         revealReviewFields([issue.fieldId]);
