@@ -14,14 +14,21 @@ export const QA_PREVIEW_SERVICE_ID = 'transferencia-propriedade-embarcacao';
 export function qaPreviewCatalog(): CatalogDefinition {
   return {
     ...catalog,
-    mappings: catalog.mappings.map((mapping) => ({
-      ...mapping,
-      // Adapter only: the production catalog and human approval remain DRAFT.
-      status: 'APPROVED' as const,
-      reviewedAt: '2026-10-27',
-      reviewer: 'QA LOCAL SOMENTE - NAO HOMOLOGADO',
-      reportPath: 'docs/QA_SYNTHETIC_PREVIEW.md',
-    })),
+    mappings: catalog.mappings.map((mapping) => {
+      const version = catalog.versions.find((item) => item.id === mapping.formVersionId);
+      if (version?.status !== 'VERIFIED') {
+        return mapping;
+      }
+      return {
+        ...mapping,
+        // Adapter only: the production catalog and human approval remain unchanged.
+        // Never promote a mapping whose PDF version is not VERIFIED.
+        status: 'APPROVED' as const,
+        reviewedAt: '2026-10-27',
+        reviewer: 'QA LOCAL SOMENTE - NAO HOMOLOGADO',
+        reportPath: 'docs/QA_SYNTHETIC_PREVIEW.md',
+      };
+    }),
     services: catalog.services.map((service) =>
       service.id === QA_PREVIEW_SERVICE_ID ? {
         ...service,
