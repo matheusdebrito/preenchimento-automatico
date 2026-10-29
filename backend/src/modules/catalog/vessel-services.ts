@@ -227,10 +227,14 @@ function questions(options: {
   band?: boolean;
   tie?: boolean;
   dataChanged?: boolean;
+  blockMediumBand?: boolean;
 } = {}): readonly ServiceQuestion[] {
+  const bandQuestion = options.blockMediumBand
+    ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_ate_24m'] }
+    : vesselBandQuestion;
   return [
     vesselTypeQuestion,
-    ...(options.band === false ? [] : [vesselBandQuestion]),
+    ...(options.band === false ? [] : [bandQuestion]),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion] : []),
   ];
@@ -260,7 +264,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Inscrição inicial de embarcação',
     description: scopeNote,
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions(),
+    questions: questions({ blockMediumBand: true }),
     documentRequirements: requirements({ origin: true }),
   },
   {
@@ -306,16 +310,16 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados ou características da embarcação',
-    description: scopeNote,
-    creditCost: 1, status: 'AVAILABLE',
+    description: 'Em validação até incorporar o termo de responsabilidade aplicável às alterações.',
+    creditCost: 1, status: 'DRAFT',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, origin: true }),
   },
   {
     id: 'alteracao-motor-embarcacao',
     title: 'Troca, instalação ou retirada de motor',
-    description: scopeNote,
-    creditCost: 1, status: 'AVAILABLE',
+    description: 'Em validação até incorporar o termo de responsabilidade aplicável às alterações.',
+    creditCost: 1, status: 'DRAFT',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, motor: true }),
   },
