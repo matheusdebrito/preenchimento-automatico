@@ -74,7 +74,7 @@ describe('ServiceCategoryPage', () => {
       .toBe('/preencher-real/emissao-cha-veleiro');
     expect((await screen.findByRole('link', { name: /Concessão de CHA por equivalência profissional/ })).getAttribute('href'))
       .toBe('/preencher-real/concessao-cha-equivalencia');
-    expect(screen.getAllByText('Formulário em validação')).toHaveLength(2);
+    expect(screen.getAllByText('Formulário em validação')).toHaveLength(1);
     unmount();
 
     renderCategory('/servicos/aquaviarios');
@@ -95,7 +95,7 @@ describe('ServiceCategoryPage', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findAllByText('Disponibilidade indisponível')).toHaveLength(6);
+    expect(await screen.findAllByText('Disponibilidade indisponível')).toHaveLength(5);
     expect(screen.queryByText('Formulário em validação')).toBeNull();
   });
 

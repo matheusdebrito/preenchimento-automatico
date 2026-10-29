@@ -2,12 +2,11 @@
 
 ## Escopo
 
-Foram revisados quatro serviços adicionais:
+Foram revisados três serviços adicionais:
 
 1. Emissão de CHA de Veleiro;
 2. Concessão de CHA por correspondência/equivalência profissional;
-3. Renovação de CHA de ARA/MSA/CPA com agregação da categoria de Motonauta;
-4. Pedido de revisão de prova de Capitão-Amador.
+3. Renovação de CHA de ARA/MSA/CPA com agregação da categoria de Motonauta.
 
 A aplicação continua limitada a **preencher formulários**. Documentos exigidos pela
 Marinha para protocolo não são tratados como bloqueios do gerador; uploads existem apenas
@@ -62,25 +61,6 @@ Arquivo local preparado:
 Estado: DRAFT até o PDF 3-A entrar no caminho canônico, seu hash ser confirmado e a
 geração pelo motor real ser revisada.
 
-## Pedido de revisão de prova de Capitão-Amador
-
-Base: NORMAM-211/DPC, Anexo 5-A, regras do exame e Apêndice I.
-
-O procedimento exige o requerimento e o formulário "Pedido de Revisão de Prova". O 5-H
-contém a opção 12 específica para esse serviço.
-
-A posição da opção 12 do 5-H foi revisada visualmente. O Apêndice I foi extraído localmente
-das páginas PDF 238-239 da NORMAM-211/DPC 2026 e recebeu mapping DRAFT, cobrindo:
-nome, CPF, identidade, órgão emissor, e-mail, telefones, data do exame, número da questão,
-resposta do gabarito, resposta do candidato, fundamentação, bibliografia, local e data.
-
-Arquivo local preparado:
-- NORMAM-211_Anexo-5-A-I_Pedido-Revisao-Prova.pdf
-- SHA-256: 73D0C89526D83D88FA773E1C26FC300B2107389C676B11E664A6C5981D64A415
-
-Estado: DRAFT até o PDF entrar no caminho canônico, o hash ser confirmado e a geração
-pelo motor real ser revisada.
-
 ## Anexo 5-G
 
 Também foi extraído localmente para conferência documental:
@@ -99,7 +79,6 @@ visualmente as posições das opções:
 - 1 - equivalência profissional;
 - 2 - emissão/renovação;
 - 3 - renovação com agregação MTA;
-- 12 - revisão de prova de Capitão-Amador.
 
 Nenhuma opção de marina/credenciamento foi promovida como serviço de amador pessoa
 física.
