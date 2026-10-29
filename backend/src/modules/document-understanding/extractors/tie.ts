@@ -811,7 +811,7 @@ function inlineOwnerFallback(
   });
 
   const result: FieldEvidence[] = [];
-  const add = (fieldId: string, item: { line: typeof ordered[number]; value: string } | undefined) => {
+  const add = (fieldId: string, item: { line: (typeof ordered)[number]; value: string } | undefined) => {
     if (!item) return;
     result.push({
       fieldId,
