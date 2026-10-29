@@ -181,7 +181,7 @@ const requestPlacements: readonly CoordinatePlacement[] = [
   top('vessel.registration', 455, 391, 75, 6.2, 0, true),
   top('vessel.length', 165, 419, 80, 6.5),
   top('vessel.hullId', 330, 419, 95, 6.2),
-  top('vessel.classification', 480, 419, 55, 5.5),
+  top('vessel.classification', 445, 419, 90, 5.5),
   top('vessel.navigationArea', 69, 455, 10, 8, 0, false, 'interior', undefined,
     ['navegação interior']),
   top('vessel.navigationArea', 123, 455, 10, 8, 0, false, 'costeira', undefined,
