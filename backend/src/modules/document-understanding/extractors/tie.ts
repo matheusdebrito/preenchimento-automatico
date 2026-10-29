@@ -76,7 +76,7 @@ const serial = (value: string): boolean => {
 };
 
 const dateValue = (value: string): boolean =>
-  /^\d{2}\/\d{2}\/\d{4}$/.test(value.trim());
+  /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value.trim());
 const yesNo = (value: string): boolean =>
   /^(?:SIM|NAO|NÃO|YES|NO)$/i.test(value.trim());
 const issuePlace = (value: string): boolean =>
