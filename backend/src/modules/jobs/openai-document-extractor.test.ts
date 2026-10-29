@@ -204,7 +204,7 @@ describe('OpenAI document extractor', () => {
         OPENAI_API_KEY: 'test-key',
         OPENAI_MODEL: 'modelo-nao-permitido',
       },
-    })).rejects.toMatchObject<Partial<OpenAiDocumentError>>({
+    })).rejects.toMatchObject({
       code: 'not_configured',
     });
   });
