@@ -85,6 +85,21 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
+export interface LiveReviewField {
+  id: string;
+  label: string;
+  valueKind: string;
+  required: boolean;
+}
+
+export interface LiveReviewForm {
+  formVersionId: string;
+  formId: string;
+  name: string;
+  description?: string;
+  fields: readonly LiveReviewField[];
+}
+
 export interface LiveService {
   id: string;
   title: string;
@@ -92,6 +107,7 @@ export interface LiveService {
   creditCost: number;
   questions: readonly {id:string;label:string;options:readonly string[]}[];
   documentRequirements: readonly {id:string;label:string;description?:string;required:boolean}[];
-  reviewFields: readonly {id:string;label:string;valueKind:string;required:boolean}[];
+  reviewFields: readonly LiveReviewField[];
+  reviewForms?: readonly LiveReviewForm[];
   formVersionIds: readonly string[];
 }
