@@ -2,7 +2,7 @@ import type { FieldDefinition } from './contracts.js';
 
 /** Shared semantic identifiers. They do not belong to any particular PDF or service. */
 export const additionalFields: readonly FieldDefinition[] = [
-  { id: "person.streetNumber", label: "Número do endereço", valueKind: 'text' },
+  { id: "person.streetNumber", label: "Número", valueKind: 'text' },
   { id: "person.apartment", label: "Complemento", valueKind: 'text' },
   { id: "person.city", label: "Cidade", valueKind: 'text' },
   { id: "person.state", label: "UF", valueKind: 'text' },
@@ -37,8 +37,8 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: "sale.price", label: "Valor da venda", valueKind: 'text' },
   { id: "seller.identity", label: "Identidade do vendedor", valueKind: 'text' },
   { id: "seller.issuer", label: "Órgão emissor do vendedor", valueKind: 'text' },
-  { id: "seller.address", label: "Endereço do vendedor", valueKind: 'text' },
-  { id: "seller.streetNumber", label: "Número do endereço do vendedor", valueKind: 'text' },
+  { id: "seller.address", label: "Rua do vendedor", valueKind: 'text' },
+  { id: "seller.streetNumber", label: "Número do vendedor", valueKind: 'text' },
   { id: "seller.neighborhood", label: "Bairro do vendedor", valueKind: 'text' },
   { id: "seller.city", label: "Cidade do vendedor", valueKind: 'text' },
   { id: "seller.state", label: "UF do vendedor", valueKind: 'text' },
@@ -83,8 +83,8 @@ export const additionalFields: readonly FieldDefinition[] = [
   // automaticamente ao comprador, vendedor ou requerente do serviço.
   { id: 'registeredOwner.fullName', label: 'Nome do proprietário registrado', valueKind: 'text' },
   { id: 'registeredOwner.taxId', label: 'CPF/CNPJ do proprietário registrado', valueKind: 'text' },
-  { id: 'registeredOwner.address', label: 'Endereço do proprietário registrado', valueKind: 'text' },
-  { id: 'registeredOwner.streetNumber', label: 'Número do endereço do proprietário registrado', valueKind: 'text' },
+  { id: 'registeredOwner.address', label: 'Rua do proprietário registrado', valueKind: 'text' },
+  { id: 'registeredOwner.streetNumber', label: 'Número do proprietário registrado', valueKind: 'text' },
   { id: 'registeredOwner.apartment', label: 'Complemento do proprietário registrado', valueKind: 'text' },
   { id: 'registeredOwner.neighborhood', label: 'Bairro do proprietário registrado', valueKind: 'text' },
   { id: 'registeredOwner.postalCode', label: 'CEP do proprietário registrado', valueKind: 'text' },
@@ -98,8 +98,8 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'coOwner.identity', label: 'Identidade do coproprietário', valueKind: 'text' },
   { id: 'coOwner.issuer', label: 'Órgão emissor do coproprietário', valueKind: 'text' },
   { id: 'coOwner.state', label: 'UF do coproprietário', valueKind: 'text' },
-  { id: 'coOwner.address', label: 'Endereço do coproprietário', valueKind: 'text' },
-  { id: 'coOwner.streetNumber', label: 'Número do endereço do coproprietário', valueKind: 'text' },
+  { id: 'coOwner.address', label: 'Rua do coproprietário', valueKind: 'text' },
+  { id: 'coOwner.streetNumber', label: 'Número do coproprietário', valueKind: 'text' },
   { id: 'coOwner.apartment', label: 'Complemento do coproprietário', valueKind: 'text' },
   { id: 'coOwner.cityState', label: 'Cidade/UF do coproprietário', valueKind: 'text' },
   { id: 'coOwner.postalCode', label: 'CEP do coproprietário', valueKind: 'text' },
