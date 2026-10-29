@@ -160,7 +160,7 @@ export const vesselForms: readonly FormDefinition[] = [
     description: 'NORMAM-211/DPC 2026 - Anexo 2-I.' },
   { id: 'autorizacao-transferencia-er', name: 'Autorização para Transferência de Propriedade',
     description: 'NORMAM-211/DPC 2026 - Anexo 2-K.' },
-  { id: 'termo-responsabilidade-er', name: 'Termo de Responsabilidade para Inscrição/Transferência',
+  { id: 'termo-responsabilidade-er', name: 'Termo de Responsabilidade de Construção/Alteração',
     description: 'NORMAM-211/DPC 2026 - Anexo 3-C.' },
 ];
 
@@ -218,8 +218,8 @@ export const vesselVersions: readonly FormVersion[] = [
     id: 'termo-responsabilidade-er-2026-v1', formId: 'termo-responsabilidade-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 3-C',
     regulation: 'NORMAM-211/DPC 2026, Anexo 3-C',
-    sourceUrl: 'https://www.marinha.mil.br/cfpa/sites/www.marinha.mil.br.cfpa/files/2026-02/ANEXO%203-C%20%28TERMO%20DE%20RESPONSABILIDADE%29.pdf',
-    verifiedAt: '2026-10-29', sha256: '706D23CA1BA72F596AC3C959A2D64363C596877355B9F3A637EE371873E15AA0', templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
+    sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
+    verifiedAt: '2026-10-29', sha256: 'F7B75FC1D6C74317DEA7D6AC3CC61A74EDFAB7C84182578C74C8BD871D23722F', templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
 ];
 
@@ -301,8 +301,8 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
   {
     id: 'segunda-via-tie-embarcacao',
-    title: '2ª via do TIE/TIEM por perda, roubo ou extravio',
-    description: scopeNote,
+    title: 'Renovação do TIE/TIEM por perda, roubo ou extravio',
+    description: scopeNote + ' O TIE digital não possui segunda via; perda ou extravio do modelo antigo segue o fluxo de renovação.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ dataChanged: true }),
     documentRequirements: requirements(),
@@ -310,7 +310,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados ou características da embarcação',
-    description: 'Em validação até incorporar o termo de responsabilidade aplicável às alterações.',
+    description: 'Em validação normativa. O Anexo 3-C só se aplica em situações específicas de construção/alteração; não deve ser incluído automaticamente.',
     creditCost: 1, status: 'DRAFT',
     questions: questions({ tie: true }),
     documentRequirements: requirements({ tie: true, origin: true }),
@@ -413,7 +413,7 @@ const responsibility = (serviceId: string, order: number): ServiceForm => ({
 export const vesselServiceForms: readonly ServiceForm[] = [
   request('inscricao-embarcacao', 1, 'inscricao'),
   bsade('inscricao-embarcacao', 2, 'inscricao'), bade('inscricao-embarcacao', 3),
-  residence('inscricao-embarcacao', 4), responsibility('inscricao-embarcacao', 5),
+  residence('inscricao-embarcacao', 4),
 
   request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
   bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'), bade('transferencia-propriedade-embarcacao', 3),
@@ -422,7 +422,6 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
   residence('transferencia-propriedade-embarcacao', 5),
   lostTie('transferencia-propriedade-embarcacao', 6),
-  responsibility('transferencia-propriedade-embarcacao', 7),
 
   request('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
   bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'), bade('transferencia-jurisdicao-embarcacao', 3),
@@ -437,7 +436,6 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
   residence('transferencia-propriedade-jurisdicao-embarcacao', 5),
   lostTie('transferencia-propriedade-jurisdicao-embarcacao', 6),
-  responsibility('transferencia-propriedade-jurisdicao-embarcacao', 7),
 
   request('renovacao-tie-embarcacao', 1, 'renovacao'),
   bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados',
