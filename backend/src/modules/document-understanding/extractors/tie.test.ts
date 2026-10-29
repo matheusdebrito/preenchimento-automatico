@@ -168,6 +168,58 @@ describe('tieDocumentExtractor', () => {
       .toBe('9');
   });
 
+  it('usa o layout tabular para mapear datas, motores e hipoteca do TIE/TIEM', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
+      '4019909971',
+      'DATA DE VALIDADE / EXPIRATION DATE',
+      '31/07/2028',
+      'QUANTIDADE DE MOTORES / QUANTITY OF ENGINES',
+      '1',
+      'ALIENAÇÃO FIDUCIÁRIA / CHATTEL MORTGAGE',
+      'NÃO',
+      'LOCAL DE EMISSÃO / PLACE OF ISSUE',
+      'São Sebastião',
+      'DATA DE EMISSÃO / DATE OF ISSUE',
+      '31/07/2023',
+    ]), context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.registration']).toBe('4019909971');
+    expect(values['vessel.expirationDate']).toBe('31/07/2028');
+    expect(values['vessel.engineCount']).toBe('1');
+    expect(values['vessel.mortgaged']).toBe('NÃO');
+    expect(values['vessel.issuePlace']).toBe('São Sebastião');
+    expect(values['vessel.issueDate']).toBe('31/07/2023');
+  });
+
+  it('mapeia campos exclusivos do TIEM antigo sem importar rótulos vizinhos', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'TÍTULO DE INSCRIÇÃO DE EMBARCAÇÃO MIÚDA',
+      'Nº DE INSCRIÇÃO',
+      '441M20200001',
+      'DATA INSCRIÇÃO',
+      '28/01/1995',
+      'VALIDADE',
+      '5/12/2019',
+      'POTÊNCIA (HP)',
+      '85.00',
+      'NOME FABRICANTE',
+      'YAMAHA',
+      'HIPOTECADA: NÃO',
+      'CREDOR HIPOTECÁRIO',
+      'BANCO TESTE',
+    ]), context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['vessel.registration']).toBe('441M20200001');
+    expect(values['vessel.registrationDate']).toBe('28/01/1995');
+    expect(values['vessel.motorPower']).toBe('85.00');
+    expect(values['vessel.motorBrand']).toBe('YAMAHA');
+    expect(values['vessel.mortgaged']).toBe('NÃO');
+    expect(values['vessel.mortgageCreditor']).toBe('BANCO TESTE');
+  });
+
   it('extrai características compartilhadas confirmadas nos modelos TIE/TIEM', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
