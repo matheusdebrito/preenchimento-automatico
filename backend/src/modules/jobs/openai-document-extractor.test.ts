@@ -64,6 +64,18 @@ describe('OpenAI document extractor', () => {
                 sourceRequirementId: 'tie',
                 confidence: 'medium',
               },
+              {
+                fieldId: 'vessel.registration',
+                value: '999M20209999',
+                sourceRequirementId: 'buyer-identity',
+                confidence: 'high',
+              },
+              {
+                fieldId: 'person.fullName',
+                value: 'OUTRO NOME',
+                sourceRequirementId: 'tie',
+                confidence: 'high',
+              },
             ],
             documents: [
               { requirementId: 'buyer-identity', status: 'readable' },
@@ -150,6 +162,16 @@ describe('OpenAI document extractor', () => {
     // Invalid CPF from an external model response must never be promoted.
     expect(values['person.cpf']).toBeUndefined();
     expect(values['vessel.registration']).toBe('441M20200001');
+    expect(result.evidence.filter((item) => item.fieldId === 'person.fullName'))
+      .toEqual([expect.objectContaining({
+        value: 'MARIA DE SOUZA',
+        sourceId: 'buyer-identity',
+      })]);
+    expect(result.evidence.filter((item) => item.fieldId === 'vessel.registration'))
+      .toEqual([expect.objectContaining({
+        value: '441M20200001',
+        sourceId: 'tie',
+      })]);
     expect(result.diagnostics).toEqual([
       expect.objectContaining({
         requirementId: 'buyer-identity',
