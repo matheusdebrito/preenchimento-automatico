@@ -110,7 +110,7 @@ export interface LiveService {
     label:string;
     options:readonly string[];
     unavailableOptions?:readonly string[];
-    conditions?:readonly {questionId:string;equals:string}[];
+    conditions?:readonly {questionId:string;equals?:string;oneOf?:readonly string[]}[];
   }[];
   documentRequirements: readonly {id:string;label:string;description?:string;required:boolean}[];
   reviewFields: readonly LiveReviewField[];
