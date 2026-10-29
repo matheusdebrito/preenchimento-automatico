@@ -109,6 +109,40 @@ describe('extractSemanticConcepts', () => {
       item.fieldId === 'vessel.motorSerial')?.value).toBe('6AN123456');
   });
 
+  it('usa a dica espacial para rejeitar um valor plausível porém distante da âncora', () => {
+    const source: DocumentObservation = {
+      ...observation([]),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'NÚMERO DE INSCRIÇÃO', confidence: .99,
+            box: [10, 10, 180, 30], polygon: null },
+          { id: '0:1', page: 0, text: '3810056831', confidence: .99,
+            box: [10, 180, 140, 202], polygon: null },
+        ],
+      }],
+    };
+    const localConcepts: readonly SemanticFieldConcept[] = [{
+      fieldId: 'vessel.registration',
+      anchor: 'INSCRICAO',
+      labels: [/^\s*N[ÚU]MERO\s+DE\s+INSCRI[CÇ][AÃ]O\s*(?:[:-]\s*)?(.*)$/i],
+      preferredDirections: ['below'],
+      allowSequentialWithGeometry: false,
+      spatialHint: {
+        maxBelowDistanceHeights: 3,
+        maxBelowHorizontalOffsetHeights: 4,
+      },
+      validate: (value) => /^\d{8,12}$/.test(value.trim()),
+    }];
+
+    const result = extractSemanticConcepts(source, context, localConcepts);
+    expect(result.evidence).toEqual([]);
+    expect(result.assessments[0]).toEqual(
+      expect.objectContaining({ fieldId: 'vessel.registration', status: 'NOT_FOUND' }),
+    );
+  });
+
   it('permite controlar fallback sequencial por conceito sem afetar os demais', () => {
     const source: DocumentObservation = {
       ...observation([]),
