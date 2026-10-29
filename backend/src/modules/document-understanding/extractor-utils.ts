@@ -107,6 +107,14 @@ function horizontalOverlap(a: ObservationLine, b: ObservationLine): number {
   return Math.max(0, Math.min(a.box[2], b.box[2]) - Math.max(a.box[0], b.box[0]));
 }
 
+function horizontalOverlapRatio(a: ObservationLine, b: ObservationLine): number {
+  if (!a.box || !b.box) return 0;
+  const overlap = horizontalOverlap(a, b);
+  const aWidth = Math.max(1, a.box[2] - a.box[0]);
+  const bWidth = Math.max(1, b.box[2] - b.box[0]);
+  return overlap / Math.min(aWidth, bWidth);
+}
+
 function looksMaskedPlaceholder(value: string): boolean {
   const compact = value.replace(/\s+/g, '');
   if (compact.length < 3) return false;
@@ -268,12 +276,14 @@ export function anchoredCandidates(
 
         if (direction === 'below' && anchor.box && !matched) {
           const height = boxHeight(anchor);
+          const anchorCenterX = (anchor.box[0] + anchor.box[2]) / 2;
           const belowRegion = positioned.filter((line) => {
             if (line === anchor || !line.box) return false;
             const dy = line.box[1] - anchor.box![3];
             if (dy < -height * 0.25 || dy > height * maxBelowDistanceHeights) return false;
-            return horizontalOverlap(anchor, line) > 0 ||
-              Math.abs(line.box[0] - anchor.box![0]) <=
+            const lineCenterX = (line.box[0] + line.box[2]) / 2;
+            return horizontalOverlapRatio(anchor, line) >= 0.25 ||
+              Math.abs(lineCenterX - anchorCenterX) <=
                 height * maxBelowHorizontalOffsetHeights;
           });
           const belowBoundaryY = belowRegion
@@ -281,10 +291,9 @@ export function anchoredCandidates(
               if (!isBoundary(line.text) || !line.box) return false;
               // Labels from a neighboring column must not close this field's
               // vertical cell. Only same-column/overlapping boundaries do.
-              const overlap = horizontalOverlap(anchor, line);
-              const anchorCenterX = (anchor.box![0] + anchor.box![2]) / 2;
+              const overlapRatio = horizontalOverlapRatio(anchor, line);
               const lineCenterX = (line.box[0] + line.box[2]) / 2;
-              return overlap > 0 ||
+              return overlapRatio >= 0.35 ||
                 Math.abs(lineCenterX - anchorCenterX) <= height * 1.5;
             })
             .map((line) => line.box![1])
@@ -294,18 +303,17 @@ export function anchoredCandidates(
             return line.box![1] < belowBoundaryY;
           }).map((line) => {
             const distance = Math.max(0, line.box![1] - anchor.box![3]);
-            const overlap = horizontalOverlap(anchor, line);
-            const horizontalOffset = overlap > 0
-              ? 0
-              : Math.abs(line.box![0] - anchor.box![0]);
+            const overlapRatio = horizontalOverlapRatio(anchor, line);
+            const lineCenterX = (line.box![0] + line.box![2]) / 2;
+            const horizontalOffset = Math.abs(lineCenterX - anchorCenterX);
             return {
               line,
               score: geometricSelectionScore(
                 anchor,
                 line,
                 1 - distance / Math.max(1, height * maxBelowDistanceHeights),
-                overlap > 0
-                  ? 1
+                overlapRatio >= 0.25
+                  ? Math.max(overlapRatio, 0.6)
                   : 1 - horizontalOffset /
                     Math.max(1, height * maxBelowHorizontalOffsetHeights),
                 Boolean(match),
