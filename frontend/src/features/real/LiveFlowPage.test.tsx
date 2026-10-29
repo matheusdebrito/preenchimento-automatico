@@ -494,7 +494,11 @@ describe('jornada real isolada da demonstração', () => {
         sources: { 'person.fullName': 'source' },
       });
       if (path.endsWith('/review')) {
-        return json({ error: 'invalid_field_value', fieldId: 'sale.date' }, 422);
+        return json({
+          error: 'invalid_field_value',
+          fieldId: 'sale.date',
+          reason: 'invalid_date',
+        }, 422);
       }
       if (path === '/api/jobs/job-invalid-date' && !init?.method) {
         return json({ status: 'REVIEW', downloads: [] });
@@ -520,6 +524,56 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByText(/Confira Data da venda: use uma data válida/i)).toBeTruthy();
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(0);
+  }, 25000);
+
+  it('mostra o campo exato quando a falha só aparece durante a geração do PDF', async () => {
+    const longFieldService = {
+      ...service,
+      reviewFields: [
+        { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+      ],
+    };
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) {
+        return json({ service: longFieldService });
+      }
+      if (path.endsWith('/quote')) return json({ service: longFieldService });
+      if (path === '/api/jobs' && init?.method === 'POST') {
+        return json({ id: 'job-overflow' }, 201);
+      }
+      if (path.endsWith('/extract')) {
+        return json({ fields: {}, sources: {}, diagnostics: [] });
+      }
+      if (path.endsWith('/review')) return json({ confirmed: true });
+      if (path.endsWith('/generate')) {
+        return json({
+          error: 'invalid_field_value',
+          fieldId: 'person.fullName',
+          reason: 'text_overflow',
+        }, 422);
+      }
+      if (path === '/api/jobs/job-overflow' && !init?.method) {
+        return json({ status: 'REVIEW', downloads: [] });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', {
+      name: 'Continuar sem anexos — preencher manualmente',
+    }));
+    const name = await screen.findByLabelText(/Nome completo/);
+    await user.type(name, 'NOME MUITO LONGO PARA O ESPAÇO DO FORMULÁRIO');
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+
+    expect(await screen.findByText(
+      /Confira Nome completo: possui texto maior do que o espaço disponível no formulário/i,
+    )).toBeTruthy();
   }, 25000);
 
   it('permite somente um RG, OCR sem sugestões e CPF corrigido no mesmo job', async () => {
@@ -551,7 +605,11 @@ describe('jornada real isolada da demonstração', () => {
       if (path.endsWith('/review')) {
         reviewAttempts++;
         return reviewAttempts === 1
-          ? json({ error: 'invalid_field_value', fieldId: 'person.cpf' }, 422)
+          ? json({
+              error: 'invalid_field_value',
+              fieldId: 'person.cpf',
+              reason: 'invalid_cpf',
+            }, 422)
           : json({ confirmed: true });
       }
       if (path.endsWith('/generate')) return json({ downloads: ['requerimento-ma-v1'] });
