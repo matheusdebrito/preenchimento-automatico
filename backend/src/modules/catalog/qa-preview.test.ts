@@ -33,8 +33,16 @@ describe('prévia local do MESMO serviço de transferência', () => {
     expect(publicServices(catalog)).toHaveLength(7);
 
     // The QA catalog is an isolated clone. It may promote mappings internally
-    // so the local preview can exercise the real forms without publishing them.
-    expect(qa.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
+    // only when the corresponding PDF version is already VERIFIED.
+    for (const mapping of qa.mappings) {
+      const version = qa.versions.find((item) => item.id === mapping.formVersionId);
+      if (version?.status === 'VERIFIED') {
+        expect(mapping.status).toBe('APPROVED');
+      } else {
+        expect(mapping.status).not.toBe('APPROVED');
+      }
+    }
+    expect(validateCatalog(qa)).toEqual([]);
     expect(qa.services).toHaveLength(catalog.services.length);
     expect(qa.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.id)
       .toBe(QA_PREVIEW_SERVICE_ID);
