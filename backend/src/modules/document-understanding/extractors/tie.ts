@@ -38,7 +38,7 @@ const strongHullIdentifier = (value: string): boolean => {
 
 const registration = (value: string): boolean => {
   const text = compactIdentifier(value);
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(text) ||
+  if (/^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(text) ||
     /^(?:19|20)\d{2}$/.test(text)) return false;
   return /^[A-Z0-9./-]{4,30}$/i.test(text) && /\d/.test(text) &&
     !strongHullIdentifier(text);
@@ -864,6 +864,14 @@ function runTieExtraction(
     }
   }
   const evidence = [...semantic.evidence, ...ownerEvidence];
+
+  const mortgageStatus = evidence.find((item) => item.fieldId === 'vessel.mortgaged');
+  if (!mortgageStatus || normalizeText(mortgageStatus.value) !== 'SIM') {
+    const creditorIndex = evidence.findIndex(
+      (item) => item.fieldId === 'vessel.mortgageCreditor');
+    if (creditorIndex >= 0) evidence.splice(creditorIndex, 1);
+  }
+
   const byAssessment = new Map(semantic.assessments.map((item) => [item.fieldId, item]));
   const assessments = tieFieldConcepts.map((concept) =>
     byAssessment.get(concept.fieldId) ?? {
@@ -871,6 +879,17 @@ function runTieExtraction(
       status: 'NOT_FOUND' as const,
       confidence: null,
     });
+  const creditorAssessmentIndex = assessments.findIndex(
+    (item) => item.fieldId === 'vessel.mortgageCreditor');
+  if (creditorAssessmentIndex >= 0 &&
+    !evidence.some((item) => item.fieldId === 'vessel.mortgageCreditor')) {
+    assessments[creditorAssessmentIndex] = {
+      fieldId: 'vessel.mortgageCreditor',
+      status: 'NOT_FOUND',
+      confidence: null,
+    };
+  }
+
   assessments.push(...owners.assessments.map((assessment) => {
     const fallback = ownerEvidence.find((item) => item.fieldId === assessment.fieldId);
     return fallback
