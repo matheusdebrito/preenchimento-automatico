@@ -1336,6 +1336,143 @@
   box-shadow: 0 0 0 2px var(--color-danger-soft);
 }
 
+/* Manual/review entry grouped by the exact PDFs that will be generated. */
+.live-review-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  color: var(--color-muted-strong);
+  font-size: .875rem;
+}
+.live-review-toolbar .live-text-button {
+  flex: none;
+  font-weight: 700;
+}
+.live-review-forms {
+  display: grid;
+  gap: .875rem;
+  min-width: 0;
+}
+.live-review-form {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+.live-review-form--open {
+  border-color: var(--color-border-strong);
+}
+.live-review-form--error {
+  border-color: var(--color-danger);
+}
+.live-review-form__trigger {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .875rem;
+  padding: 1rem 1.125rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.live-review-form__trigger:hover {
+  background: var(--color-page);
+}
+.live-review-form__trigger:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+.live-review-form__icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  place-items: center;
+  border-radius: .7rem;
+  background: var(--color-mint);
+  color: var(--color-teal-strong);
+}
+.live-review-form__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.live-review-form__heading {
+  display: grid;
+  min-width: 0;
+  gap: .2rem;
+}
+.live-review-form__heading strong {
+  color: var(--color-navy);
+  font-size: .975rem;
+}
+.live-review-form__heading span {
+  color: var(--color-muted-strong);
+  font-size: .8rem;
+  line-height: 1.4;
+}
+.live-review-form__chevron {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--color-muted-strong);
+  transition: transform var(--transition);
+}
+.live-review-form--open .live-review-form__chevron {
+  transform: rotate(180deg);
+}
+.live-review-form__content {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem 1.125rem 1.125rem;
+  border-top: 1px solid var(--color-border);
+}
+.live-review-form__description {
+  margin: 0;
+  color: var(--color-muted-strong);
+  font-size: .875rem;
+  line-height: 1.5;
+}
+.live-review-form__fields {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.live-review-field {
+  min-width: 0;
+}
+@media (min-width: 760px) {
+  .live-review-form__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+@media (max-width: 540px) {
+  .live-review-toolbar {
+    align-items: flex-start;
+  }
+  .live-review-form__trigger {
+    gap: .7rem;
+    padding: .875rem;
+  }
+  .live-review-form__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+  .live-review-form__content {
+    padding: .875rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-review-form__chevron {
+    transition: none;
+  }
+}
+
 
 /* OCR inspector */
 .ocr-inspector,
