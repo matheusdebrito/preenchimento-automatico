@@ -1,4 +1,4 @@
-import type { CatalogDefinition, ServiceForm } from './contracts.js';
+import type { CatalogDefinition } from './contracts.js';
 import { catalog } from './catalog.js';
 
 /**
@@ -8,22 +8,7 @@ import { catalog } from './catalog.js';
  * the official catalog, and every output is watermarked as an unusable sample.
  * NODE_ENV=development + DEV_QA_PREVIEW=true are required at startup.
  */
-export const QA_PREVIEW_SERVICE_ID = 'transferencia-moto-aquatica';
-
-const qaFormRelations: readonly ServiceForm[] = [
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'requerimento-ma-v1',
-    order: 1, fixedValues: { 'process.transferOwnership': 'X' } },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'bdmoto-v1',
-    order: 2, fixedValues: { 'process.transferOwnership': 'X' } },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'autorizacao-transferencia-ma-v1',
-    order: 3, conditions: [{ questionId: 'transferAuthorization', equals: 'anexo_2d' }] },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'comunicacao-transferencia-ma-v1',
-    order: 4, conditions: [{ questionId: 'sellerCommunication', equals: 'sim' }] },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'declaracao-perda-tie-ma-v1',
-    order: 5, conditions: [{ questionId: 'tieSituation', equals: 'extraviado' }] },
-  { serviceId: QA_PREVIEW_SERVICE_ID, formVersionId: 'declaracao-residencia-ma-v1',
-    order: 6, conditions: [{ questionId: 'residenceProof', equals: 'declaracao_1c' }] },
-];
+export const QA_PREVIEW_SERVICE_ID = 'transferencia-propriedade-embarcacao';
 
 export function qaPreviewCatalog(): CatalogDefinition {
   return {
@@ -45,6 +30,5 @@ export function qaPreviewCatalog(): CatalogDefinition {
         status: 'AVAILABLE' as const,
         creditCost: 0,
       } : service),
-    serviceForms: [...catalog.serviceForms, ...qaFormRelations],
   };
 }
