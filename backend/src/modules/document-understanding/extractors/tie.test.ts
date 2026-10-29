@@ -158,6 +158,16 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.passengerCount']).toBe('3');
   });
 
+  it('extrai passageiros quando o OCR preserva apenas a barra do rótulo bilíngue', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NÚMERO DE PASSAGEIROS /',
+      '9',
+    ]), context);
+
+    expect(evidence.find((item) => item.fieldId === 'vessel.passengerCount')?.value)
+      .toBe('9');
+  });
+
   it('extrai características compartilhadas confirmadas nos modelos TIE/TIEM', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
