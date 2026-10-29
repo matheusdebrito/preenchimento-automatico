@@ -959,4 +959,26 @@ describe('tieDocumentExtractor', () => {
     expect(values['coOwner.neighborhood']).toBeUndefined();
   });
 
+  it('não usa observações próximas como cor quando o valor da cor está mascarado', () => {
+    const source: DocumentObservation = {
+      engine: 'paddleocr', engineVersion: '3.7.0', model: 'PP-OCRv6', elapsedMs: 10,
+      pages: [{
+        page: 0, orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'COR PREDOMINANTE DO CASCO',
+            confidence: .98, box: [20, 20, 240, 42], polygon: null },
+          { id: '0:1', page: 0, text: '******',
+            confidence: .92, box: [20, 48, 120, 70], polygon: null },
+          { id: '0:2', page: 0, text: 'OUTRAS OBSERVACOES',
+            confidence: .98, box: [20, 96, 240, 118], polygon: null },
+          { id: '0:3', page: 0, text: 'VERDE',
+            confidence: .98, box: [20, 126, 100, 148], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = tieDocumentExtractor.extract(source, context);
+    expect(evidence.some((item) => item.fieldId === 'vessel.hullColor')).toBe(false);
+  });
+
 });
