@@ -7,7 +7,7 @@ import { Notice } from '../../components/ui/Notice';
 import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
 import { formatBrazilianDateInput } from '../../lib/date-mask';
-import type { LiveReviewForm, LiveService } from '../../lib/api';
+import type { LiveReviewField, LiveReviewForm, LiveService } from '../../lib/api';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
@@ -42,6 +42,89 @@ function firstReviewFormIds(service: LiveService): string[] {
   return first ? [first.formVersionId] : [];
 }
 
+type ReviewFieldGroup = {
+  id: string;
+  title: string;
+  fields: readonly LiveReviewField[];
+};
+
+function reviewFieldGroup(fieldId: string): { id: string; title: string; order: number } {
+  const suffix = fieldId.split('.').slice(1).join('.');
+  const addressFields = new Set([
+    'address', 'streetNumber', 'apartment', 'neighborhood', 'city', 'state', 'postalCode',
+    'cityState',
+  ]);
+  const contactFields = new Set(['phone', 'mobile', 'email', 'fax']);
+  const identityFields = new Set([
+    'identity', 'identityType', 'issuer', 'issueDate', 'documentOrigin',
+    'parent1Name', 'parent2Name',
+  ]);
+  const personalFields = new Set([
+    'fullName', 'cpf', 'taxId', 'nationality', 'birthplace', 'birthDate',
+  ]);
+
+  if (fieldId.startsWith('person.')) {
+    if (personalFields.has(suffix)) return { id: 'person', title: 'Dados pessoais', order: 10 };
+    if (identityFields.has(suffix)) return { id: 'person-document', title: 'Documento de identificação', order: 20 };
+    if (addressFields.has(suffix)) return { id: 'person-address', title: 'Endereço', order: 30 };
+    if (contactFields.has(suffix)) return { id: 'person-contact', title: 'Contato', order: 40 };
+    return { id: 'person-other', title: 'Outros dados pessoais', order: 45 };
+  }
+  if (fieldId.startsWith('seller.')) {
+    if (personalFields.has(suffix)) return { id: 'seller', title: 'Dados do vendedor', order: 50 };
+    if (identityFields.has(suffix)) return { id: 'seller-document', title: 'Documento do vendedor', order: 60 };
+    if (addressFields.has(suffix)) return { id: 'seller-address', title: 'Endereço do vendedor', order: 70 };
+    if (contactFields.has(suffix)) return { id: 'seller-contact', title: 'Contato do vendedor', order: 80 };
+    return { id: 'seller-other', title: 'Outros dados do vendedor', order: 85 };
+  }
+  if (fieldId.startsWith('coOwner.')) {
+    if (personalFields.has(suffix)) return { id: 'co-owner', title: 'Dados do coproprietário', order: 90 };
+    if (identityFields.has(suffix)) return { id: 'co-owner-document', title: 'Documento do coproprietário', order: 100 };
+    if (addressFields.has(suffix)) return { id: 'co-owner-address', title: 'Endereço do coproprietário', order: 110 };
+    if (contactFields.has(suffix)) return { id: 'co-owner-contact', title: 'Contato do coproprietário', order: 120 };
+    return { id: 'co-owner-other', title: 'Outros dados do coproprietário', order: 125 };
+  }
+  if (fieldId.startsWith('registeredOwner.')) {
+    if (addressFields.has(suffix)) return { id: 'registered-owner-address', title: 'Endereço do proprietário registrado', order: 140 };
+    return { id: 'registered-owner', title: 'Proprietário registrado', order: 130 };
+  }
+  if (fieldId.startsWith('declarant.')) {
+    if (personalFields.has(suffix)) return { id: 'declarant', title: 'Dados do declarante', order: 150 };
+    if (identityFields.has(suffix)) return { id: 'declarant-document', title: 'Documento do declarante', order: 160 };
+    if (contactFields.has(suffix)) return { id: 'declarant-contact', title: 'Contato do declarante', order: 170 };
+    return { id: 'declarant-other', title: 'Outros dados do declarante', order: 175 };
+  }
+  if (fieldId.startsWith('sale.')) return { id: 'sale', title: 'Dados da venda', order: 180 };
+  if (fieldId.startsWith('vessel.motor') || fieldId.includes('Propulsion') ||
+    fieldId.startsWith('vessel.fuel') || fieldId.startsWith('vessel.lateralThruster')) {
+    return { id: 'motor', title: 'Motor e propulsão', order: 200 };
+  }
+  if (fieldId.startsWith('vessel.')) return { id: 'vessel', title: 'Dados da embarcação', order: 190 };
+  if (fieldId.startsWith('process.')) return { id: 'process', title: 'Dados do serviço', order: 210 };
+  return { id: 'other', title: 'Outros dados', order: 220 };
+}
+
+function groupReviewFields(fields: readonly LiveReviewField[]): readonly ReviewFieldGroup[] {
+  const groups = new Map<string, ReviewFieldGroup & { order: number }>();
+  for (const field of fields) {
+    const definition = reviewFieldGroup(field.id);
+    const current = groups.get(definition.id);
+    if (current) {
+      groups.set(definition.id, { ...current, fields: [...current.fields, field] });
+    } else {
+      groups.set(definition.id, {
+        id: definition.id,
+        title: definition.title,
+        order: definition.order,
+        fields: [field],
+      });
+    }
+  }
+  return [...groups.values()]
+    .sort((a, b) => a.order - b.order)
+    .map(({ id, title, fields }) => ({ id, title, fields }));
+}
+
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
   const { serviceId } = useParams();
@@ -52,7 +135,7 @@ export function LiveFlowPage() {
   const [values, setValues] = useState<Record<string,string>>({});
   const [sources, setSources] = useState<Record<string,string>>({});
   const [diagnostics, setDiagnostics] = useState<ExtractionDiagnostic[]>([]);
-  const [invalidFieldId, setInvalidFieldId] = useState<string | null>(null);
+  const [invalidFieldIds, setInvalidFieldIds] = useState<string[]>([]);
   const [jobId, setJobId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
@@ -68,17 +151,19 @@ export function LiveFlowPage() {
   const allReviewFormsOpen = reviewForms.length > 0 &&
     reviewForms.every((form) => openReviewFormIds.includes(form.formVersionId));
 
-  const revealReviewField = (fieldId: string) => {
-    const form = reviewForms.find((item) =>
-      item.fields.some((field) => field.id === fieldId && field.required)) ??
-      reviewForms.find((item) => item.fields.some((field) => field.id === fieldId));
-    if (!form) return;
-    setOpenReviewFormIds((current) =>
-      current.includes(form.formVersionId)
-        ? current
-        : [...current, form.formVersionId]);
+  const revealReviewFields = (fieldIds: readonly string[]) => {
+    if (fieldIds.length === 0) return;
+    const formsToOpen = reviewForms
+      .filter((form) => form.fields.some((field) => fieldIds.includes(field.id)))
+      .map((form) => form.formVersionId);
+    setOpenReviewFormIds((current) => [...new Set([...current, ...formsToOpen])]);
+
+    const firstFieldId = fieldIds[0];
+    const firstForm = reviewForms.find((form) =>
+      form.fields.some((field) => field.id === firstFieldId));
+    if (!firstForm || !firstFieldId) return;
     window.setTimeout(() => {
-      document.getElementById(reviewInputId(form.formVersionId, fieldId))?.focus();
+      document.getElementById(reviewInputId(firstForm.formVersionId, firstFieldId))?.focus();
     }, 0);
   };
 
@@ -193,7 +278,7 @@ export function LiveFlowPage() {
     setValues(Object.fromEntries(Object.entries(fields).filter(([key]) => visible.has(key)).map(([key, value]) => [key, service?.reviewFields.find((field) => field.id === key)?.valueKind === 'date' ? formatBrazilianDateInput(value) : value])));
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
-    setInvalidFieldId(null);
+    setInvalidFieldIds([]);
     if (service) setOpenReviewFormIds(firstReviewFormIds(service));
     setStep('review');
   };
@@ -311,7 +396,7 @@ export function LiveFlowPage() {
       setValues({});
       setSources({});
       setDiagnostics([]);
-      setInvalidFieldId(null);
+      setInvalidFieldIds([]);
       setOpenReviewFormIds([]);
       setDownloads([]);
       setStep('questions');
@@ -325,16 +410,19 @@ export function LiveFlowPage() {
   const generate = async () => {
     if (!jobId || !service) return;
     setError('');
-    setInvalidFieldId(null);
-    const missing = reviewForms
-      .flatMap((form) => form.fields)
-      .find((field) => field.required && !values[field.id]?.trim()) ??
-      service.reviewFields.find((field) =>
-        field.required && !values[field.id]?.trim());
-    if (missing) {
-      setInvalidFieldId(missing.id);
-      setError('Preencha o campo obrigatório: ' + missing.label + '.');
-      revealReviewField(missing.id);
+    setInvalidFieldIds([]);
+    const requiredFields = [...reviewForms.flatMap((form) => form.fields), ...service.reviewFields]
+      .filter((field) => field.required)
+      .filter((field, index, all) => all.findIndex((item) => item.id === field.id) === index);
+    const missing = requiredFields.filter((field) => !values[field.id]?.trim());
+    if (missing.length > 0) {
+      const ids = missing.map((field) => field.id);
+      setInvalidFieldIds(ids);
+      setError(
+        'Não é possível gerar os formulários. Preencha os campos obrigatórios pendentes: ' +
+        missing.map((field) => field.label).join(', ') + '.',
+      );
+      revealReviewFields(ids);
       return;
     }
 
@@ -368,9 +456,9 @@ export function LiveFlowPage() {
             : issue.fieldId.endsWith('.cpf')
               ? 'informe um CPF válido com os dígitos verificadores.'
               : 'revise o formato e o valor.';
-        setInvalidFieldId(issue.fieldId);
+        setInvalidFieldIds([issue.fieldId]);
         setError('Confira ' + label + ': ' + tip);
-        revealReviewField(issue.fieldId);
+        revealReviewFields([issue.fieldId]);
       } else {
         setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
       }
@@ -625,8 +713,8 @@ export function LiveFlowPage() {
                         values[field.id]?.trim()).length;
                       const requiredRemaining = form.fields.filter((field) =>
                         field.required && !values[field.id]?.trim()).length;
-                      const hasError = !!invalidFieldId &&
-                        form.fields.some((field) => field.id === invalidFieldId);
+                      const hasError = form.fields.some((field) =>
+                        invalidFieldIds.includes(field.id));
                       const triggerId = 'form-trigger-' + form.formVersionId;
                       const panelId = 'form-panel-' + form.formVersionId;
 
@@ -681,8 +769,12 @@ export function LiveFlowPage() {
                                   Este formulário não exige dados manuais adicionais.
                                 </p>
                               ) : (
-                                <div className="live-review-form__fields">
-                                  {form.fields.map((field) => {
+                                <div className="live-review-form__groups">
+                                  {groupReviewFields(form.fields).map((group) => (
+                                    <section key={group.id} className="live-review-field-group">
+                                      <h3 className="live-review-field-group__title">{group.title}</h3>
+                                      <div className="live-review-form__fields">
+                                  {group.fields.map((field) => {
                                     const sharedFormCount = reviewForms.filter((candidate) =>
                                       candidate.fields.some((candidateField) =>
                                         candidateField.id === field.id)).length;
@@ -703,7 +795,7 @@ export function LiveFlowPage() {
                                           className="field__input"
                                           required={field.required}
                                           value={values[field.id] ?? ''}
-                                          aria-invalid={invalidFieldId === field.id || undefined}
+                                          aria-invalid={invalidFieldIds.includes(field.id) || undefined}
                                           inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
                                           maxLength={field.valueKind === 'date' ? 10 : undefined}
                                           placeholder={field.valueKind === 'date'
@@ -714,9 +806,10 @@ export function LiveFlowPage() {
                                               ? formatBrazilianDateInput(event.target.value)
                                               : event.target.value;
                                             setValues((prev) => ({ ...prev, [field.id]:typed }));
-                                            if (invalidFieldId === field.id) {
-                                              setInvalidFieldId(null);
-                                              setError('');
+                                            if (invalidFieldIds.includes(field.id)) {
+                                              const remaining = invalidFieldIds.filter((id) => id !== field.id);
+                                              setInvalidFieldIds(remaining);
+                                              if (remaining.length === 0) setError('');
                                             }
                                           }}
                                         />
@@ -729,14 +822,19 @@ export function LiveFlowPage() {
                                             ? ' · Este valor é compartilhado com outros formulários'
                                             : ''}
                                         </span>
-                                        {invalidFieldId === field.id
+                                        {invalidFieldIds.includes(field.id)
                                           ? <span className="field__error">
-                                              Confira o valor informado neste campo.
+                                              {field.required && !values[field.id]?.trim()
+                                                ? 'Campo obrigatório pendente.'
+                                                : 'Confira o valor informado neste campo.'}
                                             </span>
                                           : null}
                                       </label>
                                     );
                                   })}
+                                      </div>
+                                    </section>
+                                  ))}
                                 </div>
                               )}
                             </div>
