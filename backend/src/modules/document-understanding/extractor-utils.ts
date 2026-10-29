@@ -16,6 +16,19 @@ export interface ApproximateLabel {
   maxDistance: number;
 }
 
+/**
+ * Field-specific geometric guidance. Distances are expressed in multiples of
+ * the detected anchor height so the same rule works across resolutions.
+ */
+export interface SpatialSearchHint {
+  minConfidence?: number;
+  maxRightDistanceHeights?: number;
+  sameRowToleranceHeights?: number;
+  maxBelowDistanceHeights?: number;
+  maxBelowHorizontalOffsetHeights?: number;
+  maxSequentialLines?: number;
+}
+
 const compactForLabelMatch = (value: string): string =>
   normalizeText(value).replace(/[^A-Z0-9]/g, '');
 
@@ -91,8 +104,16 @@ export function anchoredCandidates(
   allowSequentialWithGeometry = true,
   firstOccurrenceOnly = false,
   approximateLabels: readonly ApproximateLabel[] = [],
+  spatialHint: SpatialSearchHint = {},
 ): readonly ExtractedCandidate[] {
   const candidates: ExtractedCandidate[] = [];
+  const minConfidence = spatialHint.minConfidence ?? 0.35;
+  const maxRightDistanceHeights = spatialHint.maxRightDistanceHeights ?? 16;
+  const sameRowToleranceHeights = spatialHint.sameRowToleranceHeights ?? 1.35;
+  const maxBelowDistanceHeights = spatialHint.maxBelowDistanceHeights ?? 5;
+  const maxBelowHorizontalOffsetHeights =
+    spatialHint.maxBelowHorizontalOffsetHeights ?? 7;
+  const maxSequentialLines = spatialHint.maxSequentialLines ?? 3;
 
   for (const page of observation.pages) {
     const lines = [...page.lines];
@@ -149,15 +170,15 @@ export function anchoredCandidates(
             if (line === anchor || !line.box) return false;
             const center = (line.box[1] + line.box[3]) / 2;
             return line.box[0] >= anchor.box![2] - height * 0.5 &&
-              line.box[0] - anchor.box![2] <= height * 16 &&
-              Math.abs(center - centerY) <= height * 1.35;
+              line.box[0] - anchor.box![2] <= height * maxRightDistanceHeights &&
+              Math.abs(center - centerY) <= height * sameRowToleranceHeights;
           });
           const rightBoundaryX = sameRow
             .filter((line) => isBoundary(line.text))
             .map((line) => line.box![0])
             .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
           const right = sameRow.filter((line) => {
-            if (line.confidence < 0.35 || isBoundary(line.text) || !validate(line.text)) return false;
+            if (line.confidence < minConfidence || isBoundary(line.text) || !validate(line.text)) return false;
             return line.box![0] < rightBoundaryX;
           }).sort((a, b) =>
             Number(a.id.startsWith('phrase:')) - Number(b.id.startsWith('phrase:')) ||
@@ -179,16 +200,17 @@ export function anchoredCandidates(
           const belowRegion = positioned.filter((line) => {
             if (line === anchor || !line.box) return false;
             const dy = line.box[1] - anchor.box![3];
-            if (dy < -height * 0.25 || dy > height * 5) return false;
+            if (dy < -height * 0.25 || dy > height * maxBelowDistanceHeights) return false;
             return horizontalOverlap(anchor, line) > 0 ||
-              Math.abs(line.box[0] - anchor.box![0]) <= height * 7;
+              Math.abs(line.box[0] - anchor.box![0]) <=
+                height * maxBelowHorizontalOffsetHeights;
           });
           const belowBoundaryY = belowRegion
             .filter((line) => isBoundary(line.text))
             .map((line) => line.box![1])
             .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
           const below = belowRegion.filter((line) => {
-            if (line.confidence < 0.35 || isBoundary(line.text) || !validate(line.text)) return false;
+            if (line.confidence < minConfidence || isBoundary(line.text) || !validate(line.text)) return false;
             return line.box![1] < belowBoundaryY;
           }).sort((a, b) =>
             Number(a.id.startsWith('phrase:')) - Number(b.id.startsWith('phrase:')) ||
@@ -206,7 +228,7 @@ export function anchoredCandidates(
         }
 
         if (direction === 'sequential' && !matched) {
-          for (let offset = 1; offset <= 3; offset++) {
+          for (let offset = 1; offset <= maxSequentialLines; offset++) {
             const next = lines[index + offset];
             if (!next) break;
             if (isBoundary(next.text)) break;
