@@ -321,7 +321,15 @@ const bsade = (
   formVersionId: 'bsade-er-2026-v1',
   order,
   conditions: [{ questionId: 'vesselBand', equals: 'ate_12m' }, ...extraConditions],
-  ...(action ? { fixedValues: { 'process.vesselAction': action } } : {}),
+  ...(action ? { fixedValues: action === 'inscricao'
+    ? { 'process.inscription': 'true' }
+    : action === 'transf_prop'
+      ? { 'process.transferOwnership': 'true' }
+      : action === 'transf_jur'
+        ? { 'process.transferJurisdiction': 'true' }
+        : action === 'transf_prop_jur'
+          ? { 'process.transferOwnership': 'true', 'process.transferJurisdiction': 'true' }
+          : { 'process.updateVesselData': 'true' } } : {}),
 });
 const bade = (
   serviceId: string,
