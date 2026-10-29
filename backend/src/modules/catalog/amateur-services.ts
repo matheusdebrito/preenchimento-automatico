@@ -116,11 +116,6 @@ export const amateurForms: readonly FormDefinition[] = [
     name: 'Requerimento de Motonauta',
     description: 'NORMAM-212/DPC 2026 - Anexo 3-A.',
   },
-  {
-    id: 'pedido-revisao-prova-capitao',
-    name: 'Pedido de Revisão de Prova de Capitão-Amador',
-    description: 'NORMAM-211/DPC 2026 - Apêndice I do Anexo 5-A.',
-  },
 ];
 
 export const amateurVersions: readonly FormVersion[] = [
@@ -157,19 +152,6 @@ export const amateurVersions: readonly FormVersion[] = [
     officialRevision: 'NORMAM-212/DPC 2026 - Anexo 3-A',
     regulation: 'NORMAM-212/DPC 2026, Anexo 3-A',
     sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-212.pdf',
-    verifiedAt: null,
-    sha256: null,
-    templatePath: null,
-    pdfKind: 'STATIC',
-    status: 'IDENTIFIED',
-  },
-  {
-    id: 'pedido-revisao-prova-capitao-2026-v1',
-    formId: 'pedido-revisao-prova-capitao',
-    revision: 'v1',
-    officialRevision: 'NORMAM-211/DPC 2026 - Apêndice I do Anexo 5-A',
-    regulation: 'NORMAM-211/DPC 2026, Apêndice I do Anexo 5-A',
-    sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
     verifiedAt: null,
     sha256: null,
     templatePath: null,
@@ -228,16 +210,6 @@ export const amateurServices: readonly ServiceDefinition[] = [
     questions: [amateurCategoryQuestion, motonautaDeclarationQuestion],
     documentRequirements: commonDocuments.filter((item) =>
       ['applicant-identity', 'residence-proof'].includes(item.id)),
-  },
-  {
-    id: 'revisao-prova-capitao-amador',
-    title: 'Pedido de revisão de prova de Capitão-Amador',
-    description: 'Preenchimento do requerimento 5-H e do Pedido de Revisão de Prova do Apêndice I do Anexo 5-A. Permanece em validação até o PDF específico ser versionado e homologado.',
-    creditCost: 1,
-    status: 'DRAFT',
-    questions: [],
-    documentRequirements: commonDocuments.filter((item) =>
-      ['applicant-identity'].includes(item.id)),
   },
 ];
 
@@ -308,19 +280,5 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     order: 2,
     fixedValues: { 'process.motonautaRequest': 'renovacao_agregacao_mta' },
     answerBindings: { 'process.motonautaDeclaration': 'motonautaDeclaration' },
-  },
-  {
-    serviceId: 'revisao-prova-capitao-amador',
-    formVersionId: 'requerimento-cha-amador-2026-v1',
-    order: 1,
-    fixedValues: {
-      'process.amateurRequest': 'revisao_prova_capitao',
-      'process.notes': 'Pedido de revisão de prova de Capitão-Amador',
-    },
-  },
-  {
-    serviceId: 'revisao-prova-capitao-amador',
-    formVersionId: 'pedido-revisao-prova-capitao-2026-v1',
-    order: 2,
   },
 ];
