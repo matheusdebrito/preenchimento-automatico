@@ -160,7 +160,8 @@ describe('jornada real isolada da demonstração', () => {
     expect(sharedNames).toHaveLength(2);
     expect(sharedNames[0]!.value).toBe('MARIA DE SOUZA');
     expect(sharedNames[1]!.value).toBe('MARIA DE SOUZA');
-    expect(screen.getByText(/valor é compartilhado com outros formulários/i)).toBeTruthy();
+    expect(screen.getAllByText(/valor é compartilhado com outros formulários/i).length)
+      .toBeGreaterThan(0);
 
     await user.click(screen.getByRole('button', { name: 'Fechar todos' }));
     expect(requestButton.getAttribute('aria-expanded')).toBe('false');
@@ -216,7 +217,7 @@ describe('jornada real isolada da demonstração', () => {
     expect((screen.getByLabelText(/^CPF/) as HTMLInputElement).value).toBe('123.456.789-09');
     expect((screen.getByLabelText(/^RG/) as HTMLInputElement).value).toBe('12.345.678-9');
     expect(screen.getByText(/3 sugestão\(ões\) encontrada/)).toBeTruthy();
-    expect(screen.queryByText('Nenhum campo preenchido pelo OCR')).toBeNull();
+    expect(screen.queryByText('Nenhum campo preenchido automaticamente')).toBeNull();
     expect(fetcher.mock.calls.some(([url]) =>
       String(url).endsWith('/documents/buyer-identity'))).toBe(true);
   }, 25000);
@@ -353,7 +354,7 @@ describe('jornada real isolada da demonstração', () => {
       String(url).includes('/documents/tie'))).toHaveLength(0);
 
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
-    expect(screen.getByText('Nenhum campo preenchido pelo OCR')).toBeTruthy();
+    expect(screen.getByText('Nenhum campo preenchido automaticamente')).toBeTruthy();
     expect(screen.getByText(/Nome: rótulo encontrado, mas valor não validado/)).toBeTruthy();
     expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/)).toBeTruthy();
     expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
