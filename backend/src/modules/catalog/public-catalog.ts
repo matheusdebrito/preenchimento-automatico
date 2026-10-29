@@ -36,7 +36,9 @@ function matches(
   rules: readonly ServiceCondition[] | undefined,
   answers: Readonly<Record<string, string>>,
 ): boolean {
-  return (rules ?? []).every((rule) => answers[rule.questionId] === rule.equals);
+  return (rules ?? []).every((rule) => rule.equals !== undefined
+    ? answers[rule.questionId] === rule.equals
+    : rule.oneOf?.includes(answers[rule.questionId] ?? '') === true);
 }
 
 /**
