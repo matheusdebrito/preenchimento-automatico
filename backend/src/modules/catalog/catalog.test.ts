@@ -64,7 +64,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(45);
+    expect(catalog.serviceForms).toHaveLength(46);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
