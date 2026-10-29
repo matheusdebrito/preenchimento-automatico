@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — matriz serviço/formulário auditada contra NORMAM-211/212; 7 serviços de barco ativos, alterações seguem DRAFT com 3-C condicional, inscrição para exame de amador voltou a DRAFT, matriz de Moto Aquática completa mas bloqueada por mapeamentos DRAFT e QA manual pendente |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — matriz serviço/formulário auditada contra NORMAM-211/212; 7 serviços de barco ativos, alterações seguem DRAFT com 3-C restrito aos casos previstos no item 2.12.1, inscrição para exame de amador voltou a DRAFT, matriz de Moto Aquática completa mas bloqueada por mapeamentos DRAFT e QA manual pendente |
 
 **Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
@@ -100,7 +100,7 @@ efetivamente publicado e registrará a divergência, sem inventar numeração.
 A segunda revisão de 29/10/2026 fechou a matriz serviço -> formulário:
 - renovação TIE/TIEM usa 2-C e só inclui BADE/BSADE quando houve alteração;
 - perda/extravio adiciona 2-H; transferência de propriedade usa 2-C + BADE/BSADE + autorização;
-- alteração estrutural só associa 3-C quando explicitamente indicada e permanece DRAFT;
+- o 3-C só é associado, no fluxo do item 2.12.1, quando houver estaleiro comprovadamente extinto ou construção artesanal; os serviços permanecem DRAFT;
 - adaptação de embarcação miúda a remo para motor registra a Declaração do Responsável Técnico como documento de apoio;
 - inscrição para exame ARA/MSA/CPA voltou a DRAFT porque o item 5.4.1 não exige expressamente o 5-H;
 - a matriz NORMAM-212 foi completada para todos os serviços equivalentes, mas não entra no catálogo ativo enquanto os mapeamentos de Moto Aquática permanecerem DRAFT.
@@ -130,7 +130,7 @@ gates normativos, visuais e de produção.
 - [x] Manter sete serviços para embarcação/barco; alteração de dados, alteração de motor, moto aquática e inscrição >12 m permanecem em validação enquanto 3-C/NORMAM-212 não estiverem homologados.
 - [x] Auditar a matriz de formulários de todos os serviços atuais contra as NORMAM-211/212 fornecidas pelo usuário.
 - [x] Preservar renovação TIE/TIEM com BADE/BSADE somente quando houver alteração de características.
-- [x] Tornar o 3-C condicional a alteração estrutural/construtiva e registrar a exigência técnica específica da adaptação de remo para motor.
+- [x] Restringir o 3-C aos casos expressos no item 2.12.1 (estaleiro comprovadamente extinto ou construção artesanal) e registrar a exigência técnica específica da adaptação de remo para motor.
 - [x] Retornar inscrição para exame de amador a DRAFT até existir evidência operacional específica para uso do 5-H.
 - [x] Completar a matriz pendente NORMAM-212 para inscrição, transferências, renovação, extravio, alterações e comunicação de venda sem liberar Moto Aquática prematuramente.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
