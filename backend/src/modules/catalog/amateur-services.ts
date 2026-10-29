@@ -150,9 +150,9 @@ export const amateurVersions: readonly FormVersion[] = [
 
 export const amateurServices: readonly ServiceDefinition[] = [
   {
-    id: 'emissao-cha-amador',
-    title: 'Inscrição/Emissão da CHA',
-    description: 'Inscrição para Arrais, Mestre ou Capitão e preparação do requerimento de emissão. Permanece em validação até extrair e mapear o Anexo 5-H.',
+    id: 'inscricao-exame-amador',
+    title: 'Inscrição para exame de amador',
+    description: 'Inscrição para exame de Arrais, Mestre ou Capitão conforme o art. 5.4.1. A norma lista a documentação exigida, mas não vincula este procedimento ao Anexo 5-H; por isso nenhum formulário é inventado.',
     creditCost: 1,
     status: 'DRAFT',
     questions: [amateurCategoryQuestion],
@@ -171,12 +171,6 @@ export const amateurServices: readonly ServiceDefinition[] = [
 ];
 
 export const amateurServiceForms: readonly ServiceForm[] = [
-  {
-    serviceId: 'emissao-cha-amador',
-    formVersionId: 'requerimento-cha-amador-2026-v1',
-    order: 1,
-    fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
-  },
   {
     serviceId: 'renovacao-cha-amador',
     formVersionId: 'requerimento-cha-amador-2026-v1',
