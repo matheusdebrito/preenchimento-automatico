@@ -68,6 +68,12 @@ projeto mantém 2-K e registra a inconsistência.
 Usa Requerimento 2-C, BADE/BSADE, TIE ou 2-H quando aplicável e documentação de
 suporte. Não usa 3-C como formulário padrão.
 
+### Comunicação de venda
+
+A NORMAM-211 determina a apresentação da Comunicação de Transferência (2-I) acompanhada
+de cópia da Autorização de Transferência (2-K). O serviço foi corrigido para preparar os dois
+formulários. Na NORMAM-212, o equivalente é 2-E + 2-D.
+
 ### Renovação e perda/extravio do TIE
 
 A renovação usa Requerimento 2-C e novo BADE/BSADE apenas quando houve alteração de
