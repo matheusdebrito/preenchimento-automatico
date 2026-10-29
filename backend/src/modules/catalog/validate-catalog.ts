@@ -184,6 +184,12 @@ export function validateCatalog(data: CatalogDefinition): string[] {
         question.options.some((option) => !option.trim())) {
         issues.push('serviço ' + service.id + ': opções inválidas para ' + question.id);
       }
+      validateConditions(question.conditions, questions,
+        'pergunta ' + service.id + ':' + question.id, issues);
+      if (question.conditions?.some((condition) => condition.questionId === question.id)) {
+        issues.push('pergunta ' + service.id + ':' + question.id +
+          ': não pode depender da própria resposta');
+      }
     }
     buildIndex(service.documentRequirements, 'documento de ' + service.id, issues);
     for (const requirement of service.documentRequirements) {
