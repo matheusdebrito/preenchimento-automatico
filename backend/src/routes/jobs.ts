@@ -5,7 +5,11 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { catalog } from '../modules/catalog/catalog.js';
 import { publicService } from '../modules/catalog/public-catalog.js';
-import { FormFieldError, isValidCpf, isValidBrazilianDate } from '../modules/catalog/field-validation.js';
+import {
+  FormFieldError,
+  isValidBrazilianDate,
+  isValidCpf,
+} from '../modules/catalog/field-validation.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
 import { QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
 import { serviceFormValues } from '../modules/catalog/service-form-values.js';
@@ -415,7 +419,18 @@ export function registerJobRoutes(
     if (!job) return reply.status(404).send({ error: 'not_found' });
     if (job.stage !== 'REVIEW') return reply.status(409).send({ error: 'invalid_state' });
     const parsed = reviewSchema.safeParse(req.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
+    if (!parsed.success) {
+      const valueIssue = parsed.error.issues.find((issue) =>
+        issue.path[0] === 'values' && typeof issue.path[1] === 'string');
+      if (valueIssue && typeof valueIssue.path[1] === 'string') {
+        return reply.status(422).send({
+          error: 'invalid_field_value',
+          fieldId: valueIssue.path[1],
+          reason: 'text_too_long',
+        });
+      }
+      return reply.status(400).send({ error: 'invalid' });
+    }
     const service = publicService(definitions, job.serviceId, job.answers);
     if (!service) return reply.status(409).send({ error: 'service_unavailable' });
     const allowedFields = new Set(service.reviewFields.map((field) => field.id));
