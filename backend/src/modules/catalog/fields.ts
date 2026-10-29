@@ -44,6 +44,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'seller.nationality', label: 'Nacionalidade do vendedor', valueKind: 'text' },
   { id: 'seller.birthplace', label: 'Naturalidade do vendedor', valueKind: 'text' },
   { id: 'process.transferOwnership', label: 'Transferência de propriedade', valueKind: 'text' },
+  { id: 'process.vesselAction', label: 'Serviço solicitado para a embarcação', valueKind: 'text' },
   { id: 'declarant.fullName', label: 'Nome do declarante', valueKind: 'text' },
   { id: 'declarant.identity', label: 'Identidade do declarante', valueKind: 'text' },
   { id: 'declarant.cpf', label: 'CPF do declarante', valueKind: 'text', validationRuleId: 'cpf' },
