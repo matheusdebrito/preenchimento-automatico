@@ -99,10 +99,10 @@ gates normativos, visuais e de produção.
 - [x] Gerar amostras fictícias, renderizar todas as páginas e concluir revisão visual técnica do agente; mapas em `TESTED`.
 - [x] Manter o domínio do MVP em um único motor e impedir reintrodução silenciosa de motor2/3/4.
 - [x] Remover fotos da embarcação do upload da aplicação; exigência oficial permanece apenas na documentação do procedimento.
-- [ ] Concluir revisão visual humana e promover os `FormMapping` para `APPROVED`.
+- [x] Promover os oito `FormMapping` NORMAM-211 para `APPROVED` após revisão visual técnica reproduzível e autorização explícita do responsável pelo produto; não registrar isso como inspeção pessoal página a página pelo usuário.
 - [ ] Incorporar/modelar o Anexo 3-D nos casos em que responsabilidade técnica for aplicável; não contornar TLS inválido da origem.
-- [ ] Decidir domínio e UX para embarcações com múltiplos motores antes de preencher Motor 2–4 ou caixas SIM/NÃO do 2-K.
-- [ ] Liberar os serviços individualmente como `AVAILABLE` somente após os gates acima.
+- [x] Fixar o MVP em um único motor; Motor 2–4 e caixas relacionadas permanecem fora do domínio e serão tratados em evolução futura.
+- [x] Liberar sete serviços para embarcação/barco; manter alteração de dados, alteração de motor, moto aquática e inscrição >12 m em validação enquanto dependências específicas (especialmente 3-D/NORMAM-212) não estiverem cobertas.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
