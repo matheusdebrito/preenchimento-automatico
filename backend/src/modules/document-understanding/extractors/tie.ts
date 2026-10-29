@@ -38,6 +38,8 @@ const strongHullIdentifier = (value: string): boolean => {
 
 const registration = (value: string): boolean => {
   const text = compactIdentifier(value);
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(text) ||
+    /^(?:19|20)\d{2}$/.test(text)) return false;
   return /^[A-Z0-9./-]{4,30}$/i.test(text) && /\d/.test(text) &&
     !strongHullIdentifier(text);
 };
@@ -133,18 +135,46 @@ const taxIdentifier = (value: string): boolean => {
 const postalCode = (value: string): boolean =>
   /^\d{5}-?\d{3}$/.test(value.trim());
 
+const meaningfulDocumentText = (
+  value: string,
+  minAlnum = 2,
+  max = 120,
+): boolean => {
+  const text = value.trim();
+  if (!textValue(text, minAlnum, max)) return false;
+  const compact = text.replace(/\s/g, '');
+  const alnum = compact.match(/[A-ZÀ-Ý0-9]/gi)?.length ?? 0;
+  const mask = compact.match(/[*.•_]/g)?.length ?? 0;
+  if (alnum < minAlnum) return false;
+  if (mask >= 2 && mask >= alnum) return false;
+  return alnum / Math.max(1, compact.length) >= 0.45;
+};
+
+const ownerNameText = (value: string): boolean => {
+  if (!meaningfulDocumentText(value, 5, 100)) return false;
+  const letters = value.match(/[A-ZÀ-Ý]/gi)?.length ?? 0;
+  const words = value.trim().split(/\s+/).filter((word) => /[A-ZÀ-Ý]/i.test(word));
+  return letters >= 5 && words.length >= 2 &&
+    !/^(?:NOME|CPF|CNPJ|ENDERECO|CARACTERISTICAS)\b/i.test(normalizeText(value));
+};
+
 const addressText = (value: string): boolean =>
-  textValue(value, 2, 120) &&
+  meaningfulDocumentText(value, 2, 120) &&
   !/^(?:ENDERECO|NUMERO|COMPLEMENTO|BAIRRO|CEP|CIDADE|ESTADO)\b/i
     .test(normalizeText(value));
 
 const creditorText = (value: string): boolean => {
-  const text = value.trim();
-  if (!textValue(text, 2, 100)) return false;
-  const letters = text.match(/[A-ZÀ-Ý]/gi) ?? [];
-  return letters.length >= 2 &&
+  if (!meaningfulDocumentText(value, 4, 100)) return false;
+  const normalized = normalizeText(value);
+  const words = value.trim().split(/\s+/).filter((word) => /[A-ZÀ-Ý]/i.test(word));
+  return words.length >= 2 &&
     !/^(?:NOME|CPF|CNPJ|DATA|LOCAL|CREDOR|ALIENACAO|SIM|NAO)\b/i
-      .test(normalizeText(text));
+      .test(normalized);
+};
+
+const hullColorText = (value: string): boolean => {
+  if (!meaningfulDocumentText(value, 3, 50)) return false;
+  return !/^(?:SIM|NAO|HIPOTECAD[AO]|CREDOR)\b/i.test(normalizeText(value));
 };
 
 const tightTableCell = {
@@ -161,6 +191,19 @@ const compactTableCell = {
   maxRightDistanceHeights: 7,
   maxBelowDistanceHeights: 2.6,
   maxBelowHorizontalOffsetHeights: 4,
+} as const;
+
+const countTableCell = {
+  ...compactTableCell,
+  maxBelowDistanceHeights: 5,
+  maxBelowHorizontalOffsetHeights: 5,
+} as const;
+
+const creditorTableCell = {
+  ...compactTableCell,
+  maxRightDistanceHeights: 5,
+  maxBelowDistanceHeights: 1.8,
+  maxBelowHorizontalOffsetHeights: 2.5,
 } as const;
 
 
@@ -526,7 +569,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
-    spatialHint: compactTableCell,
+    spatialHint: countTableCell,
     validate: count,
   },
   {
@@ -547,7 +590,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*CREDOR\s+HIPOTEC[AÁ]RIO(?:\s*\/\s*MORTGAGE\s+CREDITOR)?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
-    spatialHint: tightTableCell,
+    spatialHint: creditorTableCell,
     validate: creditorText,
   },
   {
@@ -579,7 +622,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['right', 'below'],
     spatialHint: tightTableCell,
-    validate: (value) => textValue(value, 2, 50),
+    validate: hullColorText,
   },
   {
     fieldId: 'vessel.authority',
@@ -602,7 +645,7 @@ function ownerConcepts(
       labels: [/^\s*NOME(?:\s*\/\s*NAME)?\s*(?:[:#\-–]\s*)?(.*)$/i],
       preferredDirections: ['right', 'below'],
       spatialHint: tightTableCell,
-      validate: (value) => textValue(value, 3, 100),
+      validate: ownerNameText,
     },
     {
       fieldId: prefix + '.' + taxField,
@@ -747,6 +790,50 @@ function extractOwnerSections(
   };
 }
 
+function inlineOwnerFallback(
+  observation: DocumentObservation,
+  context: ExtractionContext,
+): FieldEvidence[] {
+  const ordered = observation.pages.flatMap((page) => page.lines)
+    .slice()
+    .sort((a, b) => a.page - b.page ||
+      ((a.box?.[1] ?? Number.MAX_SAFE_INTEGER) - (b.box?.[1] ?? Number.MAX_SAFE_INTEGER)));
+
+  const names = ordered.flatMap((line) => {
+    const match = /^\s*NOME\s*:\s*(.+)$/i.exec(line.text);
+    if (!match || !ownerNameText(match[1]!)) return [];
+    return [{ line, value: match[1]!.trim() }];
+  });
+  const taxes = ordered.flatMap((line) => {
+    const match = /^\s*CPF\s*\/?\s*CNPJ\s*:\s*(.+)$/i.exec(line.text);
+    if (!match || !taxIdentifier(match[1]!)) return [];
+    return [{ line, value: match[1]!.trim() }];
+  });
+
+  const result: FieldEvidence[] = [];
+  const add = (fieldId: string, item: { line: typeof ordered[number]; value: string } | undefined) => {
+    if (!item) return;
+    result.push({
+      fieldId,
+      value: item.value,
+      confidence: item.line.confidence,
+      documentId: context.documentId,
+      sourceId: context.sourceId,
+      page: item.line.page,
+      method: 'inline-owner-fallback',
+      anchor: fieldId.startsWith('coOwner.') ? 'CO-PROPRIETARIO' : 'PROPRIETARIO',
+      lineIds: [item.line.id],
+      status: 'REVIEW_REQUIRED',
+    });
+  };
+
+  add('registeredOwner.fullName', names[0]);
+  add('registeredOwner.taxId', taxes[0]);
+  add('coOwner.fullName', names[1]);
+  add('coOwner.cpf', taxes[1]);
+  return result;
+}
+
 function runTieExtraction(
   observation: DocumentObservation,
   context: ExtractionContext,
@@ -755,7 +842,14 @@ function runTieExtraction(
   const concepts = conceptsForVariant(variant);
   const semantic = extractSemanticConcepts(observation, context, concepts);
   const owners = extractOwnerSections(observation, context);
-  const evidence = [...semantic.evidence, ...owners.evidence];
+  const ownerFallback = inlineOwnerFallback(observation, context);
+  const ownerEvidence = [...owners.evidence];
+  for (const fallback of ownerFallback) {
+    if (!ownerEvidence.some((item) => item.fieldId === fallback.fieldId)) {
+      ownerEvidence.push(fallback);
+    }
+  }
+  const evidence = [...semantic.evidence, ...ownerEvidence];
   const byAssessment = new Map(semantic.assessments.map((item) => [item.fieldId, item]));
   const assessments = tieFieldConcepts.map((concept) =>
     byAssessment.get(concept.fieldId) ?? {
@@ -763,7 +857,17 @@ function runTieExtraction(
       status: 'NOT_FOUND' as const,
       confidence: null,
     });
-  assessments.push(...owners.assessments);
+  assessments.push(...owners.assessments.map((assessment) => {
+    const fallback = ownerEvidence.find((item) => item.fieldId === assessment.fieldId);
+    return fallback
+      ? {
+          fieldId: assessment.fieldId,
+          status: 'FOUND' as const,
+          confidence: fallback.confidence,
+          method: fallback.method,
+        }
+      : assessment;
+  }));
 
   // A hull fallback is intentionally strict: only identifiers with a strong
   // Brazilian hull/HIN shape are eligible. Generic alphanumeric identifiers
