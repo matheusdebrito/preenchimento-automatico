@@ -27,6 +27,18 @@ function prepareValue(raw: string, fieldId: string): string {
   return value;
 }
 
+function normalizeChoice(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function placementChoices(
+  placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
+): readonly string[] {
+  if (placement.markWhen === undefined) return [];
+  return [placement.markWhen, ...(placement.markAliases ?? [])].map(normalizeChoice);
+}
+
 const MONTHS_PT_BR = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
@@ -90,17 +102,19 @@ export async function fillPdf(
   for (const placement of placements) {
     if (placement.kind === 'COORDINATES' && placement.markWhen !== undefined) {
       const options = choices.get(placement.fieldId) ?? new Set<string>();
-      options.add(placement.markWhen);
+      for (const option of placementChoices(placement)) options.add(option);
       choices.set(placement.fieldId, options);
     }
   }
   for (const [fieldId, options] of choices) {
     const value = values[fieldId];
-    if (typeof value === 'string' && value.trim() && !options.has(value.trim())) {
-      const normalized = value.trim();
-      const unilateralBoolean = options.size === 1 && options.has('true') && normalized === 'false';
-      if (!unilateralBoolean) {
-        throw new Error('Opção não prevista no formulário: ' + fieldId);
+    if (typeof value === 'string' && value.trim()) {
+      const normalized = normalizeChoice(value);
+      if (!options.has(normalized)) {
+        const unilateralBoolean = options.size === 1 && options.has('true') && normalized === 'false';
+        if (!unilateralBoolean) {
+          throw new Error('Opção não prevista no formulário: ' + fieldId);
+        }
       }
     }
   }
@@ -148,7 +162,8 @@ export async function fillPdf(
     assertStaticPlacement(page, placement);
     // Declarative choice fields: write an X only in the selected box.
     // Never stamp the literal word "sim" or "não" into a tiny checkbox.
-    if (placement.markWhen !== undefined && value !== placement.markWhen) continue;
+    if (placement.markWhen !== undefined &&
+      !placementChoices(placement).includes(normalizeChoice(value))) continue;
     const transformed = transformStaticValue(value, placement);
     const printed = placement.markWhen === undefined ? transformed : 'X';
     let width: number;
