@@ -243,6 +243,35 @@ describe('catálogo reutilizável de formulários', () => {
     expect(validateCatalog(fixture).join(' ')).toContain('binding inválido');
   });
 
+  it('valida mapeamentos de respostas enumeradas para texto revisado', () => {
+    const fixture = sharedFormFixture();
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      answerValueMappings: {
+        'person.fullName': {
+          questionId: 'mode',
+          values: { yes: 'Sim', no: 'Não' },
+        },
+      },
+    }];
+    expect(validateCatalog(fixture)).toEqual([]);
+
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      answerValueMappings: {
+        'person.fullName': {
+          questionId: 'mode',
+          values: { maybe: 'Talvez' },
+        },
+      },
+    }];
+    expect(validateCatalog(fixture).join(' ')).toContain('mapeamento de resposta inválido');
+  });
+
   it('aceita condição oneOf somente com opções declaradas', () => {
     const fixture = sharedFormFixture();
     fixture.serviceForms = [{
