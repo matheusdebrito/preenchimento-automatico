@@ -53,3 +53,16 @@ A promoção exige:
 4. renderização da saída sintética pelo CI;
 5. revisão visual final;
 6. testes/typecheck/build.
+
+
+## Uso do 5-H na inscrição para exame
+
+A NORMAM-211, no item 5.4.1, não cita nominalmente o Anexo 5-H. A liberação do
+serviço de inscrição se apoia também em orientação operacional oficial da Marinha:
+a página da DPC "Para quem quer se tornar um Navegador Amador" oferece o
+Requerimento de Inscrição para o Exame, e a lista operacional do COM8DN identifica
+o requerimento de inscrição como Anexo 5-H da NORMAM-211.
+
+O serviço marca a opção 2 - Emissão/Renovação e escreve na descrição do pedido a
+categoria selecionada (Arrais-Amador, Mestre-Amador ou Capitão-Amador). Não é criado
+nenhum formulário alternativo ou não oficial.
