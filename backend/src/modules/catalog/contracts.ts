@@ -81,6 +81,11 @@ export interface ServiceQuestion {
   label: string;
   /** Only explicitly enumerated answers may be used in rules. */
   options: readonly string[];
+  /**
+   * Optional visibility/requirement rules. Questions may depend only on other
+   * declared answers; hidden questions are not required by the quote endpoint.
+   */
+  conditions?: readonly ServiceCondition[];
 }
 
 export interface ServiceCondition {
