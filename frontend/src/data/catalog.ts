@@ -49,7 +49,7 @@ export const PILOT_SERVICE: ServiceDefinition = {
   id: 'transferencia-propriedade-embarcacao',
   categoryId: 'embarcacoes',
   title: 'Transferência de propriedade',
-  summary: 'Barco ou moto aquática — transferência de propriedade.'
+  summary: 'Barco ou moto aquática — transferência de propriedade.',
   description:
     'Reúna os documentos do comprador, do vendedor e da embarcação. Você confere cada dado antes de preparar os formulários.',
   creditCost: 1,
