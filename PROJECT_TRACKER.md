@@ -480,7 +480,7 @@ head final deve repetir todos os gates antes do merge.
 
 - [x] Confirmar na NORMAM-211 que ARA/MSA/CPA pertencem ao escopo da norma.
 - [x] Identificar Anexo 5-H (Requerimento) e Anexo 5-D (extravio/furto/roubo/dano da CHA).
-- [x] Catalogar Inscrição/Emissão da CHA e Renovação da CHA em DRAFT.
+- [x] Catalogar Inscrição para exame de amador e Renovação da CHA em DRAFT; não vincular 5-H à inscrição sem suporte do art. 5.4.1.
 - [x] Não criar “segunda via” separada: perda/dano de cédula segue renovação.
 - [x] Modelar dependência de categoria: Arrais usa atestado 5-E; Mestre exige Arrais válido; Capitão exige Mestre válido.
 - [ ] Extrair 5-D e 5-H para templates imutáveis no repositório.
