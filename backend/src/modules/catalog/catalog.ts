@@ -1,6 +1,7 @@
 import type { CatalogDefinition } from './contracts.js';
 import { additionalFields } from './fields.js';
 import { draftMappings } from './draft-mappings.js';
+import { normam211Mappings } from './normam211-mappings.js';
 import {
   vesselForms,
   vesselVersions,
@@ -139,7 +140,7 @@ export const catalog: CatalogDefinition = {
       status: 'VERIFIED',
     },
   ],
-  mappings: draftMappings,
+  mappings: [...draftMappings, ...normam211Mappings],
   services: [
     {
       id: 'transferencia-moto-aquatica',
