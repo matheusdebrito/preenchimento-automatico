@@ -12,6 +12,7 @@ import {
   matchesApproximateLabel,
   type ApproximateLabel,
   type CandidateDirection,
+  type SpatialSearchHint,
 } from './extractor-utils.js';
 
 export interface SemanticFieldConcept {
@@ -23,6 +24,7 @@ export interface SemanticFieldConcept {
   boundaries?: readonly RegExp[];
   allowSequentialWithGeometry?: boolean;
   firstOccurrenceOnly?: boolean;
+  spatialHint?: SpatialSearchHint;
   validate(value: string): boolean;
   normalize?(value: string): string;
 }
@@ -63,8 +65,12 @@ export function extractSemanticConcepts(
       concept.allowSequentialWithGeometry ?? true,
       concept.firstOccurrenceOnly ?? false,
       concept.approximateLabels ?? [],
+      concept.spatialHint ?? {},
     );
-    const selected = selectUniqueCandidate(candidates);
+    const selected = selectUniqueCandidate(
+      candidates,
+      concept.spatialHint?.minSelectionScoreGap,
+    );
 
     if (selected) {
       const normalized = concept.normalize

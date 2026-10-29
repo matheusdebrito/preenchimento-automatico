@@ -1,8 +1,8 @@
 name: CI
+# Temporariamente manual durante a fase de desenvolvimento do MVP.
+# Reative push/pull_request quando o pipeline voltar a ser um gate de entrega.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read

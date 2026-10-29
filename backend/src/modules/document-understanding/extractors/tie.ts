@@ -38,7 +38,12 @@ const strongHullIdentifier = (value: string): boolean => {
 
 const registration = (value: string): boolean => {
   const text = compactIdentifier(value);
-  return /^[A-Z0-9./-]{4,30}$/i.test(text) && /\d/.test(text) &&
+  const alnum = text.replace(/[^A-Z0-9]/gi, '');
+  if (/^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(text) ||
+    /^(?:19|20)\d{2}$/.test(text) ||
+    /^\d{1,4}[.,]\d{1,3}$/.test(text)) return false;
+  return alnum.length >= 8 && alnum.length <= 24 &&
+    /^[A-Z0-9/-]+$/i.test(text) && /\d/.test(text) &&
     !strongHullIdentifier(text);
 };
 const hull = (value: string): boolean => {
@@ -74,6 +79,168 @@ const serial = (value: string): boolean => {
     motorStructuralMarker(normalized)) return false;
   return /^[A-Z0-9./-]{4,50}$/i.test(text) && /\d/.test(text);
 };
+
+const normalizeBrazilianDate = (value: string): string | null => {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const yearValue = Number(match[3]);
+  const parsed = new Date(Date.UTC(yearValue, month - 1, day));
+  if (parsed.getUTCFullYear() !== yearValue ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day) return null;
+  return String(day).padStart(2, '0') + '/' +
+    String(month).padStart(2, '0') + '/' + String(yearValue);
+};
+const dateValue = (value: string): boolean =>
+  normalizeBrazilianDate(value) !== null;
+const normalizeYesNo = (value: string): string =>
+  /^(?:SIM|YES)$/i.test(value.trim()) ? 'sim' : 'nao';
+const yesNo = (value: string): boolean =>
+  /^(?:SIM|NAO|NÃO|YES|NO)$/i.test(value.trim());
+const issuePlace = (value: string): boolean =>
+  value.trim().length >= 2 && value.trim().length <= 80 &&
+  /[A-ZÀ-Ý]/i.test(value) && !labelLike(value);
+
+const compactDigits = (value: string): string => value.replace(/\D/g, '');
+
+const validCpfDigits = (digits: string): boolean => {
+  if (!/^\d{11}$/.test(digits) || /^(\d)\1{10}$/.test(digits)) return false;
+  for (let length = 9; length <= 10; length++) {
+    const sum = Array.from({ length }, (_, index) =>
+      Number(digits[index]) * (length + 1 - index)).reduce((a, b) => a + b, 0);
+    if ((sum * 10) % 11 % 10 !== Number(digits[length])) return false;
+  }
+  return true;
+};
+
+const validCnpjDigits = (digits: string): boolean => {
+  if (!/^\d{14}$/.test(digits) || /^(\d)\1{13}$/.test(digits)) return false;
+  const calculate = (baseLength: number): number => {
+    const weights = baseLength === 12
+      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const sum = weights.reduce((total, weight, index) =>
+      total + Number(digits[index]) * weight, 0);
+    const remainder = sum % 11;
+    return remainder < 2 ? 0 : 11 - remainder;
+  };
+  return calculate(12) === Number(digits[12]) &&
+    calculate(13) === Number(digits[13]);
+};
+
+const taxIdentifier = (value: string): boolean => {
+  const digits = compactDigits(value);
+  return validCpfDigits(digits) || validCnpjDigits(digits);
+};
+
+const postalCode = (value: string): boolean =>
+  /^\d{5}-?\d{3}$/.test(value.trim());
+
+const meaningfulDocumentText = (
+  value: string,
+  minAlnum = 2,
+  max = 120,
+): boolean => {
+  const text = value.trim();
+  if (!textValue(text, minAlnum, max)) return false;
+  const compact = text.replace(/\s/g, '');
+  const alnum = compact.match(/[A-ZÀ-Ý0-9]/gi)?.length ?? 0;
+  const mask = compact.match(/[*.•_]/g)?.length ?? 0;
+  if (alnum < minAlnum) return false;
+  if (/^X{4,}$/i.test(compact)) return false;
+  if (mask >= 2 && mask >= alnum) return false;
+  return alnum / Math.max(1, compact.length) >= 0.45;
+};
+
+const ownerNameText = (value: string): boolean => {
+  if (!meaningfulDocumentText(value, 5, 100)) return false;
+  const letters = value.match(/[A-ZÀ-Ý]/gi)?.length ?? 0;
+  const words = value.trim().split(/\s+/).filter((word) => /[A-ZÀ-Ý]/i.test(word));
+  return letters >= 5 && words.length >= 2 &&
+    !/^(?:NOME|CPF|CNPJ|ENDERECO|CARACTERISTICAS)\b/i.test(normalizeText(value));
+};
+
+const addressText = (value: string): boolean =>
+  meaningfulDocumentText(value, 2, 120) &&
+  !/^(?:ENDERECO|NUMERO|COMPLEMENTO|BAIRRO|CEP|CIDADE|ESTADO)\b/i
+    .test(normalizeText(value));
+
+const creditorText = (value: string): boolean => {
+  if (!meaningfulDocumentText(value, 4, 100)) return false;
+  const normalized = normalizeText(value);
+  const words = value.trim().split(/\s+/).filter((word) => /[A-ZÀ-Ý]/i.test(word));
+  return words.length >= 2 &&
+    !/^(?:NOME|CPF|CNPJ|DATA|LOCAL|CREDOR|ALIENACAO|SIM|NAO)\b/i
+      .test(normalized);
+};
+
+const HULL_COLOR_WORDS = new Set([
+  'AMARELO', 'AMARELA', 'AZUL', 'BEGE', 'BRANCO', 'BRANCA',
+  'CINZA', 'DOURADO', 'DOURADA', 'LARANJA', 'MARROM', 'PRETO', 'PRETA',
+  'PRATA', 'ROSA', 'ROXO', 'ROXA', 'VERDE', 'VERMELHO', 'VERMELHA',
+]);
+
+const hullColorText = (value: string): boolean => {
+  if (!meaningfulDocumentText(value, 3, 50)) return false;
+  const normalized = normalizeText(value);
+  if (/^(?:SIM|NAO|HIPOTECAD[AO]|CREDOR|OUTRAS?\s+OBSERVACOES)\b/.test(normalized)) {
+    return false;
+  }
+  const words = normalized.split(/[^A-Z]+/).filter(Boolean)
+    .filter((word) => word !== 'E');
+  return words.length >= 1 && words.every((word) => HULL_COLOR_WORDS.has(word));
+};
+
+const tightTableCell = {
+  minConfidence: 0.35,
+  maxRightDistanceHeights: 10,
+  sameRowToleranceHeights: 1.15,
+  maxBelowDistanceHeights: 3.2,
+  maxBelowHorizontalOffsetHeights: 5,
+  maxSequentialLines: 1,
+  minSelectionScoreGap: 0.12,
+} as const;
+
+const compactTableCell = {
+  ...tightTableCell,
+  maxRightDistanceHeights: 7,
+  maxBelowDistanceHeights: 2.6,
+  maxBelowHorizontalOffsetHeights: 4,
+} as const;
+
+const countTableCell = {
+  ...compactTableCell,
+  maxBelowDistanceHeights: 5,
+  maxBelowHorizontalOffsetHeights: 5,
+} as const;
+
+const motorCountCell = {
+  ...countTableCell,
+  // The current low-resolution TIE can place the one-digit engine count lower
+  // inside a tall cell. Keep this wider search scoped to this field only.
+  maxRightDistanceHeights: 12,
+  maxBelowDistanceHeights: 8,
+  maxBelowHorizontalOffsetHeights: 7,
+} as const;
+
+const creditorTableCell = {
+  ...compactTableCell,
+  maxRightDistanceHeights: 5,
+  maxBelowDistanceHeights: 1.8,
+  maxBelowHorizontalOffsetHeights: 2.5,
+} as const;
+
+const hullColorCell = {
+  ...compactTableCell,
+  // Color is a compact cell in the legacy TIEM. A narrow window prevents
+  // "OUTRAS OBSERVACOES" or nearby text from being promoted when the color
+  // itself is masked or missed by OCR.
+  maxRightDistanceHeights: 5,
+  maxBelowDistanceHeights: 1.8,
+  maxBelowHorizontalOffsetHeights: 2.5,
+} as const;
 
 
 export type TieDocumentVariant = 'digital' | 'legacy' | 'unknown';
@@ -116,19 +283,63 @@ const digitalOnlyFields = new Set([
   'vessel.grossTonnage',
   'vessel.breadth',
   'vessel.motorManufacturerBrandModel',
+  'vessel.motorCount',
+  'vessel.issuePlace',
+  'vessel.issueDate',
 ]);
 
 const legacyOnlyFields = new Set([
   'vessel.motorBrand',
   'vessel.motorPower',
+  'vessel.registrationDate',
 ]);
+
+const legacyRegistrationCell = {
+  ...tightTableCell,
+  // The old TIEM scan places the registration lower inside a tall header cell,
+  // and PaddleOCR may shift the detected value vertically. Keep the larger
+  // window scoped to the legacy registration field.
+  maxRightDistanceHeights: 16,
+  maxBelowDistanceHeights: 7,
+  maxBelowHorizontalOffsetHeights: 8,
+} as const;
+
+const legacyCountCell = {
+  ...compactTableCell,
+  // TIEM crew/passenger counts live in adjacent narrow columns. Keep the
+  // candidate close to the anchor center so one column cannot steal the other.
+  maxRightDistanceHeights: 4,
+  maxBelowDistanceHeights: 4,
+  maxBelowHorizontalOffsetHeights: 2.25,
+  minSelectionScoreGap: 0.08,
+} as const;
 
 function conceptsForVariant(variant: TieDocumentVariant): readonly SemanticFieldConcept[] {
   if (variant === 'digital') {
     return tieFieldConcepts.filter((concept) => !legacyOnlyFields.has(concept.fieldId));
   }
   if (variant === 'legacy') {
-    return tieFieldConcepts.filter((concept) => !digitalOnlyFields.has(concept.fieldId));
+    return tieFieldConcepts
+      .filter((concept) => !digitalOnlyFields.has(concept.fieldId))
+      .map((concept) => {
+        if (concept.fieldId === 'vessel.registration') {
+          return {
+            ...concept,
+            firstOccurrenceOnly: true,
+            spatialHint: legacyRegistrationCell,
+          };
+        }
+        if (concept.fieldId === 'vessel.crewCount' ||
+          concept.fieldId === 'vessel.passengerCount') {
+          return {
+            ...concept,
+            allowSequentialWithGeometry: false,
+            firstOccurrenceOnly: true,
+            spatialHint: legacyCountCell,
+          };
+        }
+        return concept;
+      });
   }
   return tieFieldConcepts;
 }
@@ -147,10 +358,37 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     // to this long label; geometry and the registration validator remain strict.
     approximateLabels: [
       { text: 'NUMERO DE INSCRICAO / REGISTRATION NUMBER', maxDistance: 5 },
+      // Real TIEM scan: the number symbol can disappear completely.
+      { text: 'N DE INSCRICAO', maxDistance: 1 },
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: registration,
+  },
+  {
+    fieldId: 'vessel.registrationDate',
+    anchor: 'DATA DE INSCRICAO',
+    labels: [
+      /^\s*DATA\s+(?:DE\s+)?INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: compactTableCell,
+    validate: dateValue,
+    normalize: (value) => normalizeBrazilianDate(value) ?? value.trim(),
+  },
+  {
+    fieldId: 'vessel.expirationDate',
+    anchor: 'VALIDADE',
+    labels: [
+      /^\s*(?:DATA\s+DE\s+VALIDADE(?:\s*\/\s*EXPIRATION\s+DATE)?|VALIDADE)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: compactTableCell,
+    validate: dateValue,
+    normalize: (value) => normalizeBrazilianDate(value) ?? value.trim(),
   },
   {
     fieldId: 'vessel.name',
@@ -165,6 +403,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       { text: 'NOME DA EMBARCACAO', maxDistance: 3 },
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 100),
   },
   {
@@ -175,6 +414,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: hull,
   },
   {
@@ -185,6 +425,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*ANO\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: compactTableCell,
     validate: year,
   },
   {
@@ -194,6 +435,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*COMPRIMENTO(?:\s+TOTAL)?(?:\s*\/\s*LENGTH)?(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: compactTableCell,
     validate: length,
   },
   {
@@ -212,6 +454,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: compactTableCell,
     validate: grossTonnage,
   },
   {
@@ -222,6 +465,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: compactTableCell,
     validate: decimalMeasure,
   },
   {
@@ -232,6 +476,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 80),
   },
   {
@@ -242,6 +487,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: navigationArea,
   },
   {
@@ -262,6 +508,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 80),
   },
   {
@@ -272,6 +519,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+        spatialHint: tightTableCell,
     validate: propulsion,
   },
   {
@@ -281,6 +529,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:ATIVIDADE\s*[/|-]\s*ACTIVITY|ATIVIDADE\s*[/|-]\s*USO|ATIVIDADE\s*[/|-]\s*SERVI[CÇ]O|ATIVIDADE|ACTIVITY)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+        spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 80),
   },
   {
@@ -290,11 +539,16 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*MOTOR\s*1\s*\/\s*ENGINE\s*1\s+(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*(?:FABRICANTE\s*[-–/]\s*MARCA\s*[-–/]\s*MODELO\s*\/\s*MANUFACTURER\s*[-–/]\s*BRAND\s*[-–/]\s*MODEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
+    approximateLabels: [
+      { text: 'FABRICANTE MARCA MODELO MANUFACTURER BRAND MODEL', maxDistance: 3 },
+    ],
     boundaries: [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
       /^\s*MOTOR\s*[2-4]\s*(?:\/|-)?\s*ENGINE\s*[2-4]\s*$/i,
     ],
+    preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
+    spatialHint: tightTableCell,
     validate: (value) => textValue(value, 2, 100),
   },
   {
@@ -335,8 +589,10 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     approximateLabels: [
       { text: 'N DO 1 MOTOR SERIE', maxDistance: 3 },
       { text: '1 MOTOR SERIE', maxDistance: 2 },
+      { text: 'N DE SERIE DO MOTOR ENGINE SERIAL NUMBER', maxDistance: 3 },
     ],
     preferredDirections: ['below', 'right'],
+    spatialHint: tightTableCell,
     firstOccurrenceOnly: true,
     boundaries: [
       /^\s*(?:MOTOR|ENGINE)\s*[2-4]\s*$/i,
@@ -352,6 +608,8 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:N[ÚU]MERO\s+DE\s+TRIPULANTES\s*\/\s*NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?|N[ÚU]MERO\s+DE\s+TRIPULANTES|QTD(?:ADE)?\.?\s+DE\s+TRIPULANTES|NUMBER\s+OF\s+CREW\s+MEMBER(?:S)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: countTableCell,
     validate: count,
   },
   {
@@ -362,7 +620,78 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: countTableCell,
     validate: count,
+  },
+  {
+    fieldId: 'vessel.motorCount',
+    anchor: 'QUANTIDADE DE MOTORES',
+    labels: [
+      /^\s*(?:QUANTIDADE\s+DE\s+MOTORES(?:\s*\/\s*QUANTITY\s+OF\s+ENGINES)?|QUANTITY\s+OF\s+ENGINES)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    approximateLabels: [
+      { text: 'QUANTIDADE DE MOTORES', maxDistance: 2 },
+      // Real TIE scan: Q->G and DE->OE are both observed OCR degradations.
+      { text: 'GUANTIDADE OE MOTORES', maxDistance: 0 },
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    spatialHint: motorCountCell,
+    validate: count,
+  },
+  {
+    fieldId: 'vessel.mortgaged',
+    anchor: 'HIPOTECA / ALIENACAO',
+    labels: [
+      /^\s*(?:HIPOTECAD[AO]\??|ALIENA[CÇ][AÃ]O\s+FIDUCI[AÁ]RIA(?:\s*\/\s*CHATTEL\s+MORTGAGE)?)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: tightTableCell,
+    validate: yesNo,
+    normalize: normalizeYesNo,
+  },
+  {
+    fieldId: 'vessel.mortgageCreditor',
+    anchor: 'CREDOR HIPOTECARIO',
+    labels: [
+      /^\s*CREDOR\s+HIPOTEC[AÁ]RIO(?:\s*\/\s*MORTGAGE\s+CREDITOR)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: creditorTableCell,
+    validate: creditorText,
+  },
+  {
+    fieldId: 'vessel.issuePlace',
+    anchor: 'LOCAL DE EMISSAO',
+    labels: [
+      /^\s*LOCAL\s+DE\s+EMISS[AÃ]O(?:\s*\/\s*PLACE\s+OF\s+ISSUE)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: tightTableCell,
+    validate: issuePlace,
+  },
+  {
+    fieldId: 'vessel.issueDate',
+    anchor: 'DATA DE EMISSAO',
+    labels: [
+      /^\s*DATA\s+DE\s+EMISS[AÃ]O(?:\s*\/\s*DATE\s+OF\s+ISSUE)?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    spatialHint: compactTableCell,
+    validate: dateValue,
+    normalize: (value) => normalizeBrazilianDate(value) ?? value.trim(),
+  },
+  {
+    fieldId: 'vessel.hullColor',
+    anchor: 'COR PREDOMINANTE DO CASCO',
+    labels: [
+      /^\s*COR\s+PREDOMINANTE\s+(?:DO\s+)?CASCO\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['right', 'below'],
+    firstOccurrenceOnly: true,
+    spatialHint: hullColorCell,
+    validate: hullColorText,
   },
   {
     fieldId: 'vessel.authority',
@@ -374,6 +703,224 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
   },
 ];
 
+function ownerConcepts(
+  prefix: 'registeredOwner' | 'coOwner',
+): readonly SemanticFieldConcept[] {
+  const taxField = prefix === 'registeredOwner' ? 'taxId' : 'cpf';
+  return [
+    {
+      fieldId: prefix + '.fullName',
+      anchor: 'NOME',
+      labels: [/^\s*NOME(?:\s*\/\s*NAME)?\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: ownerNameText,
+    },
+    {
+      fieldId: prefix + '.' + taxField,
+      anchor: 'CPF/CNPJ',
+      labels: [/^\s*CPF\s*\/?\s*CNPJ\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: compactTableCell,
+      validate: taxIdentifier,
+    },
+    {
+      fieldId: prefix + '.address',
+      anchor: 'ENDERECO',
+      labels: [/^\s*ENDERE[CÇ]O\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+    {
+      fieldId: prefix + '.streetNumber',
+      anchor: 'NUMERO',
+      labels: [/^\s*N[ÚU]MERO\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: compactTableCell,
+      validate: (value) => /^[A-Z0-9./-]{1,20}$/i.test(value.trim()),
+    },
+    {
+      fieldId: prefix + '.apartment',
+      anchor: 'COMPLEMENTO',
+      labels: [/^\s*COMPLEMENTO\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+    {
+      fieldId: prefix + '.neighborhood',
+      anchor: 'BAIRRO',
+      labels: [/^\s*BAIRRO\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+    {
+      fieldId: prefix + '.postalCode',
+      anchor: 'CEP',
+      labels: [/^\s*CEP\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: compactTableCell,
+      validate: postalCode,
+    },
+    {
+      fieldId: prefix + '.cityState',
+      anchor: 'CIDADE/ESTADO',
+      labels: [
+        /^\s*CIDADE\s*\/\s*ESTADO\s*(?:[:#\-–]\s*)?(.*)$/i,
+        /^\s*CIDADE\s+E\s+ESTADO\s*(?:[:#\-–]\s*)?(.*)$/i,
+      ],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+  ];
+}
+
+const registeredOwnerConcepts = ownerConcepts('registeredOwner');
+const coOwnerConcepts = ownerConcepts('coOwner');
+const ownerFieldConcepts = [...registeredOwnerConcepts, ...coOwnerConcepts] as const;
+
+function sectionObservation(
+  observation: DocumentObservation,
+  start: RegExp,
+  stops: readonly RegExp[],
+  minPageCenterXRatio?: number,
+): DocumentObservation {
+  const pages = observation.pages.map((page) => {
+    const lines = page.lines;
+    const positioned = lines.filter((line) => line.box);
+    const pageMinX = positioned.length
+      ? Math.min(...positioned.map((line) => line.box![0]))
+      : 0;
+    const pageMaxX = positioned.length
+      ? Math.max(...positioned.map((line) => line.box![2]))
+      : 0;
+    const pageWidth = Math.max(1, pageMaxX - pageMinX);
+    const inHorizontalPanel = (line: (typeof lines)[number]): boolean => {
+      if (minPageCenterXRatio === undefined || !line.box) return true;
+      const centerX = (line.box[0] + line.box[2]) / 2;
+      return centerX >= pageMinX + pageWidth * minPageCenterXRatio;
+    };
+    const startIndex = lines.findIndex((line) =>
+      inHorizontalPanel(line) && start.test(normalizeText(line.text)));
+    if (startIndex < 0) return { ...page, lines: [] };
+
+    const header = lines[startIndex]!;
+    const matchesStop = (value: string): boolean =>
+      stops.some((pattern) => pattern.test(normalizeText(value)));
+
+    if (header.box) {
+      const startY = header.box[3];
+      const stopY = lines
+        .filter((line) => line.box && line.box[1] > startY && matchesStop(line.text))
+        .map((line) => line.box![1])
+        .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
+
+      return {
+        ...page,
+        lines: lines.filter((line) =>
+          line !== header && line.box && inHorizontalPanel(line) &&
+          line.box[1] >= startY - Math.max(1, header.box![3] - header.box![1]) * 0.25 &&
+          line.box[1] < stopY),
+      };
+    }
+
+    const selected = [];
+    for (let index = startIndex + 1; index < lines.length; index++) {
+      const line = lines[index]!;
+      if (matchesStop(line.text)) break;
+      if (inHorizontalPanel(line)) selected.push(line);
+    }
+    return { ...page, lines: selected };
+  });
+
+  return { ...observation, pages };
+}
+
+function extractOwnerSections(
+  observation: DocumentObservation,
+  context: ExtractionContext,
+): { evidence: FieldEvidence[]; assessments: FieldExtractionAssessment[] } {
+  const ownerPanelMinX = classifyTieVariant(observation) === 'legacy' ? 0.48 : undefined;
+  const registered = sectionObservation(
+    observation,
+    /^PROPRIETARIO(?:\s*\/\s*OWNER)?$/,
+    [
+      /^CO[- ]?PROPRIETARIO\b/,
+      /^ALIENACAO\b/,
+      /^HIPOTECAD[AO]\b/,
+      /^CARACTERISTICAS\s+DO\s+CASCO\b/,
+    ],
+    ownerPanelMinX,
+  );
+  const coOwner = sectionObservation(
+    observation,
+    /^CO[- ]?PROPRIETARIO(?:\s*\/\s*CO[- ]?OWNER)?$/,
+    [
+      /^ALIENACAO\b/,
+      /^HIPOTECAD[AO]\b/,
+      /^CARACTERISTICAS\s+DO\s+CASCO\b/,
+    ],
+    ownerPanelMinX,
+  );
+
+  const registeredResult =
+    extractSemanticConcepts(registered, context, registeredOwnerConcepts);
+  const coOwnerResult =
+    extractSemanticConcepts(coOwner, context, coOwnerConcepts);
+
+  return {
+    evidence: [...registeredResult.evidence, ...coOwnerResult.evidence],
+    assessments: [...registeredResult.assessments, ...coOwnerResult.assessments],
+  };
+}
+
+function inlineOwnerFallback(
+  observation: DocumentObservation,
+  context: ExtractionContext,
+): FieldEvidence[] {
+  const ordered = observation.pages.flatMap((page) => page.lines)
+    .slice()
+    .sort((a, b) => a.page - b.page ||
+      ((a.box?.[1] ?? Number.MAX_SAFE_INTEGER) - (b.box?.[1] ?? Number.MAX_SAFE_INTEGER)));
+
+  const names = ordered.flatMap((line) => {
+    const match = /^\s*NOME\s*:\s*(.+)$/i.exec(line.text);
+    if (!match || !ownerNameText(match[1]!)) return [];
+    return [{ line, value: match[1]!.trim() }];
+  });
+  const taxes = ordered.flatMap((line) => {
+    const match = /^\s*CPF\s*\/?\s*CNPJ\s*:\s*(.+)$/i.exec(line.text);
+    if (!match || !taxIdentifier(match[1]!)) return [];
+    return [{ line, value: match[1]!.trim() }];
+  });
+
+  const result: FieldEvidence[] = [];
+  const add = (fieldId: string, item: { line: (typeof ordered)[number]; value: string } | undefined) => {
+    if (!item) return;
+    result.push({
+      fieldId,
+      value: item.value,
+      confidence: item.line.confidence,
+      documentId: context.documentId,
+      sourceId: context.sourceId,
+      page: item.line.page,
+      method: 'inline-owner-fallback',
+      anchor: fieldId.startsWith('coOwner.') ? 'CO-PROPRIETARIO' : 'PROPRIETARIO',
+      lineIds: [item.line.id],
+      status: 'REVIEW_REQUIRED',
+    });
+  };
+
+  // Without an explicit co-owner section, a second generic "NOME:" in the
+  // document is not enough evidence to assign a co-owner role.
+  add('registeredOwner.fullName', names[0]);
+  add('registeredOwner.taxId', taxes[0]);
+  return result;
+}
+
 function runTieExtraction(
   observation: DocumentObservation,
   context: ExtractionContext,
@@ -381,7 +928,42 @@ function runTieExtraction(
   const variant = classifyTieVariant(observation);
   const concepts = conceptsForVariant(variant);
   const semantic = extractSemanticConcepts(observation, context, concepts);
-  const evidence = [...semantic.evidence];
+  const owners = extractOwnerSections(observation, context);
+  const ownerFallback = inlineOwnerFallback(observation, context);
+  const ownerEvidence = [...owners.evidence];
+  for (const fallback of ownerFallback) {
+    if (!ownerEvidence.some((item) => item.fieldId === fallback.fieldId)) {
+      ownerEvidence.push(fallback);
+    }
+  }
+
+  const hasRegisteredOwnerIdentity = ownerEvidence.some((item) =>
+    item.fieldId === 'registeredOwner.fullName' ||
+    item.fieldId === 'registeredOwner.taxId');
+  const hasCoOwnerIdentity = ownerEvidence.some((item) =>
+    item.fieldId === 'coOwner.fullName' ||
+    item.fieldId === 'coOwner.cpf');
+
+  for (let index = ownerEvidence.length - 1; index >= 0; index--) {
+    const fieldId = ownerEvidence[index]!.fieldId;
+    if (fieldId.startsWith('registeredOwner.') && !hasRegisteredOwnerIdentity) {
+      ownerEvidence.splice(index, 1);
+      continue;
+    }
+    if (fieldId.startsWith('coOwner.') && !hasCoOwnerIdentity) {
+      ownerEvidence.splice(index, 1);
+    }
+  }
+
+  const evidence = [...semantic.evidence, ...ownerEvidence];
+
+  const mortgageStatus = evidence.find((item) => item.fieldId === 'vessel.mortgaged');
+  if (!mortgageStatus || normalizeText(mortgageStatus.value) !== 'SIM') {
+    const creditorIndex = evidence.findIndex(
+      (item) => item.fieldId === 'vessel.mortgageCreditor');
+    if (creditorIndex >= 0) evidence.splice(creditorIndex, 1);
+  }
+
   const byAssessment = new Map(semantic.assessments.map((item) => [item.fieldId, item]));
   const assessments = tieFieldConcepts.map((concept) =>
     byAssessment.get(concept.fieldId) ?? {
@@ -389,6 +971,35 @@ function runTieExtraction(
       status: 'NOT_FOUND' as const,
       confidence: null,
     });
+  const creditorAssessmentIndex = assessments.findIndex(
+    (item) => item.fieldId === 'vessel.mortgageCreditor');
+  if (creditorAssessmentIndex >= 0 &&
+    !evidence.some((item) => item.fieldId === 'vessel.mortgageCreditor')) {
+    assessments[creditorAssessmentIndex] = {
+      fieldId: 'vessel.mortgageCreditor',
+      status: 'NOT_FOUND',
+      confidence: null,
+    };
+  }
+
+  assessments.push(...owners.assessments.map((assessment) => {
+    const fallback = ownerEvidence.find((item) => item.fieldId === assessment.fieldId);
+    if (fallback) {
+      return {
+        fieldId: assessment.fieldId,
+        status: 'FOUND' as const,
+        confidence: fallback.confidence,
+        method: fallback.method,
+      };
+    }
+    return assessment.status === 'FOUND'
+      ? {
+          fieldId: assessment.fieldId,
+          status: 'NOT_FOUND' as const,
+          confidence: null,
+        }
+      : assessment;
+  }));
 
   // A hull fallback is intentionally strict: only identifiers with a strong
   // Brazilian hull/HIN shape are eligible. Generic alphanumeric identifiers
@@ -420,7 +1031,10 @@ function runTieExtraction(
 
 export const tieDocumentExtractor: DocumentExtractor = {
   documentType: 'tie',
-  supportedFields: tieFieldConcepts.map((concept) => concept.fieldId),
+  supportedFields: [
+    ...tieFieldConcepts.map((concept) => concept.fieldId),
+    ...ownerFieldConcepts.map((concept) => concept.fieldId),
+  ],
   extract(observation, context) {
     return runTieExtraction(observation, context).evidence;
   },

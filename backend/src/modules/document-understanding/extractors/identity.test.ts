@@ -206,4 +206,102 @@ describe('identityDocumentExtractor', () => {
     expect(evidence.some((item) => item.fieldId === 'person.identity')).toBe(false);
   });
 
+  it('mapeia RG antigo usando posição relativa e preserva filiação sem inferir parentesco', () => {
+    const rgAntigo: DocumentObservation = {
+      ...observation(),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'REGISTRO GERAL', confidence: .99,
+            box: [20, 20, 125, 44], polygon: null },
+          { id: '0:1', page: 0, text: '26.324.631-6', confidence: .98,
+            box: [150, 18, 285, 46], polygon: null },
+          { id: '0:2', page: 0, text: 'DATA DE EXPEDIÇÃO', confidence: .99,
+            box: [500, 20, 670, 44], polygon: null },
+          { id: '0:3', page: 0, text: '29/10/2018', confidence: .98,
+            box: [700, 18, 820, 46], polygon: null },
+          { id: '0:4', page: 0, text: 'NOME', confidence: .99,
+            box: [20, 70, 90, 94], polygon: null },
+          { id: '0:5', page: 0, text: 'MATHEUS DE BRITO LEONCIO SALIM', confidence: .98,
+            box: [20, 100, 430, 128], polygon: null },
+          { id: '0:6', page: 0, text: 'FILIAÇÃO', confidence: .99,
+            box: [20, 150, 120, 174], polygon: null },
+          { id: '0:7', page: 0, text: 'JULIO CESAR LEONCIO SALIM', confidence: .97,
+            box: [20, 182, 360, 208], polygon: null },
+          { id: '0:8', page: 0, text: 'LUCELIA DE BRITO LEONCIO SALIM', confidence: .97,
+            box: [20, 216, 390, 242], polygon: null },
+          { id: '0:9', page: 0, text: 'NATURALIDADE', confidence: .99,
+            box: [20, 270, 170, 294], polygon: null },
+          { id: '0:10', page: 0, text: 'ESTADO DO RIO DE JANEIRO', confidence: .98,
+            box: [20, 302, 340, 328], polygon: null },
+          { id: '0:11', page: 0, text: 'DATA DE NASCIMENTO', confidence: .99,
+            box: [500, 270, 690, 294], polygon: null },
+          { id: '0:12', page: 0, text: '22/11/1999', confidence: .98,
+            box: [700, 270, 820, 296], polygon: null },
+          { id: '0:13', page: 0, text: 'DOC. ORIGEM', confidence: .99,
+            box: [20, 350, 160, 374], polygon: null },
+          { id: '0:14', page: 0, text: 'C. NASC LIV 277A FLS 61 TERM 101358 C 01',
+            confidence: .95, box: [20, 382, 520, 408], polygon: null },
+          { id: '0:15', page: 0, text: 'RIO DE JANEIRO RJ', confidence: .96,
+            box: [20, 414, 250, 440], polygon: null },
+          { id: '0:16', page: 0, text: 'CPF', confidence: .99,
+            box: [20, 462, 70, 486], polygon: null },
+          { id: '0:17', page: 0, text: '138.989.167-40', confidence: .99,
+            box: [20, 494, 210, 520], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = identityDocumentExtractor.extract(rgAntigo, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['person.identity']).toBe('26.324.631-6');
+    expect(values['person.issueDate']).toBe('29/10/2018');
+    expect(values['person.fullName']).toBe('MATHEUS DE BRITO LEONCIO SALIM');
+    expect(values['person.parent1Name']).toBe('JULIO CESAR LEONCIO SALIM');
+    expect(values['person.parent2Name']).toBe('LUCELIA DE BRITO LEONCIO SALIM');
+    expect(values['person.birthplace']).toBe('ESTADO DO RIO DE JANEIRO');
+    expect(values['person.birthDate']).toBe('22/11/1999');
+    expect(values['person.documentOrigin']).toBe(
+      'C. NASC LIV 277A FLS 61 TERM 101358 C 01 RIO DE JANEIRO RJ');
+    expect(values['person.cpf']).toBe('138.989.167-40');
+  });
+
+  it('tolera corrupção leve nas âncoras do RG antigo sem confundir campos vizinhos', () => {
+    const noisyRg: DocumentObservation = {
+      ...observation(),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'REGISTR0 GERAL', confidence: .91,
+            box: [20, 20, 125, 44], polygon: null },
+          { id: '0:1', page: 0, text: '26.324.631-6', confidence: .97,
+            box: [150, 18, 285, 46], polygon: null },
+          { id: '0:2', page: 0, text: 'DATA DE EXPEDICA0', confidence: .90,
+            box: [500, 20, 670, 44], polygon: null },
+          { id: '0:3', page: 0, text: '29/10/2018', confidence: .97,
+            box: [700, 18, 820, 46], polygon: null },
+          { id: '0:4', page: 0, text: 'NATURAL1DADE', confidence: .90,
+            box: [20, 270, 170, 294], polygon: null },
+          { id: '0:5', page: 0, text: 'ESTADO DO RIO DE JANEIRO', confidence: .97,
+            box: [20, 302, 340, 328], polygon: null },
+          { id: '0:6', page: 0, text: 'DATA DE NASCIMENT0', confidence: .90,
+            box: [500, 270, 690, 294], polygon: null },
+          { id: '0:7', page: 0, text: '22/11/1999', confidence: .97,
+            box: [500, 302, 620, 328], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = identityDocumentExtractor.extract(noisyRg, context);
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+
+    expect(values['person.identity']).toBe('26.324.631-6');
+    expect(values['person.issueDate']).toBe('29/10/2018');
+    expect(values['person.birthplace']).toBe('ESTADO DO RIO DE JANEIRO');
+    expect(values['person.birthDate']).toBe('22/11/1999');
+  });
+
 });
