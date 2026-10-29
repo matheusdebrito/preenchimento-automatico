@@ -1,5 +1,6 @@
 import type { CatalogDefinition } from './contracts.js';
 import { catalog } from './catalog.js';
+import { pendingMotoAquaticaServiceForms } from './vessel-services.js';
 
 /**
  * Local-only overlay of the REAL pilot service, never a parallel fake service.
@@ -29,6 +30,15 @@ export function qaPreviewCatalog(): CatalogDefinition {
           'com dados inventados. PDFs marcados como AMOSTRA e não válidos para protocolo.',
         status: 'AVAILABLE' as const,
         creditCost: 0,
+        questions: service.questions.map((question) =>
+          question.id === 'vesselType'
+            ? { ...question, unavailableOptions: [] }
+            : question),
       } : service),
+    serviceForms: [
+      ...catalog.serviceForms,
+      ...pendingMotoAquaticaServiceForms.filter((relation) =>
+        relation.serviceId === QA_PREVIEW_SERVICE_ID),
+    ],
   };
 }
