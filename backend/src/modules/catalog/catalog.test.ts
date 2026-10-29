@@ -132,8 +132,12 @@ describe('catálogo reutilizável de formulários', () => {
     const generic = vesselServices.flatMap((service) => service.documentRequirements)
       .filter((requirement) => requirement.extraction?.documentType === 'supporting-document');
     expect(generic.length).toBeGreaterThan(0);
-    expect(vesselServices.flatMap((service) => service.documentRequirements)
-      .some((requirement) => requirement.id === 'vessel-photos')).toBe(false);
+    const requirementIds = vesselServices.flatMap((service) =>
+      service.documentRequirements.map((requirement) => requirement.id));
+    expect(requirementIds).not.toContain('power-of-attorney');
+    expect(requirementIds).not.toContain('gru-receipt');
+    expect(requirementIds).not.toContain('dpem-proof');
+    expect(requirementIds).not.toContain('vessel-photos');
   });
 
   it('mantém origem de campos explícita em todo perfil de extração', () => {
