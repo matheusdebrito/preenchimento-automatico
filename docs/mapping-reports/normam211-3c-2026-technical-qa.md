@@ -11,7 +11,7 @@ O Anexo 3-C vigente é o **Termo de Responsabilidade de Construção/Alteração
 - sem criptografia;
 - sem AcroForm;
 - SHA-256 local:
-  `BD8531AA1E8EB0DBD7B46EB69D460B621D34772154D2C8DF9659A4F69E12F3A9`.
+  `63B31E5D256B8B178E88D1689AE0087C49ECB89EBB012B9F8B465B095F50F005`.
 
 ## Campos mapeados
 
@@ -31,8 +31,5 @@ Assinatura e ART permanecem fora do preenchimento automático.
 
 ## Estado
 
-O novo mapping está `DRAFT` e a amostra sintética local foi revisada visualmente.
-A FormVersion permanece `IDENTIFIED`: o blob atualmente existente no caminho canônico
-do repositório não foi comprovado como sendo byte a byte o mesmo PDF local desta revisão.
-Não promover para `VERIFIED/APPROVED` antes de substituir/verificar os bytes e repetir o
-QA pelo motor real.
+O novo mapping está `TESTED` e a amostra sintética local foi revisada visualmente.
+A FormVersion foi promovida para `VERIFIED` após a comparação byte a byte entre o PDF local e o blob versionado no caminho canônico. O mapping permanece `TESTED`, não `APPROVED`; ainda falta executar o gate do motor real/CI antes de liberar cenários dependentes dele.
