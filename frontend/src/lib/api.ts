@@ -5,6 +5,7 @@ export class ApiError extends Error {
     public readonly fieldId?: string,
     public readonly errorCode?: string,
     public readonly requirementId?: string,
+    public readonly fieldReason?: string,
   ) { super(message); }
 }
 
@@ -62,6 +63,12 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         ? value : undefined;
     const fieldId = safeIdentifier(body.fieldId);
     const requirementId = safeIdentifier(body.requirementId);
+    const allowedReasons = new Set([
+      'required', 'invalid_cpf', 'invalid_date', 'invalid_boolean',
+      'invalid_choice', 'unsupported_character', 'text_too_long', 'text_overflow',
+    ]);
+    const fieldReason = typeof body.reason === 'string' && allowedReasons.has(body.reason)
+      ? body.reason : undefined;
     const message = response.status === 401 ? 'Entre na sua conta para continuar.'
       : code === 'missing_required_fields' ? 'Há um campo obrigatório sem preencher.'
       : code === 'invalid_field_value' ? 'Um campo contém um valor inválido.'
@@ -71,6 +78,11 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       : code === 'openai_failed'
         ? 'A leitura pela OpenAI não foi concluída. Tente novamente ou use PaddleOCR.'
       : code === 'ocr_failed' ? 'A leitura não foi concluída. Tente novamente.'
+      : code === 'insufficient_credits' ? 'Você não possui créditos suficientes para gerar os formulários.'
+      : code === 'credit_charge_failed'
+        ? 'Não foi possível confirmar a cobrança do crédito agora. Tente novamente.'
+      : code === 'template_generation_failed'
+        ? 'O modelo do formulário não pôde ser gerado. Tente novamente ou informe o suporte.'
       : code === 'generation_failed' ? 'Não foi possível gerar o PDF. Confira os dados e tente novamente.'
       : code === 'invalid_document' ? 'Arquivo não aceito. Confira formato, integridade e tamanho.'
       : response.status === 413 ? 'Arquivo excede o limite de 10 MB.'
@@ -78,7 +90,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       : response.status === 422 ? 'Revise os documentos e valores informados.'
       : response.status === 429 ? 'Muitas tentativas. Aguarde antes de continuar.'
       : 'Não foi possível concluir a solicitação. Tente novamente.';
-    throw new ApiError(response.status, message, fieldId, code, requirementId);
+    throw new ApiError(response.status, message, fieldId, code, requirementId, fieldReason);
   }
   const data: unknown = await response.json();
   logLocalOcrResult(path, (init?.method ?? 'GET').toUpperCase(), data);
