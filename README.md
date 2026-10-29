@@ -332,8 +332,9 @@ O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a prepar
 ## Serviços de amadores NORMAM-211
 
 A NORMAM-211 também cobre Arrais-Amador, Mestre-Amador e Capitão-Amador. O
-catálogo já modela, em `DRAFT`, **Inscrição/Emissão da CHA** e **Renovação da
-CHA**. Perda, roubo, furto ou dano da cédula não é exposto como uma “segunda via”
+catálogo já modela, em `DRAFT`, **Inscrição para exame de amador** e **Renovação da
+CHA**. A inscrição do art. 5.4.1 não é vinculada ao Anexo 5-H por inferência. Perda,
+roubo, furto ou dano da cédula não é exposto como uma “segunda via”
 separada: a norma direciona esses casos para renovação, com o Anexo 5-D quando
 aplicável. Os anexos 5-D e 5-H precisam ser versionados, mapeados e revisados
 antes da liberação.
