@@ -91,7 +91,7 @@ export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
   {
     id: 'inscricao-exame-amador',
     title: 'Inscrição para exame',
-    summary: 'Documentação para inscrição nos exames de Arrais, Mestre ou Capitão, sem inventar formulário não indicado pela norma.',
+    summary: 'Preenchimento do requerimento para inscrição nos exames de Arrais, Mestre ou Capitão.',
   },
   {
     id: 'renovacao-cha-amador',
