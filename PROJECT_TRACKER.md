@@ -115,7 +115,8 @@ gates normativos, visuais e de produção.
 - [x] Corrigir BADE/BSADE: BSADE até 6 m; BADE acima de 6 m.
 - [x] Manter o domínio do MVP em um único motor e impedir reintrodução silenciosa de motor2/3/4.
 - [x] Remover fotos da embarcação do upload da aplicação; exigência oficial permanece apenas na documentação do procedimento.
-- [ ] Validar bytes, mapear e homologar visualmente o 3-C correto antes de liberar os cenários que dependem dele.
+- [x] Validar os bytes versionados do 3-C correto; blob Git comparado byte a byte com o PDF enviado pelo usuário.
+- [x] Refazer o FormMapping do 3-C correto, revisar amostra sintética local e promover para `TESTED`.
 - [x] Fixar o MVP em um único motor; Motor 2–4 e caixas relacionadas permanecem fora do domínio e serão tratados em evolução futura.
 - [x] Manter sete serviços para embarcação/barco; alteração de dados, alteração de motor, moto aquática e inscrição >12 m permanecem em validação enquanto 3-C/NORMAM-212 não estiverem homologados.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
@@ -483,9 +484,36 @@ head final deve repetir todos os gates antes do merge.
 - [x] Catalogar Inscrição para exame de amador e Renovação da CHA em DRAFT; não vincular 5-H à inscrição sem suporte do art. 5.4.1.
 - [x] Não criar “segunda via” separada: perda/dano de cédula segue renovação.
 - [x] Modelar dependência de categoria: Arrais usa atestado 5-E; Mestre exige Arrais válido; Capitão exige Mestre válido.
-- [ ] Extrair 5-D e 5-H para templates imutáveis no repositório.
-- [ ] Registrar SHA-256 e validar estrutura PDF.
-- [ ] Criar FormMapping dos anexos 5-D e 5-H.
-- [ ] Gerar amostras fictícias e revisar visualmente.
+- [x] Versionar 5-D e 5-H como templates imutáveis no repositório; blobs Git comparados byte a byte com os PDFs enviados pelo usuário.
+- [x] Registrar SHA-256 local, páginas, dimensões e ausência de AcroForm dos anexos 5-D e 5-H.
+- [x] Criar FormMapping dos anexos 5-D e 5-H e promover para `TESTED` após QA sintético local.
+- [x] Gerar amostras fictícias locais e revisar visualmente; promoção continua bloqueada até repetir a geração com os bytes versionados pelo motor real.
 - [ ] Executar testes/CI e somente então promover serviços de amadores para AVAILABLE.
 - [ ] Aquaviários: obter NORMAM-101/DPC antes de catalogar serviços profissionais.
+
+
+### Registro de implementação - 29/10/2026, mappings 5-D/5-H e 3-C
+
+- [x] Adicionar `answerBindings` ao `ServiceForm` para copiar respostas já validadas para campos do PDF sem lógica específica de CHA na rota.
+- [x] Validar bindings no catálogo e adicionar testes unitários de precedência/fail-closed.
+- [x] Vincular `chaSituation` -> `process.chaLossReason` para o Anexo 5-D.
+- [x] Mapear 5-D e 5-H em coordenadas PDF, mantendo assinatura manual.
+- [x] Mapear o 3-C correto com campos semânticos próprios de construção/alteração.
+- [x] Registrar relatórios em `docs/mapping-reports/normam211-amadores-2026-technical-qa.md` e `normam211-3c-2026-technical-qa.md`.
+- [ ] Executar suíte completa/typecheck/build quando o ambiente conseguir acessar o repositório ou CI for disparado.
+
+
+### Validação dos blobs versionados - 29/10/2026
+
+Os três PDFs foram enviados pelo responsável do produto para a branch do PR #37 e os
+blobs Git foram comparados byte a byte com os arquivos locais usados no QA:
+
+- Anexo 3-C: Git blob `2d22e83e51721d34fe06d4e1230be67bf226ca56`, SHA-256
+  `63B31E5D256B8B178E88D1689AE0087C49ECB89EBB012B9F8B465B095F50F005`;
+- Anexo 5-D: Git blob `6473c645eb700b4eb27bb0bb26418804560378eb`, SHA-256
+  `53DD1F6576B3B9C6C4D1B056B18F4333DBCC24C3DE8FB18047B32B6AEBE9850E`;
+- Anexo 5-H: Git blob `0eeb17b1f83f17ac788d68d3fdeeb98e26868bd4`, SHA-256
+  `06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF`.
+
+As três `FormVersion` estão `VERIFIED`. Os mappings 3-C, 5-D e 5-H permanecem
+`TESTED`, não `APPROVED`, até a execução do gate completo do projeto.

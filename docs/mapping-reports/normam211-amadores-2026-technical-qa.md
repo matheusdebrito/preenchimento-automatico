@@ -1,0 +1,55 @@
+# QA técnica - NORMAM-211 amadores (Anexos 5-D e 5-H)
+
+**Data:** 29/10/2026  
+**Fonte:** NORMAM-211/DPC fornecida ao projeto.
+
+## Estrutura verificada localmente
+
+| Anexo | Páginas | Tamanho | AcroForm | SHA-256 local |
+| --- | ---: | --- | --- | --- |
+| 5-D | 1 | A4 595x842 pt | não | `53DD1F6576B3B9C6C4D1B056B18F4333DBCC24C3DE8FB18047B32B6AEBE9850E` |
+| 5-H | 2 | A4 595x842 pt | não | `06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF` |
+
+Ambos estão sem criptografia, sem anexos e sem anotações. A inspeção estrutural foi feita
+com `pdf_inspect.py` e a revisão visual com renderização a 180 dpi.
+
+## 5-D - Declaração de extravio/furto/roubo/dano da CHA
+
+Mapeados:
+
+- nome, identidade, órgão expedidor e data de expedição;
+- CPF e endereço;
+- telefone;
+- número, data de emissão e categoria da CHA;
+- opções Extraviada, Roubada, Furtada e Danificada;
+- data da declaração.
+
+O motivo é obtido da resposta validada `chaSituation` por `answerBindings`, sem confiar
+em valor arbitrário vindo do navegador.
+
+## 5-H - Requerimento
+
+Mapeados:
+
+- nome, CPF, identidade e órgão expedidor;
+- endereço e contatos;
+- opção 2 - Emissão/Renovação;
+- descrição do pedido;
+- local, data e CPF na página 2.
+
+Assinatura permanece manual.
+
+## Estado de homologação
+
+Os mappings estão em `TESTED`. A geometria foi conferida com amostras sintéticas locais,
+mas os PDFs 5-D/5-H estão versionados em
+`backend/templates/<form>/v1/original.pdf`. As FormVersion foram promovidas para `VERIFIED` após comparação byte a byte entre os uploads locais e os blobs Git versionados. Os mappings permanecem `TESTED`, não `APPROVED`, portanto os serviços ainda não são publicados.
+
+A promoção exige:
+
+1. bytes exatos versionados no repositório;
+2. SHA-256 do arquivo versionado igual ao registrado;
+3. geração pelo motor real do projeto;
+4. renderização da saída sintética pelo CI;
+5. revisão visual final;
+6. testes/typecheck/build.

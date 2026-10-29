@@ -311,6 +311,24 @@ const authorizationPlacements: readonly CoordinatePlacement[] = [
   top('process.date', 275, 552, 142, 6.2),
 ];
 
+
+const responsibilityConstructionPlacements: readonly CoordinatePlacement[] = [
+  top('vessel.authority', 280, 185, 245, 6.5),
+  top('vessel.name', 185, 214, 215, 7, 0, true),
+  top('process.constructionAction', 414, 214, 100, 7),
+  top('vessel.builderName', 92, 243, 275, 7, 0, true),
+  top('vessel.length', 315, 287, 75, 7),
+  top('vessel.lengthBetweenPerpendiculars', 315, 302, 75, 7),
+  top('vessel.breadth', 315, 317, 75, 7),
+  top('vessel.depth', 315, 332, 75, 7),
+  top('vessel.navigationArea', 228, 347, 10, 9, 0, false, 'interior'),
+  top('vessel.navigationArea', 290, 347, 10, 9, 0, false, 'costeira'),
+  top('vessel.navigationArea', 356, 347, 10, 9, 0, false, 'oceanica'),
+  top('vessel.capacityPersons', 315, 362, 75, 7),
+  top('process.constructionAction', 278, 463, 115, 7),
+  top('declarant.placeDate', 150, 536, 245, 7),
+];
+
 export const normam211Mappings: readonly FormMapping[] = [
   { id: 'bade-er-map-v1', formVersionId: 'bade-er-2026-v1', revision: 'v1',
     status: 'APPROVED', placements: badePlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI visual QA + product owner release authorization', reportPath: 'docs/mapping-reports/normam211-2026-technical-qa.md' },
@@ -333,5 +351,6 @@ export const normam211Mappings: readonly FormMapping[] = [
     status: 'APPROVED', placements: authorizationPlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI visual QA + product owner release authorization', reportPath: 'docs/mapping-reports/normam211-2026-technical-qa.md' },
   { id: 'termo-responsabilidade-er-map-v1',
     formVersionId: 'termo-responsabilidade-er-2026-v1', revision: 'v2',
-    status: 'DRAFT', placements: [], reviewedAt: null, reviewer: null, reportPath: null },
+    status: 'TESTED', placements: responsibilityConstructionPlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI local synthetic visual QA',
+    reportPath: 'docs/mapping-reports/normam211-3c-2026-technical-qa.md' },
 ];

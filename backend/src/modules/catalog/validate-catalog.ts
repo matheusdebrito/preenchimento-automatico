@@ -247,8 +247,14 @@ export function validateCatalog(data: CatalogDefinition): string[] {
     formsByService.set(relation.serviceId, (formsByService.get(relation.serviceId) ?? 0) + 1);
     validateConditions(relation.conditions, questionsByService.get(relation.serviceId) ?? new Map(), pair, issues);
     for (const [fieldId, value] of Object.entries(relation.fixedValues ?? {})) {
-      if (!fields.has(fieldId) || !value || value.length > 20) {
+      if (!fields.has(fieldId) || !value || value.length > 80) {
         issues.push('relação: valor fixo inválido: ' + fieldId);
+      }
+    }
+    for (const [fieldId, questionId] of Object.entries(relation.answerBindings ?? {})) {
+      if (!fields.has(fieldId) ||
+        !questionsByService.get(relation.serviceId)?.has(questionId)) {
+        issues.push('relação: binding inválido: ' + fieldId + ' <- ' + questionId);
       }
     }
     if (version?.status === 'OUTDATED') issues.push('relação: versão desatualizada ' + relation.formVersionId);

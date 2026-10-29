@@ -50,8 +50,8 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(4);
     expect(catalog.forms).toHaveLength(16);
     expect(catalog.versions).toHaveLength(16);
-    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(13);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(3);
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(16);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(0);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED').every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
     expect(catalog.mappings).toHaveLength(16);
@@ -60,10 +60,14 @@ describe('catálogo reutilizável de formulários', () => {
       mapping.formVersionId !== 'termo-responsabilidade-er-2026-v1').every((mapping) =>
       mapping.status === 'APPROVED')).toBe(true);
     expect(catalog.mappings.find((mapping) =>
-      mapping.formVersionId === 'termo-responsabilidade-er-2026-v1')?.status).toBe('DRAFT');
+      mapping.formVersionId === 'termo-responsabilidade-er-2026-v1')?.status).toBe('TESTED');
     expect(catalog.mappings.filter((mapping) =>
-      !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
-      mapping.status === 'DRAFT')).toBe(true);
+      ['requerimento-cha-amador-2026-v1', 'declaracao-extravio-cha-amador-2026-v1']
+        .includes(mapping.formVersionId)).every((mapping) =>
+      mapping.status === 'TESTED')).toBe(true);
+    expect(catalog.mappings.filter((mapping) =>
+      mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
+      .every((mapping) => mapping.status === 'DRAFT')).toBe(true);
     expect(catalog.serviceForms).toHaveLength(45);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
@@ -218,6 +222,25 @@ describe('catálogo reutilizável de formulários', () => {
     fixture.serviceForms = [{ serviceId: 'service-b', formVersionId: 'example-form-v1', order: 1,
       conditions: [{ questionId: 'mode', equals: 'maybe' }] }];
     expect(validateCatalog(fixture).join(' ')).toContain('resposta fora das opções');
+  });
+
+  it('valida bindings entre respostas do serviço e campos semânticos', () => {
+    const fixture = sharedFormFixture();
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      answerBindings: { 'person.fullName': 'mode' },
+    }];
+    expect(validateCatalog(fixture)).toEqual([]);
+
+    fixture.serviceForms = [{
+      serviceId: 'service-b',
+      formVersionId: 'example-form-v1',
+      order: 1,
+      answerBindings: { 'person.fullName': 'missing-question' },
+    }];
+    expect(validateCatalog(fixture).join(' ')).toContain('binding inválido');
   });
 
   it('aceita condição oneOf somente com opções declaradas', () => {
