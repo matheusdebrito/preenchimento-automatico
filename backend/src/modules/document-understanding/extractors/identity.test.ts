@@ -155,6 +155,32 @@ describe('identityDocumentExtractor', () => {
     expect(Object.keys(values).some((field) => field.includes('blood'))).toBe(false);
   });
 
+  it('extrai data de nascimento do RG antigo sem reutilizar a data de expedição', () => {
+    const rgAntigo: DocumentObservation = {
+      ...observation(),
+      pages: [{
+        page: 0,
+        orientation: 0,
+        lines: [
+          { id: '0:0', page: 0, text: 'DATA DE EXPEDIÇÃO', confidence: .99,
+            box: [300, 20, 470, 42], polygon: null },
+          { id: '0:1', page: 0, text: '29/10/2018', confidence: .98,
+            box: [300, 48, 420, 70], polygon: null },
+          { id: '0:2', page: 0, text: 'DATA DE NASCIMENTO', confidence: .99,
+            box: [300, 140, 500, 162], polygon: null },
+          { id: '0:3', page: 0, text: '22/11/1999', confidence: .98,
+            box: [300, 168, 420, 190], polygon: null },
+        ],
+      }],
+    };
+
+    const evidence = identityDocumentExtractor.extract(rgAntigo, context);
+    expect(evidence.find((item) => item.fieldId === 'person.issueDate')?.value)
+      .toBe('29/10/2018');
+    expect(evidence.find((item) => item.fieldId === 'person.birthDate')?.value)
+      .toBe('22/11/1999');
+  });
+
   it('mantém CIN como família de identidade sem transformar CPF em RG automaticamente', () => {
     const cin: DocumentObservation = {
       ...observation(),
