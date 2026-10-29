@@ -446,35 +446,121 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
 ];
 
-// Preserved for later NORMAM-212 homologation. These relations are intentionally
-// excluded from the active catalog while moto aquática remains unavailable.
+// NORMAM-212 relationships are kept explicit even while Moto Aquática remains blocked.
+// They are not part of the active catalog until every corresponding PDF mapping is approved.
+const motoRequest = (
+  serviceId: string,
+  order: number,
+  action: string,
+  extraConditions: ServiceForm['conditions'] = [],
+): ServiceForm => ({
+  serviceId,
+  formVersionId: 'requerimento-ma-v1',
+  order,
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }, ...extraConditions],
+  fixedValues: { 'process.vesselAction': action },
+});
+
+const motoBdmoto = (
+  serviceId: string,
+  order: number,
+  action: 'inscricao' | 'transf_prop' | 'transf_jur' | 'transf_prop_jur' | 'alteracao_dados',
+  extraConditions: ServiceForm['conditions'] = [],
+): ServiceForm => ({
+  serviceId,
+  formVersionId: 'bdmoto-v1',
+  order,
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }, ...extraConditions],
+  fixedValues: action === 'inscricao'
+    ? { 'process.inscription': 'true' }
+    : action === 'transf_prop'
+      ? { 'process.transferProperty': 'true' }
+      : action === 'transf_jur'
+        ? { 'process.transferJurisdiction': 'true' }
+        : action === 'transf_prop_jur'
+          ? { 'process.transferProperty': 'true', 'process.transferJurisdiction': 'true' }
+          : { 'process.updateVesselData': 'true' },
+});
+
+const motoResidence = (serviceId: string, order: number): ServiceForm => ({
+  serviceId,
+  formVersionId: 'declaracao-residencia-ma-v1',
+  order,
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+});
+
+const motoLostTie = (
+  serviceId: string,
+  order: number,
+  conditional = true,
+): ServiceForm => ({
+  serviceId,
+  formVersionId: 'declaracao-perda-tie-ma-v1',
+  order,
+  fixedValues: { 'process.lostTie': 'true' },
+  conditions: conditional
+    ? [
+        { questionId: 'vesselType', equals: 'moto_aquatica' },
+        { questionId: 'tieSituation', equals: 'extraviado' },
+      ]
+    : [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+});
+
 export const pendingMotoAquaticaServiceForms: readonly ServiceForm[] = [
-{ serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'requerimento-ma-v1', order: 8,
-    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
-    fixedValues: { 'process.transferOwnership': 'X' } },
+  motoRequest('inscricao-embarcacao', 1, 'inscricao'),
+  motoBdmoto('inscricao-embarcacao', 2, 'inscricao'),
+  motoResidence('inscricao-embarcacao', 3),
+
+  motoRequest('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
+  motoBdmoto('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
   { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'bdmoto-v1', order: 9,
-    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
-    fixedValues: { 'process.transferOwnership': 'X' } },
-  { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 10,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
-  { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'declaracao-residencia-ma-v1', order: 11,
+  motoResidence('transferencia-propriedade-embarcacao', 4),
+  motoLostTie('transferencia-propriedade-embarcacao', 5),
+
+  motoRequest('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
+  motoBdmoto('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'),
+  motoResidence('transferencia-jurisdicao-embarcacao', 3),
+  motoLostTie('transferencia-jurisdicao-embarcacao', 4),
+
+  motoRequest('transferencia-propriedade-jurisdicao-embarcacao', 1, 'transf_prop_jur'),
+  motoBdmoto('transferencia-propriedade-jurisdicao-embarcacao', 2, 'transf_prop_jur'),
+  { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
-  { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'declaracao-perda-tie-ma-v1', order: 12,
-    conditions: [
-      { questionId: 'vesselType', equals: 'moto_aquatica' },
-      { questionId: 'tieSituation', equals: 'extraviado' },
-    ] },
+  motoResidence('transferencia-propriedade-jurisdicao-embarcacao', 4),
+  motoLostTie('transferencia-propriedade-jurisdicao-embarcacao', 5),
+
+  // NORMAM-212 2.2: BDMOTO is required on renewal only when characteristics changed.
+  motoRequest('renovacao-tie-embarcacao', 1, 'renovacao'),
+  motoBdmoto('renovacao-tie-embarcacao', 2, 'alteracao_dados',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  motoResidence('renovacao-tie-embarcacao', 3),
+  motoLostTie('renovacao-tie-embarcacao', 4),
+
+  // Old/non-digital TIE loss follows renewal; declaration substitutes the missing original.
+  motoRequest('segunda-via-tie-embarcacao', 1, 'segunda_via'),
+  motoLostTie('segunda-via-tie-embarcacao', 2, false),
+  motoBdmoto('segunda-via-tie-embarcacao', 3, 'alteracao_dados',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  motoResidence('segunda-via-tie-embarcacao', 4),
+
+  motoRequest('alteracao-dados-embarcacao', 1, 'alteracao_dados'),
+  motoBdmoto('alteracao-dados-embarcacao', 2, 'alteracao_dados'),
+  motoResidence('alteracao-dados-embarcacao', 3),
+  motoLostTie('alteracao-dados-embarcacao', 4),
+
+  motoRequest('alteracao-motor-embarcacao', 1, 'alteracao_dados'),
+  motoBdmoto('alteracao-motor-embarcacao', 2, 'alteracao_dados'),
+  motoResidence('alteracao-motor-embarcacao', 3),
+  motoLostTie('alteracao-motor-embarcacao', 4),
 
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'comunicacao-transferencia-ma-v1', order: 2,
+    formVersionId: 'comunicacao-transferencia-ma-v1', order: 1,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 2,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
 ];
 
