@@ -54,6 +54,9 @@ export interface CoordinatePlacement {
   maxWidth: number;
   /** Optional fixed-choice value; selected coordinates receive X, others stay blank. */
   markWhen?: string;
+  /** Optional presentation-only transformation; the canonical value remains unchanged. */
+  valueTransform?: 'DATE_DAY' | 'DATE_MONTH_NUMBER' | 'DATE_MONTH_NAME_PT_BR' |
+    'DATE_YEAR' | 'DATE_YEAR_2';
 }
 
 export type FieldPlacement = AcroFormPlacement | CoordinatePlacement;
