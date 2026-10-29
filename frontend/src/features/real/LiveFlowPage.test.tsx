@@ -188,6 +188,79 @@ describe('jornada real isolada da demonstração', () => {
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('agrupa dados por contexto e destaca todos os campos obrigatórios pendentes', async () => {
+    const groupedFieldsService = {
+      ...service,
+      reviewFields: [
+        { id: 'person.address', label: 'Rua', valueKind: 'text', required: false },
+        { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+        { id: 'person.streetNumber', label: 'Número', valueKind: 'text', required: false },
+        { id: 'person.cpf', label: 'CPF', valueKind: 'text', required: true },
+        { id: 'person.nationality', label: 'Nacionalidade', valueKind: 'text', required: false },
+        { id: 'person.birthplace', label: 'Naturalidade', valueKind: 'text', required: false },
+        { id: 'vessel.name', label: 'Nome da embarcação', valueKind: 'text', required: false },
+      ],
+      reviewForms: [{
+        formVersionId: 'form-grouped-v1',
+        formId: 'form-grouped',
+        name: 'Formulário agrupado',
+        fields: [
+          { id: 'person.address', label: 'Rua', valueKind: 'text', required: false },
+          { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
+          { id: 'person.streetNumber', label: 'Número', valueKind: 'text', required: false },
+          { id: 'person.cpf', label: 'CPF', valueKind: 'text', required: true },
+          { id: 'person.nationality', label: 'Nacionalidade', valueKind: 'text', required: false },
+          { id: 'person.birthplace', label: 'Naturalidade', valueKind: 'text', required: false },
+          { id: 'vessel.name', label: 'Nome da embarcação', valueKind: 'text', required: false },
+        ],
+      }],
+      formVersionIds: ['form-grouped-v1'],
+    };
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' && !init?.method) {
+        return json({ service: groupedFieldsService });
+      }
+      if (path.endsWith('/quote')) return json({ service: groupedFieldsService });
+      if (path === '/api/jobs' && init?.method === 'POST') {
+        return json({ id: 'job-grouped', expiresAt: Date.now() + 20 * 60_000 }, 201);
+      }
+      if (path.endsWith('/extract')) {
+        return json({ fields: {}, sources: {}, diagnostics: [] });
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', {
+      name: 'Continuar sem anexos — preencher manualmente',
+    }));
+
+    const personal = await screen.findByRole('heading', { level: 3, name: 'Dados pessoais' });
+    const address = screen.getByRole('heading', { level: 3, name: 'Endereço' });
+    const vessel = screen.getByRole('heading', { level: 3, name: 'Dados da embarcação' });
+    expect(personal.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(address.compareDocumentPosition(vessel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByLabelText(/^Rua$/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Número$/)).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Não é possível gerar os formulários');
+    expect(alert.textContent).toContain('Nome completo');
+    expect(alert.textContent).toContain('CPF');
+
+    const name = screen.getByLabelText('Nome completo *') as HTMLInputElement;
+    const cpf = screen.getByLabelText('CPF *') as HTMLInputElement;
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(cpf.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getAllByText('Campo obrigatório pendente.')).toHaveLength(2);
+  }, 25000);
+
   it('popula nome, CPF e RG do comprador quando a API entrega candidatos válidos', async () => {
     const identityService = {
       ...service,
