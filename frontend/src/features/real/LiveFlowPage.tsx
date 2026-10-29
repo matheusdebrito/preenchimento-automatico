@@ -412,10 +412,10 @@ export function LiveFlowPage() {
               ) : null}
               {step === 'files' ? (
                 <>
-                  <h2>Documentos para leitura automática (opcionais)</h2>
-                  <p>Você pode anexar apenas um documento, vários ou nenhum.
-                    O OCR tentará sugerir os dados disponíveis; todos os demais campos
-                    poderão ser preenchidos manualmente na próxima etapa.</p>
+                  <h2>Documentos para preenchimento automático (opcionais)</h2>
+                  <p>Você pode anexar um documento, vários ou nenhum. A leitura automática
+                    serve apenas para sugerir dados. Se preferir, continue sem anexos e
+                    preencha cada formulário manualmente na próxima etapa.</p>
                   <p className="field__hint">Os arquivos escolhidos são enviados temporariamente
                     ao servidor e excluídos ao cancelar ou expirar o processo.</p>
                   <label className="field">
