@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 28/10/2026. Piloto técnico: transferência de propriedade de moto aquática. Expansão NORMAM-211 de serviços de embarcações catalogada em DRAFT, ainda sem liberação de geração. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
+> Atualização: 29/10/2026. Matriz serviço -> formulário auditada contra as NORMAM-211/212 anexadas pelo usuário. Fluxos de barco homologados preservados; inscrição para exame de amador voltou a DRAFT por ausência de exigência expressa do 5-H no item 5.4.1; matriz de Moto Aquática foi completada, mas permanece bloqueada enquanto seus seis mapeamentos PDF estiverem DRAFT. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de OCR abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — auditoria contra NORMAM-211/212 completa em andamento; 7 serviços de barco ativos, 3-C corrigido pendente de remapeamento, amadores catalogados em DRAFT, moto aquática e QA manual pendentes |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — matriz serviço/formulário auditada contra NORMAM-211/212; 7 serviços de barco ativos, alterações seguem DRAFT com 3-C condicional, inscrição para exame de amador voltou a DRAFT, matriz de Moto Aquática completa mas bloqueada por mapeamentos DRAFT e QA manual pendente |
 
 **Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
@@ -96,6 +96,15 @@ Também foram identificadas referências internas inconsistentes na própria pub
 (2-L/2-K e 3-D/2-C, entre outras). O produto seguirá o título e conteúdo do anexo
 efetivamente publicado e registrará a divergência, sem inventar numeração.
 
+
+A segunda revisão de 29/10/2026 fechou a matriz serviço -> formulário:
+- renovação TIE/TIEM usa 2-C e só inclui BADE/BSADE quando houve alteração;
+- perda/extravio adiciona 2-H; transferência de propriedade usa 2-C + BADE/BSADE + autorização;
+- alteração estrutural só associa 3-C quando explicitamente indicada e permanece DRAFT;
+- adaptação de embarcação miúda a remo para motor registra a Declaração do Responsável Técnico como documento de apoio;
+- inscrição para exame ARA/MSA/CPA voltou a DRAFT porque o item 5.4.1 não exige expressamente o 5-H;
+- a matriz NORMAM-212 foi completada para todos os serviços equivalentes, mas não entra no catálogo ativo enquanto os mapeamentos de Moto Aquática permanecerem DRAFT.
+
 Relatório: `docs/NORMAM_SOURCE_AUDIT_2026-10-29.md`.
 
 ## 3.1. Fase 18 — checklist atual de expansão NORMAM-211
@@ -119,6 +128,11 @@ gates normativos, visuais e de produção.
 - [x] Refazer o FormMapping do 3-C correto, revisar amostra sintética local e promover para `TESTED`.
 - [x] Fixar o MVP em um único motor; Motor 2–4 e caixas relacionadas permanecem fora do domínio e serão tratados em evolução futura.
 - [x] Manter sete serviços para embarcação/barco; alteração de dados, alteração de motor, moto aquática e inscrição >12 m permanecem em validação enquanto 3-C/NORMAM-212 não estiverem homologados.
+- [x] Auditar a matriz de formulários de todos os serviços atuais contra as NORMAM-211/212 fornecidas pelo usuário.
+- [x] Preservar renovação TIE/TIEM com BADE/BSADE somente quando houver alteração de características.
+- [x] Tornar o 3-C condicional a alteração estrutural/construtiva e registrar a exigência técnica específica da adaptação de remo para motor.
+- [x] Retornar inscrição para exame de amador a DRAFT até existir evidência operacional específica para uso do 5-H.
+- [x] Completar a matriz pendente NORMAM-212 para inscrição, transferências, renovação, extravio, alterações e comunicação de venda sem liberar Moto Aquática prematuramente.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
