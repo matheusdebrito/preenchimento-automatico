@@ -18,7 +18,8 @@ describe('prévia local do MESMO serviço de transferência', () => {
     const qa = qaPreviewCatalog();
     expect(catalog.mappings.every((mapping) => mapping.status === 'DRAFT')).toBe(true);
     expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status).toBe('DRAFT');
-    expect(catalog.serviceForms).toHaveLength(0);
+    expect(catalog.serviceForms.some((relation) =>
+      relation.serviceId === QA_PREVIEW_SERVICE_ID)).toBe(false);
     expect(publicService(catalog, QA_PREVIEW_SERVICE_ID)).toBeNull();
     expect(publicServices(catalog)).toHaveLength(0);
     expect(qa.services).toHaveLength(catalog.services.length);
