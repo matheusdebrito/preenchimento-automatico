@@ -133,11 +133,11 @@ export const amateurMappings: readonly FormMapping[] = [
   {
     id: 'requerimento-cha-amador-map-v1',
     formVersionId: 'requerimento-cha-amador-2026-v1',
-    revision: 'v1',
+    revision: 'v2',
     status: 'APPROVED',
     placements: requestPlacements,
     reviewedAt: '2026-10-29',
-    reviewer: 'OpenAI visual QA + product owner release authorization',
+    reviewer: 'OpenAI visual QA of 5-H options 1, 2, 3 and 12 + product owner authorization',
     reportPath: 'docs/mapping-reports/normam211-amadores-2026-technical-qa.md',
   },
   {
