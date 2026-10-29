@@ -46,7 +46,8 @@ function sharedFormFixture(): CatalogDefinition {
 describe('catálogo reutilizável de formulários', () => {
   it('publica os serviços de barco somente com versões e mapas aprovados', () => {
     expect(catalog.services).toHaveLength(9);
-    expect(catalog.services.every((service) => service.status === 'AVAILABLE')).toBe(true);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(7);
+    expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(2);
     expect(catalog.forms).toHaveLength(14);
     expect(catalog.versions).toHaveLength(14);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(14);
@@ -66,7 +67,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
-  it('cadastra e publica os nove serviços NORMAM-211 para embarcação/barco', () => {
+  it('publica sete serviços NORMAM-211 e mantém alterações dependentes do 3-D em validação', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
       'inscricao-embarcacao',
@@ -80,7 +81,9 @@ describe('catálogo reutilizável de formulários', () => {
       'comunicacao-venda-embarcacao',
     ]) {
       expect(ids.has(id)).toBe(true);
-      expect(catalog.services.find((service) => service.id === id)?.status).toBe('AVAILABLE');
+      const expectedStatus = ['alteracao-dados-embarcacao', 'alteracao-motor-embarcacao'].includes(id)
+        ? 'DRAFT' : 'AVAILABLE';
+      expect(catalog.services.find((service) => service.id === id)?.status).toBe(expectedStatus);
       expect(catalog.serviceForms.some((relation) => relation.serviceId === id)).toBe(true);
     }
   });
