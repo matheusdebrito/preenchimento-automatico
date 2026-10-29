@@ -105,7 +105,12 @@ export interface LiveService {
   title: string;
   description: string;
   creditCost: number;
-  questions: readonly {id:string;label:string;options:readonly string[]}[];
+  questions: readonly {
+    id:string;
+    label:string;
+    options:readonly string[];
+    conditions?:readonly {questionId:string;equals:string}[];
+  }[];
   documentRequirements: readonly {id:string;label:string;description?:string;required:boolean}[];
   reviewFields: readonly LiveReviewField[];
   reviewForms?: readonly LiveReviewForm[];
