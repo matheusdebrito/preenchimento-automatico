@@ -481,7 +481,7 @@ export function LiveFlowPage() {
                                   : item.outcome === 'read_failed' ? 'a leitura deste arquivo falhou; os demais documentos foram preservados'
                                   : item.outcome === 'no_applicable_fields'
                                     ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
-                                    : 'texto detectado, mas nome/CPF/RG não foram identificados com segurança')}
+                                    : 'texto detectado, mas nenhum dado foi associado aos campos com segurança')}
                             {item.engine ? (
                               <span className="live-ocr-name-stage">
                                 {' · Leitura: ' + (item.engine === 'pdf-text' ? 'texto digital do PDF' : 'PaddleOCR')}

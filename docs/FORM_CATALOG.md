@@ -263,3 +263,15 @@ substituídos. O PDF completo da norma não foi versionado.
    um mapeamento aprovado, além de condições e documentos validados no backend.
 5. A aprovação técnica não garante aceitação pela Marinha e não substitui
    assinatura, reconhecimento de firma nem protocolo oficial.
+
+
+## 10. Expansão NORMAM-211/DPC 2026
+
+Em 28/10/2026 foram catalogados nove serviços de embarcações de esporte e
+recreio e oito formulários vigentes da NORMAM-211/DPC. Diferentemente das seis
+versões do piloto de moto aquática, essas novas versões permanecem
+`IDENTIFIED`: os binários oficiais ainda não foram incorporados, hashados,
+renderizados nem mapeados. Os serviços permanecem `DRAFT`.
+
+Inventário, fontes, composição inicial, estratégia OCR e gates:
+[NORMAM211_VESSEL_SERVICES.md](NORMAM211_VESSEL_SERVICES.md).

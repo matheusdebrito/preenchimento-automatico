@@ -85,7 +85,7 @@ export interface ServiceCondition {
 
 export interface DocumentExtractionProfile {
   /** Reusable document-understanding strategy; never a service ID. */
-  documentType: 'identity' | 'tie' | 'residence-proof' | 'sale-document';
+  documentType: 'identity' | 'tie' | 'residence-proof' | 'sale-document' | 'supporting-document';
   /** Semantic owner of the extracted values. */
   subjectRole: 'person' | 'seller' | 'vessel' | 'representative' | 'declarant' | 'coOwner';
 }
@@ -96,8 +96,9 @@ export interface DocumentRequirement {
   description?: string;
   required: boolean;
   /**
-   * Optional OCR/understanding profile. Requirements without this metadata are
-   * supporting documents and must not be sent through semantic extraction.
+   * Optional OCR/understanding profile. Known document types may produce
+   * semantic fields; supporting-document may still run OCR while deliberately
+   * producing no field until a reviewed extractor exists.
    */
   extraction?: DocumentExtractionProfile;
   /** All conditions must match; absent means unconditional. */

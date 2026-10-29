@@ -260,6 +260,26 @@ A API utiliza limites de arquivos, autorização por sessão, validação de ori
 - O OCR pode interpretar dados incorretamente; cada campo deve ser conferido pelo usuário.
 - Novos serviços e versões oficiais devem passar novamente pela conferência de fonte, mapeamento e QA.
 
+## Serviços de embarcações NORMAM-211 em preparação
+
+O catálogo técnico agora inclui nove serviços de embarcações de esporte e
+recreio: inscrição inicial, transferências de propriedade/jurisdição,
+renovação/segunda via do TIE/TIEM, alteração de dados, alteração de motor e
+comunicação de venda. Os modelos oficiais 2-A, 2-B, 2-C, 2-G, 2-H, 2-I, 2-K e
+3-C foram identificados em fontes oficiais de 2026.
+
+Esses serviços **ainda não estão liberados para geração**. As versões permanecem
+`IDENTIFIED` até que os PDFs sejam baixados, verificados por hash, inspecionados,
+mapeados e revisados visualmente. A página inicial os exibe como “Formulário em
+validação”, evitando prometer um fluxo oficial antes do gate documental.
+
+Todos os documentos de origem cadastrados para essa expansão entram no pipeline
+OCR quando enviados. Tipos já estruturados podem sugerir campos; documentos de
+apoio sem extractor semântico são lidos sem gerar palpites. O usuário sempre
+revisa ou preenche manualmente antes da geração.
+
+Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md).
+
 ## Planejamento e expansão
 
 O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a preparação comercial/produção (10–17) e a expansão (18). Apenas o trabalho técnico do MVP foi autorizado para execução contínua; pagamentos reais, infraestrutura externa e lançamento público requerem novas decisões. **Sem assinaturas ou planos empresariais nesta versão.**

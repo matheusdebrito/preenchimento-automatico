@@ -44,16 +44,53 @@ function sharedFormFixture(): CatalogDefinition {
 }
 
 describe('catálogo reutilizável de formulários', () => {
-  it('mantém o piloto em DRAFT e registra versões verificadas com mapeamentos em rascunho', () => {
-    expect(catalog.services[0]?.status).toBe('DRAFT');
-    expect(catalog.forms).toHaveLength(6);
-    expect(catalog.versions).toHaveLength(6);
-    expect(catalog.versions.every((version) => version.status === 'VERIFIED')).toBe(true);
-    expect(catalog.versions.every((version) => version.pdfKind === 'STATIC')).toBe(true);
+  it('mantém serviços não homologados em DRAFT e separa versões identificadas de verificadas', () => {
+    const pilot = catalog.services.find((service) => service.id === 'transferencia-moto-aquatica');
+    expect(pilot?.status).toBe('DRAFT');
+    expect(catalog.forms).toHaveLength(14);
+    expect(catalog.versions).toHaveLength(14);
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(6);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(8);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')
+      .every((version) => version.templatePath === null && version.sha256 === null)).toBe(true);
     expect(catalog.mappings).toHaveLength(6);
     expect(catalog.mappings.every((mapping) => mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toEqual([]);
+    expect(catalog.serviceForms).toHaveLength(44);
+    expect(catalog.serviceForms.some((relation) =>
+      relation.serviceId === 'transferencia-moto-aquatica')).toBe(false);
     expect(validateCatalog(catalog)).toEqual([]);
+  });
+
+  it('cadastra os nove serviços NORMAM-211 sem publicá-los antes dos PDFs e mapas', () => {
+    const ids = new Set(catalog.services.map((service) => service.id));
+    for (const id of [
+      'inscricao-embarcacao',
+      'transferencia-propriedade-embarcacao',
+      'transferencia-jurisdicao-embarcacao',
+      'transferencia-propriedade-jurisdicao-embarcacao',
+      'renovacao-tie-embarcacao',
+      'segunda-via-tie-embarcacao',
+      'alteracao-dados-embarcacao',
+      'alteracao-motor-embarcacao',
+      'comunicacao-venda-embarcacao',
+    ]) {
+      expect(ids.has(id)).toBe(true);
+      expect(catalog.services.find((service) => service.id === id)?.status).toBe('DRAFT');
+      expect(catalog.serviceForms.some((relation) => relation.serviceId === id)).toBe(true);
+    }
+  });
+
+  it('envia todos os documentos dos novos serviços ao pipeline OCR sem inventar campos genéricos', () => {
+    const vesselServices = catalog.services.filter((service) =>
+      service.id !== 'transferencia-moto-aquatica');
+    expect(vesselServices).toHaveLength(9);
+    for (const service of vesselServices) {
+      expect(service.documentRequirements.length).toBeGreaterThan(0);
+      expect(service.documentRequirements.every((requirement) => requirement.extraction)).toBe(true);
+    }
+    const generic = vesselServices.flatMap((service) => service.documentRequirements)
+      .filter((requirement) => requirement.extraction?.documentType === 'supporting-document');
+    expect(generic.length).toBeGreaterThan(0);
   });
 
   it('mantém o domínio do MVP restrito a um único motor', () => {

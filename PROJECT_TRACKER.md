@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 28/10/2026. Primeiro serviço: transferência de propriedade de moto aquática. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
+> Atualização: 28/10/2026. Piloto técnico: transferência de propriedade de moto aquática. Expansão NORMAM-211 de serviços de embarcações catalogada em DRAFT, ainda sem liberação de geração. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de OCR abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável de formulár
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Pendente |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 9 serviços NORMAM-211 e 8 anexos identificados; download, mapeamento visual e homologação ainda bloqueiam disponibilidade |
 
 **Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
 
@@ -81,6 +81,69 @@ As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, v
 - [ ] Homologar o OCR junto ao restante do serviço sem remover revisão humana nem confundir qualidade OCR com aprovação dos formulários.
 
 **Aceite:** extração rastreável, resultados conservadores e falhas tratadas; confiança medida e revisão humana preservada. A fase continua aberta.
+
+## 3.1. Fase 18 — checklist atual de expansão NORMAM-211
+
+A decisão de produto para os serviços de embarcações foi dada pelo usuário em
+28/10/2026. Isso autoriza catalogar e preparar os fluxos, mas não remove os
+gates normativos, visuais e de produção.
+
+- [x] Definir os nove serviços de embarcações aprovados para a aplicação.
+- [x] Identificar os anexos NORMAM-211/DPC 2026 em fontes oficiais e manter IDs lógicos independentes da numeração normativa.
+- [x] Cadastrar `ServiceDefinition`, perguntas, requisitos opcionais de origem e composição condicional `ServiceForm` em DRAFT.
+- [x] Garantir perfil OCR em todos os requisitos da expansão; documentos de apoio usam `supporting-document` e não inventam campos.
+- [x] Exibir no frontend os serviços planejados sem criar links de geração antes da homologação.
+- [ ] Baixar e preservar os oito PDFs oficiais NORMAM-211; o ambiente desta sessão não conseguiu baixar os binários.
+- [ ] Registrar hash, páginas, dimensões, tipo PDF e mover cada versão de `IDENTIFIED` para `VERIFIED`.
+- [ ] Criar os mapeamentos de campos dos oito formulários.
+- [ ] Gerar amostras fictícias, renderizar todas as páginas e concluir revisão visual humana.
+- [ ] Aprovar os `FormMapping` e liberar os serviços individualmente como `AVAILABLE`.
+- [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
+- [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
+
+**Aceite parcial atual:** catálogo e arquitetura preparados sem publicação
+prematura. A fase permanece aberta porque nenhum novo PDF NORMAM-211 está
+verificado/mapeado no repositório.
+
+## 3.2. Registro de execução — 28/10/2026, catálogo dos serviços NORMAM-211
+
+**Decisão:** os serviços escolhidos são inscrição inicial; transferência de
+propriedade; transferência de jurisdição; transferência conjunta de propriedade
+e jurisdição; renovação do TIE/TIEM; segunda via por perda/roubo/extravio;
+alteração de dados/características; troca/instalação/retirada de motor; e
+comunicação de venda. A nomenclatura do motor acompanha a alteração de
+características da NORMAM-211, sem criar uma semântica independente de
+“averbação” sem evidência.
+
+**Formulários identificados:** 2-A BADE, 2-B BSADE, 2-C Requerimento, 2-G
+Declaração de Residência, 2-H Declaração de Perda/Extravio, 2-I Comunicação de
+Transferência, 2-K Autorização de Transferência e 3-C Termo de Responsabilidade.
+As versões foram cadastradas como `IDENTIFIED` com URL oficial, sem hash,
+template ou status `VERIFIED`.
+
+**Arquitetura:** novo módulo `vessel-services.ts` concentra os serviços e
+relações reutilizáveis. Até 12 m seleciona BSADE; maior que 12 m até 24 m
+seleciona BADE. Anexos de residência/perda são condicionais e a autorização
+2-K entra nas transferências de propriedade. A composição permanece DRAFT e
+deve ser reconferida antes de cada liberação.
+
+**OCR:** todos os requisitos dos nove serviços possuem `extraction`. Identidade,
+TIE e residência reutilizam extractors estruturados; venda permanece no
+adaptador legado; procuração, GRU, fotos e outros apoios usam o novo tipo
+`supporting-document`, que passa pelo OCR mas não produz `FieldEvidence`
+sem regra semântica revisada. A interface passou a usar mensagem genérica para
+texto lido sem associação segura.
+
+**Frontend:** a página inicial lista os nove serviços como “Formulário em
+validação”. Eles não são clicáveis nem retornados por `GET /api/services`
+enquanto estiverem DRAFT, preservando o fail-closed atual.
+
+**Bloqueio documental:** o ambiente de execução não conseguiu resolver/baixar
+os binários oficiais da Marinha/GitHub. Não foram inventadas coordenadas, hashes
+ou PDFs. O próximo passo documental é baixar os oito anexos oficiais, inspecionar
+com renderização, mapear e revisar visualmente antes de qualquer `AVAILABLE`.
+
+**Validação:** o primeiro CI do PR #24 revelou dois testes antigos que pressupunham que toda `FormVersion` já possuía PDF/hash e que toda versão possuía `FormMapping`. Eles foram corrigidos para preservar o contrato correto: somente versões `VERIFIED` exigem asset/hash e somente versões verificadas atualmente mapeadas entram nos testes de coordenadas. Um segundo CI encontrou apenas a expectativa textual antiga do diagnóstico frontend (`nome/CPF/RG`), atualizada para a mensagem genérica de qualquer documento. O head de implementação `ef9ade1d` passou integralmente na execução `40791885589`: `backend-checks`, `frontend-checks`, `postgres-integration`, `pdf-mapping-visual`, `compose-smoke`, `reference-documents` e `ocr-integration` em sucesso. Após este registro documental, o head final deve repetir o CI antes do merge.
 
 ## 4. Registro de execução — 27/10/2026, correção do nome
 

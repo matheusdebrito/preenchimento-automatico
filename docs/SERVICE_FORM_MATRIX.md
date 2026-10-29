@@ -147,3 +147,17 @@ Ao adicionar serviço novo, primeiro consultar o catálogo e reutilizar versões
 existentes onde válidas. Pedir ao usuário somente os modelos ausentes ou
 atualizados; não repetir o trabalho de mapeamento por serviço. Os formulários
 2-A e 2-B são candidatos naturais a reutilização por outros serviços de MA.
+
+
+## Expansão de embarcações NORMAM-211/DPC 2026
+
+Os nove serviços aprovados como próximo catálogo do produto já possuem relações
+`ServiceForm` em estado de rascunho, incluindo escolha BADE/BSADE por faixa de
+comprimento e anexos condicionais de residência/perda. As oito versões
+NORMAM-211 permanecem `IDENTIFIED`, sem template ou mapeamento aprovado; por
+isso nenhuma relação torna esses serviços publicáveis pela API.
+
+A matriz detalhada e as fontes oficiais estão em
+[NORMAM211_VESSEL_SERVICES.md](NORMAM211_VESSEL_SERVICES.md). O catálogo público
+continua fail-closed: somente `AVAILABLE + VERIFIED + APPROVED` aparece ao
+usuário.
