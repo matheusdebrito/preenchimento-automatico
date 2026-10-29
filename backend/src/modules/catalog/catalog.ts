@@ -2,6 +2,7 @@ import type { CatalogDefinition } from './contracts.js';
 import { additionalFields } from './fields.js';
 import { draftMappings } from './draft-mappings.js';
 import { normam211Mappings } from './normam211-mappings.js';
+import { amateurMappings } from './amateur-mappings.js';
 import {
   vesselForms,
   vesselVersions,
@@ -148,7 +149,7 @@ export const catalog: CatalogDefinition = {
       status: 'VERIFIED',
     },
   ],
-  mappings: [...draftMappings, ...normam211Mappings],
+  mappings: [...draftMappings, ...normam211Mappings, ...amateurMappings],
   services: [
     ...vesselServices,
     ...amateurServices,
