@@ -1,5 +1,20 @@
 import type { CatalogDefinition, DocumentRequirement, ServiceCondition, ServiceDefinition } from './contracts.js';
 
+export interface PublicReviewField {
+  id: string;
+  label: string;
+  valueKind: string;
+  required: boolean;
+}
+
+export interface PublicReviewForm {
+  formVersionId: string;
+  formId: string;
+  name: string;
+  description?: string;
+  fields: readonly PublicReviewField[];
+}
+
 export interface PublicService {
   id: string;
   title: string;
@@ -9,7 +24,12 @@ export interface PublicService {
   documentRequirements: readonly DocumentRequirement[];
   /** Only IDs, never paths or internal approval metadata. */
   formVersionIds: readonly string[];
-  reviewFields: readonly { id: string; label: string; valueKind: string; required: boolean }[];
+  reviewFields: readonly PublicReviewField[];
+  /**
+   * Same semantic values grouped by the exact PDFs that will be generated.
+   * A field may appear in more than one form; the client must keep one shared value per field ID.
+   */
+  reviewForms: readonly PublicReviewForm[];
 }
 
 function matches(
@@ -56,6 +76,47 @@ export function publicService(
   const mappedFields = new Set(placements.map((placement) => placement.fieldId));
   const requiredFields = new Set(placements
     .filter((placement) => placement.required).map((placement) => placement.fieldId));
+  const fieldById = new Map(catalog.fields.map((field) => [field.id, field]));
+  const versionById = new Map(catalog.versions.map((version) => [version.id, version]));
+  const formById = new Map(catalog.forms.map((form) => [form.id, form]));
+  const approvedMappingByVersion = new Map(catalog.mappings
+    .filter((mapping) => mapping.status === 'APPROVED')
+    .map((mapping) => [mapping.formVersionId, mapping]));
+
+  const reviewForms: PublicReviewForm[] = versionIds.flatMap((formVersionId) => {
+    const version = versionById.get(formVersionId);
+    const mapping = approvedMappingByVersion.get(formVersionId);
+    const form = version ? formById.get(version.formId) : undefined;
+    if (!version || !mapping || !form) return [];
+
+    const orderedIds: string[] = [];
+    const seen = new Set<string>();
+    for (const placement of mapping.placements) {
+      if (placement.fieldId.startsWith('process.') || seen.has(placement.fieldId)) continue;
+      seen.add(placement.fieldId);
+      orderedIds.push(placement.fieldId);
+    }
+
+    const fields = orderedIds.flatMap((fieldId): PublicReviewField[] => {
+      const field = fieldById.get(fieldId);
+      if (!field) return [];
+      return [{
+        id: field.id,
+        label: field.label,
+        valueKind: field.valueKind,
+        required: mapping.placements.some((placement) =>
+          placement.fieldId === fieldId && placement.required),
+      }];
+    });
+
+    return [{
+      formVersionId,
+      formId: form.id,
+      name: form.name,
+      ...(form.description ? { description: form.description } : {}),
+      fields,
+    }];
+  });
 
   return {
     id: service.id,
@@ -69,6 +130,7 @@ export function publicService(
     reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
       .filter((field) => !field.id.startsWith('process.'))
       .map(({ id, label, valueKind }) => ({ id, label, valueKind, required: requiredFields.has(id) })),
+    reviewForms,
   };
 }
 
