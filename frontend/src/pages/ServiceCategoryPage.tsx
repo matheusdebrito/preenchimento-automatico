@@ -13,15 +13,21 @@ export function ServiceCategoryPage() {
   const { categoryId } = useParams();
   const category = SERVICE_CATEGORIES.find((item) => item.id === categoryId);
   const [available, setAvailable] = useState<readonly LiveService[]>([]);
+  const [availabilityState, setAvailabilityState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useDocumentTitle(category ? category.title : 'Serviços');
 
   useEffect(() => {
     if (!category || typeof fetch !== 'function') return;
     let mounted = true;
+    setAvailabilityState('loading');
     void api<{services:LiveService[]}>('/api/services').then((result) => {
-      if (mounted) setAvailable(result.services);
-    }).catch(() => undefined);
+      if (!mounted) return;
+      setAvailable(result.services);
+      setAvailabilityState('ready');
+    }).catch(() => {
+      if (mounted) setAvailabilityState('error');
+    });
     return () => { mounted = false; };
   }, [category]);
 
@@ -93,6 +99,11 @@ export function ServiceCategoryPage() {
                 {planned.map((service) => {
                   const live = availableById.get(service.id);
                   if (!live) {
+                    const unavailableLabel = availabilityState === 'loading'
+                      ? 'Verificando disponibilidade'
+                      : availabilityState === 'error'
+                        ? 'Disponibilidade indisponível'
+                        : 'Formulário em validação';
                     return (
                       <article key={service.id} className="category-card category-card--soon">
                         <span className="icon-badge" aria-hidden="true"><Icon /></span>
@@ -100,7 +111,7 @@ export function ServiceCategoryPage() {
                           <h2 className="category-card__title">{service.title}</h2>
                           <p className="category-card__description">{service.summary}</p>
                           <div className="category-card__meta">
-                            <Badge tone="soon">Formulário em validação</Badge>
+                            <Badge tone="soon">{unavailableLabel}</Badge>
                           </div>
                         </div>
                       </article>

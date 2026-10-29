@@ -82,6 +82,23 @@ describe('ServiceCategoryPage', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Serviços em preparação' })).toBeTruthy();
   });
 
+  it('não confunde falha da API com formulário em validação', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ error: 'unavailable' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } },
+    )));
+    render(
+      <MemoryRouter initialEntries={['/servicos/amadores']}>
+        <Routes>
+          <Route path="/servicos/:categoryId" element={<ServiceCategoryPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findAllByText('Disponibilidade indisponível')).toHaveLength(6);
+    expect(screen.queryByText('Formulário em validação')).toBeNull();
+  });
+
   it('permite voltar para as categorias', () => {
     renderCategory('/servicos/embarcacoes');
     expect(screen.getByRole('link', { name: /Voltar às categorias/ }).getAttribute('href')).toBe('/');
