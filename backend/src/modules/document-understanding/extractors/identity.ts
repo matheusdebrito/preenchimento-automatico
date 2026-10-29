@@ -487,6 +487,17 @@ export const identityDocumentExtractor: DocumentExtractor = {
     );
     if (issueDate) evidence.push(issueDate);
 
+    const birthDate = labelledEvidence(
+      observation,
+      context,
+      prefix + '.birthDate',
+      /^\s*(?:DATA\s+(?:DE\s+)?NASCIMENTO|NASCIMENTO|DATE\s+OF\s+BIRTH)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      'DATA DE NASCIMENTO',
+      isValidBrazilianDate,
+      ['below', 'right'],
+    );
+    if (birthDate) evidence.push(birthDate);
+
     const nationality = labelledEvidence(
       observation,
       context,
@@ -516,7 +527,7 @@ export const identityDocumentExtractor: DocumentExtractor = {
     const prefix = context.subjectRole;
     const evidence = identityDocumentExtractor.extract(observation, context);
     const byField = new Map(evidence.map((item) => [item.fieldId, item]));
-    return ['fullName', 'cpf', 'identity', 'issuer', 'issueDate', 'nationality', 'birthplace']
+    return ['fullName', 'cpf', 'identity', 'issuer', 'issueDate', 'birthDate', 'nationality', 'birthplace']
       .map((name) => {
       const fieldId = prefix + '.' + name;
       const item = byField.get(fieldId);
