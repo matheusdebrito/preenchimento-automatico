@@ -259,6 +259,47 @@ jobs:
         if: always()
         run: docker rm -f preenchimento-ocr-reference-ci || true
 
+  normam211-inspection:
+    needs: detect-changes
+    if: >-
+      github.event_name == 'push' ||
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.reference == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install locked backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Install PDF inspection tools
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils qpdf
+      - name: Inspect NORMAM-211 PDF structure and hashes
+        working-directory: backend
+        run: node scripts/inspect-normam211.mjs
+      - name: Render and extract every NORMAM-211 annex
+        shell: bash
+        run: |
+          find docs/_normam211_inspection -type f -name '*.pdf' -print0 | while IFS= read -r -d '' file; do
+            directory="$(dirname "$file")"
+            pdfinfo "$file" > "$directory/pdfinfo.txt"
+            qpdf --check "$file" > "$directory/qpdf-check.txt" 2>&1
+            pdffonts "$file" > "$directory/pdffonts.txt"
+            pdftotext -layout "$file" "$directory/text.txt" || true
+            pdftoppm -r 160 -png "$file" "$directory/page"
+          done
+      - name: Attach inspection evidence for page-by-page review
+        uses: actions/upload-artifact@v4
+        with:
+          name: normam211-homologation-inspection
+          path: docs/_normam211_inspection
+          retention-days: 7
+          if-no-files-found: error
+
   compose-smoke:
     needs: detect-changes
     if: >-
