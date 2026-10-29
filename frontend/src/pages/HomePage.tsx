@@ -8,11 +8,10 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export function HomePage() {
   useDocumentTitle();
+
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#conteudo">
-        Pular para o conteúdo
-      </a>
+      <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
       <div className="home-hero">
         <AppHeader variant="hero" />
@@ -26,8 +25,8 @@ export function HomePage() {
               </p>
               <h1 id="hero-title">Documentos da Marinha sem complicação.</h1>
               <p className="hero__subtitle">
-                Escolha o serviço, anexe os documentos que quiser ou digite os dados
-                manualmente e receba os formulários preenchidos.
+                Escolha uma categoria, encontre o serviço que precisa e prepare os formulários
+                com preenchimento assistido.
               </p>
               <div className="hero__actions">
                 <Button
@@ -37,7 +36,7 @@ export function HomePage() {
                   icon={<ArrowRight aria-hidden="true" />}
                   iconPosition="end"
                 >
-                  Começar agora
+                  Ver categorias
                 </Button>
                 <span className="hero__note">
                   <ShieldCheck aria-hidden="true" />
@@ -54,11 +53,11 @@ export function HomePage() {
         <section className="home-section" aria-labelledby="categories-title">
           <div className="container">
             <div className="section-heading">
-              <p className="eyebrow">Escolha um caminho</p>
-              <h2 id="categories-title">O que você deseja fazer?</h2>
+              <p className="eyebrow">Escolha uma categoria</p>
+              <h2 id="categories-title">Qual tipo de serviço você precisa?</h2>
               <p>
-                Comece pelo serviço. Os demais caminhos serão liberados depois da validação de cada
-                fluxo.
+                Cada categoria possui sua própria página com os serviços disponíveis e os que
+                ainda estão em validação.
               </p>
             </div>
 
@@ -71,9 +70,7 @@ export function HomePage() {
                     className="category-card category-card--link"
                     to={category.route}
                   >
-                    <span className="icon-badge" aria-hidden="true">
-                      <Icon />
-                    </span>
+                    <span className="icon-badge" aria-hidden="true"><Icon /></span>
                     <div className="category-card__content">
                       <h3 className="category-card__title">{category.title}</h3>
                       <p className="category-card__description">{category.description}</p>
@@ -89,27 +86,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="home-section home-section--flush-top" aria-labelledby="vessel-services-title">
-          <div className="container">
-            <div className="section-heading">
-              <p className="eyebrow">Embarcações de esporte e recreio</p>
-              <h2 id="vessel-services-title">Serviços de embarcações</h2>
-              <p>
-                Os fluxos abaixo usam a NORMAM-211/DPC ou a NORMAM-212/DPC conforme o tipo
-                selecionado. Serviços homologados ficam disponíveis para preenchimento; os demais
-                permanecem identificados como em validação.
-              </p>
-            </div>
-            <div className="category-grid">
-              {PLANNED_VESSEL_SERVICES.map((service) => {
-                const live = availableById.get(service.id);
-                if (!live) {
-                  return (
-                    <article key={service.id} className="category-card category-card--soon">
-                      <span className="icon-badge" aria-hidden="true">
-                        <ShipWheel />
-                      </span>
-                         <section className="home-section home-section--flush-top" aria-labelledby="how-title">
+        <section className="home-section home-section--flush-top" aria-labelledby="how-title">
           <div className="container">
             <div className="section-heading">
               <p className="eyebrow">Simples do início ao fim</p>
@@ -117,20 +94,16 @@ export function HomePage() {
             </div>
             <ol className="how-list">
               <li className="how-item">
-                <span className="how-item__number" aria-hidden="true">
-                  1
-                </span>
+                <span className="how-item__number" aria-hidden="true">1</span>
                 <div>
-                  <h3 className="how-item__title">Escolha o serviço</h3>
+                  <h3 className="how-item__title">Escolha a categoria e o serviço</h3>
                   <p className="how-item__text">
-                    Confira os formulários e o custo antes de começar.
+                    Navegue somente pelos serviços do tipo que você precisa.
                   </p>
                 </div>
               </li>
               <li className="how-item">
-                <span className="how-item__number" aria-hidden="true">
-                  2
-                </span>
+                <span className="how-item__number" aria-hidden="true">2</span>
                 <div>
                   <h3 className="how-item__title">Anexe o que desejar</h3>
                   <p className="how-item__text">
@@ -139,9 +112,7 @@ export function HomePage() {
                 </div>
               </li>
               <li className="how-item">
-                <span className="how-item__number" aria-hidden="true">
-                  3
-                </span>
+                <span className="how-item__number" aria-hidden="true">3</span>
                 <div>
                   <h3 className="how-item__title">Confira e baixe</h3>
                   <p className="how-item__text">
@@ -162,9 +133,8 @@ export function HomePage() {
               <div className="trust-card__content">
                 <h2 id="trust-title">Seus documentos ficam sob seu controle</h2>
                 <p>
-                  A demonstração visual funciona no navegador. No preenchimento assistido,
-                  os arquivos enviados são processados temporariamente no servidor para
-                  extrair os dados e gerar os formulários.
+                  No preenchimento assistido, os arquivos enviados são processados
+                  temporariamente no servidor para extrair os dados e gerar os formulários.
                 </p>
                 <p className="trust-card__note">
                   Os processos temporários podem ser apagados pelo usuário e expiram após
