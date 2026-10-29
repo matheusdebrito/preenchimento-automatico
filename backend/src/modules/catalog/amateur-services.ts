@@ -164,9 +164,9 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'inscricao-exame-amador',
     title: 'Inscrição para exame de amador',
-    description: 'Preenchimento do requerimento para inscrição no exame de Arrais-Amador, Mestre-Amador ou Capitão-Amador. O 5-H é usado conforme orientação operacional vigente da Marinha. Os uploads são apenas fontes opcionais de dados; a aplicação não valida a documentação exigida para protocolo.',
+    description: 'Em validação operacional. O item 5.4.1 da NORMAM-211/DPC lista a documentação da inscrição para ARA/MSA/CPA, mas não determina expressamente o uso do Anexo 5-H. O fluxo permanece indisponível até existir evidência operacional específica da CP/DL/AG ou DPC para esse requerimento.',
     creditCost: 1,
-    status: 'AVAILABLE',
+    status: 'DRAFT',
     questions: [amateurCategoryQuestion],
     documentRequirements: commonDocuments.filter((item) =>
       ['applicant-identity', 'residence-proof'].includes(item.id)),
