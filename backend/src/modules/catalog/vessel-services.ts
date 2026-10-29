@@ -17,28 +17,17 @@ import {
   TIE_FIELDS,
 } from './document-field-policies.js';
 
+const vesselTypeQuestion: ServiceQuestion = {
+  id: 'vesselType',
+  label: 'Tipo de embarcação',
+  options: ['moto_aquatica', 'embarcacao'],
+};
+
 const vesselBandQuestion: ServiceQuestion = {
   id: 'vesselBand',
   label: 'Comprimento da embarcação',
   options: ['ate_12m', 'maior_12_ate_24m'],
-};
-
-const residenceQuestion: ServiceQuestion = {
-  id: 'residenceProof',
-  label: 'Comprovação de residência',
-  options: ['comprovante', 'declaracao_2g'],
-};
-
-const representativeQuestion: ServiceQuestion = {
-  id: 'representative',
-  label: 'O processo será feito por procurador?',
-  options: ['sim', 'nao'],
-};
-
-const tieSituationQuestion: ServiceQuestion = {
-  id: 'tieSituation',
-  label: 'Situação do TIE/TIEM atual',
-  options: ['regular', 'extraviado'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
 const dataChangedQuestion: ServiceQuestion = {
@@ -68,18 +57,16 @@ const commonApplicantDocuments: readonly DocumentRequirement[] = [
       subjectRole: 'person',
       allowedFieldIds: RESIDENCE_PROOF_FIELDS,
     },
-    conditions: [{ questionId: 'residenceProof', equals: 'comprovante' }],
   },
   {
     id: 'power-of-attorney',
-    label: 'Procuração e identificação do representante',
+    label: 'Procuração e identificação do representante (se houver)',
     required: false,
     extraction: {
       documentType: 'supporting-document',
       subjectRole: 'representative',
       allowedFieldIds: NO_AUTOMATIC_FIELDS,
     },
-    conditions: [{ questionId: 'representative', equals: 'sim' }],
   },
   {
     id: 'gru-receipt',
