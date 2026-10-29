@@ -164,12 +164,6 @@ A NORMAM-212, art. 3.4, exige também o Anexo 3-A e a declaração de que o inte
 conduz ou já conduziu moto aquática. O serviço está catalogado em DRAFT até o 3-A ser
 versionado e homologado.
 
-### Revisão de prova de Capitão-Amador
-
-O Anexo 5-A prevê pedido de revisão e traz formulário próprio em seu Apêndice I. O 5-H
-também possui a opção 12 específica para esse pedido. O serviço está catalogado em DRAFT
-até o formulário do Apêndice I ser versionado e homologado.
-
 ### Perda, roubo, furto ou dano
 
 Não foi criado serviço separado de “segunda via”. A NORMAM determina que, com a CHA
