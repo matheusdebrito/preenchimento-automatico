@@ -86,13 +86,10 @@ async function inspect(
 }
 
 describe.skipIf(!enabled)('documentos de referência do repositório', () => {
-  it('lê os modelos de TIE/TIEM e preserva identificadores compatíveis com cada layout', async () => {
+  it('lê o modelo público de TIE digital sem promover campos mascarados', async () => {
     const digital = await inspect(
       'documentos/tie/TIE digital modelo.pdf', 'tie', 'tie', 'vessel');
-    const currentDigital = await inspect(
-      'documentos/tie/tie digital 2.pdf', 'tie-current', 'tie', 'vessel');
-    const legacy = await inspect(
-      'documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
+
     expect(digital.has('vessel.registration')).toBe(true);
     expect(digital.has('vessel.name')).toBe(true);
     // The public digital model masks/omits hull, AB/GT and breadth values.
@@ -102,17 +99,19 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(digital.has('vessel.breadth')).toBe(false);
     expect(digital.has('vessel.activity')).toBe(true);
     // The public model masks motor manufacturer/model and serial with asterisks.
-    // A label or a neighboring field must never be promoted as the missing value.
     expect(digital.has('vessel.motorManufacturerBrandModel')).toBe(false);
     expect(digital.has('vessel.motorSerial')).toBe(false);
     expect(digital.has('vessel.passengerCount')).toBe(true);
+  }, 120_000);
 
+  it('lê o TIE digital atual respeitando campos presentes e ausentes', async () => {
+    const currentDigital = await inspect(
+      'documentos/tie/tie digital 2.pdf', 'tie-current', 'tie', 'vessel');
 
     expect(currentDigital.has('vessel.registration')).toBe(true);
     expect(currentDigital.has('vessel.name')).toBe(true);
     expect(currentDigital.has('vessel.type')).toBe(true);
     expect(currentDigital.has('vessel.navigationArea')).toBe(true);
-    // This TIE layout does not print a PONTAL / DEPTH field; absence is correct.
     expect(currentDigital.has('vessel.depth')).toBe(false);
     expect(currentDigital.has('vessel.hullMaterial')).toBe(true);
     expect(currentDigital.has('vessel.activity')).toBe(true);
@@ -120,7 +119,14 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     // The low-resolution public reference preserves the label, but PaddleOCR
     // does not return a trustworthy passenger-count value. Do not fabricate it.
     expect(currentDigital.has('vessel.passengerCount')).toBe(false);
+    expect(currentDigital.has('vessel.expirationDate')).toBe(true);
+    expect(currentDigital.has('vessel.issueDate')).toBe(true);
+    expect(currentDigital.has('vessel.issuePlace')).toBe(true);
+  }, 120_000);
 
+  it('lê o TIEM antigo sem confundir inscrição com casco', async () => {
+    const legacy = await inspect(
+      'documentos/tie/TIEM antigo.pdf', 'tie', 'tie', 'vessel');
 
     expect(legacy.has('vessel.registration')).toBe(true);
     expect(legacy.has('vessel.name')).toBe(true);
@@ -130,13 +136,12 @@ describe.skipIf(!enabled)('documentos de referência do repositório', () => {
     expect(legacy.has('vessel.length')).toBe(true);
     expect(legacy.has('vessel.year')).toBe(true);
     // This scanned public reference does not yield a trustworthy power/serial
-    // token in PaddleOCR. Those fields are covered by deterministic geometric
-    // regressions in tie.test.ts instead of asserting data absent from this scan.
+    // token in PaddleOCR. Those fields are covered by deterministic regressions.
     expect(legacy.has('vessel.motorBrand')).toBe(true);
     expect(legacy.has('vessel.activity')).toBe(true);
     expect(legacy.has('vessel.crewCount')).toBe(true);
     expect(legacy.has('vessel.passengerCount')).toBe(true);
-  }, 180_000);
+  }, 120_000);
 
   it.skip('lê o comprovante e preserva CEP/logradouro sem usar nome do titular', async () => {
     const file = 'documentos/comprovante de residencia/comprovante de residencia.pdf';
