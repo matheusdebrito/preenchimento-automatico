@@ -9,6 +9,7 @@ import type {
 import {
   anchoredCandidates,
   selectUniqueCandidate,
+  type ApproximateLabel,
   type CandidateDirection,
   type ExtractedCandidate,
   type SpatialSearchHint,
@@ -231,6 +232,7 @@ const IDENTITY_SPATIAL_HINT: SpatialSearchHint = {
   maxBelowDistanceHeights: 4,
   maxBelowHorizontalOffsetHeights: 5,
   maxSequentialLines: 2,
+  minSelectionScoreGap: 0.12,
 };
 
 function validIdentityNumber(value: string): boolean {
@@ -268,19 +270,23 @@ function labelledValue(
   isValid: (value: string) => boolean,
   preferredDirections: readonly CandidateDirection[] = [],
   spatialHint: SpatialSearchHint = IDENTITY_SPATIAL_HINT,
+  approximateLabels: readonly ApproximateLabel[] = [],
 ): ExtractedCandidate | null {
-  return selectUniqueCandidate(anchoredCandidates(
-    observation,
-    [label],
-    anchorName,
-    isValid,
-    preferredDirections,
-    () => false,
-    true,
-    false,
-    [],
-    spatialHint,
-  ));
+  return selectUniqueCandidate(
+    anchoredCandidates(
+      observation,
+      [label],
+      anchorName,
+      isValid,
+      preferredDirections,
+      () => false,
+      true,
+      false,
+      approximateLabels,
+      spatialHint,
+    ),
+    spatialHint.minSelectionScoreGap,
+  );
 }
 
 function labelledEvidence(
@@ -292,9 +298,17 @@ function labelledEvidence(
   validator: (value: string) => boolean,
   preferredDirections: readonly CandidateDirection[] = [],
   spatialHint: SpatialSearchHint = IDENTITY_SPATIAL_HINT,
+  approximateLabels: readonly ApproximateLabel[] = [],
 ): FieldEvidence | null {
   const candidate = labelledValue(
-    observation, label, anchor, validator, preferredDirections, spatialHint);
+    observation,
+    label,
+    anchor,
+    validator,
+    preferredDirections,
+    spatialHint,
+    approximateLabels,
+  );
   if (!candidate) return null;
   return {
     fieldId,
@@ -496,6 +510,11 @@ export const identityDocumentExtractor: DocumentExtractor = {
       'IDENTIDADE',
       validIdentityNumber,
       ['right', 'below'],
+      IDENTITY_SPATIAL_HINT,
+      [
+        { text: 'REGISTRO GERAL', maxDistance: 2 },
+        { text: 'NUMERO DA IDENTIDADE', maxDistance: 2 },
+      ],
     );
     if (identity) evidence.push(identity);
 
@@ -507,6 +526,11 @@ export const identityDocumentExtractor: DocumentExtractor = {
       'ORGAO EMISSOR',
       validIssuer,
       ['below', 'right'],
+      IDENTITY_SPATIAL_HINT,
+      [
+        { text: 'ORGAO EXPEDIDOR', maxDistance: 2 },
+        { text: 'ORGAO EMISSOR', maxDistance: 2 },
+      ],
     );
     if (issuer) evidence.push(issuer);
 
@@ -518,6 +542,11 @@ export const identityDocumentExtractor: DocumentExtractor = {
       'DATA DE EMISSAO',
       isValidBrazilianDate,
       ['right', 'below'],
+      IDENTITY_SPATIAL_HINT,
+      [
+        { text: 'DATA DE EXPEDICAO', maxDistance: 2 },
+        { text: 'DATA DE EMISSAO', maxDistance: 2 },
+      ],
     );
     if (issueDate) evidence.push(issueDate);
 
@@ -528,7 +557,9 @@ export const identityDocumentExtractor: DocumentExtractor = {
       /^\s*(?:DATA\s+(?:DE\s+)?NASCIMENTO|NASCIMENTO|DATE\s+OF\s+BIRTH)\s*(?:[:#\-–]\s*)?(.*)$/i,
       'DATA DE NASCIMENTO',
       isValidBrazilianDate,
-      ['right', 'below'],
+      ['below', 'right'],
+      IDENTITY_SPATIAL_HINT,
+      [{ text: 'DATA DE NASCIMENTO', maxDistance: 2 }],
     );
     if (birthDate) evidence.push(birthDate);
 
@@ -540,6 +571,8 @@ export const identityDocumentExtractor: DocumentExtractor = {
       'NACIONALIDADE',
       validIdentityText,
       ['below', 'right'],
+      IDENTITY_SPATIAL_HINT,
+      [{ text: 'NACIONALIDADE', maxDistance: 2 }],
     );
     if (nationality) evidence.push(nationality);
 
@@ -551,6 +584,8 @@ export const identityDocumentExtractor: DocumentExtractor = {
       'NATURALIDADE',
       validIdentityText,
       ['below', 'right'],
+      IDENTITY_SPATIAL_HINT,
+      [{ text: 'NATURALIDADE', maxDistance: 2 }],
     );
     if (birthplace) evidence.push(birthplace);
 
