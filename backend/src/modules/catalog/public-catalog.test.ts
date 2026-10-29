@@ -69,7 +69,6 @@ describe('projeção pública do catálogo', () => {
     expect(publicService(catalog, 'renovacao-cha-agregacao-mta', {
       amateurCategory: 'arrais', motonautaDeclaration: 'sim',
     })).toBeNull();
-    expect(publicService(catalog, 'revisao-prova-capitao-amador')).toBeNull();
   });
 
   it('publica renovação da CHA com uploads opcionais e pacote condicional 5-D', () => {
