@@ -180,12 +180,13 @@ export const vesselVersions: readonly FormVersion[] = [
 ];
 
 function questions(options: {
+  band?: boolean;
   tie?: boolean;
   residence?: boolean;
   representative?: boolean;
 } = {}): readonly ServiceQuestion[] {
   return [
-    vesselBandQuestion,
+    ...(options.band === false ? [] : [vesselBandQuestion]),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.residence === false ? [] : [residenceQuestion]),
     ...(options.representative === false ? [] : [representativeQuestion]),
@@ -265,7 +266,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: '2ª via do TIE/TIEM por perda, roubo ou extravio',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions(),
+    questions: questions({ band: false }),
     documentRequirements: requirements(),
   },
   {
@@ -289,7 +290,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Comunicação de venda de embarcação',
     description: 'Comunicação do vendedor conforme a NORMAM-211/DPC. Não efetiva por si só a transferência.',
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ residence: false }),
+    questions: questions({ band: false, residence: false }),
     documentRequirements: requirements({
       tie: true, seller: true, origin: true, residence: false,
     }),
