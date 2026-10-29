@@ -13,7 +13,7 @@ const ALLOWED_MODELS = new Set([
 const ALLOWED_DETAIL = new Set(['auto', 'low', 'high']);
 
 type FetchLike = typeof fetch;
-type Confidence = 'high' | 'medium' | 'low';
+type Confidence = 'high' | 'medium';
 type DocumentStatus = 'readable' | 'partial' | 'unreadable';
 
 export interface OpenAiTargetField {
@@ -54,7 +54,7 @@ const candidateSchema = z.object({
   fieldId: z.string().min(1).max(100),
   value: z.string().min(1).max(500),
   sourceRequirementId: z.string().min(1).max(100),
-  confidence: z.enum(['high', 'medium', 'low']),
+  confidence: z.enum(['high', 'medium']),
 });
 
 const structuredResultSchema = z.object({
@@ -97,7 +97,7 @@ function detailFromEnvironment(env: NodeJS.ProcessEnv): 'auto' | 'low' | 'high' 
 }
 
 function confidenceNumber(value: Confidence): number {
-  return value === 'high' ? 0.95 : value === 'medium' ? 0.75 : 0.55;
+  return value === 'high' ? 0.95 : 0.75;
 }
 
 function normalizeSimple(value: string): string {
@@ -140,6 +140,23 @@ function validateCandidateValue(
   if (field.valueKind === 'boolean') {
     return normalizeBoolean(normalized);
   }
+
+  if (field.id === 'vessel.registration') {
+    const compact = normalized.replace(/\s+/g, '');
+    if (/^\d{1,2}[./-]\d{1,2}[./-]\d{2,4}$/.test(compact) ||
+      /^\d{1,4}[.,]\d{1,3}$/.test(compact) ||
+      !/^[A-Z0-9./-]{8,30}$/i.test(compact) ||
+      !/\d/.test(compact)) return null;
+  }
+  if (['vessel.crewCount', 'vessel.passengerCount', 'vessel.motorCount']
+    .includes(field.id) && !/^\d{1,4}$/.test(normalized)) return null;
+  if (field.id === 'vessel.year' &&
+    !/^(?:19|20)\d{2}$/.test(normalized)) return null;
+  if (field.id.endsWith('.postalCode') &&
+    !/^\d{5}-?\d{3}$/.test(normalized)) return null;
+  if (field.id.endsWith('.email') &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return null;
+
   return normalized;
 }
 
@@ -194,7 +211,7 @@ function outputSchema(fieldIds: readonly string[], requirementIds: readonly stri
             fieldId: { type: 'string', enum: fieldIds },
             value: { type: 'string' },
             sourceRequirementId: { type: 'string', enum: requirementIds },
-            confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+            confidence: { type: 'string', enum: ['high', 'medium'] },
           },
         },
       },
@@ -238,6 +255,7 @@ function extractionPrompt(
     '1. Use SOMENTE informação claramente visível no documento enviado.',
     '2. Nunca complete, deduza, adivinhe ou corrija um valor ausente.',
     '3. Valor mascarado, borrado, cortado, conflitante ou incerto deve ser OMITIDO de candidates.',
+    '3a. Só retorne candidates com confiança alta ou média; evidência de baixa confiança deve ser omitida.',
     '4. Não confunda titular com pai, mãe, vendedor, comprador, proprietário ou coproprietário.',
     '5. Não confunda número de inscrição da embarcação com casco/HIN, série do motor, datas ou medidas.',
     '6. Para datas, só retorne DD/MM/AAAA quando a data completa estiver inequivocamente presente.',
