@@ -37,6 +37,11 @@ function reviewInputId(formVersionId: string, fieldId: string): string {
   return 'review-' + formVersionId + '-' + fieldId;
 }
 
+function firstReviewFormIds(service: LiveService): string[] {
+  const first = groupedReviewForms(service)[0];
+  return first ? [first.formVersionId] : [];
+}
+
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
   const { serviceId } = useParams();
@@ -63,22 +68,18 @@ export function LiveFlowPage() {
   const allReviewFormsOpen = reviewForms.length > 0 &&
     reviewForms.every((form) => openReviewFormIds.includes(form.formVersionId));
 
-  const openFirstReviewForm = (currentService: LiveService) => {
-    const first = groupedReviewForms(currentService)[0];
-    setOpenReviewFormIds(first ? [first.formVersionId] : []);
-  };
-
   const revealReviewField = (fieldId: string) => {
     const form = reviewForms.find((item) =>
-      item.fields.some((field) => field.id === fieldId));
+      item.fields.some((field) => field.id === fieldId && field.required)) ??
+      reviewForms.find((item) => item.fields.some((field) => field.id === fieldId));
     if (!form) return;
     setOpenReviewFormIds((current) =>
       current.includes(form.formVersionId)
         ? current
         : [...current, form.formVersionId]);
-    requestAnimationFrame(() => {
+    window.setTimeout(() => {
       document.getElementById(reviewInputId(form.formVersionId, fieldId))?.focus();
-    });
+    }, 0);
   };
 
   useEffect(() => {
@@ -120,7 +121,7 @@ export function LiveFlowPage() {
             if (status.status === 'GENERATED') {
               setDownloads(status.downloads ?? []);
             } else {
-              openFirstReviewForm(quoted.service);
+              setOpenReviewFormIds(firstReviewFormIds(quoted.service));
             }
             setStep(status.status === 'GENERATED' ? 'download' : 'review');
           } else {
@@ -188,7 +189,7 @@ export function LiveFlowPage() {
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
     setInvalidFieldId(null);
-    if (service) openFirstReviewForm(service);
+    if (service) setOpenReviewFormIds(firstReviewFormIds(service));
     setStep('review');
   };
 
