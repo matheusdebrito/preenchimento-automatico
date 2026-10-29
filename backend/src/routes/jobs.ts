@@ -8,6 +8,7 @@ import { publicService } from '../modules/catalog/public-catalog.js';
 import { isValidCpf, isValidBrazilianDate } from '../modules/catalog/field-validation.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
 import { QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
+import { serviceFormValues } from '../modules/catalog/service-form-values.js';
 import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
@@ -470,12 +471,7 @@ export function registerJobRoutes(
       for (const id of service.formVersionIds) {
         const relation = definitions.serviceForms.find((item) =>
           item.serviceId === job.serviceId && item.formVersionId === id);
-        const boundValues = Object.fromEntries(Object.entries(relation?.answerBindings ?? {})
-          .flatMap(([fieldId, questionId]) => {
-            const value = job.answers[questionId];
-            return value ? [[fieldId, value]] : [];
-          }));
-        const values = { ...job.values, ...boundValues, ...relation?.fixedValues };
+        const values = serviceFormValues(relation, job.answers, job.values);
         const original = await fillApprovedTemplate(definitions, id, values);
         // Samples are conspicuously watermarked on every page. Never send
         // an unmarked draft form through the local QA service.
