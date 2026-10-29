@@ -1,30 +1,13 @@
-import { useEffect, useState } from 'react';
 import { ArrowRight, ChevronRight, ShieldCheck, ShipWheel, Waves } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppFooter } from '../components/layout/AppFooter';
 import { AppHeader } from '../components/layout/AppHeader';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { PLANNED_VESSEL_SERVICES, SERVICE_CATEGORIES } from '../data/catalog';
-import { api } from '../lib/api';
-import type { LiveService } from '../lib/api';
+import { SERVICE_CATEGORIES } from '../data/catalog';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 export function HomePage() {
   useDocumentTitle();
-  const [available, setAvailable] = useState<readonly LiveService[]>([]);
-  // One service per category, including its safe QA preview; no parallel demo.
-  const availableById = new Map(available.map((service) => [service.id, service]));
-  const pilot = availableById.get('transferencia-moto-aquatica');
-  useEffect(() => {
-    if (typeof fetch !== 'function') return;
-    let mounted = true;
-    void api<{services:LiveService[]}>('/api/services').then((result) => {
-      if (mounted) setAvailable(result.services);
-    }).catch(() => undefined);
-    return () => { mounted = false; };
-  }, []);
-
   return (
     <div className="app-shell">
       <a className="skip-link" href="#conteudo">
@@ -48,7 +31,7 @@ export function HomePage() {
               </p>
               <div className="hero__actions">
                 <Button
-                  to={pilot ? '/preencher-real/' + encodeURIComponent(pilot.id) : '#categories-title'}
+                  to="#categories-title"
                   variant="inverse"
                   size="lg"
                   icon={<ArrowRight aria-hidden="true" />}
@@ -82,41 +65,20 @@ export function HomePage() {
             <div className="category-grid">
               {SERVICE_CATEGORIES.map((category) => {
                 const Icon = category.icon;
-
-                const liveService = category.serviceId ? availableById.get(category.serviceId) : undefined;
-                if (!liveService) {
-                  return (
-                    <article key={category.id} className="category-card category-card--soon">
-                      <span className="icon-badge" aria-hidden="true">
-                        <Icon />
-                      </span>
-                      <div className="category-card__content">
-                        <h3 className="category-card__title">{category.title}</h3>
-                        <p className="category-card__description">{category.description}</p>
-                        <div className="category-card__meta">
-                          <Badge tone="soon">Em breve</Badge>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                }
-
                 return (
                   <Link
                     key={category.id}
                     className="category-card category-card--link"
-                    to={'/preencher-real/' + encodeURIComponent(liveService.id)}
+                    to={category.route}
                   >
                     <span className="icon-badge" aria-hidden="true">
                       <Icon />
                     </span>
                     <div className="category-card__content">
-                      <h3 className="category-card__title">{liveService.title}</h3>
-                      <p className="category-card__description">{liveService.description}</p>
+                      <h3 className="category-card__title">{category.title}</h3>
+                      <p className="category-card__description">{category.description}</p>
                       <div className="category-card__meta">
-                        <span className="category-card__available">{liveService.creditCost === 0
-                          ? 'Prévia local para revisão — sem créditos'
-                          : 'Preencher — ' + liveService.creditCost + ' crédito'}</span>
+                        <span className="category-card__available">Ver serviços</span>
                       </div>
                     </div>
                     <ChevronRight className="category-card__chevron" aria-hidden="true" />
@@ -147,43 +109,7 @@ export function HomePage() {
                       <span className="icon-badge" aria-hidden="true">
                         <ShipWheel />
                       </span>
-                      <div className="category-card__content">
-                        <h3 className="category-card__title">{service.title}</h3>
-                        <p className="category-card__description">{service.summary}</p>
-                        <div className="category-card__meta">
-                          <Badge tone="soon">Formulário em validação</Badge>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                }
-                return (
-                  <Link
-                    key={service.id}
-                    className="category-card category-card--link"
-                    to={'/preencher-real/' + encodeURIComponent(live.id)}
-                  >
-                    <span className="icon-badge" aria-hidden="true">
-                      <ShipWheel />
-                    </span>
-                    <div className="category-card__content">
-                      <h3 className="category-card__title">{live.title}</h3>
-                      <p className="category-card__description">{live.description}</p>
-                      <div className="category-card__meta">
-                        <span className="category-card__available">
-                          Preencher — {live.creditCost} crédito
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight className="category-card__chevron" aria-hidden="true" />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="home-section home-section--flush-top" aria-labelledby="how-title">
+                         <section className="home-section home-section--flush-top" aria-labelledby="how-title">
           <div className="container">
             <div className="section-heading">
               <p className="eyebrow">Simples do início ao fim</p>
