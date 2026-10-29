@@ -470,7 +470,12 @@ export function registerJobRoutes(
       for (const id of service.formVersionIds) {
         const relation = definitions.serviceForms.find((item) =>
           item.serviceId === job.serviceId && item.formVersionId === id);
-        const values = { ...job.values, ...relation?.fixedValues };
+        const boundValues = Object.fromEntries(Object.entries(relation?.answerBindings ?? {})
+          .flatMap(([fieldId, questionId]) => {
+            const value = job.answers[questionId];
+            return value ? [[fieldId, value]] : [];
+          }));
+        const values = { ...job.values, ...boundValues, ...relation?.fixedValues };
         const original = await fillApprovedTemplate(definitions, id, values);
         // Samples are conspicuously watermarked on every page. Never send
         // an unmarked draft form through the local QA service.
