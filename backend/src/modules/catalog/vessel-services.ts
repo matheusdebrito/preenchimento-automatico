@@ -11,6 +11,7 @@ import {
   MOTOR_DOCUMENT_FIELDS,
   RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
+  NO_AUTOMATIC_FIELDS,
   SELLER_IDENTITY_FIELDS,
   TIE_FIELDS,
 } from './document-field-policies.js';
@@ -47,6 +48,18 @@ const dataChangedQuestion: ServiceQuestion = {
   id: 'dataChanged',
   label: 'Houve alteração de dados do proprietário ou das características da embarcação?',
   options: ['sim', 'nao'],
+};
+
+const structuralAlterationQuestion: ServiceQuestion = {
+  id: 'structuralAlteration',
+  label: 'A alteração envolve modificação estrutural ou construtiva da embarcação?',
+  options: ['nao', 'sim'],
+};
+
+const rowToMotorConversionQuestion: ServiceQuestion = {
+  id: 'rowToMotorConversion',
+  label: 'É uma adaptação de embarcação miúda a remo para propulsão a motor?',
+  options: ['nao', 'sim'],
 };
 
 const commonApplicantDocuments: readonly DocumentRequirement[] = [
@@ -106,6 +119,32 @@ const motorProof: DocumentRequirement = {
     documentType: 'supporting-document',
     subjectRole: 'vessel',
     allowedFieldIds: MOTOR_DOCUMENT_FIELDS,
+  },
+};
+
+const technicalResponsibilityDocument: DocumentRequirement = {
+  id: 'technical-responsibility-document',
+  label: 'Documento do responsável técnico / ART',
+  description: 'Quando a alteração exigir responsabilidade técnica, envie a ART e a declaração/termo aplicável para conferência. A aplicação não presume que toda alteração exija o Anexo 3-C.',
+  required: false,
+  conditions: [{ questionId: 'structuralAlteration', equals: 'sim' }],
+  extraction: {
+    documentType: 'supporting-document',
+    subjectRole: 'vessel',
+    allowedFieldIds: NO_AUTOMATIC_FIELDS,
+  },
+};
+
+const rowToMotorTechnicalDeclaration: DocumentRequirement = {
+  id: 'row-to-motor-technical-declaration',
+  label: 'Declaração do Responsável Técnico',
+  description: 'Exigida pela NORMAM-211/DPC para adaptação de embarcação miúda a remo para propulsão a motor a partir de 01/01/2025.',
+  required: false,
+  conditions: [{ questionId: 'rowToMotorConversion', equals: 'sim' }],
+  extraction: {
+    documentType: 'supporting-document',
+    subjectRole: 'vessel',
+    allowedFieldIds: NO_AUTOMATIC_FIELDS,
   },
 };
 
@@ -204,6 +243,8 @@ function questions(options: {
   dataChanged?: boolean;
   blockMediumBand?: boolean;
   constructionCase?: boolean;
+  structuralAlteration?: boolean;
+  rowToMotorConversion?: boolean;
 } = {}): readonly ServiceQuestion[] {
   const baseBandQuestion = options.blockMediumBand
     ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_menor_24m'] }
@@ -220,6 +261,8 @@ function questions(options: {
     ...(options.dataChanged ? [dataChangedQuestion] : []),
     ...(options.band === false ? [] : [bandQuestion]),
     ...(options.constructionCase ? [builtByApplicantQuestion] : []),
+    ...(options.structuralAlteration ? [structuralAlterationQuestion] : []),
+    ...(options.rowToMotorConversion ? [rowToMotorConversionQuestion] : []),
   ];
 }
 
@@ -295,16 +338,23 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Alteração de dados ou características da embarcação',
     description: 'Em validação normativa. O Anexo 3-C só se aplica em situações específicas de construção/alteração; não deve ser incluído automaticamente.',
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
-    documentRequirements: requirements({ tie: true, origin: true }),
+    questions: questions({ tie: true, structuralAlteration: true }),
+    documentRequirements: [
+      ...requirements({ tie: true, origin: true }),
+      technicalResponsibilityDocument,
+    ],
   },
   {
     id: 'alteracao-motor-embarcacao',
     title: 'Troca, instalação ou retirada de motor',
-    description: 'Em validação até incorporar o termo de responsabilidade aplicável às alterações.',
+    description: 'Em validação normativa. O fluxo distingue troca cadastral de alteração estrutural e a adaptação de embarcação miúda a remo para motor, que possui exigência técnica específica.',
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
-    documentRequirements: requirements({ tie: true, motor: true }),
+    questions: questions({ tie: true, structuralAlteration: true, rowToMotorConversion: true }),
+    documentRequirements: [
+      ...requirements({ tie: true, motor: true }),
+      technicalResponsibilityDocument,
+      rowToMotorTechnicalDeclaration,
+    ],
   },
   {
     id: 'comunicacao-venda-embarcacao',
@@ -432,11 +482,25 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   bsade('alteracao-dados-embarcacao', 2, 'alteracao_dados'),
   bade('alteracao-dados-embarcacao', 3),
   residence('alteracao-dados-embarcacao', 4), lostTie('alteracao-dados-embarcacao', 5),
+  { serviceId: 'alteracao-dados-embarcacao',
+    formVersionId: 'termo-responsabilidade-er-2026-v1', order: 6,
+    conditions: [
+      { questionId: 'vesselType', equals: 'embarcacao' },
+      { questionId: 'structuralAlteration', equals: 'sim' },
+    ],
+    fixedValues: { 'process.constructionAction': 'alterada' } },
 
   request('alteracao-motor-embarcacao', 1, 'troca_motor'),
   bsade('alteracao-motor-embarcacao', 2, 'troca_motor'),
   bade('alteracao-motor-embarcacao', 3),
   residence('alteracao-motor-embarcacao', 4), lostTie('alteracao-motor-embarcacao', 5),
+  { serviceId: 'alteracao-motor-embarcacao',
+    formVersionId: 'termo-responsabilidade-er-2026-v1', order: 6,
+    conditions: [
+      { questionId: 'vesselType', equals: 'embarcacao' },
+      { questionId: 'structuralAlteration', equals: 'sim' },
+    ],
+    fixedValues: { 'process.constructionAction': 'alterada' } },
 
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 1,
