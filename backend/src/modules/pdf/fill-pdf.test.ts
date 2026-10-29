@@ -63,6 +63,52 @@ describe('motor determinístico de PDF', () => {
     // The X is visibly tested by rendered PDF regression; this asserts both options fit.
   });
 
+  it('aceita somente aliases revisados em escolhas estáticas', async () => {
+    const input = await syntheticPdf();
+    const placements = [
+      { kind: 'COORDINATES' as const, fieldId: 'area', required: true,
+        pageIndex: 0, x: 50, y: 600, fontSize: 12, maxWidth: 12,
+        markWhen: 'interior', markAliases: ['navegação interior'] },
+      { kind: 'COORDINATES' as const, fieldId: 'area', required: true,
+        pageIndex: 0, x: 90, y: 600, fontSize: 12, maxWidth: 12,
+        markWhen: 'costeira', markAliases: ['navegação costeira'] },
+    ];
+    const output = await fillPdf(input, placements, { area: 'NAVEGAÇÃO INTERIOR' });
+    expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
+    await expect(fillPdf(input, placements, { area: 'área desconhecida' }))
+      .rejects.toThrow('Opção não prevista');
+  });
+
+  it('aceita false em checkbox estático unilateral deixando a caixa em branco', async () => {
+    const input = await syntheticPdf();
+    const placement = [{
+      kind: 'COORDINATES' as const, fieldId: 'equipment',
+      pageIndex: 0, x: 50, y: 600, fontSize: 12, maxWidth: 12,
+      required: false, markWhen: 'true',
+    }];
+    const output = await fillPdf(input, placement, { equipment: 'false' });
+    expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
+    await expect(fillPdf(input, placement, { equipment: 'maybe' }))
+      .rejects.toThrow('Opção não prevista');
+  });
+
+  it('formata a mesma data canônica em partes exigidas pelo formulário', async () => {
+    const input = await syntheticPdf();
+    const output = await fillPdf(input, [
+      { kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+        x: 50, y: 600, fontSize: 10, maxWidth: 20, valueTransform: 'DATE_DAY' },
+      { kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+        x: 90, y: 600, fontSize: 10, maxWidth: 80, valueTransform: 'DATE_MONTH_NAME_PT_BR' },
+      { kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+        x: 190, y: 600, fontSize: 10, maxWidth: 30, valueTransform: 'DATE_YEAR_2' },
+    ], { date: '29/10/2026' });
+    expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
+    await expect(fillPdf(input, [{
+      kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
+      x: 50, y: 600, fontSize: 10, maxWidth: 20, valueTransform: 'DATE_DAY',
+    }], { date: '2026-10-29' })).rejects.toThrow('Data inválida');
+  });
+
   it('identifica tipos reais de AcroForm em vez de confundir texto true com checkbox', async () => {
     const original = await PDFDocument.create();
     const page = original.addPage([595, 842]);

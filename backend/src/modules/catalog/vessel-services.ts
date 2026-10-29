@@ -31,6 +31,12 @@ const tieSituationQuestion: ServiceQuestion = {
   options: ['regular', 'extraviado'],
 };
 
+const dataChangedQuestion: ServiceQuestion = {
+  id: 'dataChanged',
+  label: 'Houve alteração de dados do proprietário ou das características da embarcação?',
+  options: ['sim', 'nao'],
+};
+
 const commonApplicantDocuments: readonly DocumentRequirement[] = [
   {
     id: 'applicant-identity',
@@ -60,6 +66,12 @@ const commonApplicantDocuments: readonly DocumentRequirement[] = [
     required: false,
     extraction: { documentType: 'supporting-document', subjectRole: 'person' },
   },
+  {
+    id: 'dpem-proof',
+    label: 'Comprovante/seguro DPEM, quando aplicável',
+    required: false,
+    extraction: { documentType: 'supporting-document', subjectRole: 'vessel' },
+  },
 ];
 
 const currentTie: DocumentRequirement = {
@@ -76,14 +88,6 @@ const vesselProof: DocumentRequirement = {
   description: 'Nota fiscal, instrumento de compra e venda ou documento equivalente aplicável ao caso.',
   required: false,
   extraction: { documentType: 'sale-document', subjectRole: 'person' },
-};
-
-const vesselPhotos: DocumentRequirement = {
-  id: 'vessel-photos',
-  label: 'Fotos da embarcação, quando exigidas no processo',
-  description: 'Fotos também passam pela leitura OCR, mas podem não conter texto útil.',
-  required: false,
-  extraction: { documentType: 'supporting-document', subjectRole: 'vessel' },
 };
 
 const motorProof: DocumentRequirement = {
@@ -126,68 +130,70 @@ export const vesselVersions: readonly FormVersion[] = [
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 2-A',
     regulation: 'NORMAM-211/DPC 2026, Anexo 2-A',
     sourceUrl: 'https://www.marinha.mil.br/cfpa/sites/www.marinha.mil.br.cfpa/files/2026-02/Anexo%202-A%20%28BADE%29.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: 'CCCA17A6C0608B995829A5A4BBDD97953343C3D924E3B74FD00CC0AE76623524', templatePath: 'backend/templates/bade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
   {
     id: 'bsade-er-2026-v1', formId: 'bsade-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 2-B',
     regulation: 'NORMAM-211/DPC 2026, Anexo 2-B',
     sourceUrl: 'https://www.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-211%28BSADE%29.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: '56F9301CC153FF97C5B4A72BE0C7688BC030F87CED9C861AB6064DD62D012988', templatePath: 'backend/templates/bsade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
   {
     id: 'requerimento-embarcacao-er-2026-v1', formId: 'requerimento-embarcacao-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 2-C',
     regulation: 'NORMAM-211/DPC 2026, Anexo 2-C',
     sourceUrl: 'https://assets.marinha.mil.br/cppe/sites/www.marinha.mil.br.cppe/files/2026-03/normam-211%28REQUERIMENTO%29_0.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: 'DAEDFD1D1F7C48C020D7D3169BFD9D36B4EEA122E75FDCC792EB3CC59E691AFF', templatePath: 'backend/templates/requerimento-embarcacao-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
   {
     id: 'declaracao-residencia-er-2026-v1', formId: 'declaracao-residencia-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 2-G',
     regulation: 'NORMAM-211/DPC 2026, Anexo 2-G',
     sourceUrl: 'https://www.marinha.mil.br/delguaira/sites/www.marinha.mil.br.delguaira/files/upload/normam-211-2G.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: '392DC41E9E2A95409972156A4460F4DF6E74C2F906D4111CC03B1CE7457C8B38', templatePath: 'backend/templates/declaracao-residencia-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
   {
     id: 'declaracao-perda-tie-er-2026-v1', formId: 'declaracao-perda-tie-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 2-H',
     regulation: 'NORMAM-211/DPC 2026, Anexo 2-H',
     sourceUrl: 'https://www.marinha.mil.br/delguaira/sites/www.marinha.mil.br.delguaira/files/2026-03/Extravio%20ANEXO%202-H.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: 'D67AAB9B1E878F7877A69AC0B9E6197DE932A61D166626B50141FBE119567093', templatePath: 'backend/templates/declaracao-perda-tie-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
   {
     id: 'comunicacao-transferencia-er-2026-v1', formId: 'comunicacao-transferencia-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 2-I',
     regulation: 'NORMAM-211/DPC 2026, Anexo 2-I',
     sourceUrl: 'https://www.marinha.mil.br/delguaira/sites/www.marinha.mil.br.delguaira/files/2026-03/anexo%202-i_0.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: '0DF2A7550AF9CBFDCBC27D94128C2BBB0EEFA88BABA6142CB39EDB4FE22EA142', templatePath: 'backend/templates/comunicacao-transferencia-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
   {
     id: 'autorizacao-transferencia-er-2026-v1', formId: 'autorizacao-transferencia-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 2-K',
     regulation: 'NORMAM-211/DPC 2026, Anexo 2-K',
     sourceUrl: 'https://www.marinha.mil.br/delguaira/sites/www.marinha.mil.br.delguaira/files/2026-03/Compra%20a%20e%20venda%20ANEXO%202-K.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: '52A4CACFFEFD628EF9D95DC84943CCA0CB0FD66A706272380A92F19F4B9EDE5E', templatePath: 'backend/templates/autorizacao-transferencia-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
   {
     id: 'termo-responsabilidade-er-2026-v1', formId: 'termo-responsabilidade-er', revision: 'v1',
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 3-C',
     regulation: 'NORMAM-211/DPC 2026, Anexo 3-C',
     sourceUrl: 'https://www.marinha.mil.br/cfpa/sites/www.marinha.mil.br.cfpa/files/2026-02/ANEXO%203-C%20%28TERMO%20DE%20RESPONSABILIDADE%29.pdf',
-    verifiedAt: null, sha256: null, templatePath: null, pdfKind: 'UNKNOWN', status: 'IDENTIFIED',
+    verifiedAt: '2026-10-29', sha256: '706D23CA1BA72F596AC3C959A2D64363C596877355B9F3A637EE371873E15AA0', templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
 ];
 
 function questions(options: {
   band?: boolean;
   tie?: boolean;
+  dataChanged?: boolean;
   residence?: boolean;
   representative?: boolean;
 } = {}): readonly ServiceQuestion[] {
   return [
     ...(options.band === false ? [] : [vesselBandQuestion]),
     ...(options.tie ? [tieSituationQuestion] : []),
+    ...(options.dataChanged ? [dataChangedQuestion] : []),
     ...(options.residence === false ? [] : [residenceQuestion]),
     ...(options.representative === false ? [] : [representativeQuestion]),
   ];
@@ -197,7 +203,6 @@ function requirements(options: {
   tie?: boolean;
   seller?: boolean;
   origin?: boolean;
-  photos?: boolean;
   motor?: boolean;
   residence?: boolean;
   representative?: boolean;
@@ -212,7 +217,6 @@ function requirements(options: {
     ...(options.tie ? [currentTie] : []),
     ...(options.seller ? [sellerIdentity] : []),
     ...(options.origin ? [vesselProof] : []),
-    ...(options.photos ? [vesselPhotos] : []),
     ...(options.motor ? [motorProof] : []),
   ];
 }
@@ -227,7 +231,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
     questions: questions(),
-    documentRequirements: requirements({ origin: true, photos: true }),
+    documentRequirements: requirements({ origin: true }),
   },
   {
     id: 'transferencia-propriedade-embarcacao',
@@ -258,7 +262,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Renovação do TIE/TIEM',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true }),
+    questions: questions({ tie: true, dataChanged: true }),
     documentRequirements: requirements({ tie: true }),
   },
   {
@@ -266,7 +270,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: '2ª via do TIE/TIEM por perda, roubo ou extravio',
     description: scopeNote,
     creditCost: 1, status: 'DRAFT',
-    questions: questions({ band: false }),
+    questions: questions({ dataChanged: true }),
     documentRequirements: requirements(),
   },
   {
@@ -297,23 +301,45 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
 ];
 
-const bsade = (serviceId: string, order: number): ServiceForm => ({
+const bsade = (
+  serviceId: string,
+  order: number,
+  action?: string,
+  extraConditions: ServiceForm['conditions'] = [],
+): ServiceForm => ({
   serviceId,
   formVersionId: 'bsade-er-2026-v1',
   order,
-  conditions: [{ questionId: 'vesselBand', equals: 'ate_12m' }],
+  conditions: [{ questionId: 'vesselBand', equals: 'ate_12m' }, ...extraConditions],
+  ...(action ? { fixedValues: action === 'inscricao'
+    ? { 'process.inscription': 'true' }
+    : action === 'transf_prop'
+      ? { 'process.transferProperty': 'true' }
+      : action === 'transf_jur'
+        ? { 'process.transferJurisdiction': 'true' }
+        : action === 'transf_prop_jur'
+          ? { 'process.transferProperty': 'true', 'process.transferJurisdiction': 'true' }
+          : { 'process.updateVesselData': 'true' } } : {}),
 });
-const bade = (serviceId: string, order: number): ServiceForm => ({
+const bade = (
+  serviceId: string,
+  order: number,
+  extraConditions: ServiceForm['conditions'] = [],
+): ServiceForm => ({
   serviceId,
   formVersionId: 'bade-er-2026-v1',
   order,
-  conditions: [{ questionId: 'vesselBand', equals: 'maior_12_ate_24m' }],
+  conditions: [{ questionId: 'vesselBand', equals: 'maior_12_ate_24m' }, ...extraConditions],
 });
 const request = (serviceId: string, order: number, action: string): ServiceForm => ({
   serviceId,
   formVersionId: 'requerimento-embarcacao-er-2026-v1',
   order,
-  fixedValues: { 'process.vesselAction': action },
+  fixedValues: {
+    'process.vesselAction': action,
+    ...(action === 'segunda_via'
+      ? { 'process.otherServiceDescription': '2ª via do TIE/TIEM' } : {}),
+  },
 });
 const residence = (serviceId: string, order: number): ServiceForm => ({
   serviceId,
@@ -325,6 +351,7 @@ const lostTie = (serviceId: string, order: number): ServiceForm => ({
   serviceId,
   formVersionId: 'declaracao-perda-tie-er-2026-v1',
   order,
+  fixedValues: { 'process.lostTie': 'true' },
   conditions: [{ questionId: 'tieSituation', equals: 'extraviado' }],
 });
 const responsibility = (serviceId: string, order: number): ServiceForm => ({
@@ -336,11 +363,11 @@ const responsibility = (serviceId: string, order: number): ServiceForm => ({
 
 export const vesselServiceForms: readonly ServiceForm[] = [
   request('inscricao-embarcacao', 1, 'inscricao'),
-  bsade('inscricao-embarcacao', 2), bade('inscricao-embarcacao', 3),
+  bsade('inscricao-embarcacao', 2, 'inscricao'), bade('inscricao-embarcacao', 3),
   residence('inscricao-embarcacao', 4), responsibility('inscricao-embarcacao', 5),
 
   request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
-  bsade('transferencia-propriedade-embarcacao', 2), bade('transferencia-propriedade-embarcacao', 3),
+  bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'), bade('transferencia-propriedade-embarcacao', 3),
   { serviceId: 'transferencia-propriedade-embarcacao',
     formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4 },
   residence('transferencia-propriedade-embarcacao', 5),
@@ -348,12 +375,12 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   responsibility('transferencia-propriedade-embarcacao', 7),
 
   request('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
-  bsade('transferencia-jurisdicao-embarcacao', 2), bade('transferencia-jurisdicao-embarcacao', 3),
+  bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'), bade('transferencia-jurisdicao-embarcacao', 3),
   residence('transferencia-jurisdicao-embarcacao', 4),
   lostTie('transferencia-jurisdicao-embarcacao', 5),
 
   request('transferencia-propriedade-jurisdicao-embarcacao', 1, 'transf_prop_jur'),
-  bsade('transferencia-propriedade-jurisdicao-embarcacao', 2),
+  bsade('transferencia-propriedade-jurisdicao-embarcacao', 2, 'transf_prop_jur'),
   bade('transferencia-propriedade-jurisdicao-embarcacao', 3),
   { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
     formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4 },
@@ -362,26 +389,35 @@ export const vesselServiceForms: readonly ServiceForm[] = [
   responsibility('transferencia-propriedade-jurisdicao-embarcacao', 7),
 
   request('renovacao-tie-embarcacao', 1, 'renovacao'),
-  bsade('renovacao-tie-embarcacao', 2), bade('renovacao-tie-embarcacao', 3),
+  bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  bade('renovacao-tie-embarcacao', 3,
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
   residence('renovacao-tie-embarcacao', 4),
   lostTie('renovacao-tie-embarcacao', 5),
-  responsibility('renovacao-tie-embarcacao', 6),
 
   request('segunda-via-tie-embarcacao', 1, 'segunda_via'),
   { serviceId: 'segunda-via-tie-embarcacao',
-    formVersionId: 'declaracao-perda-tie-er-2026-v1', order: 2 },
-  residence('segunda-via-tie-embarcacao', 3),
+    formVersionId: 'declaracao-perda-tie-er-2026-v1', order: 2,
+    fixedValues: { 'process.lostTie': 'true' } },
+  bsade('segunda-via-tie-embarcacao', 3, 'alteracao_dados',
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  bade('segunda-via-tie-embarcacao', 4,
+    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  residence('segunda-via-tie-embarcacao', 5),
 
   request('alteracao-dados-embarcacao', 1, 'alteracao_dados'),
-  bsade('alteracao-dados-embarcacao', 2), bade('alteracao-dados-embarcacao', 3),
+  bsade('alteracao-dados-embarcacao', 2, 'alteracao_dados'), bade('alteracao-dados-embarcacao', 3),
   residence('alteracao-dados-embarcacao', 4), lostTie('alteracao-dados-embarcacao', 5),
 
   request('alteracao-motor-embarcacao', 1, 'troca_motor'),
-  bsade('alteracao-motor-embarcacao', 2), bade('alteracao-motor-embarcacao', 3),
+  bsade('alteracao-motor-embarcacao', 2, 'troca_motor'), bade('alteracao-motor-embarcacao', 3),
   residence('alteracao-motor-embarcacao', 4), lostTie('alteracao-motor-embarcacao', 5),
 
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'comunicacao-transferencia-er-2026-v1', order: 1 },
+  { serviceId: 'comunicacao-venda-embarcacao',
+    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 2 },
 ];
 
 export const vesselServiceIds = vesselServices.map((service) => service.id);

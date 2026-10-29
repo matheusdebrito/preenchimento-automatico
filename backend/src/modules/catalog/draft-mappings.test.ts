@@ -9,9 +9,14 @@ import { resolve } from 'node:path';
 
 describe('draft form map coordinates', () => {
   it('all draft placements refer to known semantic fields and remain unpublished', () => {
-    expect(catalog.mappings).toHaveLength(6);
+    expect(catalog.mappings).toHaveLength(14);
     expect(validateCatalog(catalog)).toEqual([]);
-    expect(catalog.mappings.every((m) => m.status === 'DRAFT')).toBe(true);
+    expect(catalog.mappings.filter((m) =>
+      m.formVersionId.includes('-er-2026-')).every((m) =>
+      m.status === 'TESTED')).toBe(true);
+    expect(catalog.mappings.filter((m) =>
+      !m.formVersionId.includes('-er-2026-')).every((m) =>
+      m.status === 'DRAFT')).toBe(true);
     expect(catalog.services[0]?.status).toBe('DRAFT');
   });
   it('positions stay within the dimensions of the real official PDF pages', async () => {
@@ -32,7 +37,7 @@ describe('draft form map coordinates', () => {
       }
     }
   });
-  it('mantém os 6 formulários independentes com campos essenciais explícitos', () => {
+  it('mantém cada formulário independente com campos essenciais explícitos', () => {
     const required: Record<string, readonly string[]> = {
       'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
       'bdmoto-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
@@ -40,6 +45,14 @@ describe('draft form map coordinates', () => {
       'comunicacao-transferencia-ma-v1': ['person.fullName', 'seller.fullName', 'person.cpf', 'seller.cpf'],
       'declaracao-perda-tie-ma-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name'],
       'declaracao-residencia-ma-v1': ['person.fullName', 'person.cpf', 'person.address'],
+      'bade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
+      'bsade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration', 'vessel.hullId'],
+      'requerimento-embarcacao-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'declaracao-residencia-er-2026-v1': ['person.fullName', 'person.cpf', 'person.address'],
+      'declaracao-perda-tie-er-2026-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name', 'vessel.registration'],
+      'comunicacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'autorizacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'termo-responsabilidade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
     };
     expect(catalog.mappings).toHaveLength(
       catalog.versions.filter((version) => version.status === 'VERIFIED').length,
@@ -55,18 +68,39 @@ describe('draft form map coordinates', () => {
     }
   });
 
-  it('mantém um único motor no MVP e nunca deriva declarante de vendedor', () => {
-    const transfer = catalog.mappings.find((m) => m.formVersionId === 'autorizacao-transferencia-ma-v1')!;
-    const fields = new Set(transfer.placements.map((placement) => placement.fieldId));
-    expect(fields.has('vessel.motorBrand')).toBe(true);
-    expect(fields.has('vessel.motorPower')).toBe(true);
-    expect(fields.has('vessel.motorSerial')).toBe(true);
-    expect([...fields].some((id) => /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id)))
-      .toBe(false);
+  it('mantém um único motor em todos os mapas e nunca deriva declarante de vendedor', () => {
+    const fields = catalog.mappings.flatMap((mapping) =>
+      mapping.placements.map((placement) => placement.fieldId));
+    expect(fields).toContain('vessel.motorBrand');
+    expect(fields).toContain('vessel.motorPower');
+    expect(fields).toContain('vessel.motorSerial');
+    expect(fields.some((id) =>
+      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
 
     const loss = catalog.mappings.find((m) => m.formVersionId === 'declaracao-perda-tie-ma-v1')!;
     expect(loss.placements.some((p) => p.fieldId === 'declarant.fullName')).toBe(true);
     expect(loss.placements.some((p) => p.fieldId.startsWith('seller.'))).toBe(false);
+  });
+
+  it('mantém as marcações do 2-C e 2-H dentro das caixas impressas revisadas', () => {
+    const request = catalog.mappings.find((m) =>
+      m.formVersionId === 'requerimento-embarcacao-er-2026-v1')!;
+    const requestMarks = request.placements.filter((p) =>
+      p.kind === 'COORDINATES' && p.markWhen !== undefined);
+    const byValue = new Map(requestMarks.map((p) =>
+      [p.kind === 'COORDINATES' ? p.markWhen : undefined, p]));
+    expect((byValue.get('interior') as { x: number } | undefined)?.x).toBe(100);
+    expect((byValue.get('costeira') as { x: number } | undefined)?.x).toBe(168);
+    expect((byValue.get('oceanica') as { x: number } | undefined)?.x).toBe(240);
+    expect((byValue.get('transf_prop') as { x: number } | undefined)?.x).toBe(96);
+    expect((byValue.get('transf_jur') as { x: number } | undefined)?.x).toBe(260);
+
+    const loss = catalog.mappings.find((m) =>
+      m.formVersionId === 'declaracao-perda-tie-er-2026-v1')!;
+    const lostTie = loss.placements.find((p) =>
+      p.kind === 'COORDINATES' && p.fieldId === 'process.lostTie');
+    expect(lostTie?.kind).toBe('COORDINATES');
+    if (lostTie?.kind === 'COORDINATES') expect(lostTie.x).toBe(94);
   });
 
   it('gera cada modelo oficial com valores fictícios preservando páginas e bytes originais', async () => {
@@ -78,8 +112,7 @@ describe('draft form map coordinates', () => {
       for (const placement of mapping.placements) {
         if (!placement.required) continue;
         const id = placement.fieldId;
-        values[id] = id.includes('motor') && id.endsWith('Choice') ? 'nao' :
-          id.endsWith('.cpf') ? '123.456.789-09' :
+        values[id] = id.endsWith('.cpf') ? '123.456.789-09' :
           id.endsWith('fullName') ? 'MARIA TESTE' :
           id.endsWith('registration') ? '123456789' :
           id.endsWith('hullId') ? 'BR-ABC-12345' :
@@ -96,7 +129,7 @@ describe('draft form map coordinates', () => {
     }
   }, 30_000);
 
-  it('impede a impressão de nome excessivo em cada um dos seis modelos', async () => {
+  it('impede a impressão de texto excessivo em cada modelo mapeado', async () => {
     for (const mapping of catalog.mappings) {
       const version = catalog.versions.find((v) => v.id === mapping.formVersionId)!;
       const original = await readFile(resolve(process.cwd(), '..', version.templatePath!));

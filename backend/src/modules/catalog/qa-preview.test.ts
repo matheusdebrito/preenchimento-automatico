@@ -15,13 +15,30 @@ const answers = {
 
 describe('prévia local do MESMO serviço de transferência', () => {
   it('nunca altera status ou campos oficiais do catálogo compartilhado', () => {
+    const originalStatuses = new Map(catalog.mappings.map((mapping) =>
+      [mapping.id, mapping.status]));
+    const originalServiceStatus = catalog.services.find((service) =>
+      service.id === QA_PREVIEW_SERVICE_ID)?.status;
+
     const qa = qaPreviewCatalog();
-    expect(catalog.mappings.every((mapping) => mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status).toBe('DRAFT');
+
+    for (const mapping of catalog.mappings) {
+      expect(mapping.status).toBe(originalStatuses.get(mapping.id));
+    }
+    expect([...originalStatuses.values()].filter((status) => status === 'TESTED'))
+      .toHaveLength(8);
+    expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status)
+      .toBe(originalServiceStatus);
+    expect(catalog.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.status)
+      .toBe('DRAFT');
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === QA_PREVIEW_SERVICE_ID)).toBe(false);
     expect(publicService(catalog, QA_PREVIEW_SERVICE_ID)).toBeNull();
     expect(publicServices(catalog)).toHaveLength(0);
+
+    // The QA catalog is an isolated clone. It may promote mappings internally
+    // so the local preview can exercise the real forms without publishing them.
+    expect(qa.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
     expect(qa.services).toHaveLength(catalog.services.length);
     expect(qa.services[0]?.id).toBe(QA_PREVIEW_SERVICE_ID);
   });

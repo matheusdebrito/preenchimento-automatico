@@ -131,28 +131,53 @@ export function HomePage() {
           <div className="container">
             <div className="section-heading">
               <p className="eyebrow">Embarcações de esporte e recreio</p>
-              <h2 id="vessel-services-title">Serviços em preparação</h2>
+              <h2 id="vessel-services-title">Serviços de embarcações</h2>
               <p>
-                Os fluxos abaixo já estão catalogados conforme a NORMAM-211/DPC 2026.
-                Eles serão liberados individualmente depois da verificação do PDF oficial
-                e da revisão visual do preenchimento.
+                Os fluxos abaixo seguem a NORMAM-211/DPC 2026. Serviços homologados ficam
+                disponíveis para preenchimento; os demais permanecem identificados como em validação.
               </p>
             </div>
             <div className="category-grid">
-              {PLANNED_VESSEL_SERVICES.map((service) => (
-                <article key={service.id} className="category-card category-card--soon">
-                  <span className="icon-badge" aria-hidden="true">
-                    <ShipWheel />
-                  </span>
-                  <div className="category-card__content">
-                    <h3 className="category-card__title">{service.title}</h3>
-                    <p className="category-card__description">{service.summary}</p>
-                    <div className="category-card__meta">
-                      <Badge tone="soon">Formulário em validação</Badge>
+              {PLANNED_VESSEL_SERVICES.map((service) => {
+                const live = availableById.get(service.id);
+                if (!live) {
+                  return (
+                    <article key={service.id} className="category-card category-card--soon">
+                      <span className="icon-badge" aria-hidden="true">
+                        <ShipWheel />
+                      </span>
+                      <div className="category-card__content">
+                        <h3 className="category-card__title">{service.title}</h3>
+                        <p className="category-card__description">{service.summary}</p>
+                        <div className="category-card__meta">
+                          <Badge tone="soon">Formulário em validação</Badge>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                }
+                return (
+                  <Link
+                    key={service.id}
+                    className="category-card category-card--link"
+                    to={'/preencher-real/' + encodeURIComponent(live.id)}
+                  >
+                    <span className="icon-badge" aria-hidden="true">
+                      <ShipWheel />
+                    </span>
+                    <div className="category-card__content">
+                      <h3 className="category-card__title">{live.title}</h3>
+                      <p className="category-card__description">{live.description}</p>
+                      <div className="category-card__meta">
+                        <span className="category-card__available">
+                          Preencher — {live.creditCost} crédito
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                    <ChevronRight className="category-card__chevron" aria-hidden="true" />
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>

@@ -89,6 +89,19 @@ describe('tieDocumentExtractor', () => {
       .toBe('MAR AZUL');
   });
 
+  it('tolera degradação real do rótulo bilíngue de inscrição sem confundir casco', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'MOMCIO DE INSCRICAO / REGISTRATION NUMSER',
+      '3810056831',
+      'Nº DO CASCO / HULL NUMBER',
+      'BRABC12345D626',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.registration']).toBe('3810056831');
+    expect(values['vessel.hullId']).toBe('BRABC12345D626');
+  });
+
   it('não escolhe valor quando o mesmo campo diverge no documento', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'INSCRIÇÃO: 3810056831',
@@ -145,6 +158,40 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.passengerCount']).toBe('3');
   });
 
+  it('extrai passageiros quando o OCR preserva apenas a barra do rótulo bilíngue', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NÚMERO DE PASSAGEIROS /',
+      '9',
+    ]), context);
+
+    expect(evidence.find((item) => item.fieldId === 'vessel.passengerCount')?.value)
+      .toBe('9');
+  });
+
+  it('extrai características compartilhadas confirmadas nos modelos TIE/TIEM', () => {
+    const evidence = tieDocumentExtractor.extract(observation([
+      'NÚMERO DE INSCRIÇÃO / REGISTRATION NUMBER',
+      '3810056831',
+      'TIPO DA EMBARCAÇÃO / TYPE OF VESSEL',
+      'LANCHA - MOTORBOAT',
+      'ÁREA DE NAVEGAÇÃO / NAVIGATION AREA',
+      'NAVEGAÇÃO INTERIOR',
+      'PONTAL / DEPTH',
+      '1,57 M',
+      'MATERIAL DO CASCO / HULL MATERIAL',
+      'FIBRA DE VIDRO',
+      'TIPO DE PROPULSÃO / TYPE OF PROPULSION',
+      'MOTOR',
+    ]), context);
+
+    const values = Object.fromEntries(evidence.map((item) => [item.fieldId, item.value]));
+    expect(values['vessel.type']).toBe('LANCHA - MOTORBOAT');
+    expect(values['vessel.navigationArea']).toBe('NAVEGAÇÃO INTERIOR');
+    expect(values['vessel.depth']).toBe('1,57 M');
+    expect(values['vessel.hullMaterial']).toBe('FIBRA DE VIDRO');
+    expect(values['vessel.propulsionType']).toBe('MOTOR');
+  });
+
   it('não confunde o rótulo bilíngue do motor com o valor do fabricante/marca/modelo', () => {
     const evidence = tieDocumentExtractor.extract(observation([
       'MOTOR 1 / ENGINE 1',
@@ -170,6 +217,14 @@ describe('tieDocumentExtractor', () => {
       '6E5L1001234',
       'NOME FABRICANTE',
       'YAMAHA',
+      'TIPO DE PROPULSÃO',
+      'Motor',
+      'TIPO DA EMBARCAÇÃO',
+      'Lancha - Motorboat',
+      'ÁREA DE NAVEGAÇÃO',
+      'Navegação Interior',
+      'MAT. CONSTRUÇÃO CASCO',
+      'Fibra de vidro',
       'ATIVIDADE/USO',
       'Esporte e Recreio',
       'QTD. DE TRIPULANTES',
@@ -190,6 +245,10 @@ describe('tieDocumentExtractor', () => {
     expect(values['vessel.motorPower']).toBe('115');
     expect(values['vessel.motorSerial']).toBe('6E5L1001234');
     expect(values['vessel.motorBrand']).toBe('YAMAHA');
+    expect(values['vessel.propulsionType']).toBe('Motor');
+    expect(values['vessel.type']).toBe('Lancha - Motorboat');
+    expect(values['vessel.navigationArea']).toBe('Navegação Interior');
+    expect(values['vessel.hullMaterial']).toBe('Fibra de vidro');
     expect(values['vessel.activity']).toBe('Esporte e Recreio');
     expect(values['vessel.crewCount']).toBe('2');
     expect(values['vessel.passengerCount']).toBe('6');

@@ -268,17 +268,21 @@ renovação/segunda via do TIE/TIEM, alteração de dados, alteração de motor 
 comunicação de venda. Os modelos oficiais 2-A, 2-B, 2-C, 2-G, 2-H, 2-I, 2-K e
 3-C foram identificados em fontes oficiais de 2026.
 
-Esses serviços **ainda não estão liberados para geração**. As versões permanecem
-`IDENTIFIED` até que os PDFs sejam baixados, verificados por hash, inspecionados,
-mapeados e revisados visualmente. A página inicial os exibe como “Formulário em
-validação”, evitando prometer um fluxo oficial antes do gate documental.
+Esses serviços **ainda não estão liberados para geração**. Os oito PDFs foram
+preservados, hashados e classificados como `VERIFIED/STATIC`; os oito mapas já
+passaram pela homologação técnica automatizada e revisão visual do agente e estão
+`TESTED`. O projeto mantém o gate fail-closed: falta revisão visual humana para
+`APPROVED`, QA real no navegador/mobile e resolução das limitações registradas
+(3-D quando aplicável e múltiplos motores). A página inicial continua exibindo
+“Formulário em validação”.
 
 Todos os documentos de origem cadastrados para essa expansão entram no pipeline
 OCR quando enviados. Tipos já estruturados podem sugerir campos; documentos de
 apoio sem extractor semântico são lidos sem gerar palpites. O usuário sempre
 revisa ou preenche manualmente antes da geração.
 
-Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md).
+Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
+[relatório de QA técnico dos mapas](docs/mapping-reports/normam211-2026-technical-qa.md).
 
 ## Planejamento e expansão
 

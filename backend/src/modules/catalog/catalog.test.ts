@@ -49,13 +49,18 @@ describe('catálogo reutilizável de formulários', () => {
     expect(pilot?.status).toBe('DRAFT');
     expect(catalog.forms).toHaveLength(14);
     expect(catalog.versions).toHaveLength(14);
-    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(6);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(8);
-    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')
-      .every((version) => version.templatePath === null && version.sha256 === null)).toBe(true);
-    expect(catalog.mappings).toHaveLength(6);
-    expect(catalog.mappings.every((mapping) => mapping.status === 'DRAFT')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(44);
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(14);
+    expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(0);
+    expect(catalog.versions.every((version) =>
+      version.templatePath !== null && version.sha256 !== null)).toBe(true);
+    expect(catalog.mappings).toHaveLength(14);
+    expect(catalog.mappings.filter((mapping) =>
+      mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
+      mapping.status === 'TESTED')).toBe(true);
+    expect(catalog.mappings.filter((mapping) =>
+      !mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
+      mapping.status === 'DRAFT')).toBe(true);
+    expect(catalog.serviceForms).toHaveLength(46);
     expect(catalog.serviceForms.some((relation) =>
       relation.serviceId === 'transferencia-moto-aquatica')).toBe(false);
     expect(validateCatalog(catalog)).toEqual([]);
@@ -91,20 +96,22 @@ describe('catálogo reutilizável de formulários', () => {
     const generic = vesselServices.flatMap((service) => service.documentRequirements)
       .filter((requirement) => requirement.extraction?.documentType === 'supporting-document');
     expect(generic.length).toBeGreaterThan(0);
+    expect(vesselServices.flatMap((service) => service.documentRequirements)
+      .some((requirement) => requirement.id === 'vessel-photos')).toBe(false);
   });
 
-  it('mantém o domínio do MVP restrito a um único motor', () => {
+  it('mantém o domínio do MVP restrito ao único motor aprovado', () => {
     const ids = new Set(catalog.fields.map((field) => field.id));
     expect(ids.has('vessel.motorBrand')).toBe(true);
     expect(ids.has('vessel.motorPower')).toBe(true);
     expect(ids.has('vessel.motorSerial')).toBe(true);
-    expect([...ids].some((id) => /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id)))
-      .toBe(false);
+    expect([...ids].some((id) =>
+      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
 
-    const placements = catalog.mappings.flatMap((mapping) => mapping.placements);
-    expect(placements.some((placement) =>
-      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(placement.fieldId)))
-      .toBe(false);
+    const placements = catalog.mappings.flatMap((mapping) =>
+      mapping.placements.map((placement) => placement.fieldId));
+    expect(placements.some((id) =>
+      /^vessel\.motor[1-4](?:Choice|Brand|Power|Serial)$/.test(id))).toBe(false);
   });
 
   it('permite a mesma versão do PDF em dois serviços sem duplicar o mapeamento', () => {

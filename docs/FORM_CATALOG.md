@@ -268,10 +268,16 @@ substituídos. O PDF completo da norma não foi versionado.
 ## 10. Expansão NORMAM-211/DPC 2026
 
 Em 28/10/2026 foram catalogados nove serviços de embarcações de esporte e
-recreio e oito formulários vigentes da NORMAM-211/DPC. Diferentemente das seis
-versões do piloto de moto aquática, essas novas versões permanecem
-`IDENTIFIED`: os binários oficiais ainda não foram incorporados, hashados,
-renderizados nem mapeados. Os serviços permanecem `DRAFT`.
+recreio e oito formulários vigentes da NORMAM-211/DPC. Em 29/10/2026 os oito
+PDFs foram preservados nos templates imutáveis, validados por SHA-256/qpdf e
+classificados como `VERIFIED/STATIC`. Os oito mapas foram implementados,
+renderizados com dados fictícios e revisados tecnicamente, avançando para
+`TESTED`.
 
-Inventário, fontes, composição inicial, estratégia OCR e gates:
-[NORMAM211_VESSEL_SERVICES.md](NORMAM211_VESSEL_SERVICES.md).
+Os serviços permanecem `DRAFT`: `TESTED` não substitui a revisão visual
+humana exigida para `APPROVED`. Também permanecem bloqueios de escopo para o
+Anexo 3-D quando aplicável, múltiplos motores e QA real em navegador/mobile.
+
+Inventário, fontes, composição e gates:
+[NORMAM211_VESSEL_SERVICES.md](NORMAM211_VESSEL_SERVICES.md). Evidência visual:
+[mapping-reports/normam211-2026-technical-qa.md](mapping-reports/normam211-2026-technical-qa.md).

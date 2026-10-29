@@ -142,6 +142,19 @@ export function validateCatalog(data: CatalogDefinition): string[] {
             issues.push('mapeamento ' + mapping.id + ': opção de marcação inválida');
           }
         }
+        if (placement.markAliases !== undefined) {
+          if (placement.markWhen === undefined || placement.markAliases.length === 0 ||
+            placement.markAliases.length > 8 ||
+            placement.markAliases.some((alias) => !alias.trim() || alias.length > 80)) {
+            issues.push('mapeamento ' + mapping.id + ': aliases de marcação inválidos');
+          }
+        }
+        if (placement.valueTransform !== undefined) {
+          const definition = fields.get(placement.fieldId);
+          if (definition?.valueKind !== 'date' || placement.markWhen !== undefined) {
+            issues.push('mapeamento ' + mapping.id + ': transformação incompatível: ' + placement.fieldId);
+          }
+        }
         const values = [placement.pageIndex, placement.x, placement.y, placement.fontSize, placement.maxWidth];
         if (values.some((value) => !Number.isFinite(value)) ||
           !Number.isInteger(placement.pageIndex) || placement.pageIndex < 0 ||

@@ -27,6 +27,44 @@ function prepareValue(raw: string, fieldId: string): string {
   return value;
 }
 
+function normalizeChoice(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function placementChoices(
+  placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
+): readonly string[] {
+  if (placement.markWhen === undefined) return [];
+  return [placement.markWhen, ...(placement.markAliases ?? [])].map(normalizeChoice);
+}
+
+const MONTHS_PT_BR = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+] as const;
+
+function transformStaticValue(
+  value: string,
+  placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
+): string {
+  if (!placement.valueTransform) return value;
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) throw new Error('Data inválida para formatação PDF: ' + placement.fieldId);
+  const [, day, monthText, year] = match;
+  const month = Number(monthText);
+  if (month < 1 || month > 12) {
+    throw new Error('Data inválida para formatação PDF: ' + placement.fieldId);
+  }
+  switch (placement.valueTransform) {
+    case 'DATE_DAY': return day!;
+    case 'DATE_MONTH_NUMBER': return monthText!;
+    case 'DATE_MONTH_NAME_PT_BR': return MONTHS_PT_BR[month - 1]!;
+    case 'DATE_YEAR': return year!;
+    case 'DATE_YEAR_2': return year!.slice(-2);
+  }
+}
+
 function assertStaticPlacement(
   page: ReturnType<PDFDocument['getPages']>[number], placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
 ): void {
@@ -64,14 +102,20 @@ export async function fillPdf(
   for (const placement of placements) {
     if (placement.kind === 'COORDINATES' && placement.markWhen !== undefined) {
       const options = choices.get(placement.fieldId) ?? new Set<string>();
-      options.add(placement.markWhen);
+      for (const option of placementChoices(placement)) options.add(option);
       choices.set(placement.fieldId, options);
     }
   }
   for (const [fieldId, options] of choices) {
     const value = values[fieldId];
-    if (typeof value === 'string' && value.trim() && !options.has(value.trim())) {
-      throw new Error('Opção não prevista no formulário: ' + fieldId);
+    if (typeof value === 'string' && value.trim()) {
+      const normalized = normalizeChoice(value);
+      if (!options.has(normalized)) {
+        const unilateralBoolean = options.size === 1 && options.has('true') && normalized === 'false';
+        if (!unilateralBoolean) {
+          throw new Error('Opção não prevista no formulário: ' + fieldId);
+        }
+      }
     }
   }
   const pdf = await PDFDocument.load(templateBytes, { updateMetadata: false });
@@ -118,8 +162,10 @@ export async function fillPdf(
     assertStaticPlacement(page, placement);
     // Declarative choice fields: write an X only in the selected box.
     // Never stamp the literal word "sim" or "não" into a tiny checkbox.
-    if (placement.markWhen !== undefined && value !== placement.markWhen) continue;
-    const printed = placement.markWhen === undefined ? value : 'X';
+    if (placement.markWhen !== undefined &&
+      !placementChoices(placement).includes(normalizeChoice(value))) continue;
+    const transformed = transformStaticValue(value, placement);
+    const printed = placement.markWhen === undefined ? transformed : 'X';
     let width: number;
     try {
       width = font.widthOfTextAtSize(printed, placement.fontSize);

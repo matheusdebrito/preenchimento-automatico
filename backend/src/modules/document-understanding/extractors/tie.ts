@@ -20,7 +20,7 @@ const motorStructuralMarker = (value: string): boolean =>
 const labelLike = (value: string): boolean => {
   const normalized = normalizeText(value);
   return motorStructuralMarker(normalized) ||
-    /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|USO|ACTIVITY|QTD|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS|FORMATO)\b/
+    /^(?:NOME|NAME|VESSEL|INSCRI|REGISTRO|COMPRIMENTO|LOTA|CAPACIDADE|ANO|CASCO|HIN|CIN|MOTOR|ENGINE|FABRICANTE|MANUFACTURER|MARCA|BRAND|MODELO|MODEL|POT|S[EÉ]RIE|SERIAL|CP\/DL\/AG|AUTORIDADE|AB|GT|BOCA|BREADTH|ATIVIDADE|USO|ACTIVITY|QTD|TRIPULANTES|CREW|PASSAGEIROS|PASSAGERS|PASSENGERS|FORMATO|TIPO|TYPE|AREA|NAVEGACAO|NAVIGATION|PONTAL|DEPTH|MATERIAL|PROPULSAO|PROPULSION)\b/
       .test(normalized);
 };
 
@@ -55,6 +55,18 @@ const grossTonnage = (value: string): boolean =>
 const count = (value: string): boolean => /^\d{1,4}$/.test(value.trim());
 const power = (value: string): boolean =>
   /^\d{1,4}(?:[.,]\d{1,2})?\s*(?:HP|CV|KW)?$/i.test(value.trim());
+const navigationArea = (value: string): boolean => {
+  const text = value.trim();
+  const normalized = normalizeText(text);
+  return text.length >= 2 && text.length <= 80 && /[A-ZÀ-Ý]/i.test(text) &&
+    !/^(?:AREA\s+DE\s+NAVEGACAO|NAVIGATION\s+AREA)$/.test(normalized);
+};
+const propulsion = (value: string): boolean => {
+  const text = value.trim();
+  const normalized = normalizeText(text);
+  return text.length >= 2 && text.length <= 80 && /[A-ZÀ-Ý]/i.test(text) &&
+    !/^(?:TIPO\s+DE\s+PROPULSAO|TYPE\s+OF\s+PROPULSION|PROPULSAO)$/.test(normalized);
+};
 const serial = (value: string): boolean => {
   const text = value.trim();
   const normalized = normalizeText(text);
@@ -129,6 +141,12 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
       /^\s*(?:(?:N[ÚU]MERO|N\s*[°ºO.]?)\s*(?:(?:DE|DA)\s*)?)?INSCRI[CÇ][AÃ]O(?:\s*\/\s*REGISTRATION\s+NUMBER)?\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*N\s*[°ºO.]?\s*INSCRI[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
       /^\s*REGISTRO\s+DA\s+EMBARCA[CÇ][AÃ]O\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    // Real-reference regression: PaddleOCR may degrade this bilingual label to
+    // "MOMCIO DE INSCRICAO / REGISTRATION NUMSER". Keep fuzzy matching scoped
+    // to this long label; geometry and the registration validator remain strict.
+    approximateLabels: [
+      { text: 'NUMERO DE INSCRICAO / REGISTRATION NUMBER', maxDistance: 5 },
     ],
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
@@ -205,6 +223,56 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     preferredDirections: ['below', 'right'],
     allowSequentialWithGeometry: false,
     validate: decimalMeasure,
+  },
+  {
+    fieldId: 'vessel.type',
+    anchor: 'TIPO DA EMBARCACAO',
+    labels: [
+      /^\s*(?:TIPO\s+(?:DA\s+)?EMBARCA[CÇ][AÃ]O(?:\s*\/\s*TYPE\s+OF\s+VESSEL)?|TYPE\s+OF\s+VESSEL)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: (value) => textValue(value, 2, 80),
+  },
+  {
+    fieldId: 'vessel.navigationArea',
+    anchor: 'AREA DE NAVEGACAO',
+    labels: [
+      /^\s*(?:[ÁA]REA\s+DE\s+NAVEGA[CÇ][AÃ]O(?:\s*\/\s*NAVIGATION\s+AREA)?|NAVIGATION\s+AREA)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: navigationArea,
+  },
+  {
+    fieldId: 'vessel.depth',
+    anchor: 'PONTAL / DEPTH',
+    labels: [
+      /^\s*(?:PONTAL(?:\s*\/\s*DEPTH)?|DEPTH)(?:\s*\(M\))?\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: decimalMeasure,
+  },
+  {
+    fieldId: 'vessel.hullMaterial',
+    anchor: 'MATERIAL DO CASCO',
+    labels: [
+      /^\s*(?:MAT\.?\s*CONSTRU[CÇ][AÃ]O\s+CASCO|MATERIAL\s+(?:DE\s+CONSTRU[CÇ][AÃ]O\s+)?(?:DO\s+)?CASCO(?:\s*\/\s*HULL\s+MATERIAL)?|HULL\s+MATERIAL)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: (value) => textValue(value, 2, 80),
+  },
+  {
+    fieldId: 'vessel.propulsionType',
+    anchor: 'TIPO DE PROPULSAO',
+    labels: [
+      /^\s*(?:TIPO\s+DE\s+PROPULS[AÃ]O(?:\s*\/\s*TYPE\s+OF\s+PROPULSION)?|TYPE\s+OF\s+PROPULSION)\s*(?:[:#\-–]\s*)?(.*)$/i,
+    ],
+    preferredDirections: ['below', 'right'],
+    allowSequentialWithGeometry: false,
+    validate: propulsion,
   },
   {
     fieldId: 'vessel.activity',
@@ -291,6 +359,7 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
     anchor: 'PASSAGEIROS',
     labels: [
       /^\s*(?:N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*NUMBER\s+OF\s+PASSAGERS|N[ÚU]MERO\s+DE\s+PASSAGEIROS|QTD(?:ADE)?\.?\s+DE\s+PASSAGEIROS|NUMBER\s+OF\s+PASSAGERS|NUMBER\s+OF\s+PASSENGERS)\s*(?:[:#\-–]\s*)?(.*)$/i,
+      /^\s*N[ÚU]MERO\s+DE\s+PASSAGEIROS\s*\/\s*(?:[:#\-–]\s*)?(.*)$/i,
     ],
     preferredDirections: ['below', 'right'],
     validate: count,
