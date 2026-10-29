@@ -83,6 +83,46 @@ const issuePlace = (value: string): boolean =>
   value.trim().length >= 2 && value.trim().length <= 80 &&
   /[A-ZÀ-Ý]/i.test(value) && !labelLike(value);
 
+const compactDigits = (value: string): string => value.replace(/\D/g, '');
+
+const validCpfDigits = (digits: string): boolean => {
+  if (!/^\d{11}$/.test(digits) || /^(\d)\1{10}$/.test(digits)) return false;
+  for (let length = 9; length <= 10; length++) {
+    const sum = Array.from({ length }, (_, index) =>
+      Number(digits[index]) * (length + 1 - index)).reduce((a, b) => a + b, 0);
+    if ((sum * 10) % 11 % 10 !== Number(digits[length])) return false;
+  }
+  return true;
+};
+
+const validCnpjDigits = (digits: string): boolean => {
+  if (!/^\d{14}$/.test(digits) || /^(\d)\1{13}$/.test(digits)) return false;
+  const calculate = (baseLength: number): number => {
+    const weights = baseLength === 12
+      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const sum = weights.reduce((total, weight, index) =>
+      total + Number(digits[index]) * weight, 0);
+    const remainder = sum % 11;
+    return remainder < 2 ? 0 : 11 - remainder;
+  };
+  return calculate(12) === Number(digits[12]) &&
+    calculate(13) === Number(digits[13]);
+};
+
+const taxIdentifier = (value: string): boolean => {
+  const digits = compactDigits(value);
+  return validCpfDigits(digits) || validCnpjDigits(digits);
+};
+
+const postalCode = (value: string): boolean =>
+  /^\d{5}-?\d{3}$/.test(value.trim());
+
+const addressText = (value: string): boolean =>
+  textValue(value, 2, 120) &&
+  !/^(?:ENDERECO|NUMERO|COMPLEMENTO|BAIRRO|CEP|CIDADE|ESTADO)\b/i
+    .test(normalizeText(value));
+
 const tightTableCell = {
   minConfidence: 0.35,
   maxRightDistanceHeights: 10,
@@ -503,6 +543,162 @@ export const tieFieldConcepts: readonly SemanticFieldConcept[] = [
   },
 ];
 
+function ownerConcepts(
+  prefix: 'registeredOwner' | 'coOwner',
+): readonly SemanticFieldConcept[] {
+  const taxField = prefix === 'registeredOwner' ? 'taxId' : 'cpf';
+  return [
+    {
+      fieldId: prefix + '.fullName',
+      anchor: 'NOME',
+      labels: [/^\s*NOME(?:\s*\/\s*NAME)?\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: (value) => textValue(value, 3, 100),
+    },
+    {
+      fieldId: prefix + '.' + taxField,
+      anchor: 'CPF/CNPJ',
+      labels: [/^\s*CPF\s*\/?\s*CNPJ\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: compactTableCell,
+      validate: taxIdentifier,
+    },
+    {
+      fieldId: prefix + '.address',
+      anchor: 'ENDERECO',
+      labels: [/^\s*ENDERE[CÇ]O\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+    {
+      fieldId: prefix + '.streetNumber',
+      anchor: 'NUMERO',
+      labels: [/^\s*N[ÚU]MERO\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: compactTableCell,
+      validate: (value) => /^[A-Z0-9./-]{1,20}$/i.test(value.trim()),
+    },
+    {
+      fieldId: prefix + '.apartment',
+      anchor: 'COMPLEMENTO',
+      labels: [/^\s*COMPLEMENTO\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+    {
+      fieldId: prefix + '.neighborhood',
+      anchor: 'BAIRRO',
+      labels: [/^\s*BAIRRO\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+    {
+      fieldId: prefix + '.postalCode',
+      anchor: 'CEP',
+      labels: [/^\s*CEP\s*(?:[:#\-–]\s*)?(.*)$/i],
+      preferredDirections: ['right', 'below'],
+      spatialHint: compactTableCell,
+      validate: postalCode,
+    },
+    {
+      fieldId: prefix + '.cityState',
+      anchor: 'CIDADE/ESTADO',
+      labels: [
+        /^\s*CIDADE\s*\/\s*ESTADO\s*(?:[:#\-–]\s*)?(.*)$/i,
+        /^\s*CIDADE\s+E\s+ESTADO\s*(?:[:#\-–]\s*)?(.*)$/i,
+      ],
+      preferredDirections: ['right', 'below'],
+      spatialHint: tightTableCell,
+      validate: addressText,
+    },
+  ];
+}
+
+const registeredOwnerConcepts = ownerConcepts('registeredOwner');
+const coOwnerConcepts = ownerConcepts('coOwner');
+const ownerFieldConcepts = [...registeredOwnerConcepts, ...coOwnerConcepts] as const;
+
+function sectionObservation(
+  observation: DocumentObservation,
+  start: RegExp,
+  stops: readonly RegExp[],
+): DocumentObservation {
+  const pages = observation.pages.map((page) => {
+    const lines = page.lines;
+    const startIndex = lines.findIndex((line) => start.test(normalizeText(line.text)));
+    if (startIndex < 0) return { ...page, lines: [] };
+
+    const header = lines[startIndex]!;
+    const matchesStop = (value: string): boolean =>
+      stops.some((pattern) => pattern.test(normalizeText(value)));
+
+    if (header.box) {
+      const startY = header.box[3];
+      const stopY = lines
+        .filter((line) => line.box && line.box[1] > startY && matchesStop(line.text))
+        .map((line) => line.box![1])
+        .sort((a, b) => a - b)[0] ?? Number.POSITIVE_INFINITY;
+
+      return {
+        ...page,
+        lines: lines.filter((line) =>
+          line !== header && line.box &&
+          line.box[1] >= startY - Math.max(1, header.box![3] - header.box![1]) * 0.25 &&
+          line.box[1] < stopY),
+      };
+    }
+
+    const selected = [];
+    for (let index = startIndex + 1; index < lines.length; index++) {
+      const line = lines[index]!;
+      if (matchesStop(line.text)) break;
+      selected.push(line);
+    }
+    return { ...page, lines: selected };
+  });
+
+  return { ...observation, pages };
+}
+
+function extractOwnerSections(
+  observation: DocumentObservation,
+  context: ExtractionContext,
+): { evidence: FieldEvidence[]; assessments: FieldExtractionAssessment[] } {
+  const registered = sectionObservation(
+    observation,
+    /^PROPRIETARIO(?:\s*\/\s*OWNER)?$/,
+    [
+      /^CO[- ]?PROPRIETARIO\b/,
+      /^ALIENACAO\b/,
+      /^HIPOTECAD[AO]\b/,
+      /^CARACTERISTICAS\s+DO\s+CASCO\b/,
+    ],
+  );
+  const coOwner = sectionObservation(
+    observation,
+    /^CO[- ]?PROPRIETARIO(?:\s*\/\s*CO[- ]?OWNER)?$/,
+    [
+      /^ALIENACAO\b/,
+      /^HIPOTECAD[AO]\b/,
+      /^CARACTERISTICAS\s+DO\s+CASCO\b/,
+    ],
+  );
+
+  const registeredResult =
+    extractSemanticConcepts(registered, context, registeredOwnerConcepts);
+  const coOwnerResult =
+    extractSemanticConcepts(coOwner, context, coOwnerConcepts);
+
+  return {
+    evidence: [...registeredResult.evidence, ...coOwnerResult.evidence],
+    assessments: [...registeredResult.assessments, ...coOwnerResult.assessments],
+  };
+}
+
 function runTieExtraction(
   observation: DocumentObservation,
   context: ExtractionContext,
@@ -510,7 +706,8 @@ function runTieExtraction(
   const variant = classifyTieVariant(observation);
   const concepts = conceptsForVariant(variant);
   const semantic = extractSemanticConcepts(observation, context, concepts);
-  const evidence = [...semantic.evidence];
+  const owners = extractOwnerSections(observation, context);
+  const evidence = [...semantic.evidence, ...owners.evidence];
   const byAssessment = new Map(semantic.assessments.map((item) => [item.fieldId, item]));
   const assessments = tieFieldConcepts.map((concept) =>
     byAssessment.get(concept.fieldId) ?? {
@@ -518,6 +715,7 @@ function runTieExtraction(
       status: 'NOT_FOUND' as const,
       confidence: null,
     });
+  assessments.push(...owners.assessments);
 
   // A hull fallback is intentionally strict: only identifiers with a strong
   // Brazilian hull/HIN shape are eligible. Generic alphanumeric identifiers
@@ -549,7 +747,10 @@ function runTieExtraction(
 
 export const tieDocumentExtractor: DocumentExtractor = {
   documentType: 'tie',
-  supportedFields: tieFieldConcepts.map((concept) => concept.fieldId),
+  supportedFields: [
+    ...tieFieldConcepts.map((concept) => concept.fieldId),
+    ...ownerFieldConcepts.map((concept) => concept.fieldId),
+  ],
   extract(observation, context) {
     return runTieExtraction(observation, context).evidence;
   },
