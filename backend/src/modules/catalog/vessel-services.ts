@@ -378,11 +378,7 @@ const request = (serviceId: string, order: number, action: string): ServiceForm 
   formVersionId: 'requerimento-embarcacao-er-2026-v1',
   order,
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
-  fixedValues: {
-    'process.vesselAction': action,
-    ...(action === 'segunda_via'
-      ? { 'process.otherServiceDescription': '2ª via do TIE/TIEM' } : {}),
-  },
+  fixedValues: { 'process.vesselAction': action },
 });
 const residence = (serviceId: string, order: number): ServiceForm => ({
   serviceId,
