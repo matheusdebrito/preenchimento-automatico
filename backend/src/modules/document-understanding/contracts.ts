@@ -2,7 +2,8 @@ export type DocumentTypeId =
   | 'identity'
   | 'tie'
   | 'residence-proof'
-  | 'sale-document';
+  | 'sale-document'
+  | 'supporting-document';
 
 export type DocumentSubjectRole =
   | 'person'
