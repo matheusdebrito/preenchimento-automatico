@@ -149,7 +149,7 @@ export interface ServiceForm {
   conditions?: readonly ServiceCondition[];
   /** Fields physically present in the PDF but not applicable to this service relation. */
   excludedReviewFieldIds?: readonly string[];
-  /** Additional per-field applicability rules evaluated against validated service answers. */
+  /** Additional per-field review rules evaluated only against validated service answers. */
   reviewFieldConditions?: Readonly<Record<string, readonly ServiceCondition[]>>;
 }
 
