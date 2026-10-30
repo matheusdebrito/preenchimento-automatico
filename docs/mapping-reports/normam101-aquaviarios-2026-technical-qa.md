@@ -14,7 +14,7 @@ A inspeção visual confirmou que o Anexo 1-E é específico de certificação. 
 
 | Formulário | SHA-256 | Observação |
 | --- | --- | --- |
-| Anexo 1-E | 58F0FE7372FC9BC99236AA3B384DF9A32796C45D34B17226564DDBE1FA1A5C30 | duas páginas oficiais extraídas e normalizadas para template estático |
+| Anexo 1-E | 536293EABB34EE5624C7D765BF3DE2B97DEEC449B591A7D9905405F86AD84100 | duas páginas oficiais extraídas e normalizadas para template estático |
 | Anexo 1-K | 4D17057BFF256919E8381BE1310449609D86701427331736127A959D8FAD599A | página oficial preservada em A4 e normalizada para template estático |
 | Anexo 1-L | 401109FF4F65F10D1544CDC76D0C748CF5B69824F041D0E3FA8806C713EAD2DF | página oficial preservada em A4 e normalizada para template estático |
 

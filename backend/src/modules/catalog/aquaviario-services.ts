@@ -124,7 +124,7 @@ export const aquaviarioVersions: readonly FormVersion[] = [
     regulation: 'NORMAM-101/DPC 2026, Anexo 1-E',
     sourceUrl,
     verifiedAt: '2026-10-30',
-    sha256: '58F0FE7372FC9BC99236AA3B384DF9A32796C45D34B17226564DDBE1FA1A5C30',
+    sha256: '536293EABB34EE5624C7D765BF3DE2B97DEEC449B591A7D9905405F86AD84100',
     templatePath: 'backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf',
     pdfKind: 'STATIC',
     status: 'VERIFIED',
