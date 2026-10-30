@@ -313,9 +313,11 @@ function extractionPrompt(
     '11b. Em RG ou CNH, o número da identidade/documento só pode vir de um número explicitamente associado à identidade; nunca use CPF como identidade nesses subtipos.',
     '11c. Na CIN, o CPF é o número único da identidade. Retorne o CPF normalmente; o backend deriva o campo de identidade de forma determinística.',
     '11d. Não retorne identityType a partir de texto livre; o backend deriva RG, CIN ou CNH do subtipo classificado.',
-    '11e. Para órgão emissor/expedidor, preserve a sigla/texto visível e nunca deduza o órgão apenas pela UF, layout ou tipo.',
-    '11f. Em TIE digital, não invente endereço de proprietário/coproprietário se o bloco não existir. Em TIE/TIEM legado, extraia endereço somente quando estiver explicitamente impresso.',
-    '11g. vessel.motorCount só pode ser retornado quando a quantidade de motores estiver explicitamente indicada; nunca inferir 1 apenas porque um motor aparece no documento.',
+    '11e. Em documentos de identidade, procure explicitamente e de forma independente: número da identidade, órgão emissor/expedidor e UF do órgão emissor.',
+    '11f. Se órgão e UF estiverem impressos juntos, por exemplo SSP/RJ ou DETRAN-RJ, retorne issuer=SSP ou DETRAN e issuerState=RJ. Isso é separação de informação visível, não inferência.',
+    '11g. Nunca use CPF como número de identidade em RG/CNH. Em CIN, a regra específica abaixo continua válida.',
+    '11h. Em TIE digital, não invente endereço de proprietário/coproprietário se o bloco não existir. Em TIE/TIEM legado, extraia endereço somente quando estiver explicitamente impresso.',
+    '11i. vessel.motorCount só pode ser retornado quando a quantidade de motores estiver explicitamente indicada; nunca inferir 1 apenas porque um motor aparece no documento.',
     '12. Não produza comentários, explicações ou campos além do schema.',
     'Campos permitidos: ' + JSON.stringify(fieldList),
     'Documentos enviados: ' + JSON.stringify(documentList),
@@ -338,6 +340,7 @@ export async function extractDocumentsWithOpenAi(
     env?: NodeJS.ProcessEnv;
     fetchImpl?: FetchLike;
     timeoutMs?: number;
+    beforeRequest?: () => void | Promise<void>;
   } = {},
 ): Promise<OpenAiExtractionResult> {
   if (documents.length === 0 || fields.length === 0) {
@@ -383,6 +386,8 @@ export async function extractDocumentsWithOpenAi(
   };
   const projectId = env.OPENAI_PROJECT_ID?.trim();
   if (projectId && !/[\r\n]/.test(projectId)) headers['OpenAI-Project'] = projectId;
+
+  await options.beforeRequest?.();
 
   let response: Response;
   try {
@@ -470,6 +475,29 @@ export async function extractDocumentsWithOpenAi(
       lineIds: [],
       status: 'REVIEW_REQUIRED',
     });
+  }
+
+  // When the model returns an explicitly combined issuer such as SSP/RJ,
+  // split the visible UF into issuerState if both target fields are allowed.
+  for (const [requirementId, source] of allowedSources) {
+    if (source.documentType !== 'identity') continue;
+    const subtypeAllowed = allowedBySource.get(requirementId) ?? new Set<string>();
+    for (const issuer of evidence.filter((item) =>
+      item.sourceId === requirementId && item.fieldId.endsWith('.issuer'))) {
+      const match = /^(.+?)[\s/-]+([A-Z]{2})$/i.exec(issuer.value.trim());
+      if (!match) continue;
+      const issuerStateFieldId = issuer.fieldId.replace(/\.issuer$/, '.issuerState');
+      if (!subtypeAllowed.has(issuerStateFieldId) || !allowedFields.has(issuerStateFieldId)) continue;
+      issuer.value = match[1]!.trim();
+      if (!evidence.some((item) => item.sourceId === requirementId &&
+        item.fieldId === issuerStateFieldId)) {
+        evidence.push({
+          ...issuer,
+          fieldId: issuerStateFieldId,
+          value: match[2]!.toUpperCase(),
+        });
+      }
+    }
   }
 
   // Derive identity type from classification and, for CIN only, mirror a
@@ -620,6 +648,7 @@ export async function extractDocumentsWithOneContingency(
     env?: NodeJS.ProcessEnv;
     fetchImpl?: FetchLike;
     timeoutMs?: number;
+    beforeRequest?: () => void | Promise<void>;
   } = {},
 ): Promise<OpenAiExtractionWithContingencyResult> {
   const primary = await extractDocumentsWithOpenAi(documents, fields, options);
