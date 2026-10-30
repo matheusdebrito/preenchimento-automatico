@@ -656,3 +656,10 @@ os mesmos PDFs e mappings já homologados.
 **Correção de papéis:** no serviço `comunicacao-venda-embarcacao`, o vendedor é o requerente. O upload de identidade do requerente passa a alimentar somente campos `seller.*`. Foi adicionado um upload separado `buyer-identity` para RG/CIN/CNH do comprador, limitado aos campos `person.*` aplicáveis e sem permissão para preencher campos do vendedor ou do declarante.
 
 **Privacidade e confiança:** a política do comprador é independente da política genérica de requerente, evitando que um documento do comprador seja usado como fonte de campos de declarante em fluxos de perda/extravio.
+
+
+## Registro de execução — 30/10/2026, comprovantes de residência separados no comunicado de venda
+
+**Correção de papéis:** o serviço `comunicacao-venda-embarcacao` passa a ter dois uploads independentes: `seller-residence-proof` para o requerente/vendedor e `buyer-residence-proof` para o comprador. O comprovante do vendedor só pode alimentar campos `seller.*`; o do comprador só pode alimentar campos `person.*`.
+
+**Objetivo:** impedir mistura de endereço entre as partes e manter a origem de cada dado rastreável para revisão humana e preenchimento dos formulários.
