@@ -30,7 +30,6 @@ export interface AdminDashboard {
     grantedMonth: number;
     totalBalance: number;
   };
-  usageByDay: readonly { day: string; used: number }[];
 }
 
 
@@ -206,30 +205,6 @@ export async function adminDashboard(pool: Database): Promise<AdminDashboard> {
     FROM credit_ledger, boundaries
   `);
 
-  const daily = await pool.query<{ day: string; used: string }>(`
-    WITH days AS (
-      SELECT generate_series(
-        (timezone('America/Sao_Paulo', now())::date - interval '29 days')::date,
-        timezone('America/Sao_Paulo', now())::date,
-        interval '1 day'
-      )::date AS day
-    ),
-    usage AS (
-      SELECT
-        timezone('America/Sao_Paulo', created_at)::date AS day,
-        SUM(-amount)::int AS used
-      FROM credit_ledger
-      WHERE reason='consume'
-        AND created_at >= (timezone('America/Sao_Paulo', now())::date - interval '29 days')
-          AT TIME ZONE 'America/Sao_Paulo'
-      GROUP BY 1
-    )
-    SELECT days.day::text, COALESCE(usage.used,0)::text AS used
-    FROM days
-    LEFT JOIN usage USING(day)
-    ORDER BY days.day
-  `);
-
   const u = users.rows[0]!;
   const c = credits.rows[0]!;
   return {
@@ -246,7 +221,6 @@ export async function adminDashboard(pool: Database): Promise<AdminDashboard> {
       grantedMonth: toNumber(c.granted_month),
       totalBalance: toNumber(c.total_balance),
     },
-    usageByDay: daily.rows.map((row) => ({ day: row.day, used: toNumber(row.used) })),
   };
 }
 
