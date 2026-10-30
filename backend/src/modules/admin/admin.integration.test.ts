@@ -6,6 +6,7 @@ import { connectDatabase } from '../auth/db.js';
 import type { Database } from '../auth/db.js';
 import { hashPassword } from '../auth/crypto.js';
 import { ensureBootstrapAdmin } from '../auth/auth-service.js';
+import { changeUserStatus } from './admin-service.js';
 import type { AppEnv } from '../../config/env.js';
 
 const url = process.env.DATABASE_TEST_URL;
@@ -180,6 +181,28 @@ describePg('PostgreSQL: painel administrativo', () => {
       headers: { cookie: userCookie },
     });
     expect(me.statusCode).toBe(401);
+  });
+
+
+  it('serializa alterações concorrentes e nunca deixa zero administradores ativos', async () => {
+    await pool.query("UPDATE app_users SET role='ADMIN',status='ACTIVE' WHERE id=$1", [userId]);
+    try {
+      const results = await Promise.allSettled([
+        changeUserStatus(pool, adminId, userId, 'BLOCKED'),
+        changeUserStatus(pool, userId, adminId, 'BLOCKED'),
+      ]);
+      expect(results.filter((item) => item.status === 'fulfilled')).toHaveLength(1);
+      expect(results.filter((item) => item.status === 'rejected')).toHaveLength(1);
+
+      const active = await pool.query<{count:string}>(
+        "SELECT COUNT(*)::text AS count FROM app_users WHERE role='ADMIN' AND status='ACTIVE' AND id IN ($1,$2)",
+        [adminId, userId],
+      );
+      expect(Number(active.rows[0]?.count)).toBe(1);
+    } finally {
+      await pool.query("UPDATE app_users SET status='ACTIVE' WHERE id IN ($1,$2)", [adminId, userId]);
+      await pool.query("UPDATE app_users SET role='USER' WHERE id=$1", [userId]);
+    }
   });
 
   it('entrega métricas e trilha de auditoria ao administrador', async () => {
