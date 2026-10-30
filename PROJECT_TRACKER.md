@@ -685,3 +685,12 @@ os mesmos PDFs e mappings já homologados.
 **BADE:** o campo de UF do órgão emissor foi separado da UF do endereço para proprietário e coproprietário. A distinção foi confirmada no formulário oficial e impede que uma única UF seja escrita em dois campos semanticamente diferentes.
 
 **Validação:** CI completo aprovado no run `41060533509`: backend, frontend, PostgreSQL, Compose, inspeção NORMAM-211 e QA visual dos PDFs.
+
+
+## Registro de execução — 30/10/2026, escopo numérico do BADE
+
+**Regra de produto:** o BADE passa a preencher exclusivamente os campos 2, 3, 4, 8, 9, 10, 16, 17, 20, 21, 22, 23, 24, 25, 26 e 39 a 65, exceto o 52. O campo 66 também fica fora. A regra corresponde a 41 números de campo autorizados.
+
+**Mapeamento:** foram removidos do mapping do BADE campos como hipoteca, helideque, IMO, IRIN, Registro no TM, arqueação, propulsores laterais, combustíveis, equipamentos, DPEM, telefax e data de assinatura. Foram adicionados ao mapping os campos 3 (inscrição), 4 (data da inscrição), 8 (navegação) e 9 (atividade), que estavam fora do mapping anterior.
+
+**Observação normativa:** o formulário oficial indica que 3, 4, 8 e 9 são de preenchimento da CP/DL/AG. A aplicação os mantém no escopo por decisão explícita do produto; eles não são tratados como obrigatórios.

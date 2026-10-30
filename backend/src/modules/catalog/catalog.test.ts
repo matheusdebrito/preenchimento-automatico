@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
 import { motoAquaticaServiceForms } from './vessel-services.js';
+import { BADE_ALLOWED_FIELD_NUMBERS } from './normam211-mappings.js';
 import { validateCatalog } from './validate-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
 
@@ -183,13 +184,67 @@ describe('catálogo reutilizável de formulários', () => {
     expect(loss?.conditions).toContainEqual({ questionId: 'tieSituation', equals: 'extraviado' });
   });
 
-  it('separa a UF do órgão emissor da UF de endereço no BADE', () => {
+  it('limita o BADE aos números de campo definidos pelo produto', () => {
+    expect(BADE_ALLOWED_FIELD_NUMBERS).toEqual([
+      2, 3, 4, 8, 9, 10, 16, 17, 20, 21, 22, 23, 24, 25, 26,
+      39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
+      53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65,
+    ]);
+    expect(BADE_ALLOWED_FIELD_NUMBERS).not.toContain(52);
+    expect(BADE_ALLOWED_FIELD_NUMBERS).not.toContain(66);
+
     const mapping = catalog.mappings.find((item) => item.formVersionId === 'bade-er-2026-v1');
-    const fieldIds = mapping?.placements.map((placement) => placement.fieldId) ?? [];
-    expect(fieldIds).toContain('person.issuerState');
-    expect(fieldIds).toContain('person.state');
-    expect(fieldIds).toContain('coOwner.issuerState');
-    expect(fieldIds).toContain('coOwner.state');
+    const fieldIds = new Set(mapping?.placements.map((placement) => placement.fieldId) ?? []);
+    expect(fieldIds).toEqual(new Set([
+      'vessel.name',
+      'vessel.registration',
+      'vessel.registrationDate',
+      'vessel.navigationArea',
+      'vessel.activity',
+      'vessel.passengerCount',
+      'vessel.hullId',
+      'vessel.year',
+      'vessel.length',
+      'vessel.breadth',
+      'vessel.depth',
+      'vessel.propulsionType',
+      'vessel.motorCount',
+      'vessel.totalPropulsionPowerKw',
+      'vessel.motorSerial',
+      'person.fullName',
+      'person.cpf',
+      'person.identity',
+      'person.issuer',
+      'person.issuerState',
+      'person.address',
+      'person.streetNumber',
+      'person.apartment',
+      'person.postalCode',
+      'person.neighborhood',
+      'person.city',
+      'person.state',
+      'person.email',
+      'person.nationality',
+      'person.phone',
+      'coOwner.fullName',
+      'coOwner.cpf',
+      'coOwner.identity',
+      'coOwner.issuer',
+      'coOwner.issuerState',
+      'coOwner.address',
+      'coOwner.postalCode',
+      'coOwner.neighborhood',
+      'coOwner.city',
+      'coOwner.state',
+      'coOwner.email',
+      'coOwner.nationality',
+      'coOwner.phone',
+    ]));
+    expect(fieldIds.has('person.fax')).toBe(false);
+    expect(fieldIds.has('coOwner.fax')).toBe(false);
+    expect(fieldIds.has('process.date')).toBe(false);
+    expect(fieldIds.has('vessel.imoNumber')).toBe(false);
+    expect(fieldIds.has('vessel.dpemNumber')).toBe(false);
   });
 
   it('publica toda a matriz NORMAM-212 homologada para Moto Aquática', () => {
