@@ -36,13 +36,18 @@ function fixture(): CatalogDefinition {
 }
 
 describe('projeção pública do catálogo', () => {
-  it('publica sete serviços de barco e bloqueia moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(12);
+  it('publica todos os serviços homologados e aceita moto aquática', () => {
+    expect(publicServices(catalog)).toHaveLength(14);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
       tieSituation: 'regular',
-    })).toBeNull();
+    })?.formVersionIds).toEqual([
+      'requerimento-ma-v1',
+      'bdmoto-v1',
+      'autorizacao-transferencia-ma-v1',
+      'declaracao-residencia-ma-v1',
+    ]);
   });
 
   it('publica inscrição para exame com 5-H e uploads opcionais', () => {
@@ -101,7 +106,10 @@ describe('projeção pública do catálogo', () => {
     const cases = [
       {
         id: 'inscricao-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m' },
+        answers: {
+          vesselType: 'embarcacao', vesselBand: 'ate_6m',
+          initialResponsibilityTerm: 'nao',
+        },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'declaracao-residencia-er-2026-v1'],
       },
@@ -167,21 +175,125 @@ describe('projeção pública do catálogo', () => {
     expect(medium).toContain('bade-er-2026-v1');
   });
 
-  it('bloqueia cenários ainda dependentes do anexo 3-C', () => {
-    expect(publicService(catalog, 'inscricao-embarcacao', {
+  it('libera os cenários homologados do Anexo 3-C sem incluí-lo fora de condição', () => {
+    const initialWithoutTerm = publicService(catalog, 'inscricao-embarcacao', {
       vesselType: 'embarcacao',
       vesselBand: 'maior_12_menor_24m',
-    })).toBeNull();
-    expect(publicService(catalog, 'alteracao-dados-embarcacao', {
+      initialResponsibilityTerm: 'nao',
+    });
+    expect(initialWithoutTerm?.formVersionIds).toEqual([
+      'requerimento-embarcacao-er-2026-v1',
+      'bade-er-2026-v1',
+      'declaracao-residencia-er-2026-v1',
+    ]);
+
+    const initialWithTerm = publicService(catalog, 'inscricao-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'maior_12_menor_24m',
+      initialResponsibilityTerm: 'sim',
+    });
+    expect(initialWithTerm?.formVersionIds).toContain('termo-responsabilidade-er-2026-v1');
+
+    const alterationRegular = publicService(catalog, 'alteracao-dados-embarcacao', {
       vesselType: 'embarcacao',
       vesselBand: 'ate_6m',
       tieSituation: 'regular',
-    })).toBeNull();
+      responsibilityTermCase: 'nao',
+    });
+    expect(alterationRegular?.formVersionIds).not.toContain('termo-responsabilidade-er-2026-v1');
+
+    const alterationArtisanal = publicService(catalog, 'alteracao-dados-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      responsibilityTermCase: 'construcao_artesanal',
+    });
+    expect(alterationArtisanal?.formVersionIds).toContain('termo-responsabilidade-er-2026-v1');
+
     expect(publicService(catalog, 'alteracao-motor-embarcacao', {
       vesselType: 'embarcacao',
       vesselBand: 'ate_6m',
       tieSituation: 'regular',
-    })).toBeNull();
+      responsibilityTermCase: 'nao',
+      rowToMotorConversion: 'nao',
+    })).not.toBeNull();
+  });
+
+  it('compõe os pacotes homologados da NORMAM-212 para moto aquática', () => {
+    const cases = [
+      {
+        id: 'inscricao-embarcacao',
+        answers: { vesselType: 'moto_aquatica' },
+        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'transferencia-propriedade-embarcacao',
+        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
+        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
+          'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'transferencia-jurisdicao-embarcacao',
+        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
+        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'transferencia-propriedade-jurisdicao-embarcacao',
+        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
+        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
+          'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'renovacao-tie-embarcacao',
+        answers: {
+          vesselType: 'moto_aquatica',
+          tieSituation: 'regular',
+          motoCharacteristicsChanged: 'nao',
+        },
+        forms: ['requerimento-ma-v1', 'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'segunda-via-tie-embarcacao',
+        answers: { vesselType: 'moto_aquatica', motoCharacteristicsChanged: 'nao' },
+        forms: ['requerimento-ma-v1', 'declaracao-perda-tie-ma-v1',
+          'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'alteracao-dados-embarcacao',
+        answers: {
+          vesselType: 'moto_aquatica',
+          tieSituation: 'regular',
+          motoCharacteristicAlteration: 'nao',
+        },
+        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'alteracao-motor-embarcacao',
+        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
+        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
+      },
+      {
+        id: 'comunicacao-venda-embarcacao',
+        answers: { vesselType: 'moto_aquatica' },
+        forms: ['comunicacao-transferencia-ma-v1', 'autorizacao-transferencia-ma-v1'],
+      },
+    ] as const;
+
+    for (const item of cases) {
+      expect(publicService(catalog, item.id, item.answers)?.formVersionIds)
+        .toEqual(item.forms);
+    }
+
+    expect(publicService(catalog, 'renovacao-tie-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'extraviado',
+      motoCharacteristicsChanged: 'sim',
+    })?.formVersionIds).toEqual([
+      'requerimento-ma-v1',
+      'bdmoto-v1',
+      'declaracao-residencia-ma-v1',
+      'declaracao-perda-tie-ma-v1',
+    ]);
   });
 
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
