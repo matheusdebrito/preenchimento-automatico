@@ -37,7 +37,7 @@ function fixture(): CatalogDefinition {
 
 describe('projeção pública do catálogo', () => {
   it('publica todos os serviços homologados e aceita moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(14);
+    expect(publicServices(catalog)).toHaveLength(13);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
@@ -199,6 +199,7 @@ describe('projeção pública do catálogo', () => {
       vesselBand: 'ate_6m',
       tieSituation: 'regular',
       responsibilityTermCase: 'nao',
+      boatAlterationTarget: 'dados_caracteristicas',
     });
     expect(alterationRegular?.formVersionIds).not.toContain('termo-responsabilidade-er-2026-v1');
 
@@ -207,16 +208,24 @@ describe('projeção pública do catálogo', () => {
       vesselBand: 'ate_6m',
       tieSituation: 'regular',
       responsibilityTermCase: 'construcao_artesanal',
+      boatAlterationTarget: 'dados_e_motor',
+      rowToMotorConversion: 'nao',
     });
     expect(alterationArtisanal?.formVersionIds).toContain('termo-responsabilidade-er-2026-v1');
 
-    expect(publicService(catalog, 'alteracao-motor-embarcacao', {
+    const motorOnly = publicService(catalog, 'alteracao-dados-embarcacao', {
       vesselType: 'embarcacao',
       vesselBand: 'ate_6m',
       tieSituation: 'regular',
       responsibilityTermCase: 'nao',
+      boatAlterationTarget: 'motor',
       rowToMotorConversion: 'nao',
-    })).not.toBeNull();
+    });
+    expect(motorOnly).not.toBeNull();
+    expect(motorOnly?.documentRequirements.map((item) => item.id))
+      .toContain('motor-document-boat');
+    expect(motorOnly?.documentRequirements.map((item) => item.id))
+      .not.toContain('vessel-origin-document-boat');
   });
 
   it('compõe os pacotes homologados da NORMAM-212 para moto aquática', () => {
@@ -267,13 +276,8 @@ describe('projeção pública do catálogo', () => {
         answers: {
           vesselType: 'moto_aquatica',
           tieSituation: 'regular',
-          motoDataChangeTarget: 'dados_embarcacao',
+          motoAlterationTarget: 'dados_embarcacao_motor',
         },
-        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
-      },
-      {
-        id: 'alteracao-motor-embarcacao',
-        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
         forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
       },
       {
@@ -309,8 +313,10 @@ describe('projeção pública do catálogo', () => {
     const dataChange = catalog.serviceForms.find((relation) =>
       relation.serviceId === 'alteracao-dados-embarcacao' &&
       relation.formVersionId === 'requerimento-ma-v1');
-    expect(dataChange?.answerBindings).toMatchObject({
-      'process.dataChangeTarget': 'motoDataChangeTarget',
+    expect(dataChange?.answerValueMappings).toMatchObject({
+      'process.dataChangeTarget': {
+        questionId: 'motoAlterationTarget',
+      },
     });
   });
 

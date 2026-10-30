@@ -14,7 +14,7 @@ rebaixados para `IDENTIFIED/DRAFT` até novo remapeamento e revisão visual.
 
 Os outros sete mapas NORMAM-211 permanecem `APPROVED`. Sete serviços continuam
 `AVAILABLE` para embarcação/barco, mas com a composição corrigida: o 3-C não
-integra transferências padrão. Alteração de dados e alteração de motor continuam
+integra transferências padrão. Alterações de dados/características e de motor passam a usar um único fluxo; os demais casos continuam
 `DRAFT`, e a inscrição de médio porte permanece bloqueada até modelar corretamente
 a condição de uso do 3-C.
 
@@ -35,8 +35,7 @@ pesquisa e composição próprias.
 | `transferencia-propriedade-jurisdicao-embarcacao` | Transferência de propriedade e jurisdição | AVAILABLE |
 | `renovacao-tie-embarcacao` | Renovação do TIE/TIEM | AVAILABLE |
 | `segunda-via-tie-embarcacao` | Renovação do TIE/TIEM por perda, roubo ou extravio (ID legado) | AVAILABLE |
-| `alteracao-dados-embarcacao` | Alteração de dados/características | DRAFT |
-| `alteracao-motor-embarcacao` | Troca, instalação ou retirada de motor | DRAFT |
+| `alteracao-dados-embarcacao` | Alteração de dados, características ou motor | AVAILABLE |
 | `comunicacao-venda-embarcacao` | Comunicação de venda | AVAILABLE |
 
 A nomenclatura de motor segue o procedimento atual de alteração de
@@ -122,7 +121,7 @@ aceitação do processo pela Marinha.
 - sete versões/mapas anteriores permanecem `VERIFIED/APPROVED`;
 - o 3-C corrigido está `IDENTIFIED/DRAFT` até remapeamento;
 - sete serviços: `AVAILABLE` para embarcação/barco;
-- alteração de dados e alteração de motor: `DRAFT`;
+- alteração de dados/características e motor: fluxo único `AVAILABLE`, com seleção do tipo de alteração no início;
 - inscrição >12 m até 24 m e moto aquática: opções bloqueadas até completar os anexos aplicáveis;
 - domínio de motor: permanece restrito a um único motor canônico;
 - 2-K: Motor 2–4 e caixas SIM/NÃO permanecem manuais até decisão de domínio;
@@ -130,3 +129,16 @@ aceitação do processo pela Marinha.
   edição é o termo para prova de máquinas/navegação e não é o formulário que estava faltando;
 - assinaturas, reconhecimento de firma, carimbos e campos reservados à autoridade
   nunca são preenchidos pelo sistema.
+
+
+## Consolidação de alteração de dados e motor — 30/10/2026
+
+Os antigos cards separados de alteração de dados e de motor foram consolidados no serviço
+`alteracao-dados-embarcacao`. A pergunta inicial define se o usuário pretende alterar apenas
+dados/características, apenas motor ou ambos. Para moto aquática, a seleção também distingue
+dados da embarcação, dados do proprietário e combinações com motor.
+
+A composição continua normativa: BADE/BSADE/BDMOTO e requerimentos são reutilizados; o
+Anexo 3-C continua condicionado aos casos admitidos, e documentos de origem/motor só aparecem
+quando a opção escolhida os torna aplicáveis. O antigo ID `alteracao-motor-embarcacao` deixou
+de ser publicado para evitar dois processos artificiais para a mesma atualização cadastral.

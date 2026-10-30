@@ -46,8 +46,8 @@ function sharedFormFixture(): CatalogDefinition {
 
 describe('catálogo reutilizável de formulários', () => {
   it('publica todos os serviços homologados somente com versões e mapas aprovados', () => {
-    expect(catalog.services).toHaveLength(14);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(14);
+    expect(catalog.services).toHaveLength(13);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(13);
     expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(0);
     expect(catalog.forms).toHaveLength(17);
     expect(catalog.versions).toHaveLength(17);
@@ -66,13 +66,13 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'APPROVED')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(88);
+    expect(catalog.serviceForms).toHaveLength(78);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
-  it('publica os nove serviços de embarcação com as condições normativas validadas', () => {
+  it('publica os oito serviços de embarcação com as condições normativas validadas', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
       'inscricao-embarcacao',
@@ -82,7 +82,6 @@ describe('catálogo reutilizável de formulários', () => {
       'renovacao-tie-embarcacao',
       'segunda-via-tie-embarcacao',
       'alteracao-dados-embarcacao',
-      'alteracao-motor-embarcacao',
       'comunicacao-venda-embarcacao',
     ]) {
       expect(ids.has(id)).toBe(true);
@@ -109,27 +108,26 @@ describe('catálogo reutilizável de formulários', () => {
       relation.formVersionId === 'declaracao-extravio-cha-amador-2026-v1')).toBe(true);
   });
 
-  it('associa o Anexo 3-C somente aos casos previstos no item 2.12.1 nos serviços de alteração', () => {
-    for (const serviceId of ['alteracao-dados-embarcacao', 'alteracao-motor-embarcacao']) {
-      const service = catalog.services.find((item) => item.id === serviceId);
-      expect(service?.status).toBe('AVAILABLE');
-      expect(service?.questions.some((question) =>
-        question.id === 'responsibilityTermCase')).toBe(true);
+  it('unifica alteração de dados e motor preservando as condições do Anexo 3-C', () => {
+    const service = catalog.services.find((item) => item.id === 'alteracao-dados-embarcacao');
+    expect(service?.status).toBe('AVAILABLE');
+    expect(catalog.services.some((item) => item.id === 'alteracao-motor-embarcacao')).toBe(false);
+    expect(service?.questions.some((question) => question.id === 'boatAlterationTarget')).toBe(true);
+    expect(service?.questions.some((question) => question.id === 'motoAlterationTarget')).toBe(true);
+    expect(service?.questions.some((question) => question.id === 'rowToMotorConversion')).toBe(true);
 
-      const term = catalog.serviceForms.find((relation) =>
-        relation.serviceId === serviceId &&
-        relation.formVersionId === 'termo-responsabilidade-er-2026-v1');
-      expect(term?.conditions).toContainEqual({
-        questionId: 'responsibilityTermCase',
-        oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
-      });
-    }
+    const term = catalog.serviceForms.find((relation) =>
+      relation.serviceId === 'alteracao-dados-embarcacao' &&
+      relation.formVersionId === 'termo-responsabilidade-er-2026-v1');
+    expect(term?.conditions).toContainEqual({
+      questionId: 'responsibilityTermCase',
+      oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
+    });
 
-    const motor = catalog.services.find((service) =>
-      service.id === 'alteracao-motor-embarcacao');
-    expect(motor?.questions.some((question) =>
-      question.id === 'rowToMotorConversion')).toBe(true);
-    expect(motor?.documentRequirements.some((requirement) =>
+    const motorDocuments = service?.documentRequirements.filter((requirement) =>
+      requirement.id.startsWith('motor-document')) ?? [];
+    expect(motorDocuments).toHaveLength(2);
+    expect(service?.documentRequirements.some((requirement) =>
       requirement.id === 'row-to-motor-technical-declaration' ||
       requirement.id === 'technical-responsibility-document' ||
       requirement.id.startsWith('moto-technical-responsibility'))).toBe(false);
@@ -231,9 +229,9 @@ describe('catálogo reutilizável de formulários', () => {
       .toBe('Número do vendedor');
   });
 
-  it('envia todos os documentos dos novos serviços ao pipeline OCR sem inventar campos genéricos', () => {
+  it('mantém perfis de análise documental em todos os serviços de embarcação', () => {
     const vesselServices = catalog.services.filter((service) => service.id.includes('embarcacao'));
-    expect(vesselServices).toHaveLength(9);
+    expect(vesselServices).toHaveLength(8);
     for (const service of vesselServices) {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
       expect(service.documentRequirements.every((requirement) => requirement.extraction)).toBe(true);
