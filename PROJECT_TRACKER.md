@@ -649,3 +649,10 @@ da escolha.
 **Compatibilidade:** não há migração de banco. O antigo ID `alteracao-motor-embarcacao` deixa de
 ser publicado; links antigos passam a não resolver para um serviço disponível. O novo fluxo usa
 os mesmos PDFs e mappings já homologados.
+
+
+## Registro de execução — 30/10/2026, comunicado de venda com comprador separado
+
+**Correção de papéis:** no serviço `comunicacao-venda-embarcacao`, o vendedor é o requerente. O upload de identidade do requerente passa a alimentar somente campos `seller.*`. Foi adicionado um upload separado `buyer-identity` para RG/CIN/CNH do comprador, limitado aos campos `person.*` aplicáveis e sem permissão para preencher campos do vendedor ou do declarante.
+
+**Privacidade e confiança:** a política do comprador é independente da política genérica de requerente, evitando que um documento do comprador seja usado como fonte de campos de declarante em fluxos de perda/extravio.
