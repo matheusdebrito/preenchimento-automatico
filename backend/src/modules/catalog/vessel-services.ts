@@ -322,6 +322,7 @@ function questions(options: {
     : vesselBandQuestion;
   return [
     vesselTypeQuestion,
+    ...(options.transferTarget ? [transferTargetQuestion] : []),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion, motoCharacteristicsChangedQuestion] : []),
     ...(options.band === false ? [] : [bandQuestion]),
@@ -329,7 +330,6 @@ function questions(options: {
     ...(options.responsibilityTermCase ? [responsibilityTermCaseQuestion] : []),
     ...(options.rowToMotorConversion ? [rowToMotorConversionQuestion] : []),
     ...(options.motoTieSecondCopyReason ? [motoTieSecondCopyReasonQuestion] : []),
-    ...(options.transferTarget ? [transferTargetQuestion] : []),
     ...(options.alterationTarget
       ? [boatAlterationTargetQuestion, motoAlterationTargetQuestion]
       : []),
