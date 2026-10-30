@@ -85,6 +85,22 @@ O Compose usa PostgreSQL privado na rede Docker, API e frontend vinculados a `12
 
 O segredo `DEV_GRANT_SECRET` é opcional, restrito a ambiente de desenvolvimento e necessário para acionar o endpoint interno de concessão de três créditos **de teste**; não há cobrança real.
 
+### Administração de roles
+
+A role administrativa não é definida por `.env`. Primeiro crie a conta normalmente e depois promova explicitamente a conta já existente pelo container da API:
+
+```powershell
+docker compose exec api npm run admin:promote -- usuario@dominio.com
+```
+
+Para remover a role administrativa:
+
+```powershell
+docker compose exec api npm run admin:demote -- usuario@dominio.com
+```
+
+Os comandos validam a existência da conta, executam a alteração em transação, registram a origem `CLI` em `admin_audit_log` e recusam a remoção do último administrador ativo. Nenhuma senha administrativa é lida do ambiente ou passada pela linha de comando.
+
 ### Comandos de validação
 
 Em cada pasta `backend/` e `frontend/`:

@@ -30,7 +30,6 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL: postgresql://${POSTGRES_USER:-preenchimento}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:-preenchimento}
       DEV_GRANT_SECRET: ${DEV_GRANT_SECRET:-}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-mini-2026-03-17}
       OPENAI_PROJECT_ID: ${OPENAI_PROJECT_ID:-}
