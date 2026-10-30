@@ -71,16 +71,13 @@ Para cada mudança:
 
 Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custos ou mudanças estruturais relevantes, solicitar aprovação antes de executar. Não avançar para outra etapa enquanto erros introduzidos pela etapa atual estiverem pendentes.
 
-## 2.2. QA do mesmo serviço real — sem homologação implícita
+## 2.2. Testes sintéticos sem homologação implícita
 
-- Em desenvolvimento local (`NODE_ENV=development` + `DEV_QA_PREVIEW=true`), testar o identificador e os contratos reais de `transferencia-moto-aquatica`, não um serviço paralelo com campos simplificados.
-- O overlay `qaPreviewCatalog` reutiliza perguntas, documentos, vínculos condicionais e os seis mapeamentos originais. A elevação transitória de status é **somente em memória no QA**; jamais escrever `APPROVED` ou `AVAILABLE` no catálogo de produção sem revisão humana.
-- PDFs de QA são **sempre marcados AMOSTRA em todas as páginas**, não debitam créditos, não são válidos para protocolo e só podem usar dados inteiramente fictícios.
+- O servidor em execução deve usar somente o catálogo oficial. Não criar flags ou overlays de runtime para promover temporariamente serviços ou mapeamentos `DRAFT`.
+- Testes podem usar `catalogOverride` isolado e fixtures sintéticas, sem alterar o comportamento do servidor normal.
 - Quando usuário questionar campo de PDF, conferir separadamente **rótulo impresso, área de preenchimento, identificador semântico, coordenadas e extração OCR**; não alterar/remover um campo normativo com base em suposição. Registrar divergência em `docs/mapping-reports/` e aguardar o portão de revisão visual.
 - Ao ampliar OCR, aceitar somente pistas consistentes por requisito/documento e gerar sugestões para campos presentes na seleção. Não prometer reconhecimento total sem corpus medido de layouts e imagens.
 - **Uploads de documentos de origem são sempre opcionais na ferramenta de preenchimento.** O usuário pode anexar zero, um ou vários documentos e deve conseguir revisar os mesmos campos mapeados ao PDF. Distinguir a validação de valores e campos necessários para gerar PDF da coleta de arquivos para OCR; jamais exigir RG/TIE/comprovante apenas por constarem do rol oficial de protocolo.
-- O único caminho de usuário para transferência é `/preencher-real/transferencia-moto-aquatica` (disponível apenas em QA local enquanto DRAFT). Não reintroduzir `WizardRoute`/demo público em `/preencher/*` nem um segundo serviço de teste. Testes devem exercitar 0 anexos, 1 RG sintético e múltiplos arquivos.
-
 
 ## 2.3. Arquitetura obrigatória de formulários e entendimento de documentos
 
