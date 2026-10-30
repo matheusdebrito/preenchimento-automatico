@@ -1,18 +1,88 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { isValidCpf } from '../catalog/field-validation.js';
 import type { Database } from './db.js';
 import { hashPassword, verifyPassword, sessionToken, tokenDigest } from './crypto.js';
 
+export type UserStatus = 'ACTIVE' | 'BLOCKED' | 'PENDING';
+export type UserRole = 'USER' | 'ADMIN';
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  fullName: string | null;
+  cellphone: string | null;
+  cpfMasked: string | null;
+  status: UserStatus;
+  role: UserRole;
+}
+
+const emailSchema = z.email().max(254).transform((email) => email.toLowerCase());
+const passwordSchema = z.string().min(12).max(128);
+
 export const credentialsSchema = z.object({
-  email: z.email().max(254).transform((email) => email.toLowerCase()),
-  password: z.string().min(12).max(128),
+  email: emailSchema,
+  password: passwordSchema,
+});
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function normalizeCpf(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+function normalizeCellphone(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 13 && digits.startsWith('55')) return digits;
+  return digits.length === 11 ? '55' + digits : digits;
+}
+
+function isValidBrazilianCellphone(value: string): boolean {
+  const normalized = normalizeCellphone(value);
+  const national = normalized.startsWith('55') ? normalized.slice(2) : normalized;
+  return /^\d{2}9\d{8}$/.test(national) && !/^0/.test(national);
+}
+
+export const registrationSchema = z.object({
+  fullName: z.string().max(120).transform(normalizeWhitespace)
+    .refine((value) => value.length >= 2, 'Nome inválido.'),
+  cellphone: z.string().max(32).transform(normalizeCellphone)
+    .refine(isValidBrazilianCellphone, 'Celular inválido.'),
+  cpf: z.string().max(32).transform(normalizeCpf)
+    .refine(isValidCpf, 'CPF inválido.'),
+  email: emailSchema,
+  password: passwordSchema,
 });
 
 interface UserRecord {
   id: string;
   email: string;
   password_hash: string;
+  full_name: string | null;
+  cellphone: string | null;
+  cpf: string | null;
+  status: UserStatus;
+  role: UserRole;
+}
+
+function maskCpf(cpf: string | null): string | null {
+  if (!cpf || !/^\d{11}$/.test(cpf)) return null;
+  return '***.***.***-' + cpf.slice(-2);
+}
+
+function toSessionUser(record: Omit<UserRecord, 'password_hash'>): SessionUser {
+  return {
+    id: record.id,
+    email: record.email,
+    fullName: record.full_name,
+    cellphone: record.cellphone,
+    cpfMasked: maskCpf(record.cpf),
+    status: record.status,
+    role: record.role,
+  };
 }
 
 function extractToken(request: FastifyRequest): string | null {
@@ -25,43 +95,53 @@ function extractToken(request: FastifyRequest): string | null {
 
 export async function getCurrentUser(
   pool: Database, request: FastifyRequest,
-): Promise<{ id: string; email: string } | null> {
+): Promise<SessionUser | null> {
   const token = extractToken(request);
   if (!token) return null;
-  const result = await pool.query<{ id: string; email: string }>(
-    `SELECT u.id, u.email FROM app_users u
+  const result = await pool.query<Omit<UserRecord, 'password_hash'>>(
+    `SELECT u.id, u.email, u.full_name, u.cellphone, u.cpf, u.status, u.role
+      FROM app_users u
       JOIN app_sessions s ON s.user_id=u.id
-      WHERE s.token_hash=$1 AND s.expires_at>now()`,
+      WHERE s.token_hash=$1 AND s.expires_at>now() AND u.status='ACTIVE'`,
     [tokenDigest(token)],
   );
-  return result.rows[0] ?? null;
+  const user = result.rows[0];
+  return user ? toSessionUser(user) : null;
 }
 
-export async function registerUser(pool: Database, body: unknown): Promise<{ id: string; email: string }> {
-  const creds = credentialsSchema.parse(body);
-  const hash = await hashPassword(creds.password);
+export async function registerUser(pool: Database, body: unknown): Promise<SessionUser> {
+  const input = registrationSchema.parse(body);
+  const hash = await hashPassword(input.password);
   const id = randomUUID();
   try {
-    await pool.query('INSERT INTO app_users(id,email,password_hash) VALUES($1,$2,$3)',
-      [id, creds.email, hash]);
+    const result = await pool.query<Omit<UserRecord, 'password_hash'>>(
+      `INSERT INTO app_users(id,email,password_hash,full_name,cellphone,cpf)
+       VALUES($1,$2,$3,$4,$5,$6)
+       RETURNING id,email,full_name,cellphone,cpf,status,role`,
+      [id, input.email, hash, input.fullName, input.cellphone, input.cpf],
+    );
+    return toSessionUser(result.rows[0]!);
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'code' in error &&
       (error as {code?:unknown}).code === '23505') {
-      throw new Error('E-mail já cadastrado.', { cause: error });
+      throw new Error('Conta já cadastrada.', { cause: error });
     }
     throw error;
   }
-  return { id, email: creds.email };
 }
 
-export async function authenticate(pool: Database, body: unknown): Promise<{ id: string; email: string } | null> {
+export async function authenticate(pool: Database, body: unknown): Promise<SessionUser | null> {
   const parse = credentialsSchema.safeParse(body);
   if (!parse.success) return null;
-  const record = await pool.query<UserRecord>(
-    'SELECT id,email,password_hash FROM app_users WHERE email=$1', [parse.data.email]);
-  const user = record.rows[0];
-  if (!user || !(await verifyPassword(parse.data.password, user.password_hash))) return null;
-  return { id: user.id, email: user.email };
+  const result = await pool.query<UserRecord>(
+    `SELECT id,email,password_hash,full_name,cellphone,cpf,status,role
+     FROM app_users WHERE email=$1`,
+    [parse.data.email],
+  );
+  const user = result.rows[0];
+  if (!user || user.status !== 'ACTIVE' ||
+    !(await verifyPassword(parse.data.password, user.password_hash))) return null;
+  return toSessionUser(user);
 }
 
 export async function issueSession(
@@ -77,7 +157,12 @@ export async function issueSession(
   reply.header('Set-Cookie', cookie);
 }
 
-export async function removeSession(pool: Database, request: FastifyRequest, reply: FastifyReply, secure: boolean): Promise<void> {
+export async function removeSession(
+  pool: Database,
+  request: FastifyRequest,
+  reply: FastifyReply,
+  secure: boolean,
+): Promise<void> {
   const token = extractToken(request);
   if (token) await pool.query('DELETE FROM app_sessions WHERE token_hash=$1', [tokenDigest(token)]);
   reply.header('Set-Cookie',
