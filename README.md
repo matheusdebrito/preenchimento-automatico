@@ -191,7 +191,7 @@ O roteiro atualizado está em [QA do serviço real com dados fictícios](docs/QA
 
 As falhas relatadas na navegação autenticada, links repetidos no rodapé, ausência de feedback dos requisitos, análise documental sem explicação e erro `422` na revisão receberam correções verificadas em [GitHub Actions 40510328039](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40510328039). Agora o frontend exibe **Entrar apenas ao visitante** e oferece **Sair** ao usuário autenticado; o backend também exige logout para alternar de conta. No wizard, os campos obrigatórios e valores inválidos são identificados. Nenhum anexo é obrigatório: com ou sem anexos, os demais dados podem ser informados manualmente. Se a análise não sugerir dados, a interface exibe o resultado por documento, sem inventar valores.
 
-Para reproduzir o reteste com **documentos totalmente fictícios**, seguir [o roteiro de correções](docs/QA_CORRECOES_2026-10-27.md). O erro `422` observado pelo usuário não teve seu campo exato identificado, pois não houve acesso ao JSON da resposta original; não foi enfraquecida a validação de CPF/data. **Essas correções não homologam os mapeamentos oficiais nem comprovam precisão do OCR com fotos reais.**
+Para reproduzir o reteste com **documentos totalmente fictícios**, seguir [o roteiro de correções](docs/QA_CORRECOES_2026-10-27.md). O erro `422` observado pelo usuário não teve seu campo exato identificado, pois não houve acesso ao JSON da resposta original; não foi enfraquecida a validação de CPF/data. **Essas correções não homologam os mapeamentos oficiais nem comprovam precisão da análise OpenAI com fotos reais.**
 
 ### Menu mobile — reteste visual
 
