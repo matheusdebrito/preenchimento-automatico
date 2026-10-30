@@ -254,7 +254,11 @@ describe('projeção pública do catálogo', () => {
       },
       {
         id: 'segunda-via-tie-embarcacao',
-        answers: { vesselType: 'moto_aquatica', motoCharacteristicsChanged: 'nao' },
+        answers: {
+          vesselType: 'moto_aquatica',
+          motoCharacteristicsChanged: 'nao',
+          motoTieSecondCopyReason: 'extravio',
+        },
         forms: ['requerimento-ma-v1', 'declaracao-perda-tie-ma-v1',
           'declaracao-residencia-ma-v1'],
       },
@@ -263,7 +267,7 @@ describe('projeção pública do catálogo', () => {
         answers: {
           vesselType: 'moto_aquatica',
           tieSituation: 'regular',
-          motoCharacteristicAlteration: 'nao',
+          motoDataChangeTarget: 'dados_embarcacao',
         },
         forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
       },
@@ -294,6 +298,20 @@ describe('projeção pública do catálogo', () => {
       'declaracao-residencia-ma-v1',
       'declaracao-perda-tie-ma-v1',
     ]);
+
+    const secondCopy = catalog.serviceForms.find((relation) =>
+      relation.serviceId === 'segunda-via-tie-embarcacao' &&
+      relation.formVersionId === 'requerimento-ma-v1');
+    expect(secondCopy?.answerBindings).toMatchObject({
+      'process.tieSecondCopyReason': 'motoTieSecondCopyReason',
+    });
+
+    const dataChange = catalog.serviceForms.find((relation) =>
+      relation.serviceId === 'alteracao-dados-embarcacao' &&
+      relation.formVersionId === 'requerimento-ma-v1');
+    expect(dataChange?.answerBindings).toMatchObject({
+      'process.dataChangeTarget': 'motoDataChangeTarget',
+    });
   });
 
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
