@@ -15,15 +15,17 @@ function prepareValue(raw: string, fieldId: string): string {
   if (/[\r\n]/.test(value)) {
     throw new FormFieldError('invalid_field_value', fieldId, 'unsupported_character');
   }
-  if (Array.from(value).length > MAX_FIELD_CHARS ||
-      [...value].some((char) => {
-        const cp = char.codePointAt(0)!;
-        return cp < 0x20 || (cp >= 0x7f && cp <= 0x9f) ||
-          cp === 0x200b || cp === 0x200c || cp === 0x200d ||
-          (cp >= 0x202a && cp <= 0x202e) ||
-          (cp >= 0x2066 && cp <= 0x2069) || cp === 0xfeff;
-      })) {
+  if (Array.from(value).length > MAX_FIELD_CHARS) {
     throw new FormFieldError('invalid_field_value', fieldId, 'text_too_long');
+  }
+  if ([...value].some((char) => {
+    const cp = char.codePointAt(0)!;
+    return cp < 0x20 || (cp >= 0x7f && cp <= 0x9f) ||
+      cp === 0x200b || cp === 0x200c || cp === 0x200d ||
+      (cp >= 0x202a && cp <= 0x202e) ||
+      (cp >= 0x2066 && cp <= 0x2069) || cp === 0xfeff;
+  })) {
+    throw new FormFieldError('invalid_field_value', fieldId, 'unsupported_character');
   }
   return value;
 }
