@@ -667,6 +667,13 @@
     box-shadow: 0 6px 18px rgb(15 34 48 / 8%);
   }
 
+  .site-header--hero {
+    position: fixed;
+    inset: 0 0 auto;
+    width: 100%;
+    background: #142f43;
+  }
+
   .site-header__inner {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 6.25rem;
