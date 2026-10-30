@@ -171,7 +171,10 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     serviceId: 'inscricao-exame-amador',
     formVersionId: 'requerimento-cha-amador-2026-v1',
     order: 1,
-    fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
+    // The current 5-H has no dedicated "inscrição para exame" checkbox.
+    // Operational CP/DL/AG pages require 5-H for exam enrollment, so record
+    // the exact request in "Descrição do pedido" instead of marking
+    // "Emissão/Renovação" by inference.
     answerValueMappings: {
       'process.notes': {
         questionId: 'amateurCategory',
