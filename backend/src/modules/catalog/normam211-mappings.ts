@@ -350,7 +350,9 @@ export const normam211Mappings: readonly FormMapping[] = [
     formVersionId: 'autorizacao-transferencia-er-2026-v1', revision: 'v1',
     status: 'APPROVED', placements: authorizationPlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI visual QA + product owner release authorization', reportPath: 'docs/mapping-reports/normam211-2026-technical-qa.md' },
   { id: 'termo-responsabilidade-er-map-v1',
-    formVersionId: 'termo-responsabilidade-er-2026-v1', revision: 'v2',
-    status: 'TESTED', placements: responsibilityConstructionPlacements, reviewedAt: '2026-10-29', reviewer: 'OpenAI local synthetic visual QA',
+    formVersionId: 'termo-responsabilidade-er-2026-v1', revision: 'v3',
+    status: 'APPROVED', placements: responsibilityConstructionPlacements,
+    reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against official NORMAM-211/DPC 2026 Anexo 3-C',
     reportPath: 'docs/mapping-reports/normam211-3c-2026-technical-qa.md' },
 ];
