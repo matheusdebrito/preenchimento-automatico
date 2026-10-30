@@ -13,20 +13,25 @@ export function ServiceCategoryPage() {
   const { categoryId } = useParams();
   const category = SERVICE_CATEGORIES.find((item) => item.id === categoryId);
   const [available, setAvailable] = useState<readonly LiveService[]>([]);
-  const [availabilityState, setAvailabilityState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [availability, setAvailability] = useState<{
+    categoryId: string | undefined;
+    state: 'loading' | 'ready' | 'error';
+  }>({ categoryId: undefined, state: 'loading' });
+  const availabilityState = availability.categoryId === categoryId
+    ? availability.state
+    : 'loading';
 
   useDocumentTitle(category ? category.title : 'Serviços');
 
   useEffect(() => {
     if (!category || typeof fetch !== 'function') return;
     let mounted = true;
-    setAvailabilityState('loading');
     void api<{services:LiveService[]}>('/api/services').then((result) => {
       if (!mounted) return;
       setAvailable(result.services);
-      setAvailabilityState('ready');
+      setAvailability({ categoryId, state: 'ready' });
     }).catch(() => {
-      if (mounted) setAvailabilityState('error');
+      if (mounted) setAvailability({ categoryId, state: 'error' });
     });
     return () => { mounted = false; };
   }, [category]);
