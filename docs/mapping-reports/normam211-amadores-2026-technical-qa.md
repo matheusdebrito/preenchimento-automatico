@@ -41,9 +41,15 @@ Assinatura permanece manual.
 
 ## Estado de homologação
 
-Os mappings 5-D e 5-H foram promovidos para `APPROVED` após QA visual sintético, verificação dos blobs versionados e autorização explícita do responsável pelo produto para liberar o serviço de preenchimento de Renovação da CHA. A geometria foi conferida com amostras sintéticas locais,
-mas os PDFs 5-D/5-H estão versionados em
-`backend/templates/<form>/v1/original.pdf`. As FormVersion foram promovidas para `VERIFIED` após comparação byte a byte entre os uploads locais e os blobs Git versionados. Os mappings 5-D e 5-H estão `APPROVED`. O serviço `renovacao-cha-amador` pode ser publicado; `inscricao-exame-amador` continua `DRAFT` porque não possui formulário oficial associado pela norma.
+Os mappings 5-D e 5-H estão `APPROVED` após QA visual sintético, verificação dos
+blobs versionados e revisão dos usos publicados. Os PDFs estão versionados em
+`backend/templates/<form>/v1/original.pdf` e suas `FormVersion` permanecem
+`VERIFIED`.
+
+Os serviços de renovação, emissão de Veleiro, equivalência profissional, renovação com
+agregação de MTA e inscrição em exame estão publicados quando usam somente relações
+homologadas. A inscrição em exame usa o 5-H por evidência operacional oficial de CP/DL/AG,
+sem inventar um formulário alternativo.
 
 A promoção exige:
 
@@ -63,9 +69,14 @@ a página da DPC "Para quem quer se tornar um Navegador Amador" oferece o
 Requerimento de Inscrição para o Exame, e a lista operacional do COM8DN identifica
 o requerimento de inscrição como Anexo 5-H da NORMAM-211.
 
-O serviço marca a opção 2 - Emissão/Renovação e escreve na descrição do pedido a
-categoria selecionada (Arrais-Amador, Mestre-Amador ou Capitão-Amador). Não é criado
-nenhum formulário alternativo ou não oficial.
+O Anexo 5-H vigente **não possui uma caixa específica “Inscrição para exame”**. Por
+isso, o serviço não marca automaticamente a opção 2 “Emissão/Renovação” por inferência.
+A aplicação escreve no campo **Descrição do pedido** exatamente “Inscrição para exame de
+Arrais-Amador”, “Mestre-Amador” ou “Capitão-Amador”, conforme a categoria escolhida.
+
+Essa decisão preserva simultaneamente as duas evidências disponíveis: a orientação
+operacional oficial exige o 5-H para a inscrição, enquanto o próprio PDF não oferece uma
+opção impressa equivalente ao nome do serviço.
 
 
 ## Revisão v2 do 5-H - expansão de serviços de amadores
