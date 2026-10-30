@@ -310,8 +310,8 @@ describe('OpenAI document extractor', () => {
                   confidence: 'high',
                 }],
                 documents: [
-                  { requirementId: 'buyer-identity', status: 'readable' },
-                  { requirementId: 'tie', status: 'readable' },
+                  { requirementId: 'buyer-identity', status: 'readable', subtype: 'rg' },
+                  { requirementId: 'tie', status: 'readable', subtype: 'tie-digital' },
                 ],
               }),
             }],
@@ -331,7 +331,7 @@ describe('OpenAI document extractor', () => {
               candidates: [
                 {
                   fieldId: 'person.cpf',
-                  value: '123.456.789-09',
+                  value: '529.982.247-25',
                   sourceRequirementId: 'buyer-identity',
                   confidence: 'high',
                 },
@@ -343,8 +343,8 @@ describe('OpenAI document extractor', () => {
                 },
               ],
               documents: [
-                { requirementId: 'buyer-identity', status: 'readable' },
-                { requirementId: 'tie', status: 'readable' },
+                { requirementId: 'buyer-identity', status: 'readable', subtype: 'rg' },
+                { requirementId: 'tie', status: 'readable', subtype: 'tie-digital' },
               ],
             }),
           }],
@@ -397,7 +397,7 @@ describe('OpenAI document extractor', () => {
     expect(Object.fromEntries(result.evidence.map((item) => [item.fieldId, item.value])))
       .toEqual({
         'person.fullName': 'MARIA DE SOUZA',
-        'person.cpf': '123.456.789-09',
+        'person.cpf': '529.982.247-25',
         'vessel.registration': '441M20200001',
       });
     expect(result.contingency).toMatchObject({
