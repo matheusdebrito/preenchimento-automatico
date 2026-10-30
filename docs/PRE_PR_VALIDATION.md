@@ -1,60 +1,49 @@
-# Processo de validação antes de Pull Request
+# Validação antes de Pull Request
 
-O objetivo deste processo é evitar usar o primeiro CI do PR como ambiente de descoberta de erros previsíveis.
+O objetivo é evitar usar o primeiro CI do PR como ambiente de descoberta de erros previsíveis.
 
-## 1. Validação determinística local
+## 1. Validação local
 
-Para alterações em OCR e entendimento de documentos:
+Em cada pacote alterado:
 
 ```bash
-cd backend
 npm ci
-npm run verify:document-understanding
+npm run typecheck
+npm run lint
+npm test
+npm run build
 ```
 
-Esse comando executa typecheck, lint, testes determinísticos de `document-understanding` e build.
+Os testes do extrator OpenAI usam respostas simuladas. Não é necessário configurar uma chave real nem consumir créditos para executar a suíte automatizada.
 
-Para alterações gerais do backend, manter também `npm test`. Para frontend alterado, executar typecheck, lint, testes e build em `frontend/`.
+## 2. Validação da branch
 
-## 2. Validação da branch no mesmo ambiente do CI
+Depois do push, abrir o PR como rascunho e aguardar o workflow CI concluir para o head atual da branch. O CI executa auditoria das dependências, typecheck, lint, testes, build, integração PostgreSQL, validação Compose e inspeção normativa/visual aplicável.
 
-Depois do push da branch e **antes de abrir o PR**, executar o workflow manual `Pre-PR OCR` na branch.
+Só marcar o PR como pronto após todos os jobs obrigatórios passarem. Se algum gate não puder ser executado, declarar a limitação e manter o PR não validado.
 
-Com GitHub CLI:
+## 3. Alterações na análise documental
 
-```bash
-gh workflow run pre-pr-ocr.yml --ref NOME_DA_BRANCH
-```
+Para mudanças em `openai-document-extractor.ts`, perfis documentais, `allowedFieldIds`, validações ou contratos:
+- adicionar testes determinísticos com Responses API simulada;
+- testar origem autorizada, campos não permitidos, respostas malformadas, CPF/data inválidos, valores ausentes e conflitos;
+- não enviar documentos reais ou dados pessoais ao CI;
+- não usar uma chamada real à API como substituto de testes determinísticos.
 
-Ou pela interface do GitHub: **Actions -> Pre-PR OCR -> Run workflow -> selecionar a branch**.
+Antes de produção, realizar homologação controlada com documentos sintéticos e amostras autorizadas, chave de projeto própria, limites de custo e revisão humana.
 
-Esse workflow é separado do CI principal para não aumentar o risco de quebrar o pipeline de PR. Ele executa os testes determinísticos de document-understanding e o OCR real dos documentos públicos de referência com PaddleOCR.
+## 4. Alteração de expectativas documentais
 
-## 3. Regra especial para OCR/documentos
-
-Alterações em qualquer um destes caminhos exigem o `Pre-PR OCR` da branch:
-
-- `ocr-service/`
-- `backend/src/modules/document-understanding/`
-- módulos OCR em `backend/src/modules/jobs/`
-- `documentos/`
-- regras de aliases, geometria, validadores ou fixtures de referência
-
-A validação deve incluir o job `reference-documents`, porque testes sintéticos não reproduzem necessariamente a fragmentação real produzida pelo PaddleOCR.
-
-## 4. Como alterar expectativas de referência
-
-Antes de mudar um teste de referência de `FOUND` para `NOT_FOUND` ou o inverso:
-
-1. observar o comportamento real do documento;
-2. identificar qual evidência/linha/método gera o resultado;
-3. criar uma regressão determinística que reproduza a causa;
-4. corrigir o algoritmo;
-5. só então ajustar a expectativa do documento real;
+Antes de alterar uma expectativa:
+1. reproduzir com fixture sintética ou amostra pública autorizada;
+2. identificar a causa da diferença;
+3. criar regressão determinística;
+4. corrigir o algoritmo, prompt, schema ou política de campo;
+5. só então ajustar a expectativa;
 6. executar o CI completo da branch.
 
 Nunca alterar a expectativa apenas para fazer o CI passar.
 
 ## 5. PR
 
-Abrir o PR somente depois dos gates anteriores verdes. O CI do PR continua existindo como verificação independente, mas não deve ser a primeira execução da mudança.
+O CI do PR é gate obrigatório, mas não substitui revisão visual dos PDFs, homologação normativa, avaliação de privacidade ou teste manual em navegador/celular.
