@@ -39,6 +39,8 @@ function downloadName(
   if (!form) {
     if (fallbackId.includes('bade')) return fallbackId.includes('bsade') ? 'BSADE' : 'BADE';
     if (fallbackId.includes('bdmoto')) return 'BDMOTO';
+    if (fallbackId === 'requerimento-interessado-aquaviario') return 'Requerimento auxiliar (não oficial)';
+    if (fallbackId === 'requerimento-certificacao-aquaviario') return 'Requerimento de Certificação (Anexo 1-E)';
     if (fallbackId.startsWith('requerimento')) return 'Requerimento';
     return 'Formulário';
   }
