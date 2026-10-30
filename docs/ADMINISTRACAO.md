@@ -101,6 +101,26 @@ O painel administrativo inclui:
 - depósito de créditos;
 - trilha de auditoria administrativa.
 
+## Métricas de uso e tokens OpenAI
+
+O painel possui gráficos de colunas para:
+
+- **Créditos utilizados**: quantidade de créditos efetivamente consumidos pelos processos;
+- **Tokens OpenAI**: tokens de **entrada (input)** e **saída (output)** retornados pela API da OpenAI.
+
+Os dois gráficos compartilham os filtros:
+
+- **Hoje** — agrupamento por hora;
+- **Últimos 7 dias** — agrupamento por dia;
+- **Mês** — agrupamento por dia do mês atual;
+- **Ano** — agrupamento por mês.
+
+A aplicação persiste apenas contagens de tokens, modelo, usuário, job e data da operação em `openai_usage`. Prompts, conteúdo dos documentos, texto extraído e arquivos não são armazenados nessa tabela.
+
+As contagens vêm do campo `usage` retornado pela API da OpenAI. Quando existe uma contingência bem-sucedida, o backend soma a tentativa principal e a tentativa de contingência antes de persistir o uso.
+
+> **Importante:** a persistência dessas métricas começa na migration `006_openai_usage.sql`. Uso anterior a essa versão não aparece retroativamente nos gráficos, porque antes os tokens eram registrados apenas nos logs da API.
+
 ## Depósito de créditos
 
 Créditos administrativos são registrados no ledger; o saldo não é alterado diretamente.
