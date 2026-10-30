@@ -56,6 +56,21 @@ function fieldApplies(
   return matches(relation.reviewFieldConditions?.[fieldId], answers);
 }
 
+function isUserReviewField(fieldId: string): boolean {
+  return !fieldId.startsWith('process.') ||
+    fieldId === 'process.place' ||
+    fieldId === 'process.date';
+}
+
+function fieldApplies(
+  relation: CatalogDefinition['serviceForms'][number],
+  fieldId: string,
+  answers: Readonly<Record<string, string>>,
+): boolean {
+  if (relation.excludedReviewFieldIds?.includes(fieldId)) return false;
+  return matches(relation.reviewFieldConditions?.[fieldId], answers);
+}
+
 /**
  * Authoritative public projection of AVAILABLE services only.
  * Unknown/unanswered conditions are false (fail closed).
