@@ -92,7 +92,7 @@ const structuredResultSchema = z.object({
   documents: z.array(z.object({
     requirementId: z.string().min(1).max(100),
     status: z.enum(['readable', 'partial', 'unreadable']),
-    subtype: documentSubtypeSchema,
+    subtype: documentSubtypeSchema.optional().default('unknown'),
   })).max(24),
 });
 
@@ -641,11 +641,14 @@ export async function extractDocumentsWithOneContingency(
   const retryFields = fields.filter((field) => pending.has(field.id));
   const retryDocuments = documents
     .filter((document) => document.allowedFieldIds.some((fieldId) => pending.has(fieldId)))
-    .map((document) => ({
-      ...document,
-      detectedSubtype: primary.documentSubtypes[document.document.requirementId],
-      allowedFieldIds: document.allowedFieldIds.filter((fieldId) => pending.has(fieldId)),
-    }));
+    .map((document) => {
+      const detectedSubtype = primary.documentSubtypes[document.document.requirementId];
+      return {
+        ...document,
+        ...(detectedSubtype ? { detectedSubtype } : {}),
+        allowedFieldIds: document.allowedFieldIds.filter((fieldId) => pending.has(fieldId)),
+      };
+    });
 
   if (retryFields.length === 0 || retryDocuments.length === 0) {
     const evidence = primary.evidence.filter((item) => !pending.has(item.fieldId));
