@@ -125,8 +125,6 @@ export function AdminPage() {
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'ADMIN') return;
     let active = true;
-    setLoading(true);
-    setError('');
     void Promise.all([loadOverview(), loadUsers()])
       .catch((cause) => {
         if (!active) return;
