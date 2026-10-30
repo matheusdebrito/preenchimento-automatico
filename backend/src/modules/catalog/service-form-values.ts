@@ -17,5 +17,25 @@ export function serviceFormValues(
       return value ? [[fieldId, value]] : [];
     }));
 
-  return { ...reviewedValues, ...boundValues, ...mappedValues, ...relation?.fixedValues };
+  const cityState = [reviewedValues['person.city'], reviewedValues['person.state']]
+    .filter(Boolean).join('/');
+  const fullAddress = [
+    reviewedValues['person.address'],
+    reviewedValues['person.streetNumber'],
+    reviewedValues['person.apartment'],
+    reviewedValues['person.neighborhood'],
+    cityState,
+    reviewedValues['person.postalCode'],
+  ].filter(Boolean).join(', ');
+  const derivedValues = fullAddress && !reviewedValues['person.fullAddress']
+    ? { 'person.fullAddress': fullAddress }
+    : {};
+
+  return {
+    ...reviewedValues,
+    ...derivedValues,
+    ...boundValues,
+    ...mappedValues,
+    ...relation?.fixedValues,
+  };
 }
