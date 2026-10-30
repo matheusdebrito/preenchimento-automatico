@@ -16,10 +16,12 @@ A chave `OPENAI_API_KEY` existe somente no backend. O frontend nunca recebe a ch
 2. O backend consulta os requisitos documentais do serviço selecionado.
 3. Para cada documento, aplica a política `allowedFieldIds` e mantém somente campos presentes na revisão daquele serviço.
 4. A Responses API recebe os arquivos originais, instruções de extração e schema JSON estrito.
-5. O backend valida a resposta estruturalmente e valida novamente cada valor (CPF, datas, booleanos, escolhas e regras específicas).
-6. O resolver associa evidências à origem documental e identifica conflitos.
-7. O usuário revisa ou corrige todos os valores antes da geração.
-8. O motor `fillPdf` usa somente os valores confirmados para preencher os modelos aprovados.
+5. Na mesma resposta, a OpenAI classifica identidades como RG/CIN/CNH e TIE/TIEM como digital/legado. Não existe chamada extra só para classificação.
+6. O backend aplica uma segunda allow-list determinística pelo subtipo e valida novamente cada valor (CPF, datas, booleanos, escolhas e regras específicas).
+7. `identityType` é derivado pelo backend. Na CIN, o CPF validado também é usado como número único da identidade; em RG/CNH o CPF nunca substitui o número de identidade.
+8. O resolver associa evidências à origem documental e identifica conflitos.
+9. O usuário revisa ou corrige todos os valores antes da geração.
+10. O motor `fillPdf` usa somente os valores confirmados para preencher os modelos aprovados.
 
 ## Segurança e privacidade
 
@@ -28,6 +30,8 @@ A chave `OPENAI_API_KEY` existe somente no backend. O frontend nunca recebe a ch
 - Nunca confiar no texto retornado pelo modelo sem validação determinística no backend.
 - Nunca aceitar campos fora do schema ou cuja origem não esteja autorizada.
 - Campo ausente, ilegível, mascarado, ambíguo ou conflitante permanece sem sugestão ou exige revisão.
+- TIE digital não é fonte de endereço legado de proprietário/coproprietário; TIE/TIEM legado pode fornecer esses campos quando estiverem explicitamente impressos.
+- Quantidade de motores nunca é inferida apenas porque um motor aparece no documento.
 - Usar `store: false` na chamada à Responses API.
 - Não registrar arquivos, imagens, texto dos documentos, CPF, nomes ou valores extraídos em logs.
 - Os arquivos permanecem no armazenamento temporário privado do job e são excluídos ao cancelar ou expirar.
