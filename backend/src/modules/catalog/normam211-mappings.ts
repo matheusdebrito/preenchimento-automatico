@@ -176,9 +176,9 @@ const bsadePlacements: readonly CoordinatePlacement[] = [
 
 const requestPlacements: readonly CoordinatePlacement[] = [
   top('person.fullName', 145, 256, 385, 7, 0, true),
-  top('person.address', 145, 282, 275, 7),
-  top('person.streetNumber', 438, 282, 42, 6),
-  top('person.apartment', 500, 282, 32, 5.5),
+  top('person.address', 145, 278, 275, 7),
+  top('person.streetNumber', 438, 278, 42, 6),
+  top('person.apartment', 500, 278, 32, 5.5),
   top('person.city', 182, 293, 110, 6.2),
   top('person.state', 320, 293, 35, 6.2),
   top('person.postalCode', 385, 293, 145, 6.2),
@@ -191,7 +191,7 @@ const requestPlacements: readonly CoordinatePlacement[] = [
   top('vessel.name', 175, 391, 210, 7, 0, true),
   top('vessel.registration', 455, 391, 75, 6.2),
   top('vessel.length', 165, 419, 80, 6.5),
-  top('vessel.hullId', 330, 419, 95, 6.2),
+  top('vessel.hullId', 300, 419, 125, 6.2),
   top('vessel.classification', 445, 419, 90, 5.5),
   top('vessel.navigationArea', 100, 455, 10, 8, 0, false, 'interior', undefined,
     ['navegação interior']),
@@ -221,9 +221,16 @@ const residencePlacements: readonly CoordinatePlacement[] = [
   top('person.phone', 211, 278, 105, 7),
   top('person.mobile', 390, 278, 120, 7),
   top('person.email', 132, 300, 140, 7),
-  top('person.address', 272, 366, 250, 7, 0, true),
-  top('person.streetNumber', 110, 388, 45, 7),
-  top('person.apartment', 170, 388, 90, 7),
+  // O Anexo 2-G tem duas linhas corridas para o endereço completo.
+  // Primeira linha: logradouro, número e complemento.
+  top('person.address', 330, 363, 110, 7, 0, true),
+  top('person.streetNumber', 450, 363, 30, 6.5),
+  top('person.apartment', 490, 363, 40, 6.2),
+  // Segunda linha: bairro, cidade, UF e CEP.
+  top('person.neighborhood', 110, 385, 100, 6.5),
+  top('person.city', 220, 385, 115, 6.5),
+  top('person.state', 350, 385, 28, 6.5),
+  top('person.postalCode', 395, 385, 105, 6.5),
   top('process.place', 300, 644, 85, 7),
   top('process.date', 400, 644, 25, 7, 0, false, undefined, 'DATE_DAY'),
   top('process.date', 446, 644, 25, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
