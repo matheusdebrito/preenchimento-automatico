@@ -3,6 +3,7 @@ import {
   APPLICANT_IDENTITY_FIELDS,
   BUYER_IDENTITY_FIELDS,
   RESIDENCE_PROOF_FIELDS,
+  SELLER_RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
   SELLER_IDENTITY_FIELDS,
   TIE_FIELDS,
@@ -14,6 +15,13 @@ describe('document field source policies', () => {
     expect(RESIDENCE_PROOF_FIELDS).toContain('person.postalCode');
     expect(RESIDENCE_PROOF_FIELDS).not.toContain('person.fullName');
     expect(RESIDENCE_PROOF_FIELDS).not.toContain('person.cpf');
+  });
+
+  it('separa comprovante de residência do comprador e do vendedor', () => {
+    expect(RESIDENCE_PROOF_FIELDS).toContain('person.address');
+    expect(RESIDENCE_PROOF_FIELDS).not.toContain('seller.address');
+    expect(SELLER_RESIDENCE_PROOF_FIELDS).toContain('seller.address');
+    expect(SELLER_RESIDENCE_PROOF_FIELDS).not.toContain('person.address');
   });
 
   it('não transforma TIE/TIEM em identidade de comprador ou vendedor', () => {

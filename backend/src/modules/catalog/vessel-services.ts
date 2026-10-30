@@ -13,6 +13,7 @@ import {
   RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
   SELLER_IDENTITY_FIELDS,
+  SELLER_RESIDENCE_PROOF_FIELDS,
   TIE_FIELDS,
 } from './document-field-policies.js';
 
@@ -134,6 +135,28 @@ const buyerIdentity: DocumentRequirement = {
     documentType: 'identity',
     subjectRole: 'person',
     allowedFieldIds: BUYER_IDENTITY_FIELDS,
+  },
+};
+
+const buyerResidenceProof: DocumentRequirement = {
+  id: 'buyer-residence-proof',
+  label: 'Comprovante de residência do comprador',
+  required: false,
+  extraction: {
+    documentType: 'residence-proof',
+    subjectRole: 'person',
+    allowedFieldIds: RESIDENCE_PROOF_FIELDS,
+  },
+};
+
+const sellerResidenceProof: DocumentRequirement = {
+  id: 'seller-residence-proof',
+  label: 'Comprovante de residência do requerente/vendedor',
+  required: false,
+  extraction: {
+    documentType: 'residence-proof',
+    subjectRole: 'seller',
+    allowedFieldIds: SELLER_RESIDENCE_PROOF_FIELDS,
   },
 };
 
@@ -439,7 +462,8 @@ export const vesselServices: readonly ServiceDefinition[] = [
     documentRequirements: [
       sellerApplicantIdentity,
       buyerIdentity,
-      residenceProof,
+      sellerResidenceProof,
+      buyerResidenceProof,
       currentTie,
       vesselProof,
     ],

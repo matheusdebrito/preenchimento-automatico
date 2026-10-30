@@ -69,6 +69,16 @@ export const RESIDENCE_PROOF_FIELDS = [
   'person.postalCode',
 ] as const;
 
+export const SELLER_RESIDENCE_PROOF_FIELDS = [
+  'seller.address',
+  'seller.streetNumber',
+  'seller.apartment',
+  'seller.neighborhood',
+  'seller.city',
+  'seller.state',
+  'seller.postalCode',
+] as const;
+
 export const TIE_FIELDS = [
   'vessel.registration',
   'vessel.registrationDate',

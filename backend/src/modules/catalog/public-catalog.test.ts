@@ -112,19 +112,26 @@ describe('projeção pública do catálogo', () => {
     expect(requirements.map((item) => item.id)).toEqual([
       'seller-applicant-identity',
       'buyer-identity',
-      'residence-proof',
+      'seller-residence-proof',
+      'buyer-residence-proof',
       'tie',
       'vessel-origin-document',
     ]);
 
     const seller = requirements.find((item) => item.id === 'seller-applicant-identity');
     const buyer = requirements.find((item) => item.id === 'buyer-identity');
+    const sellerResidence = requirements.find((item) => item.id === 'seller-residence-proof');
+    const buyerResidence = requirements.find((item) => item.id === 'buyer-residence-proof');
     expect(seller?.label).toContain('requerente/vendedor');
     expect(seller?.extraction?.allowedFieldIds).toContain('seller.fullName');
     expect(seller?.extraction?.allowedFieldIds).not.toContain('person.fullName');
     expect(buyer?.extraction?.allowedFieldIds).toContain('person.fullName');
     expect(buyer?.extraction?.allowedFieldIds).not.toContain('seller.fullName');
     expect(buyer?.extraction?.allowedFieldIds).not.toContain('declarant.fullName');
+    expect(sellerResidence?.extraction?.allowedFieldIds).toContain('seller.address');
+    expect(sellerResidence?.extraction?.allowedFieldIds).not.toContain('person.address');
+    expect(buyerResidence?.extraction?.allowedFieldIds).toContain('person.address');
+    expect(buyerResidence?.extraction?.allowedFieldIds).not.toContain('seller.address');
   });
 
   it('compõe corretamente os pacotes homologados para embarcação/barco', () => {
