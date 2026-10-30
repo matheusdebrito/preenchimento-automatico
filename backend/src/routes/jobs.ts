@@ -24,6 +24,7 @@ import {
 import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
 import type { FieldEvidence } from '../modules/document-understanding/contracts.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
+import { TemplateGenerationError } from '../modules/pdf/template-error.js';
 
 const createSchema = z.object({ serviceId: z.string().max(100),
   answers: z.record(z.string().max(100), z.string().max(100)).default({}),
@@ -403,6 +404,10 @@ export function registerJobRoutes(
         }
         req.log.error({ err: error, jobId: job.id }, 'job_credit_charge_failed');
         return reply.status(503).send({ error: 'credit_charge_failed' });
+      }
+      if (error instanceof TemplateGenerationError) {
+        req.log.error({ err: error, jobId: job.id, templateError: error.code }, 'pdf_generation_failed');
+        return reply.status(422).send({ error: error.code });
       }
       req.log.error({ err: error, jobId: job.id }, 'pdf_generation_failed');
       return reply.status(422).send({ error: 'template_generation_failed' });
