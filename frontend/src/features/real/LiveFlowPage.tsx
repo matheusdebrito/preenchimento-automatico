@@ -45,6 +45,8 @@ function downloadName(
   const id = form.formId;
   if (id.includes('bade')) return id.includes('bsade') ? 'BSADE' : 'BADE';
   if (id.includes('bdmoto')) return 'BDMOTO';
+  if (id === 'requerimento-interessado-aquaviario') return 'Requerimento auxiliar (não oficial)';
+  if (id === 'requerimento-certificacao-aquaviario') return 'Requerimento de Certificação (Anexo 1-E)';
   if (id.startsWith('requerimento')) return 'Requerimento';
   if (id.startsWith('autorizacao-transferencia')) return 'Autorização de Transferência';
   if (id.startsWith('comunicacao-transferencia')) return 'Comunicação de Transferência';
