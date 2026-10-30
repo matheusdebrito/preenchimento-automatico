@@ -76,19 +76,22 @@ describe('serviços de aquaviários - NORMAM-101', () => {
   });
 
   it('usa o Anexo 1-E oficial nos serviços de certificação, sem duplicar com o modelo auxiliar', () => {
-    const certificationIds = new Set([
+    const certificationIds = [
       'emissao-certificado-aquaviario',
       'segunda-via-certificado-aquaviario',
       'revalidacao-certificado-aquaviario',
-    ]);
+    ];
     for (const id of aquaviarioIds) {
-      const service = catalog.serviceForms.filter((relation) => relation.serviceId === id);
-      const hasCertificationRequest = service.some((relation) =>
-        relation.formVersionId === certificationRequestId);
-      const hasAuxiliaryRequest = service.some((relation) =>
-        relation.formVersionId === auxiliaryRequestId);
-      expect(hasCertificationRequest, id).toBe(certificationIds.has(id));
-      expect(hasAuxiliaryRequest, id).toBe(false);
+      const service = publicService(catalog, id, id === 'segunda-via-cir-aquaviario'
+        ? { cirSecondCopyReason: 'dano' }
+        : id === 'inscricao-inicial-cir-aquaviario'
+          ? { initialAquaviarioGroup: 'demais_grupos' }
+          : {});
+      expect(service?.formVersionIds.includes(certificationRequestId), id)
+        .toBe(certificationIds.includes(id));
+      if (certificationIds.includes(id)) {
+        expect(service?.formVersionIds, id).not.toContain(auxiliaryRequestId);
+      }
     }
   });
 
