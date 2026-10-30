@@ -4,6 +4,7 @@ import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
 import {
   adminDashboard,
+  adminUsage,
   changeUserRole,
   changeUserStatus,
   getAdminUser,
@@ -52,6 +53,15 @@ export function registerAdminRoutes(app: FastifyInstance, pool?: Database): void
   app.get('/api/admin/dashboard', async (request) => {
     await requireAdmin(pool, request);
     return adminDashboard(pool!);
+  });
+
+  app.get('/api/admin/usage', async (request, reply) => {
+    await requireAdmin(pool, request);
+    const parsed = z.object({
+      period: z.enum(['today', '7d', 'month', 'year']).default('7d'),
+    }).safeParse(request.query);
+    if (!parsed.success) return reply.status(400).send({ error: 'invalid_period' });
+    return adminUsage(pool!, parsed.data.period);
   });
 
   app.get('/api/admin/users', async (request, reply) => {
