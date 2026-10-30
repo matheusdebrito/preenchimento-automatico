@@ -40,7 +40,6 @@ describe('painel administrativo', () => {
       if (path === '/api/admin/dashboard') return json({
         users: { total: 2, active: 2, blocked: 0, pending: 0 },
         credits: { usedToday: 3, usedWeek: 8, usedMonth: 20, grantedMonth: 30, totalBalance: 10 },
-        usageByDay: [],
       });
       if (path.startsWith('/api/admin/usage?period=')) {
         const period = new URL(path, 'http://localhost').searchParams.get('period') ?? '7d';
