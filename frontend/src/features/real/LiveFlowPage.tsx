@@ -669,7 +669,10 @@ export function LiveFlowPage() {
                                                                   : value === 'ambos' ? 'Moto aquática e proprietário'
                                                                     : value === 'estaleiro_extinto' ? 'Estaleiro comprovadamente extinto'
                                                                       : value === 'construcao_artesanal' ? 'Construção artesanal'
-                                                                        : value.replaceAll('_',' ');
+                                                                        : value === 'demais_grupos' ? 'Demais grupos (1º, 2º ou 3º)'
+                                                                          : value === 'mergulhadores' ? '4º Grupo - Mergulhadores'
+                                                                            : value === 'praticos' ? '5º Grupo - Práticos'
+                                                                              : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
                             {label}{unavailable ? ' (em validação)' : ''}
                           </option>;
