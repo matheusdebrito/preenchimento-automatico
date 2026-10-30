@@ -431,7 +431,7 @@ const boatServiceForms: readonly ServiceForm[] = [
       { questionId: 'vesselType', equals: 'embarcacao' },
       { questionId: 'initialResponsibilityTerm', equals: 'sim' },
     ],
-    fixedValues: { 'process.constructionAction': 'construida' } },
+    fixedValues: { 'process.constructionAction': 'construída' } },
 
   request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
   bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
