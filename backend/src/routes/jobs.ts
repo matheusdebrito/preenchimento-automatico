@@ -323,14 +323,6 @@ export function registerJobRoutes(
     if (Object.keys(parsed.data.values).some((field) => !allowedFields.has(field))) {
       return reply.status(400).send({ error: 'invalid_field' });
     }
-    const missingField = service.reviewFields.find((field) => field.required &&
-      !parsed.data.values[field.id]?.trim());
-    if (missingField) {
-      // Only public catalog metadata is returned, never private field content.
-      return reply.status(422).send({
-        error: 'missing_required_fields', fieldId: missingField.id, reason: 'required',
-      });
-    }
     const fieldsById = new Map(definitions.fields.map((field) => [field.id, field]));
     for (const [fieldId, raw] of Object.entries(parsed.data.values)) {
       if (!raw.trim()) continue;
@@ -359,7 +351,7 @@ export function registerJobRoutes(
     const job = store.get(req.params.id, userId);
     if (!job) return reply.status(404).send({ error: 'not_found' });
     if (job.stage === 'GENERATED') return { downloads: [...job.outputs.keys()], reused: true };
-    if (job.stage !== 'REVIEW' || !job.reviewConfirmed || Object.keys(job.values).length === 0) {
+    if (job.stage !== 'REVIEW' || !job.reviewConfirmed) {
       return reply.status(409).send({ error: 'review_required' });
     }
     const service = publicService(definitions, job.serviceId, job.answers);
@@ -373,8 +365,10 @@ export function registerJobRoutes(
     job.stage = 'GENERATING';
     const generated = new Map<string, string>();
     let generationPhase: 'pdf' | 'credit' = 'pdf';
+    let currentFormVersionId: string | undefined;
     try {
       for (const id of service.formVersionIds) {
+        currentFormVersionId = id;
         const relation = definitions.serviceForms.find((item) =>
           item.serviceId === job.serviceId && item.formVersionId === id);
         const values = serviceFormValues(relation, job.answers, job.values);
@@ -406,8 +400,17 @@ export function registerJobRoutes(
         return reply.status(503).send({ error: 'credit_charge_failed' });
       }
       if (error instanceof TemplateGenerationError) {
-        req.log.error({ err: error, jobId: job.id, templateError: error.code }, 'pdf_generation_failed');
-        return reply.status(422).send({ error: error.code });
+        req.log.error({
+          err: error,
+          jobId: job.id,
+          serviceId: job.serviceId,
+          formVersionId: currentFormVersionId,
+          templateError: error.code,
+        }, 'pdf_generation_failed');
+        return reply.status(422).send({
+          error: error.code,
+          ...(currentFormVersionId ? { formVersionId: currentFormVersionId } : {}),
+        });
       }
       req.log.error({ err: error, jobId: job.id }, 'pdf_generation_failed');
       return reply.status(422).send({ error: 'template_generation_failed' });
