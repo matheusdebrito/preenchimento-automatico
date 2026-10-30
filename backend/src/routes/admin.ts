@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
@@ -22,7 +22,7 @@ async function requireAdmin(pool: Database | undefined, request: FastifyRequest)
   return user;
 }
 
-function adminError(reply: Parameters<FastifyInstance['get']>[1] extends never ? never : any, error: unknown) {
+function adminError(reply: FastifyReply, error: unknown) {
   const message = error instanceof Error ? error.message : '';
   if (message === 'user_not_found') {
     return reply.status(404).send({ error: 'user_not_found', message: 'Usuário não encontrado.' });
