@@ -20,7 +20,6 @@ const vesselTypeQuestion: ServiceQuestion = {
   id: 'vesselType',
   label: 'Tipo de embarcação',
   options: ['embarcacao', 'moto_aquatica'],
-  unavailableOptions: ['moto_aquatica'],
 };
 
 const vesselBandQuestion: ServiceQuestion = {
@@ -30,11 +29,10 @@ const vesselBandQuestion: ServiceQuestion = {
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
-const builtByApplicantQuestion: ServiceQuestion = {
-  id: 'builtByApplicant',
-  label: 'A embarcação foi construída pelo próprio interessado?',
+const initialResponsibilityTermQuestion: ServiceQuestion = {
+  id: 'initialResponsibilityTerm',
+  label: 'Será apresentado o Termo de Responsabilidade de Construção/Alteração (Anexo 3-C)? Se a embarcação foi construída pelo interessado, selecione Sim. Para embarcação de médio porte, selecione Sim quando o termo for usado para dispensa da vistoria inicial.',
   options: ['nao', 'sim'],
-  unavailableOptions: ['sim'],
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
@@ -48,18 +46,35 @@ const dataChangedQuestion: ServiceQuestion = {
   id: 'dataChanged',
   label: 'Houve alteração de dados do proprietário ou das características da embarcação?',
   options: ['sim', 'nao'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+};
+
+const motoCharacteristicsChangedQuestion: ServiceQuestion = {
+  id: 'motoCharacteristicsChanged',
+  label: 'Houve alteração das características da moto aquática (por exemplo, motor, casco ou waterbox)?',
+  options: ['sim', 'nao'],
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+};
+
+const motoCharacteristicAlterationQuestion: ServiceQuestion = {
+  id: 'motoCharacteristicAlteration',
+  label: 'A alteração envolve características da moto aquática (por exemplo, motor, casco ou waterbox)?',
+  options: ['sim', 'nao'],
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 };
 
 const responsibilityTermCaseQuestion: ServiceQuestion = {
   id: 'responsibilityTermCase',
   label: 'O caso envolve estaleiro comprovadamente extinto ou embarcação de construção artesanal?',
   options: ['nao', 'estaleiro_extinto', 'construcao_artesanal'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
 const rowToMotorConversionQuestion: ServiceQuestion = {
   id: 'rowToMotorConversion',
   label: 'É uma adaptação de embarcação miúda a remo para propulsão a motor?',
   options: ['nao', 'sim'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
 const commonApplicantDocuments: readonly DocumentRequirement[] = [
@@ -127,10 +142,13 @@ const technicalResponsibilityDocument: DocumentRequirement = {
   label: 'Documento do responsável técnico / ART',
   description: 'No fluxo do item 2.12.1, o Anexo 3-C é aceito nos casos de estaleiro comprovadamente extinto ou construção artesanal. Envie também a ART/documentação técnica aplicável para conferência.',
   required: false,
-  conditions: [{
-    questionId: 'responsibilityTermCase',
-    oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
-  }],
+  conditions: [
+    { questionId: 'vesselType', equals: 'embarcacao' },
+    {
+      questionId: 'responsibilityTermCase',
+      oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
+    },
+  ],
   extraction: {
     documentType: 'supporting-document',
     subjectRole: 'vessel',
@@ -143,7 +161,39 @@ const rowToMotorTechnicalDeclaration: DocumentRequirement = {
   label: 'Declaração do Responsável Técnico',
   description: 'Exigida pela NORMAM-211/DPC para adaptação de embarcação miúda a remo para propulsão a motor a partir de 01/01/2025.',
   required: false,
-  conditions: [{ questionId: 'rowToMotorConversion', equals: 'sim' }],
+  conditions: [
+    { questionId: 'vesselType', equals: 'embarcacao' },
+    { questionId: 'rowToMotorConversion', equals: 'sim' },
+  ],
+  extraction: {
+    documentType: 'supporting-document',
+    subjectRole: 'vessel',
+    allowedFieldIds: NO_AUTOMATIC_FIELDS,
+  },
+};
+
+const motoTechnicalResponsibilityDocument: DocumentRequirement = {
+  id: 'moto-technical-responsibility-document',
+  label: 'Responsável técnico / ART da alteração da moto aquática',
+  description: 'A NORMAM-212/DPC exige Responsável Técnico e ART para alterações de características da moto aquática.',
+  required: false,
+  conditions: [
+    { questionId: 'vesselType', equals: 'moto_aquatica' },
+    { questionId: 'motoCharacteristicAlteration', equals: 'sim' },
+  ],
+  extraction: {
+    documentType: 'supporting-document',
+    subjectRole: 'vessel',
+    allowedFieldIds: NO_AUTOMATIC_FIELDS,
+  },
+};
+
+const motoMotorTechnicalResponsibilityDocument: DocumentRequirement = {
+  id: 'moto-motor-technical-responsibility-document',
+  label: 'Responsável técnico / ART da alteração do motor da moto aquática',
+  description: 'Mudança de motor é alteração de característica e exige Responsável Técnico e ART conforme a NORMAM-212/DPC.',
+  required: false,
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
   extraction: {
     documentType: 'supporting-document',
     subjectRole: 'vessel',
@@ -244,28 +294,26 @@ function questions(options: {
   band?: boolean;
   tie?: boolean;
   dataChanged?: boolean;
-  blockMediumBand?: boolean;
   constructionCase?: boolean;
   responsibilityTermCase?: boolean;
   rowToMotorConversion?: boolean;
+  motoCharacteristicAlteration?: boolean;
 } = {}): readonly ServiceQuestion[] {
-  const baseBandQuestion = options.blockMediumBand
-    ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_menor_24m'] }
-    : vesselBandQuestion;
   const bandQuestion = options.dataChanged
-    ? { ...baseBandQuestion, conditions: [
+    ? { ...vesselBandQuestion, conditions: [
         { questionId: 'vesselType', equals: 'embarcacao' },
         { questionId: 'dataChanged', equals: 'sim' },
       ] }
-    : baseBandQuestion;
+    : vesselBandQuestion;
   return [
     vesselTypeQuestion,
     ...(options.tie ? [tieSituationQuestion] : []),
-    ...(options.dataChanged ? [dataChangedQuestion] : []),
+    ...(options.dataChanged ? [dataChangedQuestion, motoCharacteristicsChangedQuestion] : []),
     ...(options.band === false ? [] : [bandQuestion]),
-    ...(options.constructionCase ? [builtByApplicantQuestion] : []),
+    ...(options.constructionCase ? [initialResponsibilityTermQuestion] : []),
     ...(options.responsibilityTermCase ? [responsibilityTermCaseQuestion] : []),
     ...(options.rowToMotorConversion ? [rowToMotorConversionQuestion] : []),
+    ...(options.motoCharacteristicAlteration ? [motoCharacteristicAlterationQuestion] : []),
   ];
 }
 
@@ -284,8 +332,7 @@ function requirements(options: {
   ];
 }
 
-const scopeNote = 'Serviço liberado para embarcação/barco. Moto aquática permanece em validação, ' +
-  'sem protocolo automático e com revisão dos dados pelo usuário.';
+const scopeNote = 'Serviço disponível para embarcação/barco e moto aquática, com seleção automática dos formulários aplicáveis conforme a NORMAM-211/DPC e a NORMAM-212/DPC. A ferramenta não protocola o processo e os dados devem ser revisados pelo usuário.';
 
 export const vesselServices: readonly ServiceDefinition[] = [
   {
@@ -293,7 +340,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Inscrição inicial de embarcação',
     description: scopeNote,
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ blockMediumBand: true, constructionCase: true }),
+    questions: questions({ constructionCase: true }),
     documentRequirements: requirements({ origin: true }),
   },
   {
@@ -339,24 +386,26 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados ou características da embarcação',
-    description: 'Em validação normativa. O Anexo 3-C só se aplica em situações específicas de construção/alteração; não deve ser incluído automaticamente.',
-    creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true, responsibilityTermCase: true }),
+    description: 'Preenchimento para alteração de dados ou características. Em embarcação/barco, o Anexo 3-C só é gerado nos casos admitidos pelo item 2.12.1 da NORMAM-211/DPC. Em moto aquática, alterações de características exigem responsável técnico e ART conforme a NORMAM-212/DPC.',
+    creditCost: 1, status: 'AVAILABLE',
+    questions: questions({ tie: true, responsibilityTermCase: true, motoCharacteristicAlteration: true }),
     documentRequirements: [
       ...requirements({ tie: true, origin: true }),
       technicalResponsibilityDocument,
+      motoTechnicalResponsibilityDocument,
     ],
   },
   {
     id: 'alteracao-motor-embarcacao',
     title: 'Troca, instalação ou retirada de motor',
-    description: 'Em validação normativa. O fluxo distingue troca cadastral de alteração estrutural e a adaptação de embarcação miúda a remo para motor, que possui exigência técnica específica.',
-    creditCost: 1, status: 'DRAFT',
+    description: 'Preenchimento para troca, instalação ou retirada de motor. O fluxo aplica as exigências técnicas específicas da NORMAM-211/DPC para embarcações/barcos e da NORMAM-212/DPC para moto aquática.',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true, responsibilityTermCase: true, rowToMotorConversion: true }),
     documentRequirements: [
       ...requirements({ tie: true, motor: true }),
       technicalResponsibilityDocument,
       rowToMotorTechnicalDeclaration,
+      motoMotorTechnicalResponsibilityDocument,
     ],
   },
   {
