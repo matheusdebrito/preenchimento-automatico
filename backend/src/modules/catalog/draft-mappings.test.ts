@@ -4,6 +4,8 @@ import { validateCatalog } from './validate-catalog.js';
 import { PDFDocument } from 'pdf-lib';
 import { fillPdf } from '../pdf/fill-pdf.js';
 import { validateMappedFieldValues } from './field-validation.js';
+import { publicService } from './public-catalog.js';
+import { serviceFormValues } from './service-form-values.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -121,6 +123,66 @@ describe('official form map coordinates', () => {
       expect(pdf.getPages().map((p) => p.getSize()), mapping.id)
         .toEqual(template.getPages().map((p) => p.getSize()));
       expect(Buffer.from(original), mapping.id).toEqual(snapshot);
+    }
+  }, 30_000);
+
+  it('gera todos os pacotes liberados de moto aquática com marcações de serviço válidas', async () => {
+    const cases = [
+      ['inscricao-embarcacao', { vesselType: 'moto_aquatica' }],
+      ['transferencia-propriedade-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['transferencia-jurisdicao-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['transferencia-propriedade-jurisdicao-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['renovacao-tie-embarcacao', {
+        vesselType: 'moto_aquatica', tieSituation: 'regular',
+        motoCharacteristicsChanged: 'nao',
+      }],
+      ['renovacao-tie-embarcacao', {
+        vesselType: 'moto_aquatica', tieSituation: 'extraviado',
+        motoCharacteristicsChanged: 'sim',
+      }],
+      ['segunda-via-tie-embarcacao', {
+        vesselType: 'moto_aquatica', motoCharacteristicsChanged: 'nao',
+        motoTieSecondCopyReason: 'extravio',
+      }],
+      ['alteracao-dados-embarcacao', {
+        vesselType: 'moto_aquatica', tieSituation: 'regular',
+        motoDataChangeTarget: 'ambos',
+      }],
+      ['alteracao-motor-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['comunicacao-venda-embarcacao', { vesselType: 'moto_aquatica' }],
+    ] as const;
+
+    for (const [serviceId, answers] of cases) {
+      const service = publicService(catalog, serviceId, answers);
+      expect(service, serviceId).not.toBeNull();
+      const reviewedValues = Object.fromEntries((service?.reviewFields ?? [])
+        .filter((field) => field.required)
+        .map((field) => {
+          const value = field.id.endsWith('.cpf') ? '123.456.789-09'
+            : field.valueKind === 'date' ? '15/10/2026'
+              : field.valueKind === 'boolean' ? 'true'
+                : field.id.endsWith('fullName') ? 'MARIA TESTE'
+                  : field.id.includes('registration') ? 'RJ123456'
+                    : field.id.includes('hullId') ? 'BR-ABC-12345'
+                      : field.id.includes('address') ? 'RUA TESTE'
+                        : 'DADO TESTE';
+          return [field.id, value];
+        }));
+
+      for (const versionId of service?.formVersionIds ?? []) {
+        const relation = catalog.serviceForms.find((item) =>
+          item.serviceId === serviceId && item.formVersionId === versionId);
+        const mapping = catalog.mappings.find((item) => item.formVersionId === versionId)!;
+        const version = catalog.versions.find((item) => item.id === versionId)!;
+        const values = serviceFormValues(relation, answers, reviewedValues);
+        validateMappedFieldValues(catalog.fields, mapping.placements, values);
+        const original = await readFile(resolve(process.cwd(), '..', version.templatePath!));
+        await expect(fillPdf(original, mapping.placements, values)).resolves.toBeInstanceOf(Uint8Array);
+      }
     }
   }, 30_000);
 
