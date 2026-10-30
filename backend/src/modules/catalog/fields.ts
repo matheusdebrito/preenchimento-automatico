@@ -170,7 +170,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'process.amateurRequest', label: 'Serviço solicitado para a CHA', valueKind: 'text' },
   { id: 'process.chaLossReason', label: 'Motivo da perda/dano da CHA', valueKind: 'text' },
   { id: 'process.motonautaRequest', label: 'Serviço solicitado para Motonauta', valueKind: 'text' },
-  { id: 'process.motonautaDeclaration', label: 'Declara que conduz ou já conduziu moto aquática', valueKind: 'boolean' },
+  { id: 'process.motonautaDeclaration', label: 'Declara que conduz ou já conduziu moto aquática', valueKind: 'text', validationRuleId: 'simNao' },
   { id: 'process.constructionAction', label: 'Construção ou alteração', valueKind: 'text' },
   { id: 'process.authorityName', label: 'Organização Militar de inscrição', valueKind: 'text' },
   { id: 'declarant.placeDate', label: 'Local e data da declaração', valueKind: 'text' },
