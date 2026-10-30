@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
 
 describe('official form map coordinates', () => {
   it('mantém todos os mapas homologados e o catálogo publicável', () => {
-    expect(catalog.mappings).toHaveLength(20);
+    expect(catalog.mappings).toHaveLength(21);
     expect(validateCatalog(catalog)).toEqual([]);
     expect(catalog.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
     expect(catalog.services.every((service) => service.status === 'AVAILABLE')).toBe(true);
