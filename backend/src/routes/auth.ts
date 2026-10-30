@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { AppEnv } from '../config/env.js';
 import type { Database } from '../modules/auth/db.js';
 import { authenticate, getCurrentUser, issueSession, registerUser, removeSession } from '../modules/auth/auth-service.js';
+import type { SessionUser } from '../modules/auth/auth-service.js';
 import { creditBalance, creditHistory, applyCreditMovement } from '../modules/auth/credits.js';
 
 export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Database): void {
@@ -34,7 +35,7 @@ export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Dat
     }
   });
 
-  async function requireUser(request: FastifyRequest): Promise<{ id: string; email: string }> {
+  async function requireUser(request: FastifyRequest): Promise<SessionUser> {
     if (!pool) throw Object.assign(new Error('Banco indisponível.'), { statusCode: 503 });
     const user = await getCurrentUser(pool, request);
     if (!user) throw Object.assign(new Error('Sessão ausente.'), { statusCode: 401 });
@@ -79,11 +80,11 @@ export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Dat
       await issueSession(pool, reply, user.id, env.NODE_ENV === 'production');
       return reply.status(201).send({ user });
     } catch (error) {
-      if (error instanceof Error && error.message === 'E-mail já cadastrado.') {
+      if (error instanceof Error && error.message === 'Conta já cadastrada.') {
         return reply.status(409).send({ error: 'conflict', message: 'Não foi possível criar a conta.' });
       }
       if (error instanceof Error && error.name === 'ZodError') {
-        return reply.status(400).send({ error: 'invalid', message: 'E-mail ou senha inválidos.' });
+        return reply.status(400).send({ error: 'invalid', message: 'Dados de cadastro inválidos.' });
       }
       throw error;
     }

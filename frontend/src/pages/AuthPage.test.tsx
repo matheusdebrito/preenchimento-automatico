@@ -94,4 +94,61 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     await user.click(screen.getByRole('button', { name: 'Sair' }));
     expect(await screen.findByRole('link', { name: 'Entrar' })).toBeTruthy();
   }, 25000);
+
+  it('cadastra perfil completo e impede envio com confirmação de senha divergente', async () => {
+    let registerBody: Record<string, unknown> | null = null;
+    const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const path = String(url);
+      if (path === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      if (path === '/api/auth/register' && init?.method === 'POST') {
+        registerBody = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return json({
+          user: {
+            id: 'new-user',
+            email: 'maria@example.invalid',
+            fullName: 'Maria da Silva',
+            cellphone: '5521999998888',
+            cpfMasked: '***.***.***-25',
+            status: 'ACTIVE',
+            role: 'USER',
+          },
+        }, 201);
+      }
+      if (path === '/api/credits/balance') return json({ balance: 0 });
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/entrar']}><App /></MemoryRouter>);
+
+    await screen.findByRole('heading', { name: 'Entrar na minha conta' });
+    await user.click(screen.getByRole('button', { name: /cadastrar/i }));
+    await user.type(screen.getByLabelText('Nome completo'), 'Maria da Silva');
+    await user.type(screen.getByLabelText('CPF'), '529.982.247-25');
+    await user.type(screen.getByLabelText('Celular'), '(21) 99999-8888');
+    await user.type(screen.getByLabelText('E-mail'), 'maria@example.invalid');
+    await user.type(screen.getByLabelText('Senha (mínimo de 12 caracteres)'), 'fixture-password-12345');
+    await user.type(screen.getByLabelText('Confirmar senha'), 'fixture-password-54321');
+    await user.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+    expect(await screen.findByText('As senhas não coincidem.')).toBeTruthy();
+    expect(registerBody).toBeNull();
+
+    await user.clear(screen.getByLabelText('Confirmar senha'));
+    await user.type(screen.getByLabelText('Confirmar senha'), 'fixture-password-12345');
+    await user.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+    expect(await screen.findByRole('heading', { name: 'Maria da Silva' })).toBeTruthy();
+    expect(registerBody).toMatchObject({
+      fullName: 'Maria da Silva',
+      cpf: '529.982.247-25',
+      cellphone: '(21) 99999-8888',
+      email: 'maria@example.invalid',
+    });
+    expect(registerBody).not.toHaveProperty('role');
+    expect(registerBody).not.toHaveProperty('status');
+    expect(screen.getByText('***.***.***-25')).toBeTruthy();
+    expect(screen.getByText('(21) 99999-8888')).toBeTruthy();
+  }, 25000);
+
 });

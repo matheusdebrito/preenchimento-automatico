@@ -1,25 +1,37 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, FilePlus2, History, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowRight, FilePlus2, History, ShieldCheck, UserRound, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
 import { Notice } from '../components/ui/Notice';
 import { DEMO_CREDIT_BALANCE } from '../data/demo';
 import { api } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useAuth } from '../features/auth/AuthProvider';
+
+function formatCellphone(value: string | null): string {
+  if (!value) return 'Não informado';
+  const digits = value.replace(/\D/g, '');
+  const national = digits.startsWith('55') ? digits.slice(2) : digits;
+  if (national.length !== 11) return value;
+  return `(${national.slice(0, 2)}) ${national.slice(2, 7)}-${national.slice(7)}`;
+}
 
 export function AccountPage() {
   useDocumentTitle('Minha conta');
-  const [user, setUser] = useState<{email:string} | null>(null);
+  const { session } = useAuth();
+  const user = session.status === 'authenticated' ? session.user : null;
   const [balance, setBalance] = useState<number | null>(null);
+
   useEffect(() => {
-    if (typeof fetch !== 'function') return;
+    if (!user || typeof fetch !== 'function') return;
     let mounted = true;
-    void api<{user:{email:string}}>('/api/auth/me').then(async (result) => {
-      const credits = await api<{balance:number}>('/api/credits/balance');
-      if (mounted) { setUser(result.user); setBalance(credits.balance); }
-    }).catch(() => undefined);
+    void api<{balance:number}>('/api/credits/balance')
+      .then((credits) => {
+        if (mounted) setBalance(credits.balance);
+      })
+      .catch(() => undefined);
     return () => { mounted = false; };
-  }, []);
+  }, [user]);
 
   return (
     <PageLayout>
@@ -27,7 +39,7 @@ export function AccountPage() {
         <div className="container page-stack">
           <header className="page__header">
             <p className="eyebrow">Minha conta</p>
-            <h1>{user ? 'Sua conta' : 'Bem-vindo!'}</h1>
+            <h1>{user?.fullName ?? (user ? 'Sua conta' : 'Bem-vindo!')}</h1>
             <p className="lead">
               {user ? user.email : 'Acompanhe seus créditos e comece um novo preenchimento quando precisar.'}
             </p>
@@ -36,6 +48,26 @@ export function AccountPage() {
           {!user ? <Notice tone="demo" title="Prévia de interface">
             O saldo abaixo é apenas ilustrativo. <Link to="/entrar">Entre na conta</Link> para ver seu saldo real.
           </Notice> : <Notice tone="success">Saldo carregado da sua conta. A venda de créditos ainda não foi ativada.</Notice>}
+
+          {user ? (
+            <section className="account-panel" aria-labelledby="profile-title">
+              <div className="account-profile-title">
+                <span className="icon-badge" aria-hidden="true"><UserRound /></span>
+                <div>
+                  <h2 className="account-panel__title" id="profile-title">Dados da conta</h2>
+                  <p className="account-panel__text">Informações cadastradas para identificação e contato.</p>
+                </div>
+              </div>
+              <dl className="account-profile-grid">
+                <div><dt>Nome</dt><dd>{user.fullName ?? 'Cadastro antigo — não informado'}</dd></div>
+                <div><dt>E-mail</dt><dd>{user.email}</dd></div>
+                <div><dt>Celular</dt><dd>{formatCellphone(user.cellphone)}</dd></div>
+                <div><dt>CPF</dt><dd>{user.cpfMasked ?? 'Cadastro antigo — não informado'}</dd></div>
+                <div><dt>Status</dt><dd>{user.status === 'ACTIVE' ? 'Ativa' : user.status}</dd></div>
+                <div><dt>Perfil</dt><dd>{user.role === 'ADMIN' ? 'Administrador' : 'Usuário'}</dd></div>
+              </dl>
+            </section>
+          ) : null}
 
           <div className="account-layout">
             <section className="credit-balance" aria-labelledby="balance-title">
@@ -103,8 +135,8 @@ export function AccountPage() {
             icon={<ShieldCheck aria-hidden="true" />}
             title="Privacidade por padrão"
           >
-            O histórico guarda apenas dados operacionais de créditos. Nenhum dado dos documentos
-            processados aparece aqui.
+            O CPF é exibido de forma mascarada. Dados de documentos processados continuam fora
+            do histórico operacional da conta.
           </Notice>
         </div>
       </div>
