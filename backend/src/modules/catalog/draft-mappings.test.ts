@@ -126,6 +126,82 @@ describe('official form map coordinates', () => {
     }
   }, 30_000);
 
+  it('gera pacotes representativos de todos os serviços publicados', async () => {
+    const cases = [
+      ['inscricao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', initialResponsibilityTerm: 'nao',
+      }],
+      ['inscricao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'maior_12_menor_24m',
+        initialResponsibilityTerm: 'sim',
+      }],
+      ['transferencia-propriedade-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+      }],
+      ['transferencia-jurisdicao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'maior_6_ate_12m', tieSituation: 'regular',
+      }],
+      ['transferencia-propriedade-jurisdicao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'extraviado',
+      }],
+      ['renovacao-tie-embarcacao', {
+        vesselType: 'embarcacao', tieSituation: 'regular', dataChanged: 'nao',
+      }],
+      ['segunda-via-tie-embarcacao', {
+        vesselType: 'embarcacao', dataChanged: 'nao',
+      }],
+      ['alteracao-dados-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+        responsibilityTermCase: 'construcao_artesanal',
+      }],
+      ['alteracao-motor-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+        responsibilityTermCase: 'nao', rowToMotorConversion: 'nao',
+      }],
+      ['comunicacao-venda-embarcacao', { vesselType: 'embarcacao' }],
+      ['inscricao-exame-amador', { amateurCategory: 'arrais' }],
+      ['renovacao-cha-amador', { amateurCategory: 'mestre', chaSituation: 'regular' }],
+      ['emissao-cha-veleiro', {}],
+      ['concessao-cha-equivalencia', { amateurCategory: 'capitao' }],
+      ['renovacao-cha-agregacao-mta', {
+        amateurCategory: 'arrais', motonautaDeclaration: 'sim',
+      }],
+    ] as const;
+
+    for (const [serviceId, answers] of cases) {
+      const service = publicService(catalog, serviceId, answers);
+      expect(service, serviceId).not.toBeNull();
+
+      const reviewedValues = Object.fromEntries((service?.reviewFields ?? [])
+        .filter((field) => field.required)
+        .map((field) => {
+          const value = field.id.endsWith('.cpf') ? '123.456.789-09'
+            : field.valueKind === 'date' ? '15/10/2026'
+              : field.valueKind === 'boolean' ? 'true'
+                : field.id.endsWith('fullName') ? 'MARIA TESTE'
+                  : field.id.includes('registration') ? 'RJ123456'
+                    : field.id.includes('hullId') ? 'BR-ABC-12345'
+                      : field.id.includes('address') ? 'RUA TESTE'
+                        : field.id === 'amateur.category' ? 'Mestre-Amador'
+                          : field.id === 'amateur.chaNumber' ? 'CHA123456'
+                            : 'DADO TESTE';
+          return [field.id, value];
+        }));
+
+      for (const versionId of service?.formVersionIds ?? []) {
+        const relation = catalog.serviceForms.find((item) =>
+          item.serviceId === serviceId && item.formVersionId === versionId);
+        const mapping = catalog.mappings.find((item) => item.formVersionId === versionId)!;
+        const version = catalog.versions.find((item) => item.id === versionId)!;
+        const values = serviceFormValues(relation, answers, reviewedValues);
+        validateMappedFieldValues(catalog.fields, mapping.placements, values);
+        const original = await readFile(resolve(process.cwd(), '..', version.templatePath!));
+        await expect(fillPdf(original, mapping.placements, values), serviceId + '/' + versionId)
+          .resolves.toBeInstanceOf(Uint8Array);
+      }
+    }
+  }, 60_000);
+
   it('gera todos os pacotes liberados de moto aquática com marcações de serviço válidas', async () => {
     const cases = [
       ['inscricao-embarcacao', { vesselType: 'moto_aquatica' }],
