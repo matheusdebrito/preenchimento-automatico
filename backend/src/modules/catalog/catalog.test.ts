@@ -130,10 +130,9 @@ describe('catálogo reutilizável de formulários', () => {
     expect(motor?.questions.some((question) =>
       question.id === 'rowToMotorConversion')).toBe(true);
     expect(motor?.documentRequirements.some((requirement) =>
-      requirement.id === 'row-to-motor-technical-declaration' &&
-      requirement.conditions?.some((condition) =>
-        condition.questionId === 'rowToMotorConversion' && condition.equals === 'sim')))
-      .toBe(true);
+      requirement.id === 'row-to-motor-technical-declaration' ||
+      requirement.id === 'technical-responsibility-document' ||
+      requirement.id.startsWith('moto-technical-responsibility'))).toBe(false);
   });
 
   it('libera inscrição inicial até 24 m e gera o Anexo 3-C somente quando informado', () => {
