@@ -103,6 +103,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'person.birthDate', label: 'Data de nascimento', valueKind: 'date' },
   { id: 'person.fax', label: 'Fax', valueKind: 'text' },
   { id: 'person.sex', label: 'Sexo', valueKind: 'text' },
+  { id: 'person.fullAddress', label: 'Endereço completo', valueKind: 'text' },
   { id: 'aquaviario.cirNumber', label: 'Número da CIR', valueKind: 'text' },
   { id: 'aquaviario.category', label: 'Categoria do aquaviário', valueKind: 'text' },
   { id: 'aquaviario.documentNumber', label: 'Número do documento/certificado declarado', valueKind: 'text' },
