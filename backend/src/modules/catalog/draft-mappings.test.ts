@@ -276,7 +276,7 @@ describe('official form map coordinates', () => {
         p.kind === 'COORDINATES' && p.markWhen === undefined)!;
       await expect(fillPdf(original, [{ ...firstText, required: true }],
         { [firstText.fieldId]: 'NOME'.repeat(100) }))
-        .rejects.toThrow(/excede|comprimento/);
+        .rejects.toThrow(/text_too_long|text_overflow/);
     }
   }, 30_000);
 
