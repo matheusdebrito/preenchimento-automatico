@@ -535,9 +535,10 @@ blobs Git foram comparados byte a byte com os arquivos locais usados no QA:
 - Anexo 5-H: Git blob `0eeb17b1f83f17ac788d68d3fdeeb98e26868bd4`, SHA-256
   `06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF`.
 
-As três `FormVersion` estão `VERIFIED`. Os mappings 5-D e 5-H foram promovidos
-para `APPROVED` após QA visual e autorização explícita do responsável pelo produto para
-liberar Renovação da CHA. O 3-C permanece `TESTED`.
+As três `FormVersion` estavam `VERIFIED` nesse ponto do histórico. Os mappings 5-D e
+5-H já haviam sido promovidos para `APPROVED`; o 3-C ainda permanecia `TESTED` naquele
+snapshot. Esse estado do 3-C foi posteriormente substituído pela homologação registrada
+abaixo, após troca do template antigo pelo Anexo 3-C oficial vigente.
 
 
 ## Registro de execução — 29/10/2026, recuperação da verificação de sessão
@@ -575,3 +576,47 @@ isolados.
 mesmo serviço e invalidado o catálogo durante o startup da API. A remoção elimina essa
 segunda fonte de comportamento. Serviços e mappings só passam a `AVAILABLE/APPROVED`
 pelo catálogo oficial após seus gates de homologação.
+
+
+## Registro de execução — 29/10/2026, homologação integral dos serviços em validação
+
+### Estado do catálogo após a revisão
+
+- [x] 14/14 serviços catalogados em `AVAILABLE`.
+- [x] 17/17 versões de formulários em `VERIFIED`.
+- [x] 17/17 mappings em `APPROVED`.
+- [x] Nenhuma opção de serviço permanece bloqueada por `unavailableOptions` no catálogo oficial.
+- [x] Moto Aquática liberada nos mesmos nove cards de serviços de embarcação por meio de `vesselType`.
+- [x] Inscrição para exame de Arrais/Mestre/Capitão liberada com o Anexo 5-H, sustentada pela NORMAM e por procedimentos operacionais atuais de CP/DL/AG.
+- [x] Alteração de dados e alteração de motor de embarcação liberadas com as condições normativas do Anexo 3-C.
+- [x] Faixa de embarcação maior que 12 m e menor que 24 m liberada na inscrição inicial.
+- [x] Opção do Anexo 3-C na inscrição inicial liberada, incluindo construção pelo interessado e uso do termo para dispensa de vistoria de embarcação de médio porte.
+- [x] Documentos apenas de protocolo (GRU, ART, atestados/certificados sem campos automáticos) não são solicitados como uploads de OCR.
+
+### Correções encontradas durante a homologação
+
+1. **Template 3-C incorreto:** o PDF anteriormente versionado era um termo antigo de inscrição/transferência, e não o Anexo 3-C vigente. O binário foi substituído pelo **Termo de Responsabilidade de Construção/Alteração** da NORMAM-211/DPC 2026, SHA-256 `3937D3997C6BD49A31FFBBD7B4D19A195304FF6024D96D629079E5F327390DB3`. O mapping foi revisado visualmente e promovido para `APPROVED`.
+2. **Moto Aquática incompleta fora da transferência:** a revisão visual anterior cobria alinhamento, mas o Requerimento 2-A e o BDMOTO não possuíam todas as marcações semânticas usadas por inscrição, jurisdição, renovação, 2ª via e alteração de dados. Os mappings foram atualizados para revisão v2.
+3. **Inscrição inicial bloqueada por número inexistente:** `vessel.registration` deixou de ser obrigatório no 2-A/BDMOTO e também nos formulários de barco reutilizados pela inscrição inicial. O campo permanece disponível nos serviços posteriores.
+4. **2ª via de moto aquática:** passou a perguntar explicitamente perda, roubo ou extravio para marcar o motivo correspondente no Anexo 2-A.
+5. **Alteração cadastral de moto aquática:** passou a distinguir dados da moto aquática, do proprietário ou de ambos, marcando corretamente o Anexo 2-A; o BDMOTO usa `Atualização de dados`.
+6. **Renovação de moto aquática:** o BDMOTO continua condicionado exclusivamente à alteração de características, conforme item 2.2 da NORMAM-212.
+7. **Frontend:** removidas mensagens residuais do antigo QA runtime; serviços liberados são apresentados pelo fluxo normal com custo de 1 crédito.
+
+### Cobertura adicionada
+
+- [x] Testes de catálogo exigem 14 serviços disponíveis, 17 mappings aprovados e catálogo sem erros.
+- [x] Testes de projeção pública cobrem os pacotes de formulários de barco e moto aquática.
+- [x] Teste de geração percorre todos os pacotes liberados de moto aquática, aplica `serviceFormValues` e chama o motor real `fillPdf` para detectar opções de checkbox inválidas.
+- [x] Testes de mapping mantêm coordenadas dentro das páginas oficiais e campos obrigatórios compatíveis com inscrição inicial.
+
+### Validação técnica ainda não executada nesta sessão
+
+O workflow do repositório permanece manual (`workflow_dispatch`) e o conector GitHub
+disponível nesta sessão não oferece ação de disparo. O ambiente de container também não
+resolve `github.com`, portanto não foi possível clonar a branch e executar `npm test`,
+typecheck, lint e build localmente. Os testes foram atualizados, mas **não são declarados
+como aprovados até a execução do CI/preflight no head desta branch**.
+
+A homologação normativa/visual acima não depende desse limite técnico, porém a branch só
+deve ser tratada como validada para merge após os gates automatizados serem executados.
