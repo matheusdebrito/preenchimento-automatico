@@ -30,6 +30,21 @@ export const APPLICANT_IDENTITY_FIELDS = [
   'declarant.issueDate',
 ] as const;
 
+export const BUYER_IDENTITY_FIELDS = [
+  'person.fullName',
+  'person.cpf',
+  'person.identity',
+  'person.identityType',
+  'person.issuer',
+  'person.issueDate',
+  'person.birthDate',
+  'person.birthplace',
+  'person.nationality',
+  'person.parent1Name',
+  'person.parent2Name',
+  'person.documentOrigin',
+] as const;
+
 export const SELLER_IDENTITY_FIELDS = [
   'seller.fullName',
   'seller.cpf',

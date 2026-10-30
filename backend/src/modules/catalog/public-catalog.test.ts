@@ -102,6 +102,31 @@ describe('projeção pública do catálogo', () => {
     ]);
   });
 
+  it('trata o vendedor como requerente e oferece identidade separada do comprador no comunicado de venda', () => {
+    const service = publicService(catalog, 'comunicacao-venda-embarcacao', {
+      vesselType: 'embarcacao',
+    });
+    expect(service).not.toBeNull();
+
+    const requirements = service?.documentRequirements ?? [];
+    expect(requirements.map((item) => item.id)).toEqual([
+      'seller-applicant-identity',
+      'buyer-identity',
+      'residence-proof',
+      'tie',
+      'vessel-origin-document',
+    ]);
+
+    const seller = requirements.find((item) => item.id === 'seller-applicant-identity');
+    const buyer = requirements.find((item) => item.id === 'buyer-identity');
+    expect(seller?.label).toContain('requerente/vendedor');
+    expect(seller?.extraction?.allowedFieldIds).toContain('seller.fullName');
+    expect(seller?.extraction?.allowedFieldIds).not.toContain('person.fullName');
+    expect(buyer?.extraction?.allowedFieldIds).toContain('person.fullName');
+    expect(buyer?.extraction?.allowedFieldIds).not.toContain('seller.fullName');
+    expect(buyer?.extraction?.allowedFieldIds).not.toContain('declarant.fullName');
+  });
+
   it('compõe corretamente os pacotes homologados para embarcação/barco', () => {
     const cases = [
       {

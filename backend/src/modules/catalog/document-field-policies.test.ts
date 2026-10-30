@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   APPLICANT_IDENTITY_FIELDS,
+  BUYER_IDENTITY_FIELDS,
   RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
   SELLER_IDENTITY_FIELDS,
@@ -26,6 +27,9 @@ describe('document field source policies', () => {
 
   it('mantém identidades pessoais fora do domínio da embarcação', () => {
     expect(APPLICANT_IDENTITY_FIELDS).toContain('person.fullName');
+    expect(BUYER_IDENTITY_FIELDS).toContain('person.fullName');
+    expect(BUYER_IDENTITY_FIELDS).not.toContain('declarant.fullName');
+    expect(BUYER_IDENTITY_FIELDS).not.toContain('seller.fullName');
     expect(SELLER_IDENTITY_FIELDS).toContain('seller.fullName');
     expect(APPLICANT_IDENTITY_FIELDS.some((field) => field.startsWith('vessel.')))
       .toBe(false);
