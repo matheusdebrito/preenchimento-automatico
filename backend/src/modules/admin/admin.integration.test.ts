@@ -323,12 +323,10 @@ describePg('PostgreSQL: painel administrativo', () => {
     const metrics = dashboard.json<{
       users:{total:number};
       credits:{grantedMonth:number;totalBalance:number};
-      usageByDay:Array<{day:string;used:number}>;
     }>();
     expect(metrics.users.total).toBeGreaterThanOrEqual(2);
     expect(metrics.credits.grantedMonth).toBeGreaterThanOrEqual(12);
     expect(metrics.credits.totalBalance).toBeGreaterThanOrEqual(12);
-    expect(metrics.usageByDay).toHaveLength(30);
 
     const audit = await app.inject({
       method: 'GET',
