@@ -103,11 +103,9 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 
 **QA integrado verificado:** o [CI 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) passou nos cinco jobs e inclui leitura de PNG/JPEG fictícios, revisão com CPF/data válidos, conferência dos valores preenchidos nos dois PDFs de amostra e teste de inicialização concorrente do PostgreSQL. Os procedimentos e resultados estão no [PROJECT_TRACKER](PROJECT_TRACKER.md); as [pendências de homologação e QA para 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md) continuam abertas. Os testes sintéticos não asseguram leitura correta de fotos reais nem liberação de formulários oficiais.
 
-### Simulação local de OCR e PDFs com dados fictícios
+### Testes sintéticos de OCR e PDFs
 
-Existe um modo de QA **opcional, desligado por padrão**, para testar a jornada real no navegador antes da revisão humana dos formulários. Coloque `DEV_QA_PREVIEW=true` **apenas no `.env` da sua máquina**, execute `docker compose up -d --build`, entre com uma conta fictícia e escolha **Transferência de moto aquática** na página inicial. Agora existe um único caminho de preenchimento: a demonstração antiga foi retirada da navegação e as rotas legadas redirecionam para a página inicial. Depois desative a flag e reconstrua os containers.
-
-O modo QA é recusado em produção, não consome créditos e usa **o mesmo serviço `transferencia-moto-aquatica`**: perguntas, requisitos reais e as posições dos seis anexos. Os anexos 2-A e 2-B entram sempre, e 2-C/2-D/2-E/1-C entram quando suas condições são selecionadas. O catálogo de produção mantém o serviço e os mapeamentos `DRAFT`; só o ambiente local permite prévias com **AMOSTRA em todas as páginas**. **Não use documentos pessoais reais**, pois os PDFs não são homologados nem válidos para protocolo. Instruções e fixtures textuais fictícias: [simulação local de ponta a ponta](docs/QA_SYNTHETIC_PREVIEW.md). Para a revisão de amanhã, leia [as pendências priorizadas de 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md), com os portões documentais e os testes ainda necessários.
+Testes de OCR, preenchimento e geração de PDF usam fixtures e dados sintéticos diretamente na suíte automatizada. O servidor em execução utiliza somente o catálogo oficial; não existe flag de ambiente para promover serviços ou mapeamentos `DRAFT` em runtime.
 
 ### Uploads necessários para preencher formulários
 
@@ -140,33 +138,9 @@ revisão exige apenas os **campos mapeados como obrigatórios nos PDFs
 selecionados** e verifica CPF, datas e tipos; os documentos de origem não
 são requisito de geração.
 
-No QA local há um único caminho para `transferencia-moto-aquatica`, sem a
-antiga demonstração paralela. Os testes usam dados integralmente fictícios
-e os PDFs permanecem com marca **AMOSTRA**, sem custos. Instruções:
-[roteiro de QA](docs/QA_SYNTHETIC_PREVIEW.md). O comportamento das fotos
-reais do usuário **não foi confirmado** sem amostras adequadas.
-
-### Diagnóstico seguro do nome no RG em QA local
-
-Quando o OCR consegue sugerir o CPF mas o nome permanece vazio, a aplicação
-mostra, em **Resultado da leitura por documento**, o motivo técnico do
-reconhecimento do nome. A API em QA local inclui `nameStage` no diagnóstico
-de cada identidade, sem retornar o nome, CPF ou texto OCR bruto:
-
-- `label_not_detected`: não encontrou um rótulo de titular reconhecível na
-  saída textual; isso não garante que a palavra estivesse ausente da foto.
-- `label_seen_name_rejected`: localizou um rótulo semelhante a NOME, mas não
-  conseguiu validar um valor de nome.
-- `name_recognized`: gerou sugestão de nome válida para revisão.
-- `name_not_mapped`: gerou nome, mas o campo não existe no PDF selecionado.
-
-O diagnóstico é exclusivo da prévia local de QA, não é enviado por serviços
-normais nem substitui a revisão humana. O relato reproduzido por meio da API
-confirmou que `person.cpf` foi devolvido, mas `person.fullName` **não**;
-o campo de nome está mapeado nos formulários 2-A e BDMOTO. Portanto, não era
-um problema de desenhar o valor na interface. O estágio exato de perda do
-nome na foto específica ainda exige reteste com dados fictícios ou leitura
-local do estado `nameStage`, sem compartilhar documentos pessoais.
+Os testes automatizados continuam usando dados integralmente fictícios. O comportamento
+de fotos reais do usuário deve ser validado separadamente com corpus autorizado e revisão
+humana; nenhum modo especial de runtime altera o catálogo para esse fim.
 
 ### Quando a foto é enviada, mas os campos continuam vazios
 
