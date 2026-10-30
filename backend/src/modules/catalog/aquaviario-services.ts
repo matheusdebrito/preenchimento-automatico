@@ -197,7 +197,7 @@ export const aquaviarioVersions: readonly FormVersion[] = [
     regulation: 'Modelo auxiliar não oficial do produto, estruturado a partir dos requisitos procedimentais da NORMAM-101/DPC 2026. Não é anexo da Marinha.',
     sourceUrl,
     verifiedAt: '2026-10-30',
-    sha256: '1BC2A2C6459A230FAEB66E6D3D13FD83FCD1F63D5F672C7ADB32DD474591FF24',
+    sha256: '2F86BE8AB54D4DCB77F68A3363D9E67F8450EE3E3799E20C9B412911AC8029F5',
     templatePath: 'backend/templates/requerimento-interessado-aquaviario/v1/original.pdf',
     pdfKind: 'STATIC',
     status: 'VERIFIED',
