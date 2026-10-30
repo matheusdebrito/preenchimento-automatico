@@ -303,11 +303,13 @@ describe('jornada real isolada da demonstração', () => {
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('false');
 
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
-    expect(await screen.findByText(/campos obrigatórios pendentes: CPF/i)).toBeTruthy();
+    expect(await screen.findByText(/Existem campos em branco/i)).toBeTruthy();
+    expect(screen.getByText(/Campos em branco: CPF/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Preencher campos' }));
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('agrupa dados por contexto e destaca todos os campos obrigatórios pendentes', async () => {
+  it('agrupa dados por contexto e lista campos em branco sem bloquear a geração', async () => {
     const groupedFieldsService = {
       ...service,
       reviewFields: [
@@ -368,16 +370,18 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByLabelText(/Número/)).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
-    const alert = await screen.findByRole('alert');
-    expect(alert.textContent).toContain('Não é possível gerar os formulários');
-    expect(alert.textContent).toContain('Nome completo');
-    expect(alert.textContent).toContain('CPF');
+    expect(await screen.findByText(/Existem campos em branco/i)).toBeTruthy();
+    const warning = screen.getByText(/Campos em branco:/i);
+    expect(warning.textContent).toContain('Nome completo');
+    expect(warning.textContent).toContain('CPF');
+    expect(warning.textContent).toContain('Rua');
+    expect(screen.getByRole('button', { name: 'Preencher campos' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continuar mesmo assim' })).toBeTruthy();
 
     const name = screen.getByLabelText(/Nome completo/) as HTMLInputElement;
     const cpf = screen.getByLabelText(/^CPF/) as HTMLInputElement;
-    expect(name.getAttribute('aria-invalid')).toBe('true');
-    expect(cpf.getAttribute('aria-invalid')).toBe('true');
-    expect(screen.getAllByText('Campo obrigatório pendente.')).toHaveLength(2);
+    expect(name.getAttribute('aria-invalid')).toBeNull();
+    expect(cpf.getAttribute('aria-invalid')).toBeNull();
   }, 25000);
 
   it('popula nome, CPF e RG do comprador quando a API entrega candidatos válidos', async () => {
@@ -461,8 +465,12 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
     expect(screen.getByText(/Você optou por preencher sem documentos/)).toBeTruthy();
-    await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA TESTE');
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
+    expect(await screen.findByText(/Existem campos em branco/i)).toBeTruthy();
+    expect(screen.getByText(/Campos em branco: Nome completo/i)).toBeTruthy();
+    expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/review'))).toHaveLength(0);
+    expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/generate'))).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: 'Continuar mesmo assim' }));
     expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
     expect(fetcher.mock.calls.filter(([url]) => String(url).includes('/documents/'))).toHaveLength(0);
     expect(fetcher.mock.calls.filter(([url]) => String(url).endsWith('/extract'))).toHaveLength(1);
@@ -632,7 +640,8 @@ describe('jornada real isolada da demonstração', () => {
       .toBeTruthy();
     expect(screen.getByText(/não foi possível ler o documento/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
-    expect(screen.getByText(/campos obrigatórios pendentes: Nome completo/i)).toBeTruthy();
+    expect(await screen.findByText(/Existem campos em branco/i)).toBeTruthy();
+    expect(screen.getByText(/Nome completo/)).toBeTruthy();
     expect(reviewAttempts).toBe(0);
 
     await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA DE SOUZA');
