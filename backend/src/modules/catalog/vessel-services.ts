@@ -23,6 +23,12 @@ const vesselTypeQuestion: ServiceQuestion = {
   options: ['embarcacao', 'moto_aquatica'],
 };
 
+const coOwnerQuestion: ServiceQuestion = {
+  id: 'hasCoOwner',
+  label: 'A embarcação possui coproprietário?',
+  options: ['sim', 'nao'],
+};
+
 const vesselBandQuestion: ServiceQuestion = {
   id: 'vesselBand',
   label: 'Comprimento da embarcação',
@@ -322,6 +328,7 @@ function questions(options: {
     : vesselBandQuestion;
   return [
     vesselTypeQuestion,
+    coOwnerQuestion,
     ...(options.transferTarget ? [transferTargetQuestion] : []),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion, motoCharacteristicsChangedQuestion] : []),
@@ -495,6 +502,32 @@ const PROPERTY_TRANSFER_FIELD_CONDITIONS = Object.fromEntries(
   }]]),
 ) as ServiceForm['reviewFieldConditions'];
 
+const CO_OWNER_REVIEW_FIELDS = [
+  'coOwner.fullName',
+  'coOwner.cpf',
+  'coOwner.identity',
+  'coOwner.issuer',
+  'coOwner.issuerState',
+  'coOwner.address',
+  'coOwner.streetNumber',
+  'coOwner.apartment',
+  'coOwner.postalCode',
+  'coOwner.neighborhood',
+  'coOwner.city',
+  'coOwner.state',
+  'coOwner.email',
+  'coOwner.nationality',
+  'coOwner.phone',
+  'coOwner.fax',
+] as const;
+
+const CO_OWNER_FIELD_CONDITIONS = Object.fromEntries(
+  CO_OWNER_REVIEW_FIELDS.map((fieldId) => [fieldId, [{
+    questionId: 'hasCoOwner',
+    equals: 'sim',
+  }]]),
+) as ServiceForm['reviewFieldConditions'];
+
 const bsade = (
   serviceId: string,
   order: number,
@@ -533,6 +566,7 @@ const bade = (
     { questionId: 'vesselBand', oneOf: ['maior_6_ate_12m', 'maior_12_menor_24m'] },
     ...extraConditions,
   ],
+  reviewFieldConditions: CO_OWNER_FIELD_CONDITIONS,
 });
 const request = (serviceId: string, order: number, action: string): ServiceForm => ({
   serviceId,
@@ -612,7 +646,8 @@ const boatServiceForms: readonly ServiceForm[] = [
     conditions: [
       { questionId: 'vesselType', equals: 'embarcacao' },
       { questionId: 'transferTarget', oneOf: ['propriedade', 'propriedade_jurisdicao'] },
-    ] },
+    ],
+    reviewFieldConditions: CO_OWNER_FIELD_CONDITIONS },
   residence('transferencia-propriedade-embarcacao', 5),
   lostTie('transferencia-propriedade-embarcacao', 6),
 
@@ -668,7 +703,8 @@ const boatServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 2,
-    conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
+    conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+    reviewFieldConditions: CO_OWNER_FIELD_CONDITIONS },
 ];
 
 // NORMAM-212 relationships validated against the 2026 forms. Orders use a separate
@@ -781,7 +817,8 @@ export const motoAquaticaServiceForms: readonly ServiceForm[] = [
     conditions: [
       { questionId: 'vesselType', equals: 'moto_aquatica' },
       { questionId: 'transferTarget', oneOf: ['propriedade', 'propriedade_jurisdicao'] },
-    ] },
+    ],
+    reviewFieldConditions: CO_OWNER_FIELD_CONDITIONS },
   motoResidence('transferencia-propriedade-embarcacao', 24),
   motoLostTie('transferencia-propriedade-embarcacao', 25),
 
@@ -832,7 +869,8 @@ export const motoAquaticaServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
   { serviceId: 'comunicacao-venda-embarcacao',
     formVersionId: 'autorizacao-transferencia-ma-v1', order: 22,
-    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
+    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+    reviewFieldConditions: CO_OWNER_FIELD_CONDITIONS },
 ];
 
 export const vesselServiceForms: readonly ServiceForm[] = [
