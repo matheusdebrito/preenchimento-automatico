@@ -45,8 +45,8 @@ export interface ServiceDefinition {
 export const PILOT_SERVICE: ServiceDefinition = {
   id: 'transferencia-propriedade-embarcacao',
   categoryId: 'embarcacoes',
-  title: 'Transferência de propriedade',
-  summary: 'Barco ou moto aquática — transferência de propriedade.',
+  title: 'Transferência de propriedade e/ou jurisdição',
+  summary: 'Barco ou moto aquática — propriedade, jurisdição ou ambas.',
   description:
     'Reúna os documentos do comprador, do vendedor e da embarcação. Você confere cada dado antes de preparar os formulários.',
   creditCost: 1,
@@ -67,13 +67,9 @@ export interface PlannedService {
 export const PLANNED_VESSEL_SERVICES: readonly PlannedService[] = [
   { id: 'inscricao-embarcacao', title: 'Inscrição inicial de embarcação',
     summary: 'Cadastro inicial de embarcação de esporte e recreio.' },
-  { id: 'transferencia-propriedade-embarcacao', title: 'Transferência de propriedade',
-    summary: 'Mudança de proprietário da embarcação.' },
-  { id: 'transferencia-jurisdicao-embarcacao', title: 'Transferência de jurisdição',
-    summary: 'Mudança da CP/DL/AG responsável pela inscrição.' },
-  { id: 'transferencia-propriedade-jurisdicao-embarcacao',
-    title: 'Transferência de propriedade e jurisdição',
-    summary: 'Mudança conjunta de proprietário e jurisdição.' },
+  { id: 'transferencia-propriedade-embarcacao',
+    title: 'Transferência de propriedade e/ou jurisdição',
+    summary: 'Mudança de proprietário, jurisdição ou ambas no mesmo fluxo.' },
   { id: 'renovacao-tie-embarcacao', title: 'Renovação do TIE/TIEM',
     summary: 'Preparação dos formulários para renovação do título.' },
   { id: 'segunda-via-tie-embarcacao', title: 'Renovação por perda ou extravio do TIE/TIEM',
