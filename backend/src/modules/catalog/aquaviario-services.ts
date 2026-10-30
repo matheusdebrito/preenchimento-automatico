@@ -37,6 +37,12 @@ const revalidatableCertificateModel: ServiceQuestion = {
   options: ['dpc1031', 'dpc1032', 'dpc1034'],
 };
 
+const personSexQuestion: ServiceQuestion = {
+  id: 'personSex',
+  label: 'Sexo',
+  options: ['masculino', 'feminino'],
+};
+
 const certificateSecondCopyReason: ServiceQuestion = {
   id: 'certificateSecondCopyReason',
   label: 'Motivo da 2ª via do certificado',
@@ -193,14 +199,15 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
     [], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
     'Prepara o Requerimento de Certificação do Anexo 1-E e a Declaração de Residência do Anexo 1-L.',
-    [certificateModel], docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
+    [certificateModel, personSexQuestion],
+    docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
   base('segunda-via-certificado-aquaviario', '2ª via de certificado',
     'Prepara o Requerimento de Certificação, a Declaração de Residência e, quando aplicável, a Declaração de Extravio, Roubo ou Furto.',
-    [certificateSecondCopyModel, certificateSecondCopyReason],
+    [certificateSecondCopyModel, certificateSecondCopyReason, personSexQuestion],
     docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
   base('revalidacao-certificado-aquaviario', 'Revalidação de certificado',
     'Prepara o Requerimento de Certificação do Anexo 1-E e a Declaração de Residência. A comprovação de manutenção da competência permanece no protocolo.',
-    [revalidatableCertificateModel],
+    [revalidatableCertificateModel, personSexQuestion],
     docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
 ];
 
@@ -208,6 +215,7 @@ const residence = (serviceId: string, order: number): ServiceForm => ({
   serviceId,
   formVersionId: 'declaracao-residencia-aquaviario-2026-v1',
   order,
+  excludedReviewFieldIds: ['person.fullAddress'],
 });
 
 export const aquaviarioServiceForms: readonly ServiceForm[] = [
@@ -230,7 +238,11 @@ export const aquaviarioServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-certificacao-aquaviario-2026-v1',
     order: 1,
     fixedValues: { 'process.aquaviarioCertificationAction': 'emissao' },
-    answerBindings: { 'process.aquaviarioCertificateModel': 'certificateModel' },
+    answerBindings: {
+      'process.aquaviarioCertificateModel': 'certificateModel',
+      'person.sex': 'personSex',
+    },
+    excludedReviewFieldIds: ['person.fullAddress'],
   },
   residence('emissao-certificado-aquaviario', 2),
   {
@@ -238,7 +250,11 @@ export const aquaviarioServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-certificacao-aquaviario-2026-v1',
     order: 1,
     fixedValues: { 'process.aquaviarioCertificationAction': 'segunda_via' },
-    answerBindings: { 'process.aquaviarioCertificateModel': 'certificateModel' },
+    answerBindings: {
+      'process.aquaviarioCertificateModel': 'certificateModel',
+      'person.sex': 'personSex',
+    },
+    excludedReviewFieldIds: ['person.fullAddress'],
   },
   residence('segunda-via-certificado-aquaviario', 2),
   {
@@ -253,7 +269,11 @@ export const aquaviarioServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-certificacao-aquaviario-2026-v1',
     order: 1,
     fixedValues: { 'process.aquaviarioCertificationAction': 'revalidacao' },
-    answerBindings: { 'process.aquaviarioCertificateModel': 'certificateModel' },
+    answerBindings: {
+      'process.aquaviarioCertificateModel': 'certificateModel',
+      'person.sex': 'personSex',
+    },
+    excludedReviewFieldIds: ['person.fullAddress'],
   },
   residence('revalidacao-certificado-aquaviario', 2),
 ];
