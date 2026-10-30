@@ -559,7 +559,7 @@ describe('projeção pública do catálogo', () => {
     const result = publicService(data, 's');
     expect(result?.formVersionIds).toEqual(['form-v1']);
     expect(result?.reviewFields).toEqual([
-      { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: true },
+      { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: false },
     ]);
     expect(result?.reviewForms).toEqual([{
       formVersionId: 'form-v1',
