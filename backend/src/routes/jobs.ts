@@ -11,14 +11,13 @@ import {
   isValidCpf,
 } from '../modules/catalog/field-validation.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
-import { QA_PREVIEW_SERVICE_ID } from '../modules/catalog/qa-preview.js';
 import { serviceFormValues } from '../modules/catalog/service-form-values.js';
 import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
-import { extractTextWithEngine, suggestFields, identityNameStage } from '../modules/jobs/ocr.js';
+import { extractTextWithEngine, suggestFields } from '../modules/jobs/ocr.js';
 import {
   extractDocumentsWithOpenAi,
   OpenAiDocumentError,
@@ -27,7 +26,6 @@ import { extractDocumentEvidence } from '../modules/document-understanding/regis
 import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
 import type { FieldEvidence } from '../modules/document-understanding/contracts.js';
 import { fillApprovedTemplate } from '../modules/pdf/verified-template.js';
-import { watermarkQaSample } from '../modules/pdf/qa-watermark.js';
 
 const createSchema = z.object({ serviceId: z.string().max(100),
   answers: z.record(z.string().max(100), z.string().max(100)).default({}),
@@ -47,10 +45,8 @@ export function registerJobRoutes(
   app: FastifyInstance,
   pool?: Database,
   definitions: CatalogDefinition = catalog,
-  qaPreview = false,
   testRoot?: string,
 ): void {
-  const isQaJob = (serviceId: string) => qaPreview && serviceId === QA_PREVIEW_SERVICE_ID;
   const store = new JobStore(testRoot ?? process.env.TEMP_DOCUMENT_ROOT, async (jobId) => {
     if (!pool) return;
     try {
@@ -353,16 +349,6 @@ export function registerJobRoutes(
                     : 'no_supported_labels',
               suggestionCount: applicableCount,
               engine: extraction.engine,
-              ...(isQaJob(job.serviceId) && requirement.extraction.documentType === 'identity'
-                ? {
-                    nameStage: identityNameStage(
-                      text,
-                      document.requirementId,
-                      recognized,
-                      reviewableFields,
-                    ),
-                  }
-                : {}),
             });
           } catch {
             failedDocuments++;
@@ -480,8 +466,7 @@ export function registerJobRoutes(
     if (!service || service.formVersionIds.length === 0) {
       return reply.status(409).send({ error: 'service_unavailable' });
     }
-    const sample = isQaJob(job.serviceId);
-    if (service.creditCost !== 1 && !(sample && service.creditCost === 0)) {
+    if (service.creditCost !== 1) {
       return reply.status(422).send({ error: 'unsupported_credit_cost' });
     }
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
@@ -493,16 +478,13 @@ export function registerJobRoutes(
         const relation = definitions.serviceForms.find((item) =>
           item.serviceId === job.serviceId && item.formVersionId === id);
         const values = serviceFormValues(relation, job.answers, job.values);
-        const original = await fillApprovedTemplate(definitions, id, values);
-        // Samples are conspicuously watermarked on every page. Never send
-        // an unmarked draft form through the local QA service.
-        const bytes = sample ? await watermarkQaSample(original) : original;
+        const bytes = await fillApprovedTemplate(definitions, id, values);
         const path = join(store.directory(job), id + '.pdf');
         await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
         generated.set(id, path);
       }
       generationPhase = 'credit';
-      if (!sample) await chargeJobCredit(pool!, userId, job.id, job.createdAt);
+      await chargeJobCredit(pool!, userId, job.id, job.createdAt);
       job.outputs = generated;
       job.stage = 'GENERATED';
       return { downloads: [...generated.keys()], reused: false };
@@ -542,14 +524,9 @@ export function registerJobRoutes(
       finished = true;
       // A receipt is not delivered until the HTTP response is fully written.
       // On DB failure leave it pending, to be refunded on expiry or restart.
-      if (isQaJob(job.serviceId)) {
-        // QA previews have no ledger charge or receipt to acknowledge.
-        store.endOperation(job);
-      } else {
-        void markJobDelivered(pool!, userId, job.id)
-          .catch((error: unknown) => req.log.error({ err: error }, 'delivery_record_failed'))
-          .finally(() => store.endOperation(job));
-      }
+      void markJobDelivered(pool!, userId, job.id)
+        .catch((error: unknown) => req.log.error({ err: error }, 'delivery_record_failed'))
+        .finally(() => store.endOperation(job));
     });
     reply.raw.once('close', () => {
       if (!finished) store.endOperation(job);
@@ -570,8 +547,7 @@ export function registerJobRoutes(
       return reply.status(409).send({ error: 'job_busy' });
     }
     try {
-      const creditRefunded = isQaJob(job.serviceId)
-        ? false : await refundUndeliveredJobCredit(pool!, job.id);
+      const creditRefunded = await refundUndeliveredJobCredit(pool!, job.id);
       return { removed: true, creditRefunded, refundPending: false };
     } catch (error) {
       req.log.error({ err: error }, 'job_refund_pending');
