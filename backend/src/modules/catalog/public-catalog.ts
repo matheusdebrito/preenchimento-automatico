@@ -160,7 +160,7 @@ export function publicService(
     formVersionIds: versionIds,
     reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
       .filter((field) => isUserReviewField(field.id))
-      .map(({ id, label, valueKind }) => ({ id, label, valueKind, required: requiredFields.has(id) })),
+      .map(({ id, label, valueKind }) => ({ id, label, valueKind, required: false })),
     reviewForms,
   };
 }
