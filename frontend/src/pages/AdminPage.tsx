@@ -74,6 +74,35 @@ function actionLabel(action: string): string {
   return action;
 }
 
+
+async function readAdminPage(
+  page: number,
+  query: string,
+  status: string,
+  role: string,
+): Promise<{
+  dashboard: Dashboard;
+  audit: AuditEntry[];
+  users: AdminUser[];
+  totalUsers: number;
+}> {
+  const params = new URLSearchParams({ page: String(page), pageSize: '50' });
+  if (query.trim()) params.set('q', query.trim());
+  if (status) params.set('status', status);
+  if (role) params.set('role', role);
+  const [dashboard, auditResult, usersResult] = await Promise.all([
+    api<Dashboard>('/api/admin/dashboard'),
+    api<{entries:AuditEntry[]}>('/api/admin/audit?limit=50'),
+    api<{users:AdminUser[];total:number}>('/api/admin/users?' + params),
+  ]);
+  return {
+    dashboard,
+    audit: auditResult.entries,
+    users: usersResult.users,
+    totalUsers: usersResult.total,
+  };
+}
+
 export function AdminPage() {
   useDocumentTitle('Administração');
   const { session } = useAuth();
@@ -86,6 +115,9 @@ export function AdminPage() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [appliedQuery, setAppliedQuery] = useState('');
+  const [appliedStatus, setAppliedStatus] = useState('');
+  const [appliedRole, setAppliedRole] = useState('');
   const [creditAmount, setCreditAmount] = useState('10');
   const [busyAction, setBusyAction] = useState(false);
   const [error, setError] = useState('');
@@ -93,48 +125,40 @@ export function AdminPage() {
 
   const currentUser = session.status === 'authenticated' ? session.user : null;
 
-  const loadOverview = useCallback(async () => {
-    const [metrics, auditResult] = await Promise.all([
-      api<Dashboard>('/api/admin/dashboard'),
-      api<{entries:AuditEntry[]}>('/api/admin/audit?limit=50'),
-    ]);
-    setDashboard(metrics);
-    setAudit(auditResult.entries);
-  }, []);
-
-  const loadUsers = useCallback(async () => {
-    const params = new URLSearchParams({ page: String(page), pageSize: '50' });
-    if (query.trim()) params.set('q', query.trim());
-    if (statusFilter) params.set('status', statusFilter);
-    if (roleFilter) params.set('role', roleFilter);
-    const result = await api<{users:AdminUser[];total:number}>('/api/admin/users?' + params);
-    setUsers(result.users);
-    setTotalUsers(result.total);
-  }, [page, query, roleFilter, statusFilter]);
-
   const loadSelected = useCallback(async (userId: string) => {
     setSelected(await api<UserDetail>('/api/admin/users/' + userId));
   }, []);
 
   const refreshAll = useCallback(async (selectedUserId?: string) => {
-    await Promise.all([loadOverview(), loadUsers()]);
-    if (selectedUserId) await loadSelected(selectedUserId);
-  }, [loadOverview, loadSelected, loadUsers]);
-
-  const loadAdminPage = useCallback(async () => {
-    try {
-      await Promise.all([loadOverview(), loadUsers()]);
-    } catch (cause) {
-      setError(cause instanceof ApiError && cause.status === 403
-        ? 'Sua conta não possui permissão administrativa.'
-        : 'Não foi possível carregar o painel administrativo.');
+    const data = await readAdminPage(page, appliedQuery, appliedStatus, appliedRole);
+    setDashboard(data.dashboard);
+    setAudit(data.audit);
+    setUsers(data.users);
+    setTotalUsers(data.totalUsers);
+    if (selectedUserId) {
+      setSelected(await api<UserDetail>('/api/admin/users/' + selectedUserId));
     }
-  }, [loadOverview, loadUsers]);
+  }, [appliedQuery, appliedRole, appliedStatus, page]);
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'ADMIN') return;
-    void loadAdminPage();
-  }, [currentUser, loadAdminPage]);
+    let active = true;
+    void readAdminPage(page, appliedQuery, appliedStatus, appliedRole)
+      .then((data) => {
+        if (!active) return;
+        setDashboard(data.dashboard);
+        setAudit(data.audit);
+        setUsers(data.users);
+        setTotalUsers(data.totalUsers);
+      })
+      .catch((cause) => {
+        if (!active) return;
+        setError(cause instanceof ApiError && cause.status === 403
+          ? 'Sua conta não possui permissão administrativa.'
+          : 'Não foi possível carregar o painel administrativo.');
+      });
+    return () => { active = false; };
+  }, [appliedQuery, appliedRole, appliedStatus, currentUser, page]);
 
   const maxDaily = useMemo(
     () => Math.max(1, ...(dashboard?.usageByDay.map((item) => item.used) ?? [1])),
@@ -256,8 +280,10 @@ export function AdminPage() {
             </div>
             <form className="admin-filters" onSubmit={(event) => {
               event.preventDefault();
+              setAppliedQuery(query);
+              setAppliedStatus(statusFilter);
+              setAppliedRole(roleFilter);
               setPage(1);
-              if (page === 1) void loadUsers();
             }}>
               <label className="field admin-search">
                 <span className="field__label">Buscar</span>
