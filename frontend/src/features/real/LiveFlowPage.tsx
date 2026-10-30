@@ -31,11 +31,17 @@ function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
 }
 
 function downloadName(
-  service: { reviewForms: readonly { formVersionId:string; formId:string; name:string }[] },
+  service: { reviewForms?: readonly { formVersionId:string; formId:string; name:string }[] },
   versionId: string,
 ): string {
-  const form = service.reviewForms.find((item) => item.formVersionId === versionId);
-  if (!form) return 'Formulário';
+  const form = service.reviewForms?.find((item) => item.formVersionId === versionId);
+  const fallbackId = form?.formId ?? versionId;
+  if (!form) {
+    if (fallbackId.includes('bade')) return fallbackId.includes('bsade') ? 'BSADE' : 'BADE';
+    if (fallbackId.includes('bdmoto')) return 'BDMOTO';
+    if (fallbackId.startsWith('requerimento')) return 'Requerimento';
+    return 'Formulário';
+  }
   const id = form.formId;
   if (id.includes('bade')) return id.includes('bsade') ? 'BSADE' : 'BADE';
   if (id.includes('bdmoto')) return 'BDMOTO';
@@ -425,6 +431,7 @@ export function LiveFlowPage() {
       }
     } finally {
       setBusy(false);
+      setConfirmAnalysisCharge(false);
     }
   };
 
