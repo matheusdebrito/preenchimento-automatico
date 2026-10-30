@@ -139,12 +139,17 @@ export async function listAdminUsers(
     return '$' + values.length;
   };
   if (input.query) {
-    const p = add('%' + input.query.trim().toLowerCase() + '%');
+    const normalized = input.query.trim().toLowerCase();
+    const textPattern = add('%' + normalized + '%');
+    const digits = normalized.replace(/\D/g, '');
+    const digitClause = digits
+      ? ` OR COALESCE(u.cpf,'') LIKE ${add('%' + digits + '%')}
+          OR COALESCE(u.cellphone,'') LIKE ${add('%' + digits + '%')}`
+      : '';
     where.push(`(
-      lower(COALESCE(u.full_name,'')) LIKE ${p}
-      OR lower(u.email) LIKE ${p}
-      OR COALESCE(u.cpf,'') LIKE regexp_replace(${p}, '[^0-9]', '', 'g')
-      OR COALESCE(u.cellphone,'') LIKE regexp_replace(${p}, '[^0-9]', '', 'g')
+      lower(COALESCE(u.full_name,'')) LIKE ${textPattern}
+      OR lower(u.email) LIKE ${textPattern}
+      ${digitClause}
     )`);
   }
   if (input.status) where.push('u.status=' + add(input.status));
