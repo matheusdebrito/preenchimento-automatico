@@ -2,17 +2,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ServiceCategoryPage } from './ServiceCategoryPage';
+import { AuthProvider } from '../features/auth/AuthProvider';
 
 function renderCategory(path: string, services: readonly object[] = []) {
-  vi.stubGlobal('fetch', vi.fn(async () => new Response(
-    JSON.stringify({ services }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } },
-  )));
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+    if (String(input) === '/api/auth/me') {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
+    }
+    return new Response(JSON.stringify({ services }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  }));
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/servicos/:categoryId" element={<ServiceCategoryPage />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/servicos/:categoryId" element={<ServiceCategoryPage />} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
