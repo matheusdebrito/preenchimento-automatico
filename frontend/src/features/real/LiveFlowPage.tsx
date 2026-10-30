@@ -12,13 +12,12 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
 type Step = 'questions' | 'files' | 'review' | 'download';
-type ExtractionProvider = 'paddleocr' | 'openai';
 
 type ExtractionDiagnostic = {
   requirementId: string;
-  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
-  engine?: 'paddleocr' | 'pdf-text' | 'openai';
+  engine?: 'openai';
 };
 
 function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
@@ -168,8 +167,6 @@ export function LiveFlowPage() {
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [extractionProvider, setExtractionProvider] =
-    useState<ExtractionProvider>('paddleocr');
   const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const cancelRequested = useRef(false);
@@ -367,7 +364,7 @@ export function LiveFlowPage() {
         diagnostics?: ExtractionDiagnostic[];
       }>(
         '/api/jobs/' + currentJob + '/extract',
-        { method:'POST', body:JSON.stringify({ provider: extractionProvider }) },
+        { method:'POST', body:JSON.stringify({}) },
       );
       // A concurrent cancellation wins over a late OCR response.
       if (cancelRequested.current) return;
@@ -382,7 +379,7 @@ export function LiveFlowPage() {
         setExpiresAt(null);
         setError('O processo expirou. Tente enviar novamente os documentos.');
       } else {
-        setError(issue instanceof ApiError ? issue.message : 'Falha na leitura. Tente novamente.');
+        setError(issue instanceof ApiError ? issue.message : 'Falha na análise documental. Tente novamente.');
       }
     } finally {
       setBusy(false);
@@ -641,24 +638,6 @@ export function LiveFlowPage() {
                     preencha cada formulário manualmente na próxima etapa.</p>
                   <p className="field__hint">Os arquivos escolhidos são enviados temporariamente
                     ao servidor e excluídos ao cancelar ou expirar o processo.</p>
-                  <label className="field">
-                    <span className="field__label">Método de leitura automática</span>
-                    <select
-                      className="field__input"
-                      aria-label="Método de leitura automática"
-                      value={extractionProvider}
-                      disabled={busy}
-                      onChange={(event) =>
-                        setExtractionProvider(event.target.value as ExtractionProvider)}
-                    >
-                      <option value="paddleocr">PaddleOCR local</option>
-                      <option value="openai">OpenAI — GPT-5.4 mini por padrão</option>
-                    </select>
-                    <span className="field__hint">
-                      OpenAI envia os documentos à API externa para análise. PaddleOCR processa
-                      localmente no servidor. Em ambos os casos, confira os campos antes de gerar.
-                    </span>
-                  </label>
                   <div className="live-upload-list">
                     {service.documentRequirements.map((required) => {
                       const uploaded = uploadedRequirements.includes(required.id);
@@ -763,8 +742,8 @@ export function LiveFlowPage() {
                     </Notice>
                   )}
                   {diagnostics.length > 0 ? (
-                    <div className="live-ocr-report">
-                      <strong>Resultado da leitura por documento</strong>
+                    <div className="live-analysis-report">
+                      <strong>Resultado da análise por documento</strong>
                       <ul>
                         {diagnostics.map((item) => (
                           <li key={item.requirementId}>
@@ -772,18 +751,15 @@ export function LiveFlowPage() {
                               doc.id === item.requirementId)?.label ?? 'Documento enviado'}:
                             {' ' + (item.outcome === 'suggested'
                               ? item.suggestionCount + ' sugestão(ões) encontrada(s), sujeitas à revisão'
-                              : item.outcome === 'no_text' ? 'nenhum texto legível identificado na imagem'
+                              : item.outcome === 'no_text' ? 'não foi possível ler o documento'
                                 : item.outcome === 'not_analyzed' ? 'não há extração automática configurada'
-                                  : item.outcome === 'read_failed' ? 'a leitura deste arquivo falhou; os demais documentos foram preservados'
                                   : item.outcome === 'no_applicable_fields'
                                     ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
                                     : 'texto detectado, mas nenhum dado foi associado aos campos com segurança')}
                             {item.engine ? (
-                              <span className="live-ocr-name-stage">
-                                {' · Leitura: ' + (
-                                  item.engine === 'pdf-text' ? 'texto digital do PDF'
-                                    : item.engine === 'openai' ? 'OpenAI'
-                                      : 'PaddleOCR'
+                              <span className="live-analysis-provider">
+                                {' · Provedor: ' + (
+                                  'OpenAI'
                                 )}
                               </span>
                             ) : null}
