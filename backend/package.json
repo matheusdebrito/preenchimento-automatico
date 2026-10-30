@@ -16,7 +16,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:document-understanding": "vitest run src/modules/document-understanding",
-    "verify:document-understanding": "npm run typecheck && npm run lint && npm run test:document-understanding && npm run build"
+    "verify:document-understanding": "npm run typecheck && npm run lint && npm run test:document-understanding && npm run build",
+    "admin:promote": "node dist/scripts/admin-role.js promote",
+    "admin:demote": "node dist/scripts/admin-role.js demote"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
