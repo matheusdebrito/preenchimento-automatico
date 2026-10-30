@@ -104,6 +104,59 @@ export const PLANNED_AQUAVIARIO_SERVICES: readonly PlannedService[] = [
     summary: 'Revalidação de certificação profissional conforme a NORMAM-101.' },
 ];
 
+export const PLANNED_AQUAVIARIO_SERVICES: readonly PlannedService[] = [
+  {
+    id: 'inscricao-inicial-cir-aquaviario',
+    title: 'Inscrição inicial / emissão da CIR',
+    summary: 'Preparação dos documentos aplicáveis à inscrição inicial e emissão da CIR.',
+  },
+  {
+    id: 'segunda-via-cir-aquaviario',
+    title: '2ª via da CIR',
+    summary: 'Segunda via por dano, extravio, roubo ou furto, com declaração específica quando aplicável.',
+  },
+  {
+    id: 'revalidacao-cir-aquaviario',
+    title: 'Revalidação da CIR',
+    summary: 'Preparação da documentação de apoio para revalidação da Caderneta de Inscrição e Registro.',
+  },
+  {
+    id: 'transferencia-jurisdicao-aquaviario',
+    title: 'Transferência de jurisdição',
+    summary: 'Mudança da Organização Militar de jurisdição do aquaviário.',
+  },
+  {
+    id: 'ascensao-categoria-aquaviario',
+    title: 'Ascensão de categoria',
+    summary: 'Preparação dos documentos do processo de ascensão profissional.',
+  },
+  {
+    id: 'transferencia-categoria-grupo-aquaviario',
+    title: 'Transferência de categoria ou grupo',
+    summary: 'Processo de transferência entre categorias, seções ou grupos previstos na NORMAM-101.',
+  },
+  {
+    id: 'homologacao-lrm-aquaviario',
+    title: 'Homologação do LRM',
+    summary: 'Homologação do Livro de Registro do Mergulhador para aquaviários do grupo de mergulhadores.',
+  },
+  {
+    id: 'emissao-certificado-aquaviario',
+    title: 'Emissão de certificado',
+    summary: 'Requerimento de certificação para os modelos previstos na NORMAM-101.',
+  },
+  {
+    id: 'segunda-via-certificado-aquaviario',
+    title: '2ª via de certificado',
+    summary: 'Segunda via de certificado profissional, com declaração de perda quando aplicável.',
+  },
+  {
+    id: 'revalidacao-certificado-aquaviario',
+    title: 'Revalidação de certificado',
+    summary: 'Requerimento para revalidação de certificado profissional do aquaviário.',
+  },
+];
+
 export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
   {
     id: 'inscricao-exame-amador',
