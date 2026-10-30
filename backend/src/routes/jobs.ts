@@ -17,6 +17,7 @@ import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
+import { recordOpenAiUsage } from '../modules/jobs/openai-usage.js';
 import {
   extractDocumentsWithOneContingency,
   OpenAiDocumentError,
@@ -259,6 +260,18 @@ export function registerJobRoutes(
             contingencyRecoveredFieldCount: extracted.contingency.recoveredFieldCount,
             elapsedMs: Date.now() - startedAt,
           }, 'document_extraction_usage');
+          if (pool && extracted.usage) {
+            await recordOpenAiUsage(pool, {
+              userId,
+              jobId: job.id,
+              model: extracted.model,
+              inputTokens: extracted.usage.inputTokens,
+              outputTokens: extracted.usage.outputTokens,
+              totalTokens: extracted.usage.totalTokens,
+            }).catch((error: unknown) => {
+              req.log.error({ err: error, jobId: job.id }, 'openai_usage_persistence_failed');
+            });
+          }
         } catch (error) {
           job.stage = 'UPLOADED';
           job.values = {};
