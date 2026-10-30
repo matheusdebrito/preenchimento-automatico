@@ -594,7 +594,7 @@ pelo catálogo oficial após seus gates de homologação.
 
 ### Correções encontradas durante a homologação
 
-1. **Template 3-C incorreto:** o PDF anteriormente versionado era um termo antigo de inscrição/transferência, e não o Anexo 3-C vigente. O binário foi substituído pelo **Termo de Responsabilidade de Construção/Alteração** da NORMAM-211/DPC 2026, SHA-256 `3937D3997C6BD49A31FFBBD7B4D19A195304FF6024D96D629079E5F327390DB3`. O mapping foi revisado visualmente e promovido para `APPROVED`.
+1. **Template 3-C incorreto:** o PDF anteriormente versionado era um termo antigo de inscrição/transferência, e não o Anexo 3-C vigente. O binário foi substituído pelo **Termo de Responsabilidade de Construção/Alteração** da NORMAM-211/DPC 2026, SHA-256 `452A2248A98CD5157BA222184BE29D2A0C31F0C7CECD1F3EDEA8F39DA1E15A53`. O mapping foi revisado visualmente e promovido para `APPROVED`.
 2. **Moto Aquática incompleta fora da transferência:** a revisão visual anterior cobria alinhamento, mas o Requerimento 2-A e o BDMOTO não possuíam todas as marcações semânticas usadas por inscrição, jurisdição, renovação, 2ª via e alteração de dados. Os mappings foram atualizados para revisão v2.
 3. **Inscrição inicial bloqueada por número inexistente:** `vessel.registration` deixou de ser obrigatório no 2-A/BDMOTO e também nos formulários de barco reutilizados pela inscrição inicial. O campo permanece disponível nos serviços posteriores.
 4. **2ª via de moto aquática:** passou a perguntar explicitamente perda, roubo ou extravio para marcar o motivo correspondente no Anexo 2-A.
@@ -609,13 +609,12 @@ pelo catálogo oficial após seus gates de homologação.
 - [x] Teste de geração percorre todos os pacotes liberados de moto aquática, aplica `serviceFormValues` e chama o motor real `fillPdf` para detectar opções de checkbox inválidas.
 - [x] Testes de mapping mantêm coordenadas dentro das páginas oficiais e campos obrigatórios compatíveis com inscrição inicial.
 
-### Validação técnica ainda não executada nesta sessão
+### Gate técnico da homologação
 
-O workflow do repositório permanece manual (`workflow_dispatch`) e o conector GitHub
-disponível nesta sessão não oferece ação de disparo. O ambiente de container também não
-resolve `github.com`, portanto não foi possível clonar a branch e executar `npm test`,
-typecheck, lint e build localmente. Os testes foram atualizados, mas **não são declarados
-como aprovados até a execução do CI/preflight no head desta branch**.
+O workflow de CI foi ajustado para executar também em `pull_request`, mantendo
+`workflow_dispatch` para uso manual. A branch só deve ser tratada como validada para
+merge quando o CI do **head definitivo** concluir com sucesso.
 
-A homologação normativa/visual acima não depende desse limite técnico, porém a branch só
-deve ser tratada como validada para merge após os gates automatizados serem executados.
+A homologação normativa/visual acima é independente desse gate, mas typecheck, lint,
+testes, build, integração, assets de referência, Compose smoke e QA sintético de PDF
+continuam sendo evidências obrigatórias antes do merge.
