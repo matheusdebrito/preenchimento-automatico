@@ -80,6 +80,7 @@ export function AdminPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [page, setPage] = useState(1);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [selected, setSelected] = useState<UserDetail | null>(null);
   const [query, setQuery] = useState('');
@@ -103,14 +104,14 @@ export function AdminPage() {
   }, []);
 
   const loadUsers = useCallback(async () => {
-    const params = new URLSearchParams({ page: '1', pageSize: '50' });
+    const params = new URLSearchParams({ page: String(page), pageSize: '50' });
     if (query.trim()) params.set('q', query.trim());
     if (statusFilter) params.set('status', statusFilter);
     if (roleFilter) params.set('role', roleFilter);
     const result = await api<{users:AdminUser[];total:number}>('/api/admin/users?' + params);
     setUsers(result.users);
     setTotalUsers(result.total);
-  }, [query, roleFilter, statusFilter]);
+  }, [page, query, roleFilter, statusFilter]);
 
   const loadSelected = useCallback(async (userId: string) => {
     setSelected(await api<UserDetail>('/api/admin/users/' + userId));
@@ -259,7 +260,8 @@ export function AdminPage() {
             </div>
             <form className="admin-filters" onSubmit={(event) => {
               event.preventDefault();
-              void loadUsers();
+              setPage(1);
+              if (page === 1) void loadUsers();
             }}>
               <label className="field admin-search">
                 <span className="field__label">Buscar</span>
@@ -319,6 +321,17 @@ export function AdminPage() {
                   ) : null}
                 </tbody>
               </table>
+            </div>
+            <div className="admin-pagination" aria-label="Paginação de usuários">
+              <Button type="button" disabled={page <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}>
+                Anterior
+              </Button>
+              <span>Página {page} de {Math.max(1, Math.ceil(totalUsers / 50))}</span>
+              <Button type="button" disabled={page * 50 >= totalUsers}
+                onClick={() => setPage((current) => current + 1)}>
+                Próxima
+              </Button>
             </div>
           </section>
 
