@@ -22,8 +22,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   if (!response.ok) {
-    // The API supplies error codes and public catalog identifiers, never OCR
-    // text or personal values. Parse defensively if a proxy returns HTML.
+    // The API supplies error codes and public catalog identifiers, never document
+    // content or personal values. Parse defensively if a proxy returns HTML.
     const detail: unknown = await response.json().catch(() => null);
     const body = detail && typeof detail === 'object' ? detail as Record<string, unknown> : {};
     const code = typeof body.error === 'string' ? body.error : undefined;
@@ -51,10 +51,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       : code === 'invalid_state'
         ? 'Esta etapa não pode ser executada no estado atual do processo.'
       : code === 'openai_not_configured'
-        ? 'A leitura pela OpenAI não está configurada neste servidor. Use PaddleOCR ou configure a API.'
+        ? 'A leitura pela OpenAI não está configurada neste servidor. Configure a chave da API.'
       : code === 'openai_failed'
-        ? 'A leitura pela OpenAI não foi concluída. Tente novamente ou use PaddleOCR.'
-      : code === 'ocr_failed' ? 'A leitura não foi concluída. Tente novamente.'
+        ? 'A leitura pela OpenAI não foi concluída. Confira a conexão e tente novamente.'
       : code === 'insufficient_credits' ? 'Você não possui créditos suficientes para gerar os formulários.'
       : code === 'credit_charge_failed'
         ? 'Não foi possível confirmar a cobrança do crédito agora. Tente novamente.'
