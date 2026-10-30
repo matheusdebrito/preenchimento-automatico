@@ -1,55 +1,7 @@
-export type DocumentTypeId =
-  | 'identity'
-  | 'tie'
-  | 'residence-proof'
-  | 'sale-document'
-  | 'supporting-document';
-
-export type DocumentSubjectRole =
-  | 'person'
-  | 'seller'
-  | 'vessel'
-  | 'representative'
-  | 'declarant'
-  | 'coOwner';
-
-export type ObservationBox = readonly [number, number, number, number];
-
-export interface ObservationLine {
-  /** Stable only inside this OCR response; never persisted as an external identifier. */
-  id: string;
-  page: number;
-  text: string;
-  confidence: number;
-  box: ObservationBox | null;
-  polygon: readonly (readonly [number, number])[] | null;
-}
-
-export interface ObservationPage {
-  page: number;
-  orientation: number | null;
-  lines: readonly ObservationLine[];
-}
-
-export interface DocumentObservation {
-  engine: 'paddleocr' | 'pdf-text';
-  engineVersion: string;
-  model: string;
-  elapsedMs: number;
-  pages: readonly ObservationPage[];
-}
-
-export interface ExtractionContext {
-  documentId: string;
-  sourceId: string;
-  documentType: DocumentTypeId;
-  subjectRole: DocumentSubjectRole;
-}
-
+/** Structured evidence returned by the OpenAI document-analysis provider. */
 export interface FieldEvidence {
   fieldId: string;
   value: string;
-  /** OCR/semantic confidence when measurable; legacy adapters use null. */
   confidence: number | null;
   documentId: string;
   sourceId: string;
@@ -58,27 +10,4 @@ export interface FieldEvidence {
   anchor?: string;
   lineIds: readonly string[];
   status: 'REVIEW_REQUIRED';
-}
-
-export type FieldExtractionStatus = 'FOUND' | 'NOT_FOUND' | 'AMBIGUOUS';
-
-export interface FieldExtractionAssessment {
-  fieldId: string;
-  status: FieldExtractionStatus;
-  confidence: number | null;
-  method?: string;
-  anchor?: string;
-}
-
-export interface DocumentExtractor {
-  readonly documentType: DocumentTypeId;
-  readonly supportedFields?: readonly string[];
-  extract(
-    observation: DocumentObservation,
-    context: ExtractionContext,
-  ): readonly FieldEvidence[];
-  assess?(
-    observation: DocumentObservation,
-    context: ExtractionContext,
-  ): readonly FieldExtractionAssessment[];
 }
