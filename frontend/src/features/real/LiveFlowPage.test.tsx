@@ -572,7 +572,7 @@ describe('jornada real isolada da demonstração', () => {
     )).toBeTruthy();
   }, 25000);
 
-  it('permite somente um RG, OCR sem sugestões e CPF corrigido no mesmo job', async () => {
+  it('permite somente um RG, análise sem sugestões e CPF corrigido no mesmo job', async () => {
     const anotherService = {
       ...service,
       documentRequirements: [
