@@ -595,7 +595,6 @@ const boatServiceForms: readonly ServiceForm[] = [
       { questionId: 'vesselBand', equals: 'ate_6m' },
     ],
     reviewFieldConditions: PROPERTY_TRANSFER_FIELD_CONDITIONS,
-    reviewFieldConditions: PROPERTY_TRANSFER_FIELD_CONDITIONS,
     answerValueMappings: {
       'process.transferProperty': {
         questionId: 'transferTarget',
@@ -765,6 +764,7 @@ export const motoAquaticaServiceForms: readonly ServiceForm[] = [
     formVersionId: 'bdmoto-v1',
     order: 22,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+    reviewFieldConditions: PROPERTY_TRANSFER_FIELD_CONDITIONS,
     answerValueMappings: {
       'process.transferProperty': {
         questionId: 'transferTarget',
