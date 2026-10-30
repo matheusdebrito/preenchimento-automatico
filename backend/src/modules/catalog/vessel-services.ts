@@ -481,11 +481,18 @@ const lostTie = (serviceId: string, order: number): ServiceForm => ({
     { questionId: 'tieSituation', equals: 'extraviado' },
   ],
 });
-export const vesselServiceForms: readonly ServiceForm[] = [
+const boatServiceForms: readonly ServiceForm[] = [
   request('inscricao-embarcacao', 1, 'inscricao'),
   bsade('inscricao-embarcacao', 2, 'inscricao'),
   bade('inscricao-embarcacao', 3),
   residence('inscricao-embarcacao', 4),
+  { serviceId: 'inscricao-embarcacao',
+    formVersionId: 'termo-responsabilidade-er-2026-v1', order: 5,
+    conditions: [
+      { questionId: 'vesselType', equals: 'embarcacao' },
+      { questionId: 'initialResponsibilityTerm', equals: 'sim' },
+    ],
+    fixedValues: { 'process.constructionAction': 'construida' } },
 
   request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
   bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
@@ -564,8 +571,8 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
 ];
 
-// NORMAM-212 relationships are kept explicit even while Moto Aquática remains blocked.
-// They are not part of the active catalog until every corresponding PDF mapping is approved.
+// NORMAM-212 relationships validated against the 2026 forms. Orders use a separate
+// range from boat forms because the catalog invariant requires unique order per service.
 const motoRequest = (
   serviceId: string,
   order: number,
@@ -624,62 +631,67 @@ const motoLostTie = (
     : [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 });
 
-export const pendingMotoAquaticaServiceForms: readonly ServiceForm[] = [
-  motoRequest('inscricao-embarcacao', 1, 'inscricao'),
-  motoBdmoto('inscricao-embarcacao', 2, 'inscricao'),
-  motoResidence('inscricao-embarcacao', 3),
+export const motoAquaticaServiceForms: readonly ServiceForm[] = [
+  motoRequest('inscricao-embarcacao', 21, 'inscricao'),
+  motoBdmoto('inscricao-embarcacao', 22, 'inscricao'),
+  motoResidence('inscricao-embarcacao', 23),
 
-  motoRequest('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
-  motoBdmoto('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
+  motoRequest('transferencia-propriedade-embarcacao', 21, 'transf_prop'),
+  motoBdmoto('transferencia-propriedade-embarcacao', 22, 'transf_prop'),
   { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 23,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
-  motoResidence('transferencia-propriedade-embarcacao', 4),
-  motoLostTie('transferencia-propriedade-embarcacao', 5),
+  motoResidence('transferencia-propriedade-embarcacao', 24),
+  motoLostTie('transferencia-propriedade-embarcacao', 25),
 
-  motoRequest('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
-  motoBdmoto('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'),
-  motoResidence('transferencia-jurisdicao-embarcacao', 3),
-  motoLostTie('transferencia-jurisdicao-embarcacao', 4),
+  motoRequest('transferencia-jurisdicao-embarcacao', 21, 'transf_jur'),
+  motoBdmoto('transferencia-jurisdicao-embarcacao', 22, 'transf_jur'),
+  motoResidence('transferencia-jurisdicao-embarcacao', 23),
+  motoLostTie('transferencia-jurisdicao-embarcacao', 24),
 
-  motoRequest('transferencia-propriedade-jurisdicao-embarcacao', 1, 'transf_prop_jur'),
-  motoBdmoto('transferencia-propriedade-jurisdicao-embarcacao', 2, 'transf_prop_jur'),
+  motoRequest('transferencia-propriedade-jurisdicao-embarcacao', 21, 'transf_prop_jur'),
+  motoBdmoto('transferencia-propriedade-jurisdicao-embarcacao', 22, 'transf_prop_jur'),
   { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 23,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
-  motoResidence('transferencia-propriedade-jurisdicao-embarcacao', 4),
-  motoLostTie('transferencia-propriedade-jurisdicao-embarcacao', 5),
+  motoResidence('transferencia-propriedade-jurisdicao-embarcacao', 24),
+  motoLostTie('transferencia-propriedade-jurisdicao-embarcacao', 25),
 
   // NORMAM-212 2.2: BDMOTO is required on renewal only when characteristics changed.
-  motoRequest('renovacao-tie-embarcacao', 1, 'renovacao'),
-  motoBdmoto('renovacao-tie-embarcacao', 2, 'alteracao_dados',
-    [{ questionId: 'dataChanged', equals: 'sim' }]),
-  motoResidence('renovacao-tie-embarcacao', 3),
-  motoLostTie('renovacao-tie-embarcacao', 4),
+  motoRequest('renovacao-tie-embarcacao', 21, 'renovacao'),
+  motoBdmoto('renovacao-tie-embarcacao', 22, 'alteracao_dados',
+    [{ questionId: 'motoCharacteristicsChanged', equals: 'sim' }]),
+  motoResidence('renovacao-tie-embarcacao', 23),
+  motoLostTie('renovacao-tie-embarcacao', 24),
 
   // Old/non-digital TIE loss follows renewal; declaration substitutes the missing original.
-  motoRequest('segunda-via-tie-embarcacao', 1, 'segunda_via'),
-  motoLostTie('segunda-via-tie-embarcacao', 2, false),
-  motoBdmoto('segunda-via-tie-embarcacao', 3, 'alteracao_dados',
-    [{ questionId: 'dataChanged', equals: 'sim' }]),
-  motoResidence('segunda-via-tie-embarcacao', 4),
+  motoRequest('segunda-via-tie-embarcacao', 21, 'segunda_via'),
+  motoLostTie('segunda-via-tie-embarcacao', 22, false),
+  motoBdmoto('segunda-via-tie-embarcacao', 23, 'alteracao_dados',
+    [{ questionId: 'motoCharacteristicsChanged', equals: 'sim' }]),
+  motoResidence('segunda-via-tie-embarcacao', 24),
 
-  motoRequest('alteracao-dados-embarcacao', 1, 'alteracao_dados'),
-  motoBdmoto('alteracao-dados-embarcacao', 2, 'alteracao_dados'),
-  motoResidence('alteracao-dados-embarcacao', 3),
-  motoLostTie('alteracao-dados-embarcacao', 4),
+  motoRequest('alteracao-dados-embarcacao', 21, 'alteracao_dados'),
+  motoBdmoto('alteracao-dados-embarcacao', 22, 'alteracao_dados'),
+  motoResidence('alteracao-dados-embarcacao', 23),
+  motoLostTie('alteracao-dados-embarcacao', 24),
 
-  motoRequest('alteracao-motor-embarcacao', 1, 'alteracao_dados'),
-  motoBdmoto('alteracao-motor-embarcacao', 2, 'alteracao_dados'),
-  motoResidence('alteracao-motor-embarcacao', 3),
-  motoLostTie('alteracao-motor-embarcacao', 4),
+  motoRequest('alteracao-motor-embarcacao', 21, 'alteracao_dados'),
+  motoBdmoto('alteracao-motor-embarcacao', 22, 'alteracao_dados'),
+  motoResidence('alteracao-motor-embarcacao', 23),
+  motoLostTie('alteracao-motor-embarcacao', 24),
 
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'comunicacao-transferencia-ma-v1', order: 1,
+    formVersionId: 'comunicacao-transferencia-ma-v1', order: 21,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 2,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 22,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
+];
+
+export const vesselServiceForms: readonly ServiceForm[] = [
+  ...boatServiceForms,
+  ...motoAquaticaServiceForms,
 ];
 
 export const vesselServiceIds = vesselServices.map((service) => service.id);
