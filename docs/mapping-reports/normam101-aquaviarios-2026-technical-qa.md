@@ -38,6 +38,6 @@ Em 30/10/2026 foram geradas amostras sintéticas sobre os três templates e rend
 
 - **1-E:** nome, nascimento, nacionalidade, naturalidade, sexo, telefone, CIR, categoria, endereço completo, observações, motivo da solicitação, modelo do certificado e local/data foram reposicionados após a primeira renderização.
 - **1-K:** identidade, órgão expedidor, CPF, endereço, documento perdido, número, data/relato do fato e CP/DL/AG + data foram revisados visualmente. O checkbox do documento foi reposicionado dentro dos parênteses.
-- **1-L:** os dados pessoais permaneceram nas linhas corretas; o endereço passou a ser composto semanticamente em uma única linha com rua, número, complemento, bairro, cidade/UF e CEP; cidade e data da assinatura foram separados conforme o layout impresso.
+- **1-L:** os dados pessoais permaneceram nas linhas corretas; rua/número/complemento ficam na linha oficial de endereço e bairro/cidade/UF/CEP usam a linha imediatamente inferior, preservando todos os campos editáveis; cidade e data da assinatura foram separados conforme o layout impresso.
 
 As amostras confirmaram ausência de sobreposição material nos campos revisados. A validação integrada da aplicação ficará para a etapa de teste manual combinada para o módulo de Aquaviários.
