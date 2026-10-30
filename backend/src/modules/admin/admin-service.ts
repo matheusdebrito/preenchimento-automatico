@@ -257,16 +257,70 @@ export async function getAdminUser(pool: Database, userId: string) {
 
 async function writeAudit(
   pool: Pick<Database, 'query'>,
-  adminUserId: string,
+  adminUserId: string | null,
   targetUserId: string | null,
   action: 'CREDIT_GRANT' | 'STATUS_CHANGE' | 'ROLE_CHANGE',
   metadata: Record<string, unknown>,
+  actorLabel?: string,
 ): Promise<void> {
   await pool.query(
-    `INSERT INTO admin_audit_log(id,admin_user_id,target_user_id,action,metadata)
-     VALUES($1,$2,$3,$4,$5::jsonb)`,
-    [randomUUID(), adminUserId, targetUserId, action, JSON.stringify(metadata)],
+    `INSERT INTO admin_audit_log(
+       id,admin_user_id,target_user_id,action,metadata,actor_label
+     ) VALUES($1,$2,$3,$4,$5::jsonb,$6)`,
+    [randomUUID(), adminUserId, targetUserId, action, JSON.stringify(metadata), actorLabel ?? null],
   );
+}
+
+
+export async function setUserRoleByEmailFromCli(
+  pool: Database,
+  rawEmail: string,
+  role: UserRole,
+): Promise<{ id: string; email: string; role: UserRole; changed: boolean }> {
+  const email = rawEmail.trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254) {
+    throw new Error('invalid_email');
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock(145902, 2)');
+    const target = await client.query<{ id:string; email:string; role:UserRole; status:UserStatus }>(
+      'SELECT id,email,role,status FROM app_users WHERE email=$1 FOR UPDATE',
+      [email],
+    );
+    const user = target.rows[0];
+    if (!user) throw new Error('user_not_found');
+
+    if (user.role === 'ADMIN' && role === 'USER' && user.status === 'ACTIVE') {
+      const activeAdmins = await client.query<{ count:string }>(
+        "SELECT COUNT(*)::text AS count FROM app_users WHERE role='ADMIN' AND status='ACTIVE'",
+      );
+      if (Number(activeAdmins.rows[0]?.count ?? 0) <= 1) throw new Error('last_admin');
+    }
+
+    const changed = user.role !== role;
+    if (changed) {
+      await client.query('UPDATE app_users SET role=$1 WHERE id=$2', [role, user.id]);
+      await writeAudit(
+        client as unknown as Database,
+        null,
+        user.id,
+        'ROLE_CHANGE',
+        { from: user.role, to: role, source: 'cli' },
+        'CLI',
+      );
+    }
+
+    await client.query('COMMIT');
+    return { id: user.id, email: user.email, role, changed };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function changeUserStatus(
@@ -400,14 +454,15 @@ export async function grantAdminCredits(
 export async function listAdminAudit(pool: Database, limit = 100) {
   const result = await pool.query<{
     id:string; action:string; metadata:Record<string,unknown>; created_at:Date;
-    admin_user_id:string; admin_name:string|null; admin_email:string;
+    admin_user_id:string|null; admin_name:string|null; admin_email:string|null;
+    actor_label:string|null;
     target_user_id:string|null; target_name:string|null; target_email:string|null;
   }>(`
-    SELECT a.id,a.action,a.metadata,a.created_at,a.admin_user_id,
+    SELECT a.id,a.action,a.metadata,a.created_at,a.admin_user_id,a.actor_label,
       admin.full_name AS admin_name,admin.email AS admin_email,
       a.target_user_id,target.full_name AS target_name,target.email AS target_email
     FROM admin_audit_log a
-    JOIN app_users admin ON admin.id=a.admin_user_id
+    LEFT JOIN app_users admin ON admin.id=a.admin_user_id
     LEFT JOIN app_users target ON target.id=a.target_user_id
     ORDER BY a.created_at DESC
     LIMIT $1
@@ -417,7 +472,9 @@ export async function listAdminAudit(pool: Database, limit = 100) {
     action: row.action,
     metadata: row.metadata,
     createdAt: row.created_at,
-    admin: { id: row.admin_user_id, name: row.admin_name, email: row.admin_email },
+    admin: row.admin_user_id
+      ? { id: row.admin_user_id, name: row.admin_name, email: row.admin_email ?? '' }
+      : { id: 'cli', name: row.actor_label ?? 'CLI', email: '' },
     target: row.target_user_id
       ? { id: row.target_user_id, name: row.target_name, email: row.target_email }
       : null,
