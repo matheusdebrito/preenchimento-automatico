@@ -86,10 +86,10 @@ const residence: readonly CoordinatePlacement[] = [
   top('person.mobile', 405, 258, 165, 7),
   top('person.email', 125, 279, 445, 7),
   top('person.fullAddress', 92, 360, 318, 6.2),
-  top('process.place', 407, 619, 48, 6.2),
-  top('process.date', 464, 619, 18, 6.2, 0, false, undefined, 'DATE_DAY'),
-  top('process.date', 500, 619, 18, 6.2, 0, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('process.date', 532, 619, 35, 6.2, 0, false, undefined, 'DATE_YEAR'),
+  top('process.place', 360, 637, 95, 6.2),
+  top('process.date', 408, 619, 22, 6.2, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 464, 619, 22, 6.2, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('process.date', 502, 619, 35, 6.2, 0, false, undefined, 'DATE_YEAR'),
 ];
 
 export const aquaviarioMappings: readonly FormMapping[] = [
