@@ -85,7 +85,7 @@ const synthetic = {
   'process.amateurRequest': 'emissao_renovacao',
   'process.chaLossReason': 'extraviada',
   'process.motonautaRequest': 'renovacao_agregacao_mta',
-  'process.motonautaDeclaration': 'true',
+  'process.motonautaDeclaration': 'sim',
   'amateur.chaNumber': 'CHA123456',
   'amateur.chaIssueDate': '01/01/2025',
   'amateur.category': 'ARRAIS-AMADOR',
