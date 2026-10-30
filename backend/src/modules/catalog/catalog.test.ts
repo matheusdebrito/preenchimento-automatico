@@ -150,7 +150,7 @@ describe('catálogo reutilizável de formulários', () => {
       questionId: 'initialResponsibilityTerm',
       equals: 'sim',
     });
-    expect(term?.fixedValues).toMatchObject({ 'process.constructionAction': 'construida' });
+    expect(term?.fixedValues).toMatchObject({ 'process.constructionAction': 'construída' });
   });
 
   it('mantém a renovação de TIE/TIEM sem BADE/BSADE quando não houve alteração', () => {
