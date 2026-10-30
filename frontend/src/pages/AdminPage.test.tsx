@@ -40,11 +40,24 @@ describe('painel administrativo', () => {
       if (path === '/api/admin/dashboard') return json({
         users: { total: 2, active: 2, blocked: 0, pending: 0 },
         credits: { usedToday: 3, usedWeek: 8, usedMonth: 20, grantedMonth: 30, totalBalance: 10 },
-        usageByDay: Array.from({ length: 30 }, (_, index) => ({
-          day: '2026-10-' + String(index + 1).padStart(2, '0'),
-          used: index === 29 ? 3 : 0,
-        })),
       });
+      if (path.startsWith('/api/admin/usage?period=')) {
+        const period = new URL(path, 'http://localhost').searchParams.get('period') ?? '7d';
+        const count = period === 'today' ? 24 : period === 'year' ? 12 : period === 'month' ? 30 : 7;
+        return json({
+          period,
+          creditsUsed: 8,
+          inputTokens: 1200,
+          outputTokens: 300,
+          points: Array.from({ length: count }, (_, index) => ({
+            bucket: String(index),
+            label: String(index + 1),
+            creditsUsed: index === count - 1 ? 8 : 0,
+            inputTokens: index === count - 1 ? 1200 : 0,
+            outputTokens: index === count - 1 ? 300 : 0,
+          })),
+        });
+      }
       if (path === '/api/admin/audit?limit=50') return json({ entries: [] });
       if (path.startsWith('/api/admin/users?')) return json({
         total: 1,
@@ -88,7 +101,16 @@ describe('painel administrativo', () => {
     expect(await screen.findByRole('heading', { name: 'Painel administrativo' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Administração' })).toBeTruthy();
     expect(await screen.findByText('Créditos usados hoje')).toBeTruthy();
+    expect(await screen.findByText('Tokens de entrada · Últimos 7 dias')).toBeTruthy();
+    expect(screen.getByText('1.200')).toBeTruthy();
+    expect(screen.getByText('Tokens de saída · Últimos 7 dias')).toBeTruthy();
+    expect(screen.getByText('300')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Créditos utilizados' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Tokens OpenAI' })).toBeTruthy();
     expect(await screen.findByText('Cliente Teste')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Ano' }));
+    expect(await screen.findByText('Tokens de entrada · Ano')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Ver' }));
     expect(await screen.findByRole('heading', { name: 'Cliente Teste' })).toBeTruthy();

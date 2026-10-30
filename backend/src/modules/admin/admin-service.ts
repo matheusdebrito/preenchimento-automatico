@@ -30,7 +30,136 @@ export interface AdminDashboard {
     grantedMonth: number;
     totalBalance: number;
   };
-  usageByDay: readonly { day: string; used: number }[];
+}
+
+
+export type AdminUsagePeriod = 'today' | '7d' | 'month' | 'year';
+
+export interface AdminUsagePoint {
+  bucket: string;
+  label: string;
+  creditsUsed: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+export interface AdminUsageMetrics {
+  period: AdminUsagePeriod;
+  creditsUsed: number;
+  inputTokens: number;
+  outputTokens: number;
+  points: readonly AdminUsagePoint[];
+}
+
+function usagePeriodSql(period: AdminUsagePeriod): {
+  start: string;
+  end: string;
+  step: string;
+  trunc: 'hour' | 'day' | 'month';
+  label: string;
+} {
+  if (period === 'today') {
+    return {
+      start: "date_trunc('day', timezone('America/Sao_Paulo', now()))",
+      end: "date_trunc('day', timezone('America/Sao_Paulo', now())) + interval '1 day'",
+      step: "interval '1 hour'",
+      trunc: 'hour',
+      label: "to_char(bucket, 'HH24\"h\"')",
+    };
+  }
+  if (period === '7d') {
+    return {
+      start: "date_trunc('day', timezone('America/Sao_Paulo', now())) - interval '6 days'",
+      end: "date_trunc('day', timezone('America/Sao_Paulo', now())) + interval '1 day'",
+      step: "interval '1 day'",
+      trunc: 'day',
+      label: "to_char(bucket, 'DD/MM')",
+    };
+  }
+  if (period === 'month') {
+    return {
+      start: "date_trunc('month', timezone('America/Sao_Paulo', now()))",
+      end: "date_trunc('month', timezone('America/Sao_Paulo', now())) + interval '1 month'",
+      step: "interval '1 day'",
+      trunc: 'day',
+      label: "to_char(bucket, 'DD/MM')",
+    };
+  }
+  return {
+    start: "date_trunc('year', timezone('America/Sao_Paulo', now()))",
+    end: "date_trunc('year', timezone('America/Sao_Paulo', now())) + interval '1 year'",
+    step: "interval '1 month'",
+    trunc: 'month',
+    label: "to_char(bucket, 'MM/YYYY')",
+  };
+}
+
+export async function adminUsage(
+  pool: Database,
+  period: AdminUsagePeriod,
+): Promise<AdminUsageMetrics> {
+  const config = usagePeriodSql(period);
+  const result = await pool.query<{
+    bucket: string;
+    label: string;
+    credits_used: string;
+    input_tokens: string;
+    output_tokens: string;
+  }>(`
+    WITH bounds AS (
+      SELECT ${config.start} AS start_at, ${config.end} AS end_at
+    ),
+    buckets AS (
+      SELECT generate_series(start_at, end_at - ${config.step}, ${config.step}) AS bucket
+      FROM bounds
+    ),
+    credit_usage AS (
+      SELECT
+        date_trunc('${config.trunc}', timezone('America/Sao_Paulo', created_at)) AS bucket,
+        SUM(-amount)::bigint AS credits_used
+      FROM credit_ledger, bounds
+      WHERE reason='consume'
+        AND created_at >= start_at AT TIME ZONE 'America/Sao_Paulo'
+        AND created_at < end_at AT TIME ZONE 'America/Sao_Paulo'
+      GROUP BY 1
+    ),
+    token_usage AS (
+      SELECT
+        date_trunc('${config.trunc}', timezone('America/Sao_Paulo', created_at)) AS bucket,
+        SUM(input_tokens)::bigint AS input_tokens,
+        SUM(output_tokens)::bigint AS output_tokens
+      FROM openai_usage, bounds
+      WHERE created_at >= start_at AT TIME ZONE 'America/Sao_Paulo'
+        AND created_at < end_at AT TIME ZONE 'America/Sao_Paulo'
+      GROUP BY 1
+    )
+    SELECT
+      buckets.bucket::text,
+      ${config.label} AS label,
+      COALESCE(credit_usage.credits_used,0)::text AS credits_used,
+      COALESCE(token_usage.input_tokens,0)::text AS input_tokens,
+      COALESCE(token_usage.output_tokens,0)::text AS output_tokens
+    FROM buckets
+    LEFT JOIN credit_usage USING(bucket)
+    LEFT JOIN token_usage USING(bucket)
+    ORDER BY buckets.bucket
+  `);
+
+  const points = result.rows.map((row) => ({
+    bucket: row.bucket,
+    label: row.label,
+    creditsUsed: toNumber(row.credits_used),
+    inputTokens: toNumber(row.input_tokens),
+    outputTokens: toNumber(row.output_tokens),
+  }));
+
+  return {
+    period,
+    creditsUsed: points.reduce((total, item) => total + item.creditsUsed, 0),
+    inputTokens: points.reduce((total, item) => total + item.inputTokens, 0),
+    outputTokens: points.reduce((total, item) => total + item.outputTokens, 0),
+    points,
+  };
 }
 
 function maskCpf(cpf: string | null): string | null {
@@ -76,30 +205,6 @@ export async function adminDashboard(pool: Database): Promise<AdminDashboard> {
     FROM credit_ledger, boundaries
   `);
 
-  const daily = await pool.query<{ day: string; used: string }>(`
-    WITH days AS (
-      SELECT generate_series(
-        (timezone('America/Sao_Paulo', now())::date - interval '29 days')::date,
-        timezone('America/Sao_Paulo', now())::date,
-        interval '1 day'
-      )::date AS day
-    ),
-    usage AS (
-      SELECT
-        timezone('America/Sao_Paulo', created_at)::date AS day,
-        SUM(-amount)::int AS used
-      FROM credit_ledger
-      WHERE reason='consume'
-        AND created_at >= (timezone('America/Sao_Paulo', now())::date - interval '29 days')
-          AT TIME ZONE 'America/Sao_Paulo'
-      GROUP BY 1
-    )
-    SELECT days.day::text, COALESCE(usage.used,0)::text AS used
-    FROM days
-    LEFT JOIN usage USING(day)
-    ORDER BY days.day
-  `);
-
   const u = users.rows[0]!;
   const c = credits.rows[0]!;
   return {
@@ -116,7 +221,6 @@ export async function adminDashboard(pool: Database): Promise<AdminDashboard> {
       grantedMonth: toNumber(c.granted_month),
       totalBalance: toNumber(c.total_balance),
     },
-    usageByDay: daily.rows.map((row) => ({ day: row.day, used: toNumber(row.used) })),
   };
 }
 

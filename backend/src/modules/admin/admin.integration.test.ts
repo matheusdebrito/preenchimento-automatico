@@ -6,6 +6,7 @@ import { connectDatabase } from '../auth/db.js';
 import type { Database } from '../auth/db.js';
 import { hashPassword } from '../auth/crypto.js';
 import { changeUserStatus, setUserRoleByEmailFromCli } from './admin-service.js';
+import { recordOpenAiUsage } from '../jobs/openai-usage.js';
 import type { AppEnv } from '../../config/env.js';
 
 const url = process.env.DATABASE_TEST_URL;
@@ -126,13 +127,20 @@ describePg('PostgreSQL: painel administrativo', () => {
   });
 
   it('nega todas as APIs administrativas a usuário comum', async () => {
-    const response = await app.inject({
+    const dashboard = await app.inject({
       method: 'GET',
       url: '/api/admin/dashboard',
       headers: { cookie: userCookie },
     });
-    expect(response.statusCode).toBe(403);
-    expect(response.body).not.toContain(adminEmail);
+    expect(dashboard.statusCode).toBe(403);
+    expect(dashboard.body).not.toContain(adminEmail);
+
+    const usage = await app.inject({
+      method: 'GET',
+      url: '/api/admin/usage?period=7d',
+      headers: { cookie: userCookie },
+    });
+    expect(usage.statusCode).toBe(403);
   });
 
   it('lista usuários e nunca devolve CPF completo', async () => {
@@ -245,6 +253,66 @@ describePg('PostgreSQL: painel administrativo', () => {
     }
   });
 
+
+  it('agrega créditos e tokens por hoje, 7 dias, mês e ano', async () => {
+    await recordOpenAiUsage(pool, {
+      userId,
+      jobId: randomUUID(),
+      model: 'gpt-5.4-mini-2026-03-17',
+      inputTokens: 120,
+      outputTokens: 30,
+      totalTokens: 150,
+    });
+    await pool.query(
+      `INSERT INTO credit_ledger(id,user_id,amount,reason,idempotency_key)
+       VALUES($1,$2,-1,'consume',$3)`,
+      [randomUUID(), userId, 'usage-test-' + randomUUID()],
+    );
+
+    const expectations: Array<{period:string;length:(value:number)=>boolean}> = [
+      { period: 'today', length: (value) => value === 24 },
+      { period: '7d', length: (value) => value === 7 },
+      { period: 'month', length: (value) => value >= 28 && value <= 31 },
+      { period: 'year', length: (value) => value === 12 },
+    ];
+
+    for (const expected of expectations) {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/usage?period=' + expected.period,
+        headers: { cookie: adminCookie },
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      const body = response.json<{
+        period:string;
+        creditsUsed:number;
+        inputTokens:number;
+        outputTokens:number;
+        points:Array<{
+          creditsUsed:number;
+          inputTokens:number;
+          outputTokens:number;
+        }>;
+      }>();
+      expect(body.period).toBe(expected.period);
+      expect(expected.length(body.points.length)).toBe(true);
+      expect(body.creditsUsed).toBeGreaterThanOrEqual(1);
+      expect(body.inputTokens).toBeGreaterThanOrEqual(120);
+      expect(body.outputTokens).toBeGreaterThanOrEqual(30);
+      expect(body.points.reduce((sum, point) => sum + point.inputTokens, 0))
+        .toBe(body.inputTokens);
+      expect(body.points.reduce((sum, point) => sum + point.outputTokens, 0))
+        .toBe(body.outputTokens);
+    }
+
+    const invalid = await app.inject({
+      method: 'GET',
+      url: '/api/admin/usage?period=forever',
+      headers: { cookie: adminCookie },
+    });
+    expect(invalid.statusCode).toBe(400);
+  });
+
   it('entrega métricas e trilha de auditoria ao administrador', async () => {
     const dashboard = await app.inject({
       method: 'GET',
@@ -255,12 +323,10 @@ describePg('PostgreSQL: painel administrativo', () => {
     const metrics = dashboard.json<{
       users:{total:number};
       credits:{grantedMonth:number;totalBalance:number};
-      usageByDay:Array<{day:string;used:number}>;
     }>();
     expect(metrics.users.total).toBeGreaterThanOrEqual(2);
     expect(metrics.credits.grantedMonth).toBeGreaterThanOrEqual(12);
     expect(metrics.credits.totalBalance).toBeGreaterThanOrEqual(12);
-    expect(metrics.usageByDay).toHaveLength(30);
 
     const audit = await app.inject({
       method: 'GET',

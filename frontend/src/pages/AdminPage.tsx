@@ -10,6 +10,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 type UserStatus = 'ACTIVE' | 'BLOCKED' | 'PENDING';
 type UserRole = 'USER' | 'ADMIN';
+type UsagePeriod = 'today' | '7d' | 'month' | 'year';
 
 interface Dashboard {
   users: { total:number; active:number; blocked:number; pending:number };
@@ -20,7 +21,20 @@ interface Dashboard {
     grantedMonth:number;
     totalBalance:number;
   };
-  usageByDay: Array<{day:string;used:number}>;
+}
+
+interface UsageMetrics {
+  period: UsagePeriod;
+  creditsUsed: number;
+  inputTokens: number;
+  outputTokens: number;
+  points: Array<{
+    bucket:string;
+    label:string;
+    creditsUsed:number;
+    inputTokens:number;
+    outputTokens:number;
+  }>;
 }
 
 interface AdminUser {
@@ -103,10 +117,23 @@ async function readAdminPage(
   };
 }
 
+function periodLabel(period: UsagePeriod): string {
+  if (period === 'today') return 'Hoje';
+  if (period === '7d') return 'Últimos 7 dias';
+  if (period === 'month') return 'Mês';
+  return 'Ano';
+}
+
+async function readAdminUsage(period: UsagePeriod): Promise<UsageMetrics> {
+  return api<UsageMetrics>('/api/admin/usage?period=' + encodeURIComponent(period));
+}
+
 export function AdminPage() {
   useDocumentTitle('Administração');
   const { session } = useAuth();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [usagePeriod, setUsagePeriod] = useState<UsagePeriod>('7d');
+  const [usage, setUsage] = useState<UsageMetrics | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [page, setPage] = useState(1);
@@ -160,9 +187,28 @@ export function AdminPage() {
     return () => { active = false; };
   }, [appliedQuery, appliedRole, appliedStatus, currentUser, page]);
 
-  const maxDaily = useMemo(
-    () => Math.max(1, ...(dashboard?.usageByDay.map((item) => item.used) ?? [1])),
-    [dashboard],
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'ADMIN') return;
+    let active = true;
+    void readAdminUsage(usagePeriod)
+      .then((data) => {
+        if (active) setUsage(data);
+      })
+      .catch(() => {
+        if (active) setError('Não foi possível carregar as métricas de uso.');
+      });
+    return () => { active = false; };
+  }, [currentUser, usagePeriod]);
+
+  const maxCredits = useMemo(
+    () => Math.max(1, ...(usage?.points.map((item) => item.creditsUsed) ?? [1])),
+    [usage],
+  );
+  const maxTokens = useMemo(
+    () => Math.max(1, ...(usage?.points.flatMap((item) => [
+      item.inputTokens, item.outputTokens,
+    ]) ?? [1])),
+    [usage],
   );
 
   if (session.status === 'loading') {
@@ -253,20 +299,96 @@ export function AdminPage() {
               </section>
 
               <section className="account-panel" aria-labelledby="usage-title">
-                <h2 className="account-panel__title" id="usage-title">Uso diário — últimos 30 dias</h2>
-                <div className="admin-usage-chart">
-                  {dashboard.usageByDay.map((item) => (
-                    <div className="admin-usage-row" key={item.day}>
-                      <time dateTime={item.day}>
-                        {new Intl.DateTimeFormat('pt-BR', {day:'2-digit',month:'2-digit'}).format(
-                          new Date(item.day + 'T12:00:00'),
-                        )}
-                      </time>
-                      <progress value={item.used} max={maxDaily} aria-label={item.used + ' créditos usados'} />
-                      <strong>{item.used}</strong>
-                    </div>
-                  ))}
+                <div className="admin-section-head">
+                  <div>
+                    <h2 className="account-panel__title" id="usage-title">Uso da plataforma</h2>
+                    <p className="account-panel__text">
+                      Créditos consumidos e tokens OpenAI no período selecionado.
+                    </p>
+                  </div>
+                  <div className="admin-period-tabs" role="group" aria-label="Período dos gráficos">
+                    {([
+                      ['today', 'Hoje'],
+                      ['7d', 'Últimos 7 dias'],
+                      ['month', 'Mês'],
+                      ['year', 'Ano'],
+                    ] as const).map(([value, label]) => (
+                      <button key={value} type="button"
+                        className={usagePeriod === value
+                          ? 'admin-period-tab admin-period-tab--active'
+                          : 'admin-period-tab'}
+                        aria-pressed={usagePeriod === value}
+                        onClick={() => setUsagePeriod(value)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {usage ? (
+                  <>
+                    <div className="admin-token-summary">
+                      <div>
+                        <span>Tokens de entrada · {periodLabel(usage.period)}</span>
+                        <strong>{usage.inputTokens.toLocaleString('pt-BR')}</strong>
+                      </div>
+                      <div>
+                        <span>Tokens de saída · {periodLabel(usage.period)}</span>
+                        <strong>{usage.outputTokens.toLocaleString('pt-BR')}</strong>
+                      </div>
+                    </div>
+
+                    <div className="admin-chart-grid">
+                      <section className="admin-chart-card" aria-labelledby="credits-chart-title">
+                        <div>
+                          <h3 id="credits-chart-title">Créditos utilizados</h3>
+                          <p>{usage.creditsUsed.toLocaleString('pt-BR')} crédito(s) consumido(s)</p>
+                        </div>
+                        <div className="admin-column-chart" role="img"
+                          aria-label={'Créditos utilizados — ' + periodLabel(usage.period)}>
+                          {usage.points.map((item) => (
+                            <div className="admin-column-group" key={item.bucket}
+                              title={item.label + ': ' + item.creditsUsed + ' créditos'}>
+                              <div className="admin-column-value">{item.creditsUsed}</div>
+                              <div className="admin-column-track">
+                                <span className="admin-column admin-column--credits"
+                                  style={{height: (item.creditsUsed / maxCredits * 100) + '%'}} />
+                              </div>
+                              <span className="admin-column-label">{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="admin-chart-card" aria-labelledby="tokens-chart-title">
+                        <div>
+                          <h3 id="tokens-chart-title">Tokens OpenAI</h3>
+                          <p>Entrada e saída por período</p>
+                        </div>
+                        <div className="admin-chart-legend" aria-hidden="true">
+                          <span><i className="admin-legend-input" /> Entrada</span>
+                          <span><i className="admin-legend-output" /> Saída</span>
+                        </div>
+                        <div className="admin-column-chart admin-column-chart--tokens" role="img"
+                          aria-label={'Tokens OpenAI de entrada e saída — ' + periodLabel(usage.period)}>
+                          {usage.points.map((item) => (
+                            <div className="admin-column-group" key={item.bucket}
+                              title={item.label + ': ' + item.inputTokens +
+                                ' input, ' + item.outputTokens + ' output'}>
+                              <div className="admin-token-columns">
+                                <span className="admin-column admin-column--input"
+                                  style={{height: (item.inputTokens / maxTokens * 100) + '%'}} />
+                                <span className="admin-column admin-column--output"
+                                  style={{height: (item.outputTokens / maxTokens * 100) + '%'}} />
+                              </div>
+                              <span className="admin-column-label">{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  </>
+                ) : <Notice tone="info">Carregando métricas de uso…</Notice>}
               </section>
             </>
           ) : null}
