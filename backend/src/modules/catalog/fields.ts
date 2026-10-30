@@ -56,7 +56,6 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'seller.parent1Name', label: 'Filiação do vendedor - primeiro nome observado', valueKind: 'text' },
   { id: 'seller.parent2Name', label: 'Filiação do vendedor - segundo nome observado', valueKind: 'text' },
   { id: 'seller.documentOrigin', label: 'Documento de origem da identidade do vendedor', valueKind: 'text' },
-  { id: 'process.transferOwnership', label: 'Transferência de propriedade', valueKind: 'text' },
   { id: 'process.inscription', label: 'Inscrição da embarcação', valueKind: 'boolean' },
   { id: 'process.transferProperty', label: 'Transferência de propriedade da embarcação', valueKind: 'boolean' },
   { id: 'process.transferJurisdiction', label: 'Transferência de jurisdição', valueKind: 'boolean' },
