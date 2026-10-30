@@ -10,7 +10,7 @@ Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnico
 
 Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, arquivos enviados, dados extraídos ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual inclui consolidar a arquitetura reutilizável e auditar PDFs contra as NORMAM-211/212 fornecidas. A análise documental foi migrada para a OpenAI Responses API; Paddleanálise documental, Tesseract, parsers OCR locais, página /ocr e endpoint de inspeção foram removidos nesta branch. A API OpenAI exige OPENAI_API_KEY no backend; os testes automatizados usam respostas simuladas. Nenhum merge, CI final ou homologação com API real foi executado ainda. A auditoria normativa revogou a antiga aprovação do 3-C incorreto; os portões de produção continuam vinculantes.
+A autorização atual inclui consolidar a arquitetura reutilizável e auditar PDFs contra as NORMAM-211/212 fornecidas. A análise documental foi migrada para a OpenAI Responses API; PaddleOCR, Tesseract, parsers OCR locais, página /ocr e endpoint de inspeção foram removidos nesta branch. A API OpenAI exige OPENAI_API_KEY no backend; os testes automatizados usam respostas simuladas. Nenhum merge, CI final ou homologação com API real foi executado ainda. A auditoria normativa revogou a antiga aprovação do 3-C incorreto; os portões de produção continuam vinculantes.
 
 ## 1. Quadro geral de progresso
 
