@@ -83,7 +83,8 @@ describe('ServiceCategoryPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Arrais, Mestre e Capitão' })).toBeTruthy();
     expect((await screen.findByRole('link', { name: /Inscrição para exame de amador/ })).getAttribute('href'))
       .toBe('/preencher-real/inscricao-exame-amador');
-    expect((await screen.findByRole('link', { name: /^Renovação da CHA$/ })).getAttribute('href'))
+    const renewalHeading = await screen.findByRole('heading', { level: 2, name: 'Renovação da CHA' });
+    expect(renewalHeading.closest('a')?.getAttribute('href'))
       .toBe('/preencher-real/renovacao-cha-amador');
     expect((await screen.findByRole('link', { name: /Emissão de CHA de Veleiro/ })).getAttribute('href'))
       .toBe('/preencher-real/emissao-cha-veleiro');
