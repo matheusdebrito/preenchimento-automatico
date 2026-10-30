@@ -21,7 +21,6 @@ interface Dashboard {
     grantedMonth:number;
     totalBalance:number;
   };
-  usageByDay: Array<{day:string;used:number}>;
 }
 
 interface UsageMetrics {
