@@ -8,7 +8,6 @@ import type {
 } from './contracts.js';
 import {
   APPLICANT_IDENTITY_FIELDS,
-  NO_AUTOMATIC_FIELDS,
   RESIDENCE_PROOF_FIELDS,
 } from './document-field-policies.js';
 
@@ -32,30 +31,6 @@ const motonautaDeclarationQuestion: ServiceQuestion = {
 
 const commonDocuments: readonly DocumentRequirement[] = [
   {
-    id: 'training-certificate-arrais',
-    label: 'Atestado de Treinamento Náutico para Arrais-Amador',
-    description: 'Anexo 5-E. Aplicável à inscrição inicial para Arrais-Amador.',
-    required: false,
-    conditions: [{ questionId: 'amateurCategory', equals: 'arrais' }],
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
-    id: 'current-cha-prerequisite',
-    label: 'CHA atual da categoria anterior',
-    description: 'Arrais válido para Mestre; Mestre válido para Capitão.',
-    required: false,
-    conditions: [{ questionId: 'amateurCategory', oneOf: ['mestre', 'capitao'] }],
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
     id: 'applicant-identity',
     label: 'Documento oficial de identificação',
     description: 'RG, CIN ou CNH. O arquivo é opcional e pode sugerir dados para revisão.',
@@ -66,7 +41,6 @@ const commonDocuments: readonly DocumentRequirement[] = [
       allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
     },
   },
-
   {
     id: 'residence-proof',
     label: 'Comprovante de residência',
@@ -77,28 +51,7 @@ const commonDocuments: readonly DocumentRequirement[] = [
       allowedFieldIds: RESIDENCE_PROOF_FIELDS,
     },
   },
-  {
-    id: 'medical-or-cnh',
-    label: 'Atestado médico ou CNH válida',
-    description: 'A NORMAM permite dispensar o atestado médico quando apresentada CNH válida.',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
-    id: 'gru-receipt',
-    label: 'Comprovante de pagamento da GRU',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-];
+]
 
 export const amateurForms: readonly FormDefinition[] = [
   {
