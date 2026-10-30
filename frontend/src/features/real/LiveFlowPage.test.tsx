@@ -641,7 +641,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByText(/não foi possível ler o documento/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByText(/Existem campos em branco/i)).toBeTruthy();
-    expect(screen.getByText(/Nome completo/)).toBeTruthy();
+    expect(screen.getByText(/Campos em branco: Nome completo, CPF/i)).toBeTruthy();
     expect(reviewAttempts).toBe(0);
 
     await user.type(screen.getByLabelText(/Nome completo/) as HTMLInputElement, 'MARIA DE SOUZA');
