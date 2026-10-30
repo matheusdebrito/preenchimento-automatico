@@ -137,12 +137,15 @@ describe('official form map coordinates', () => {
       }],
       ['transferencia-propriedade-embarcacao', {
         vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+        transferTarget: 'propriedade',
       }],
-      ['transferencia-jurisdicao-embarcacao', {
+      ['transferencia-propriedade-embarcacao', {
         vesselType: 'embarcacao', vesselBand: 'maior_6_ate_12m', tieSituation: 'regular',
+        transferTarget: 'jurisdicao',
       }],
-      ['transferencia-propriedade-jurisdicao-embarcacao', {
+      ['transferencia-propriedade-embarcacao', {
         vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'extraviado',
+        transferTarget: 'propriedade_jurisdicao',
       }],
       ['renovacao-tie-embarcacao', {
         vesselType: 'embarcacao', tieSituation: 'regular', dataChanged: 'nao',
@@ -206,11 +209,12 @@ describe('official form map coordinates', () => {
     const cases = [
       ['inscricao-embarcacao', { vesselType: 'moto_aquatica' }],
       ['transferencia-propriedade-embarcacao',
-        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
-      ['transferencia-jurisdicao-embarcacao',
-        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
-      ['transferencia-propriedade-jurisdicao-embarcacao',
-        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+        { vesselType: 'moto_aquatica', tieSituation: 'regular', transferTarget: 'propriedade' }],
+      ['transferencia-propriedade-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular', transferTarget: 'jurisdicao' }],
+      ['transferencia-propriedade-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular',
+          transferTarget: 'propriedade_jurisdicao' }],
       ['renovacao-tie-embarcacao', {
         vesselType: 'moto_aquatica', tieSituation: 'regular',
         motoCharacteristicsChanged: 'nao',
