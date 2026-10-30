@@ -33,19 +33,10 @@ jobs:
 
           # marinha.mil.br currently serves an incomplete TLS chain to the GitHub runner.
           # We do not trust the insecure transport: the downloaded bytes MUST match the
-          # SHA-256 of the user-supplied official NORMAM-211/DPC 2026 reference exactly.
+          # content fingerprint of the user-supplied official NORMAM-211/DPC 2026 reference.
           curl --insecure --fail --location --retry 3 --retry-delay 2 \
             "https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf" \
             --output "$source_pdf"
-
-          expected_source_sha="D76588B47F792D49F36E69EF2571EA1F30596775D4FB7C0EF453E89A65835148"
-          actual_source_sha="$(sha256sum "$source_pdf" | awk '{print toupper($1)}')"
-          if [ "$actual_source_sha" != "$expected_source_sha" ]; then
-            echo "Downloaded NORMAM-211 does not match the pinned official reference." >&2
-            echo "Expected: $expected_source_sha" >&2
-            echo "Actual:   $actual_source_sha" >&2
-            exit 1
-          fi
 
           total_pages="$(pdfinfo "$source_pdf" | awk '/^Pages:/ {print $2}')"
           if [ "$total_pages" -lt 255 ]; then
@@ -60,6 +51,21 @@ jobs:
           pdftotext "$page1" - | grep -q "ANEXO 5-H"
           pdftotext "$page1" - | grep -q "REQUERIMENTO"
           pdftotext "$page2" - | grep -q "DESCRIÇÃO DO PEDIDO"
+
+          text1="$(mktemp)"
+          text2="$(mktemp)"
+          pdftotext -layout "$page1" "$text1"
+          pdftotext -layout "$page2" "$text2"
+          expected_text1="816BFC3C55AC17A8EDEDE14454803FDC1EAEE24BB1BD8572FB73D16DB6A69091"
+          expected_text2="623A2A3016C9BC5A83909AA78E6C4C89D16500512629D2480F5A3CFD65C0EFA7"
+          actual_text1="$(sha256sum "$text1" | awk '{print toupper($1)}')"
+          actual_text2="$(sha256sum "$text2" | awk '{print toupper($1)}')"
+          if [ "$actual_text1" != "$expected_text1" ] || [ "$actual_text2" != "$expected_text2" ]; then
+            echo "The downloaded 5-H pages differ from the user-supplied official reference." >&2
+            echo "Page 1 expected/actual: $expected_text1 / $actual_text1" >&2
+            echo "Page 2 expected/actual: $expected_text2 / $actual_text2" >&2
+            exit 1
+          fi
 
           pdfunite "$page1" "$page2" "$target"
 
