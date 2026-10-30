@@ -9,7 +9,7 @@ import { serviceFormValues } from './service-form-values.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-describe('official form map coordinates', () => {
+describe('versioned form map coordinates', () => {
   it('mantém todos os mapas homologados e o catálogo publicável', () => {
     expect(catalog.mappings).toHaveLength(21);
     expect(validateCatalog(catalog)).toEqual([]);
