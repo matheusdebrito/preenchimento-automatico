@@ -2,15 +2,15 @@
 
 > Atualização: 29/10/2026. Matriz serviço -> formulário revalidada contra as NORMAM-211/212 completas fornecidas pelo usuário e evidência operacional atual da Marinha. Os 14 serviços catalogados estão `AVAILABLE`, as 17 versões de formulário estão `VERIFIED` e os 17 mappings estão `APPROVED`. Moto Aquática usa os mesmos cards de embarcação, o Anexo 3-C vigente substituiu o modelo antigo e a inscrição em exame usa o 5-H sem marcar uma opção inexistente no formulário. O próximo portão é a execução dos gates automatizados da branch e o QA manual na aplicação web.
 >
-> O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de OCR abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
+> O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de análise documental abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
 ## 0. Protocolo de continuidade
 
 Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnicos. Conferir branch, alterações locais e último commit antes de editar; preservar trabalho do usuário. Inspecionar, planejar, implementar a menor alteração coesa, validar e registrar resultados reais. Não inventar testes executados nem marcar fases completas a partir de código escrito.
 
-Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, texto OCR ou valores reais. Testes automatizados e CI usam dados fictícios.
+Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a análise documental funcionar. Não versionar imagens/documentos pessoais, arquivos enviados, dados extraídos ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual inclui consolidar a arquitetura reutilizável, auditar os PDFs contra as NORMAM-211/212 completas fornecidas pelo usuário e evoluir OCR/document understanding, sem confundir disponibilidade para teste web com liberação de produção. O 3-C incorreto foi substituído pelo Anexo 3-C vigente e o logger temporário do antigo QA runtime foi removido. Os portões de segurança, OCR, pagamentos, infraestrutura e produção continuam vinculantes.
+A autorização atual inclui consolidar a arquitetura reutilizável e auditar os PDFs contra as NORMAM-211/212 completas fornecidas pelo usuário. A implementação OpenAI-only remove o PaddleOCR/Tesseract, parsers locais, sidecar Python e página de inspeção; PDFs/imagens são enviados diretamente à Responses API, com campos autorizados por documento/serviço, validação determinística e revisão humana. O 3-C incorreto foi substituído pelo Anexo 3-C vigente. A migração está em branch derivada da homologação do PR #56; não foi feito merge nem deploy. Os portões de segurança, privacidade, custos, infraestrutura e produção continuam vinculantes.
 
 ## 1. Quadro geral de progresso
 
@@ -22,8 +22,8 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [x] Concluída para o catálogo atual — 17/17 versões VERIFIED e 17/17 mappings APPROVED; novo serviço exige novo gate documental/visual |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade, TIE/TIEM e residência usam extração estruturada/semântica; venda ainda usa adaptador legado; corpus amplo pendente |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
+| 06 | Análise documental estruturada | 05 | [ ] Parcial — OpenAI Responses API como único provedor; testes simulados; homologação de precisão, custo, latência e privacidade ainda pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — revisão humana preservada; E2E/browser/mobile real e homologação OpenAI pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais | 09 e autorização | [ ] Pendente |
@@ -31,12 +31,12 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 12 | Segurança de produção e segredos | 11 | [ ] Pendente |
 | 13 | LGPD, políticas e retenção | 09, 11 e revisão responsável | [ ] Pendente |
 | 14 | Observabilidade, backup e recuperação | 11, 12 | [ ] Pendente |
-| 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
+| 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — medir tokens, custo por documento, latência, concorrência e limites da OpenAI |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
 | 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 14/14 serviços catalogados disponíveis e formulários homologados; gates automatizados desta branch e QA manual navegador/celular ainda pendentes antes de tratar a expansão como encerrada |
 
-**Correção de estado:** a Fase 06 permanece **Parcial** por qualidade/corpus/hardening do OCR, independentemente da homologação dos PDFs. A liberação dos 14 serviços para teste web não significa homologação de produção nem encerra os gates de OCR, segurança, E2E, carga ou infraestrutura.
+**Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 14 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
 
 ## 2. Checklists preservados das outras fases
 
@@ -47,6 +47,19 @@ Fases 07–09: seguir a [revisão integrada e suas pendências](PROJECT_TRACKER_
 Fases 10–18 e expansão: todos os critérios, dependências e autorizações anteriores permanecem no [plano histórico completo](PROJECT_TRACKER_HISTORY_2026-10-27.md). Não avançar de fase apenas por esta correção.
 
 ## 3. Fase 06 — checklist atual
+
+**Implementação vigente — OpenAI-only (30/10/2026):**
+- [x] Integrar o extrator OpenAI Responses API como único provedor de interpretação documental.
+- [x] Remover serviço PaddleOCR/Tesseract, parsers locais, sidecar Python, endpoint e página de inspeção.
+- [x] Enviar somente arquivos com campos aplicáveis e autorizados por `allowedFieldIds`.
+- [x] Preservar validação determinística, proveniência, resolução de conflitos e revisão humana.
+- [x] Atualizar Compose, ambiente de exemplo, documentação e CI sem chamadas reais à OpenAI nos testes.
+- [ ] Confirmar CI completo na branch empilhada sobre o PR #56; corrigir regressões reais sem enfraquecer as expectativas.
+- [ ] Homologar documentos sintéticos e amostras autorizadas por tipo e campo; medir precisão, falsos positivos/negativos, latência, tokens e custo.
+- [ ] Confirmar limites de tamanho/páginas, timeout, concorrência, falhas da API, retenção temporária e avisos de privacidade antes de produção.
+
+**Histórico:** os itens seguintes registram a implementação OCR anterior e foram preservados como trilha de auditoria; não descrevem o runtime atual.
+
 
 As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, venda, mapeamento, conflitos e diagnósticos continuam no [checklist anterior](PROJECT_TRACKER_HISTORY_2026-10-27.md#fase-06--pdf-textual-ocr-e-extração-estruturada). Os marcos antigos de leitura de identidade descrevem implementações substituídas pela correção atual, não o algoritmo vigente.
 
@@ -210,7 +223,7 @@ caixas SIM/NÃO manuais em vez de inferir informação ausente. Fotos da embarca
 também foram retiradas do upload da aplicação, sem afirmar dispensa no
 procedimento oficial.
 
-**OCR/document understanding:** identidade passou a extrair data de nascimento;
+**Análise documental:** histórico anterior da implementação OCR; substituído pela arquitetura OpenAI-only descrita acima.
 TIE/TIEM passou a reconhecer tipo, área de navegação, pontal, material do casco
 e tipo de propulsão nos layouts confirmados. O modelo `tie digital 2.pdf`
 entrou no teste de referência. Revisão humana permanece obrigatória.
