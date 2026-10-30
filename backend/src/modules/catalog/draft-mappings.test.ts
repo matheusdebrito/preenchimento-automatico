@@ -153,10 +153,7 @@ describe('official form map coordinates', () => {
       ['alteracao-dados-embarcacao', {
         vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
         responsibilityTermCase: 'construcao_artesanal',
-      }],
-      ['alteracao-motor-embarcacao', {
-        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
-        responsibilityTermCase: 'nao', rowToMotorConversion: 'nao',
+        boatAlterationTarget: 'dados_e_motor', rowToMotorConversion: 'nao',
       }],
       ['comunicacao-venda-embarcacao', { vesselType: 'embarcacao' }],
       ['inscricao-exame-amador', { amateurCategory: 'arrais' }],
@@ -228,10 +225,8 @@ describe('official form map coordinates', () => {
       }],
       ['alteracao-dados-embarcacao', {
         vesselType: 'moto_aquatica', tieSituation: 'regular',
-        motoDataChangeTarget: 'ambos',
+        motoAlterationTarget: 'ambos_motor',
       }],
-      ['alteracao-motor-embarcacao',
-        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
       ['comunicacao-venda-embarcacao', { vesselType: 'moto_aquatica' }],
     ] as const;
 
