@@ -773,7 +773,12 @@ describe('OpenAI document extractor', () => {
     });
 
     expect(calls).toBe(2);
-    expect(retryBody).toContain('"knownSubtype":"cin"');
+    const parsedRetry = JSON.parse(retryBody) as {
+      input: Array<{ content: Array<{ type: string; text?: string }> }>;
+    };
+    const retryPrompt = parsedRetry.input[0]?.content
+      .find((item) => item.type === 'input_text')?.text ?? '';
+    expect(retryPrompt).toContain('"knownSubtype":"cin"');
     expect(result.documentSubtypes).toEqual({ 'buyer-identity': 'cin' });
     expect(result.evidence).toEqual([
       expect.objectContaining({ fieldId: 'person.cpf', value: '529.982.247-25' }),
