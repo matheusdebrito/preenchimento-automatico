@@ -7,17 +7,12 @@ import { validateMappedFieldValues } from './field-validation.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-describe('draft form map coordinates', () => {
-  it('all draft placements refer to known semantic fields and remain unpublished', () => {
-    expect(catalog.mappings).toHaveLength(14);
+describe('official form map coordinates', () => {
+  it('mantém todos os mapas homologados e o catálogo publicável', () => {
+    expect(catalog.mappings).toHaveLength(17);
     expect(validateCatalog(catalog)).toEqual([]);
-    expect(catalog.mappings.filter((m) =>
-      m.formVersionId.includes('-er-2026-')).every((m) =>
-      m.status === 'TESTED')).toBe(true);
-    expect(catalog.mappings.filter((m) =>
-      !m.formVersionId.includes('-er-2026-')).every((m) =>
-      m.status === 'DRAFT')).toBe(true);
-    expect(catalog.services[0]?.status).toBe('DRAFT');
+    expect(catalog.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
+    expect(catalog.services.every((service) => service.status === 'AVAILABLE')).toBe(true);
   });
   it('positions stay within the dimensions of the real official PDF pages', async () => {
     for (const mapping of catalog.mappings) {
@@ -52,7 +47,7 @@ describe('draft form map coordinates', () => {
       'declaracao-perda-tie-er-2026-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name', 'vessel.registration'],
       'comunicacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
       'autorizacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
-      'termo-responsabilidade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'termo-responsabilidade-er-2026-v1': ['vessel.name', 'vessel.builderName'],
     };
     expect(catalog.mappings).toHaveLength(
       catalog.versions.filter((version) => version.status === 'VERIFIED').length,
