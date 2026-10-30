@@ -53,21 +53,9 @@ function fieldApplies(
   answers: Readonly<Record<string, string>>,
 ): boolean {
   if (relation.excludedReviewFieldIds?.includes(fieldId)) return false;
-  return matches(relation.reviewFieldConditions?.[fieldId], answers);
-}
-
-function isUserReviewField(fieldId: string): boolean {
-  return !fieldId.startsWith('process.') ||
-    fieldId === 'process.place' ||
-    fieldId === 'process.date';
-}
-
-function fieldApplies(
-  relation: CatalogDefinition['serviceForms'][number],
-  fieldId: string,
-  answers: Readonly<Record<string, string>>,
-): boolean {
-  if (relation.excludedReviewFieldIds?.includes(fieldId)) return false;
+  if (Object.hasOwn(relation.fixedValues ?? {}, fieldId) ||
+    Object.hasOwn(relation.answerBindings ?? {}, fieldId) ||
+    Object.hasOwn(relation.answerValueMappings ?? {}, fieldId)) return false;
   return matches(relation.reviewFieldConditions?.[fieldId], answers);
 }
 
