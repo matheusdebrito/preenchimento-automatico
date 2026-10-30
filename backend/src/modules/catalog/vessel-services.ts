@@ -8,6 +8,7 @@ import type {
 } from './contracts.js';
 import {
   APPLICANT_IDENTITY_FIELDS,
+  BUYER_IDENTITY_FIELDS,
   MOTOR_DOCUMENT_FIELDS,
   RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
@@ -132,7 +133,7 @@ const buyerIdentity: DocumentRequirement = {
   extraction: {
     documentType: 'identity',
     subjectRole: 'person',
-    allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
+    allowedFieldIds: BUYER_IDENTITY_FIELDS,
   },
 };
 
