@@ -618,7 +618,15 @@ export function LiveFlowPage() {
                                                   : value === 'roubada' ? 'Roubada'
                                                     : value === 'furtada' ? 'Furtada'
                                                       : value === 'danificada' ? 'Danificada'
-                                                        : value.replaceAll('_',' ');
+                                                        : value === 'perda' ? 'Perda'
+                                                          : value === 'roubo' ? 'Roubo'
+                                                            : value === 'extravio' ? 'Extravio'
+                                                              : value === 'dados_embarcacao' ? 'Dados da moto aquática'
+                                                                : value === 'dados_proprietario' ? 'Dados do proprietário'
+                                                                  : value === 'ambos' ? 'Moto aquática e proprietário'
+                                                                    : value === 'estaleiro_extinto' ? 'Estaleiro comprovadamente extinto'
+                                                                      : value === 'construcao_artesanal' ? 'Construção artesanal'
+                                                                        : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
                             {label}{unavailable ? ' (em validação)' : ''}
                           </option>;
