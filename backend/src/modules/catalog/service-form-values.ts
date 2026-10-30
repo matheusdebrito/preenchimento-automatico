@@ -27,9 +27,10 @@ export function serviceFormValues(
     cityState,
     reviewedValues['person.postalCode'],
   ].filter(Boolean).join(', ');
-  const derivedValues = fullAddress && !reviewedValues['person.fullAddress']
-    ? { 'person.fullAddress': fullAddress }
-    : {};
+  const derivedValues: Record<string, string> =
+    fullAddress && !reviewedValues['person.fullAddress']
+      ? { 'person.fullAddress': fullAddress }
+      : {};
 
   return {
     ...reviewedValues,
