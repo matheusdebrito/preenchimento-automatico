@@ -62,6 +62,10 @@ Enquanto a sessão temporária estiver válida, atualizar a mesma aba permite re
 
 **Armazenamento temporário:** quando configurar `TEMP_DOCUMENT_ROOT` manualmente, use uma pasta absoluta, exclusiva e privada, nunca uma raiz genérica (`/tmp`, `/`, a raiz do repositório) nem um link simbólico. A aplicação deve falhar em caso de configuração insegura.
 
+## Administração
+
+O painel administrativo, gerenciamento de roles, auditoria e comandos de manutenção estão documentados em [docs/ADMINISTRACAO.md](docs/ADMINISTRACAO.md).
+
 ## Ambiente local
 
 Pré-requisitos: Node.js 24 LTS, npm compatível e Docker Compose.
