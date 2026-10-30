@@ -576,6 +576,7 @@ export function LiveFlowPage() {
           ) : (
             <section className="card card--padded live-form">
               <p className="eyebrow">Custo: {service.creditCost} crédito por processo</p>
+              <p className="lead">{service.description}</p>
               <Notice tone="info">Ferramenta independente. Não protocola documentos na Marinha e não substitui assinaturas, reconhecimento de firmas ou conferência.</Notice>
               {step === 'questions' ? (
                 <>
