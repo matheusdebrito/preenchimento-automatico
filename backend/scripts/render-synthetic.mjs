@@ -18,6 +18,7 @@ const synthetic = {
   'declarant.mobile': '21990000000',
   'declarant.email': 'teste@example.invalid',
   'vessel.authority': 'CAPITANIA DE TESTE',
+  'vessel.builderName': 'ESTALEIRO TESTE',
   'seller.identityType': 'RG',
   'seller.issueDate': '01/01/2020',
   'seller.apartment': 'CASA',
