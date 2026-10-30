@@ -11,7 +11,8 @@ import type { SessionUser } from '../features/auth/AuthProvider';
 
 export function AuthPage() {
   useDocumentTitle('Entrar');
-  const [register, setRegister] = useState(false);
+  const [params] = useSearchParams();
+  const [register, setRegister] = useState(() => params.get('modo') === 'cadastro');
   const [fullName, setFullName] = useState('');
   const [cpf, setCpf] = useState('');
   const [cellphone, setCellphone] = useState('');
@@ -21,7 +22,6 @@ export function AuthPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
-  const [params] = useSearchParams();
   const { session, acceptLogin, refreshSession } = useAuth();
   const next = params.get('next');
   const safeNext = next?.startsWith('/preencher-real/') && !next.startsWith('//')
