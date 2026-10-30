@@ -15,7 +15,7 @@ type Step = 'questions' | 'files' | 'review' | 'download';
 
 type ExtractionDiagnostic = {
   requirementId: string;
-  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
   engine?: 'openai';
 };
@@ -447,7 +447,7 @@ export function LiveFlowPage() {
   };
 
   const cancel = async () => {
-    // Cancellation is intentionally allowed while OCR is running on the files
+    // Cancellation is intentionally allowed while document analysis is running on the files
     // step. It remains blocked during generation/download accounting.
     if (busy && step !== 'files') return;
     cancelRequested.current = true;
@@ -739,7 +739,7 @@ export function LiveFlowPage() {
                   )}
                   {diagnostics.length > 0 ? (
                     <div className="live-ocr-report">
-                      <strong>Resultado da leitura por documento</strong>
+                      <strong>Resultado da análise por documento</strong>
                       <ul>
                         {diagnostics.map((item) => (
                           <li key={item.requirementId}>
@@ -747,9 +747,8 @@ export function LiveFlowPage() {
                               doc.id === item.requirementId)?.label ?? 'Documento enviado'}:
                             {' ' + (item.outcome === 'suggested'
                               ? item.suggestionCount + ' sugestão(ões) encontrada(s), sujeitas à revisão'
-                              : item.outcome === 'no_text' ? 'nenhum texto legível identificado na imagem'
+                              : item.outcome === 'no_text' ? 'não foi possível ler o documento'
                                 : item.outcome === 'not_analyzed' ? 'não há extração automática configurada'
-                                  : item.outcome === 'read_failed' ? 'a leitura deste arquivo falhou; os demais documentos foram preservados'
                                   : item.outcome === 'no_applicable_fields'
                                     ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
                                     : 'texto detectado, mas nenhum dado foi associado aos campos com segurança')}
