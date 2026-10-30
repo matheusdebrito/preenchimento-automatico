@@ -80,7 +80,7 @@ export const amateurVersions: readonly FormVersion[] = [
     regulation: 'NORMAM-211/DPC 2026, Anexo 5-H',
     sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
     verifiedAt: '2026-10-29',
-    sha256: '06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF',
+    sha256: 'E8E988F19C5E09C3307201003DD81ACF7932C964E25E4CD8B4262AC9369A1D9F',
     templatePath: 'backend/templates/requerimento-cha-amador/v1/original.pdf',
     pdfKind: 'STATIC',
     status: 'VERIFIED',
