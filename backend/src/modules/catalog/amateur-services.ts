@@ -235,6 +235,11 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-motonauta-2026-v1',
     order: 2,
     fixedValues: { 'process.motonautaRequest': 'renovacao_agregacao_mta' },
-    answerBindings: { 'process.motonautaDeclaration': 'motonautaDeclaration' },
+    answerValueMappings: {
+      'process.motonautaDeclaration': {
+        questionId: 'motonautaDeclaration',
+        values: { sim: 'true', nao: 'false' },
+      },
+    },
   },
 ];
