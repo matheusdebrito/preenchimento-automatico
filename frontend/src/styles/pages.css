@@ -1357,7 +1357,7 @@
 }
 
 /* OCR reports expose only counts and document requirement labels, never OCR text. */
-.live-ocr-report {
+.live-analysis-report {
   padding: 0.85rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
