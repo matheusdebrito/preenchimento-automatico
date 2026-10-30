@@ -106,6 +106,13 @@ function normalizeSimple(value: string): string {
   return value.normalize('NFC').replace(/\s+/g, ' ').trim();
 }
 
+function hasDisallowedControlCharacter(value: string): boolean {
+  return Array.from(value).some((character) => {
+    const code = character.charCodeAt(0);
+    return code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31);
+  });
+}
+
 function normalizeYesNo(value: string): string | null {
   const normalized = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .trim().toLowerCase();
@@ -127,7 +134,7 @@ function validateCandidateValue(
   field: OpenAiTargetField,
 ): string | null {
   const normalized = normalizeSimple(value);
-  if (!normalized || normalized.length > 500 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(normalized)) {
+  if (!normalized || normalized.length > 500 || hasDisallowedControlCharacter(normalized)) {
     return null;
   }
   if (field.validationRuleId === 'cpf') {
