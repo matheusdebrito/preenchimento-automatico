@@ -7,6 +7,8 @@ import {
   SALE_DOCUMENT_FIELDS,
   SELLER_IDENTITY_FIELDS,
   TIE_FIELDS,
+  fieldsAllowedForDetectedSubtype,
+  identityTypeValue,
 } from './document-field-policies.js';
 
 describe('document field source policies', () => {
@@ -61,4 +63,36 @@ describe('document field source policies', () => {
     expect(SALE_DOCUMENT_FIELDS).not.toContain('seller.address');
     expect(SALE_DOCUMENT_FIELDS).not.toContain('vessel.motorSerial');
   });
+
+  it('refina identidade por subtipo sem permitir origem documental em CIN/CNH', () => {
+    expect(fieldsAllowedForDetectedSubtype('identity', 'rg', APPLICANT_IDENTITY_FIELDS))
+      .toContain('person.documentOrigin');
+    expect(fieldsAllowedForDetectedSubtype('identity', 'cin', APPLICANT_IDENTITY_FIELDS))
+      .not.toContain('person.documentOrigin');
+    expect(fieldsAllowedForDetectedSubtype('identity', 'cnh', APPLICANT_IDENTITY_FIELDS))
+      .not.toContain('person.documentOrigin');
+    expect(identityTypeValue('rg')).toBe('RG');
+    expect(identityTypeValue('cin')).toBe('CIN');
+    expect(identityTypeValue('cnh')).toBe('CNH');
+  });
+
+  it('restringe endereço de proprietário ao TIE/TIEM legado e mantém construtor legado', () => {
+    const digital = fieldsAllowedForDetectedSubtype('tie', 'tie-digital', TIE_FIELDS);
+    const legacy = fieldsAllowedForDetectedSubtype('tie', 'tie-legacy', TIE_FIELDS);
+    expect(digital).toContain('registeredOwner.fullName');
+    expect(digital).not.toContain('registeredOwner.address');
+    expect(digital).not.toContain('coOwner.address');
+    expect(digital).not.toContain('vessel.builderName');
+    expect(legacy).toContain('registeredOwner.address');
+    expect(legacy).toContain('coOwner.address');
+    expect(legacy).toContain('vessel.builderName');
+  });
+
+  it('preserva política configurada quando o subtipo é desconhecido', () => {
+    expect(fieldsAllowedForDetectedSubtype('identity', 'unknown', BUYER_IDENTITY_FIELDS))
+      .toEqual(BUYER_IDENTITY_FIELDS);
+    expect(fieldsAllowedForDetectedSubtype('tie', 'unknown', TIE_FIELDS))
+      .toEqual(TIE_FIELDS);
+  });
+
 });

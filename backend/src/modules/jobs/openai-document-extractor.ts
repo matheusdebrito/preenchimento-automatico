@@ -1,6 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import { isValidBrazilianDate, isValidCpf } from '../catalog/field-validation.js';
+import {
+  fieldsAllowedForDetectedSubtype,
+  identityTypeValue,
+} from '../catalog/document-field-policies.js';
+import type { DetectedDocumentSubtype } from '../catalog/document-field-policies.js';
 import type { FieldEvidence } from '../document-understanding/contracts.js';
 import type { StoredDocument, ExtractionDiagnostic } from './job-store.js';
 
@@ -29,6 +34,8 @@ export interface OpenAiDocumentDescriptor {
   label: string;
   documentType?: string;
   subjectRole?: string;
+  /** Reuse a subtype already classified in the primary pass during contingency. */
+  detectedSubtype?: DetectedDocumentSubtype;
   /** Fields this source document is authorized to provide for this request. */
   allowedFieldIds: readonly string[];
 }
@@ -37,6 +44,7 @@ export interface OpenAiExtractionResult {
   evidence: FieldEvidence[];
   diagnostics: ExtractionDiagnostic[];
   model: string;
+  documentSubtypes: Readonly<Record<string, DetectedDocumentSubtype>>;
   usage?: {
     inputTokens?: number;
     outputTokens?: number;
@@ -69,11 +77,22 @@ const candidateSchema = z.object({
   confidence: z.enum(['high', 'medium']),
 });
 
+const documentSubtypeSchema = z.enum([
+  'rg',
+  'cin',
+  'cnh',
+  'tie-digital',
+  'tie-legacy',
+  'unknown',
+  'not-applicable',
+]);
+
 const structuredResultSchema = z.object({
   candidates: z.array(candidateSchema).max(100),
   documents: z.array(z.object({
     requirementId: z.string().min(1).max(100),
     status: z.enum(['readable', 'partial', 'unreadable']),
+    subtype: documentSubtypeSchema.optional().default('unknown'),
   })).max(24),
 });
 
@@ -240,10 +259,14 @@ function outputSchema(fieldIds: readonly string[], requirementIds: readonly stri
         items: {
           type: 'object',
           additionalProperties: false,
-          required: ['requirementId', 'status'],
+          required: ['requirementId', 'status', 'subtype'],
           properties: {
             requirementId: { type: 'string', enum: requirementIds },
             status: { type: 'string', enum: ['readable', 'partial', 'unreadable'] },
+            subtype: {
+              type: 'string',
+              enum: ['rg', 'cin', 'cnh', 'tie-digital', 'tie-legacy', 'unknown', 'not-applicable'],
+            },
           },
         },
       },
@@ -266,6 +289,7 @@ function extractionPrompt(
     label: item.label,
     documentType: item.documentType ?? 'unknown',
     subjectRole: item.subjectRole ?? 'unknown',
+    knownSubtype: item.detectedSubtype ?? null,
     allowedFieldIds: item.allowedFieldIds,
   }));
 
@@ -284,9 +308,14 @@ function extractionPrompt(
     '9. Cada candidate deve apontar para o requirementId do documento em que o valor está visível.',
     '9a. Para cada documento, retorne SOMENTE fieldIds presentes em allowedFieldIds daquele documento.',
     '10. Se documentos divergirem, retorne candidatos separados por documento; o backend resolverá o conflito.',
-    '11. Em RG, CIN ou CNH, quando os fieldIds correspondentes estiverem permitidos, extraia também o número da identidade/documento e o órgão emissor/expedidor que estejam claramente visíveis.',
-    '11a. Para número da identidade, não use CPF, número de segurança, código interno, número de formulário ou outro identificador que não esteja explicitamente associado ao documento de identidade.',
-    '11b. Para órgão emissor, preserve a sigla/texto visível (por exemplo SSP/UF ou DETRAN/UF) e nunca deduza o órgão apenas pela UF, pelo layout ou pelo tipo de documento.',
+    '11. Classifique cada documento: identidade como rg, cin ou cnh; TIE/TIEM como tie-digital ou tie-legacy; outros como not-applicable. Use unknown somente se realmente não for possível distinguir.',
+    '11a. Se knownSubtype estiver preenchido, preserve exatamente esse subtipo; ele foi classificado na tentativa principal.',
+    '11b. Em RG ou CNH, o número da identidade/documento só pode vir de um número explicitamente associado à identidade; nunca use CPF como identidade nesses subtipos.',
+    '11c. Na CIN, o CPF é o número único da identidade. Retorne o CPF normalmente; o backend deriva o campo de identidade de forma determinística.',
+    '11d. Não retorne identityType a partir de texto livre; o backend deriva RG, CIN ou CNH do subtipo classificado.',
+    '11e. Para órgão emissor/expedidor, preserve a sigla/texto visível e nunca deduza o órgão apenas pela UF, layout ou tipo.',
+    '11f. Em TIE digital, não invente endereço de proprietário/coproprietário se o bloco não existir. Em TIE/TIEM legado, extraia endereço somente quando estiver explicitamente impresso.',
+    '11g. vessel.motorCount só pode ser retornado quando a quantidade de motores estiver explicitamente indicada; nunca inferir 1 apenas porque um motor aparece no documento.',
     '12. Não produza comentários, explicações ou campos além do schema.',
     'Campos permitidos: ' + JSON.stringify(fieldList),
     'Documentos enviados: ' + JSON.stringify(documentList),
@@ -312,7 +341,7 @@ export async function extractDocumentsWithOpenAi(
   } = {},
 ): Promise<OpenAiExtractionResult> {
   if (documents.length === 0 || fields.length === 0) {
-    return { evidence: [], diagnostics: [], model: DEFAULT_MODEL };
+    return { evidence: [], diagnostics: [], model: DEFAULT_MODEL, documentSubtypes: {} };
   }
 
   const env = options.env ?? process.env;
@@ -396,11 +425,37 @@ export async function extractDocumentsWithOpenAi(
     item.document.requirementId,
     item,
   ]));
+  const documentStatuses = new Map<string, DocumentStatus>();
+  const documentSubtypes = new Map<string, DetectedDocumentSubtype>();
+  for (const item of parsed.documents) {
+    const source = allowedSources.get(item.requirementId);
+    if (!source || documentStatuses.has(item.requirementId)) continue;
+    documentStatuses.set(item.requirementId, item.status);
+    documentSubtypes.set(
+      item.requirementId,
+      source.detectedSubtype ?? item.subtype,
+    );
+  }
+
+  const allowedBySource = new Map<string, ReadonlySet<string>>();
+  for (const [requirementId, source] of allowedSources) {
+    const subtype = documentSubtypes.get(requirementId) ?? 'unknown';
+    allowedBySource.set(requirementId, new Set(fieldsAllowedForDetectedSubtype(
+      source.documentType,
+      subtype,
+      source.allowedFieldIds,
+    )));
+  }
+
   const evidence: FieldEvidence[] = [];
   for (const candidate of parsed.candidates) {
     const field = allowedFields.get(candidate.fieldId);
     const source = allowedSources.get(candidate.sourceRequirementId);
-    if (!field || !source || !source.allowedFieldIds.includes(field.id)) continue;
+    const subtypeAllowed = allowedBySource.get(candidate.sourceRequirementId);
+    if (!field || !source || !subtypeAllowed?.has(field.id)) continue;
+    // identityType is deterministic from the classified subtype, never trusted
+    // as free-form model output.
+    if (source.documentType === 'identity' && field.id.endsWith('.identityType')) continue;
     const normalized = validateCandidateValue(candidate.value, field);
     if (!normalized) continue;
     const document = source.document;
@@ -417,10 +472,42 @@ export async function extractDocumentsWithOpenAi(
     });
   }
 
-  const documentStatuses = new Map<string, DocumentStatus>();
-  for (const item of parsed.documents) {
-    if (allowedSources.has(item.requirementId) && !documentStatuses.has(item.requirementId)) {
-      documentStatuses.set(item.requirementId, item.status);
+  // Derive identity type from classification and, for CIN only, mirror a
+  // validated CPF into the identity field because CPF is the CIN's unique ID.
+  for (const [requirementId, source] of allowedSources) {
+    if (source.documentType !== 'identity') continue;
+    const subtype = documentSubtypes.get(requirementId) ?? 'unknown';
+    const subtypeAllowed = allowedBySource.get(requirementId) ?? new Set<string>();
+    const typeValue = identityTypeValue(subtype);
+    if (typeValue) {
+      for (const fieldId of source.allowedFieldIds.filter((id) => id.endsWith('.identityType'))) {
+        if (!subtypeAllowed.has(fieldId) || !allowedFields.has(fieldId)) continue;
+        evidence.push({
+          fieldId,
+          value: typeValue,
+          confidence: 0.95,
+          documentId: source.document.id,
+          sourceId: requirementId,
+          page: 0,
+          method: 'openai-structured-vision',
+          lineIds: [],
+          status: 'REVIEW_REQUIRED',
+        });
+      }
+    }
+    if (subtype !== 'cin') continue;
+    const cpfEvidence = evidence.filter((item) =>
+      item.sourceId === requirementId && item.fieldId.endsWith('.cpf'));
+    for (const cpf of cpfEvidence) {
+      const identityFieldId = cpf.fieldId.replace(/\.cpf$/, '.identity');
+      if (!subtypeAllowed.has(identityFieldId) || !allowedFields.has(identityFieldId) ||
+        evidence.some((item) => item.sourceId === requirementId &&
+          item.fieldId === identityFieldId)) continue;
+      evidence.push({
+        ...cpf,
+        fieldId: identityFieldId,
+        confidence: 0.95,
+      });
     }
   }
   const diagnostics: ExtractionDiagnostic[] = documents.map((item) => {
@@ -438,7 +525,13 @@ export async function extractDocumentsWithOpenAi(
     };
   });
 
-  return { evidence, diagnostics, model, usage };
+  return {
+    evidence,
+    diagnostics,
+    model,
+    documentSubtypes: Object.fromEntries(documentSubtypes),
+    usage,
+  };
 }
 
 
@@ -548,10 +641,14 @@ export async function extractDocumentsWithOneContingency(
   const retryFields = fields.filter((field) => pending.has(field.id));
   const retryDocuments = documents
     .filter((document) => document.allowedFieldIds.some((fieldId) => pending.has(fieldId)))
-    .map((document) => ({
-      ...document,
-      allowedFieldIds: document.allowedFieldIds.filter((fieldId) => pending.has(fieldId)),
-    }));
+    .map((document) => {
+      const detectedSubtype = primary.documentSubtypes[document.document.requirementId];
+      return {
+        ...document,
+        ...(detectedSubtype ? { detectedSubtype } : {}),
+        allowedFieldIds: document.allowedFieldIds.filter((fieldId) => pending.has(fieldId)),
+      };
+    });
 
   if (retryFields.length === 0 || retryDocuments.length === 0) {
     const evidence = primary.evidence.filter((item) => !pending.has(item.fieldId));
@@ -582,6 +679,7 @@ export async function extractDocumentsWithOneContingency(
       evidence,
       diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics, retry.diagnostics),
       model: primary.model,
+      documentSubtypes: primary.documentSubtypes,
       usage: sumUsage(primary.usage, retry.usage),
       contingency: {
         used: true,
@@ -598,6 +696,7 @@ export async function extractDocumentsWithOneContingency(
       evidence,
       diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics),
       model: primary.model,
+      documentSubtypes: primary.documentSubtypes,
       usage: primary.usage,
       contingency: {
         used: true,

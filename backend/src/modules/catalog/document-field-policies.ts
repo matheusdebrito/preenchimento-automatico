@@ -6,6 +6,15 @@
  * Unknown/unsupported documents must not become generic sources for arbitrary fields.
  */
 
+export type DetectedDocumentSubtype =
+  | 'rg'
+  | 'cin'
+  | 'cnh'
+  | 'tie-digital'
+  | 'tie-legacy'
+  | 'unknown'
+  | 'not-applicable';
+
 export const APPLICANT_IDENTITY_FIELDS = [
   'person.fullName',
   'person.cpf',
@@ -61,6 +70,27 @@ export const SELLER_IDENTITY_FIELDS = [
   'seller.documentOrigin',
 ] as const;
 
+const IDENTITY_FIELDS_BY_SUBTYPE: Readonly<Record<
+  Extract<DetectedDocumentSubtype, 'rg' | 'cin' | 'cnh'>,
+  ReadonlySet<string>
+>> = {
+  rg: new Set([
+    'fullName', 'cpf', 'identity', 'identityType', 'issuer', 'issuerState',
+    'issueDate', 'birthDate', 'birthplace', 'nationality',
+    'parent1Name', 'parent2Name', 'documentOrigin',
+  ]),
+  cin: new Set([
+    'fullName', 'cpf', 'identity', 'identityType', 'issuer', 'issuerState',
+    'issueDate', 'birthDate', 'birthplace', 'nationality',
+    'parent1Name', 'parent2Name',
+  ]),
+  cnh: new Set([
+    'fullName', 'cpf', 'identity', 'identityType', 'issuer', 'issuerState',
+    'issueDate', 'birthDate', 'birthplace', 'nationality',
+    'parent1Name', 'parent2Name',
+  ]),
+};
+
 export const RESIDENCE_PROOF_FIELDS = [
   'person.address',
   'person.streetNumber',
@@ -100,6 +130,7 @@ export const TIE_FIELDS = [
   'vessel.hullMaterial',
   'vessel.propulsionType',
   'vessel.activity',
+  'vessel.builderName',
   'vessel.motorManufacturerBrandModel',
   'vessel.motorBrand',
   'vessel.motorPower',
@@ -138,6 +169,44 @@ export const TIE_FIELDS = [
   'coOwner.nationality',
 ] as const;
 
+const TIE_DIGITAL_FIELDS = new Set<string>([
+  'vessel.registration',
+  'vessel.registrationDate',
+  'vessel.expirationDate',
+  'vessel.issueDate',
+  'vessel.issuePlace',
+  'vessel.name',
+  'vessel.hullId',
+  'vessel.year',
+  'vessel.length',
+  'vessel.capacity',
+  'vessel.grossTonnage',
+  'vessel.breadth',
+  'vessel.type',
+  'vessel.navigationArea',
+  'vessel.depth',
+  'vessel.hullMaterial',
+  'vessel.propulsionType',
+  'vessel.activity',
+  'vessel.motorManufacturerBrandModel',
+  'vessel.motorBrand',
+  'vessel.motorPower',
+  'vessel.motorSerial',
+  'vessel.motorCount',
+  'vessel.crewCount',
+  'vessel.passengerCount',
+  'vessel.mortgaged',
+  'vessel.mortgageCreditor',
+  'vessel.hullColor',
+  'vessel.authority',
+  'registeredOwner.fullName',
+  'registeredOwner.taxId',
+  'coOwner.fullName',
+  'coOwner.cpf',
+]);
+
+const TIE_LEGACY_FIELDS = new Set<string>(TIE_FIELDS);
+
 export const SALE_DOCUMENT_FIELDS = [
   'sale.invoice',
   'sale.date',
@@ -165,10 +234,42 @@ export const MOTOR_DOCUMENT_FIELDS = [
   'vessel.totalPropulsionPowerKw',
 ] as const;
 
-export const DPEM_DOCUMENT_FIELDS = [
-  'vessel.dpemNumber',
-  'vessel.dpemExpiry',
-] as const;
-
 /** Documents that are useful to the official process but not trusted as field sources. */
 export const NO_AUTOMATIC_FIELDS: readonly string[] = [];
+
+function semanticLeaf(fieldId: string): string {
+  const dot = fieldId.indexOf('.');
+  return dot >= 0 ? fieldId.slice(dot + 1) : fieldId;
+}
+
+/**
+ * Applies a second deterministic allow-list after the model classifies a known
+ * identity/TIE subtype. Unknown classifications preserve the configured policy
+ * to avoid turning classification uncertainty into silent data loss.
+ */
+export function fieldsAllowedForDetectedSubtype(
+  documentType: string | undefined,
+  subtype: DetectedDocumentSubtype,
+  configuredAllowedFieldIds: readonly string[],
+): readonly string[] {
+  if (documentType === 'identity' && ['rg', 'cin', 'cnh'].includes(subtype)) {
+    const allowed = IDENTITY_FIELDS_BY_SUBTYPE[subtype as 'rg' | 'cin' | 'cnh'];
+    return configuredAllowedFieldIds.filter((fieldId) => allowed.has(semanticLeaf(fieldId)));
+  }
+  if (documentType === 'tie' && subtype === 'tie-digital') {
+    return configuredAllowedFieldIds.filter((fieldId) => TIE_DIGITAL_FIELDS.has(fieldId));
+  }
+  if (documentType === 'tie' && subtype === 'tie-legacy') {
+    return configuredAllowedFieldIds.filter((fieldId) => TIE_LEGACY_FIELDS.has(fieldId));
+  }
+  return configuredAllowedFieldIds;
+}
+
+export function identityTypeValue(
+  subtype: DetectedDocumentSubtype,
+): 'RG' | 'CIN' | 'CNH' | null {
+  if (subtype === 'rg') return 'RG';
+  if (subtype === 'cin') return 'CIN';
+  if (subtype === 'cnh') return 'CNH';
+  return null;
+}
