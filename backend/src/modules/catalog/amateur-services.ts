@@ -51,7 +51,7 @@ const commonDocuments: readonly DocumentRequirement[] = [
       allowedFieldIds: RESIDENCE_PROOF_FIELDS,
     },
   },
-]
+];
 
 export const amateurForms: readonly FormDefinition[] = [
   {
