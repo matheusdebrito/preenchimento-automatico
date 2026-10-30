@@ -12,6 +12,22 @@ import { pendingMotoAquaticaServiceForms } from './vessel-services.js';
 export const QA_PREVIEW_SERVICE_ID = 'transferencia-propriedade-embarcacao';
 
 export function qaPreviewCatalog(): CatalogDefinition {
+  const lastOfficialOrder = Math.max(
+    0,
+    ...catalog.serviceForms
+      .filter((relation) => relation.serviceId === QA_PREVIEW_SERVICE_ID)
+      .map((relation) => relation.order),
+  );
+  const previewServiceForms = pendingMotoAquaticaServiceForms
+    .filter((relation) => relation.serviceId === QA_PREVIEW_SERVICE_ID)
+    .map((relation) => ({
+      ...relation,
+      // The validator requires one unique order per service. Boat and moto-aquatica
+      // relations are mutually exclusive by vesselType, but the QA overlay still
+      // shares the same service ID, so keep the preview orders outside the official range.
+      order: lastOfficialOrder + relation.order,
+    }));
+
   return {
     ...catalog,
     mappings: catalog.mappings.map((mapping) => {
@@ -44,8 +60,7 @@ export function qaPreviewCatalog(): CatalogDefinition {
       } : service),
     serviceForms: [
       ...catalog.serviceForms,
-      ...pendingMotoAquaticaServiceForms.filter((relation) =>
-        relation.serviceId === QA_PREVIEW_SERVICE_ID),
+      ...previewServiceForms,
     ],
   };
 }
