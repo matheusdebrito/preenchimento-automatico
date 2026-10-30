@@ -15,6 +15,13 @@ import {
   amateurServices,
   amateurServiceForms,
 } from './amateur-services.js';
+import {
+  aquaviarioForms,
+  aquaviarioVersions,
+  aquaviarioServices,
+  aquaviarioServiceForms,
+} from './aquaviario-services.js';
+import { aquaviarioMappings } from './aquaviario-mappings.js';
 
 /**
  * Authoritative catalog of the forms currently released by the application.
@@ -33,6 +40,7 @@ export const catalog: CatalogDefinition = {
   forms: [
     ...vesselForms,
     ...amateurForms,
+    ...aquaviarioForms,
     {
       id: 'requerimento-ma',
       name: 'Requerimento para inscrição ou transferência de propriedade e/ou jurisdição de moto aquática ou do seu proprietário',
@@ -67,6 +75,7 @@ export const catalog: CatalogDefinition = {
   versions: [
     ...vesselVersions,
     ...amateurVersions,
+    ...aquaviarioVersions,
     {
       id: 'requerimento-ma-v1',
       formId: 'requerimento-ma',
@@ -149,10 +158,11 @@ export const catalog: CatalogDefinition = {
       status: 'VERIFIED',
     },
   ],
-  mappings: [...draftMappings, ...normam211Mappings, ...amateurMappings],
+  mappings: [...draftMappings, ...normam211Mappings, ...amateurMappings, ...aquaviarioMappings],
   services: [
     ...vesselServices,
     ...amateurServices,
+    ...aquaviarioServices,
   ],
-  serviceForms: [...vesselServiceForms, ...amateurServiceForms],
+  serviceForms: [...vesselServiceForms, ...amateurServiceForms, ...aquaviarioServiceForms],
 };
