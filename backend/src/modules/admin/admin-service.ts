@@ -279,10 +279,16 @@ export async function changeUserStatus(
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const target = await client.query<{ status: UserStatus }>(
-      'SELECT status FROM app_users WHERE id=$1 FOR UPDATE', [targetUserId]);
+    await client.query('SELECT pg_advisory_xact_lock(145902, 2)');
+    const target = await client.query<{ status: UserStatus; role: UserRole }>(
+      'SELECT status,role FROM app_users WHERE id=$1 FOR UPDATE', [targetUserId]);
     if (!target.rows[0]) throw new Error('user_not_found');
     const previous = target.rows[0].status;
+    if (target.rows[0].role === 'ADMIN' && previous === 'ACTIVE' && status !== 'ACTIVE') {
+      const activeAdmins = await client.query<{ count: string }>(
+        "SELECT COUNT(*)::text AS count FROM app_users WHERE role='ADMIN' AND status='ACTIVE'");
+      if (Number(activeAdmins.rows[0]?.count ?? 0) <= 1) throw new Error('last_admin');
+    }
     if (previous !== status) {
       await client.query('UPDATE app_users SET status=$1 WHERE id=$2', [status, targetUserId]);
       if (status !== 'ACTIVE') {
@@ -311,13 +317,14 @@ export async function changeUserRole(
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const target = await client.query<{ role: UserRole }>(
-      'SELECT role FROM app_users WHERE id=$1 FOR UPDATE', [targetUserId]);
+    await client.query('SELECT pg_advisory_xact_lock(145902, 2)');
+    const target = await client.query<{ role: UserRole; status: UserStatus }>(
+      'SELECT role,status FROM app_users WHERE id=$1 FOR UPDATE', [targetUserId]);
     if (!target.rows[0]) throw new Error('user_not_found');
     const previous = target.rows[0].role;
-    if (previous === 'ADMIN' && role !== 'ADMIN') {
+    if (previous === 'ADMIN' && target.rows[0].status === 'ACTIVE' && role !== 'ADMIN') {
       const admins = await client.query<{ count: string }>(
-        "SELECT COUNT(*)::text AS count FROM app_users WHERE role='ADMIN'");
+        "SELECT COUNT(*)::text AS count FROM app_users WHERE role='ADMIN' AND status='ACTIVE'");
       if (Number(admins.rows[0]?.count ?? 0) <= 1) throw new Error('last_admin');
     }
     if (previous !== role) {
