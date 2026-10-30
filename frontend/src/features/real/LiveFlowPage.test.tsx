@@ -365,7 +365,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(personal.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(address.compareDocumentPosition(vessel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByLabelText(/Rua/)).toBeTruthy();
-    expect(screen.getByLabelText(/^Número$/)).toBeTruthy();
+    expect(screen.getByLabelText(/Número/)).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     const alert = await screen.findByRole('alert');
@@ -629,7 +629,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(screen.getByText('Nenhum campo preenchido automaticamente')).toBeTruthy();
     expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/)).toBeTruthy();
-    expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
+    expect(screen.getByText(/não foi possível ler o documento/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(screen.getByText(/campos obrigatórios pendentes: Nome completo/i)).toBeTruthy();
     expect(reviewAttempts).toBe(0);
