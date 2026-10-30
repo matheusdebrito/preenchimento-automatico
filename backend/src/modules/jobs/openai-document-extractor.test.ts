@@ -197,6 +197,8 @@ describe('OpenAI document extractor', () => {
     expect(JSON.stringify(body)).not.toContain(identity.path);
     expect(JSON.stringify(body)).not.toContain(tie.path);
     expect(JSON.stringify(body)).toContain('número da identidade/documento');
+    expect(JSON.stringify(body)).toContain('REGISTRO GERAL');
+    expect(JSON.stringify(body)).toContain('Número da identidade / Registro Geral (RG)');
     expect(JSON.stringify(body)).toContain('órgão emissor/expedidor');
     expect(JSON.stringify(body)).toContain('issuerState=RJ');
 
