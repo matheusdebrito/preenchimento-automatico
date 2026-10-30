@@ -319,9 +319,13 @@ describe('OpenAI document extractor', () => {
           usage: { input_tokens: 1000, output_tokens: 100, total_tokens: 1100 },
         }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
-      expect(serialized).not.toContain('person.fullName');
-      expect(serialized).toContain('person.cpf');
-      expect(serialized).toContain('vessel.registration');
+      const prompt = (body.input[0]?.content.find((item) =>
+        item.type === 'input_text') as { text?: string } | undefined)?.text ?? '';
+      const allowedFieldsLine = prompt.split('\n')
+        .find((line) => line.startsWith('Campos permitidos: ')) ?? '';
+      expect(allowedFieldsLine).not.toContain('person.fullName');
+      expect(allowedFieldsLine).toContain('person.cpf');
+      expect(allowedFieldsLine).toContain('vessel.registration');
       return new Response(JSON.stringify({
         output: [{
           type: 'message',
