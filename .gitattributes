@@ -3,3 +3,6 @@
 Dockerfile text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
+
+# Official PDFs are byte-sensitive; never normalize line endings.
+*.pdf binary
