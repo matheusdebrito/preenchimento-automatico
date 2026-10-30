@@ -151,3 +151,4 @@ export const aquaviarioMappings: readonly FormMapping[] = [
     reviewer: 'OpenAI visual QA - modelo auxiliar não oficial',
     reportPath: 'docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md',
   },
+];
