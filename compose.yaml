@@ -57,7 +57,6 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       DATABASE_URL: postgresql://${POSTGRES_USER:-preenchimento}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:-preenchimento}
       DEV_GRANT_SECRET: ${DEV_GRANT_SECRET:-}
-      DEV_QA_PREVIEW: ${DEV_QA_PREVIEW:-false}
       PADDLE_OCR_URL: http://ocr:8000
       OCR_RESERVED_CPUS: ${OCR_RESERVED_CPUS:-auto}
       OCR_MAX_WORKERS: ${OCR_MAX_WORKERS:-4}
