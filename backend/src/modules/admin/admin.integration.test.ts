@@ -111,6 +111,20 @@ describePg('PostgreSQL: painel administrativo', () => {
     )).rejects.toThrow('user_not_found');
   });
 
+
+  it('CLI não remove o último administrador ativo', async () => {
+    await setUserRoleByEmailFromCli(pool, userEmail, 'ADMIN');
+    try {
+      await setUserRoleByEmailFromCli(pool, adminEmail, 'USER');
+      await expect(
+        setUserRoleByEmailFromCli(pool, userEmail, 'USER'),
+      ).rejects.toThrow('last_admin');
+    } finally {
+      await setUserRoleByEmailFromCli(pool, adminEmail, 'ADMIN');
+      await setUserRoleByEmailFromCli(pool, userEmail, 'USER');
+    }
+  });
+
   it('nega todas as APIs administrativas a usuário comum', async () => {
     const response = await app.inject({
       method: 'GET',
