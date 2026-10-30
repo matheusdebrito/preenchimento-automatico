@@ -538,3 +538,22 @@ blobs Git foram comparados byte a byte com os arquivos locais usados no QA:
 As três `FormVersion` estão `VERIFIED`. Os mappings 5-D e 5-H foram promovidos
 para `APPROVED` após QA visual e autorização explícita do responsável pelo produto para
 liberar Renovação da CHA. O 3-C permanece `TESTED`.
+
+
+## Registro de execução — 29/10/2026, recuperação da verificação de sessão
+
+**Problema observado:** a tela de login ficava bloqueada em "Verificando sua sessão..." e,
+quando `GET /api/auth/me` falhava por motivo diferente de 401, a interface entrava em
+`unavailable` e escondia o formulário. O botão de tentativa repetida não mudava o estado
+visual para loading, parecendo não funcionar.
+
+**Correção:** `AuthProvider.refreshSession()` agora publica o estado `loading` antes da nova
+consulta e a leitura de sessão possui timeout de 10 segundos. `AuthPage` mantém o
+formulário disponível quando a consulta de sessão está temporariamente indisponível,
+oferecendo nova tentativa sem bloquear a autenticação. Falhas 401 de login, indisponibilidade
+do servidor e sessão já existente (409) recebem tratamentos distintos.
+
+**Cobertura:** adicionado teste de regressão para falha inicial de sessão, formulário ainda
+utilizável, retry com feedback de loading e recuperação para estado guest. O CI continua
+dependente de execução manual do workflow antes de considerar os gates automatizados
+confirmados.

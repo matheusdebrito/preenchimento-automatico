@@ -4,7 +4,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
 import { Button } from '../components/ui/Button';
 import { Notice } from '../components/ui/Notice';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useAuth } from '../features/auth/AuthProvider';
 
@@ -33,8 +33,19 @@ export function AuthPage() {
       );
       acceptLogin(result.user);
       navigate(safeNext, { replace: true });
-    } catch {
-      setError('Não foi possível acessar a conta. Verifique os dados e tente novamente.');
+    } catch (cause) {
+      if (cause instanceof ApiError &&
+        cause.status === 409 && cause.errorCode === 'already_authenticated') {
+        await refreshSession();
+        return;
+      }
+      if (cause instanceof ApiError && cause.status === 401 && !register) {
+        setError('E-mail ou senha inválidos.');
+      } else if (!(cause instanceof ApiError) || cause.status >= 500) {
+        setError('Não foi possível conectar ao servidor. Tente novamente.');
+      } else {
+        setError('Não foi possível acessar a conta. Verifique os dados e tente novamente.');
+      }
     } finally {
       setBusy(false);
     }
@@ -43,17 +54,11 @@ export function AuthPage() {
   if (session.status === 'authenticated') {
     return <Navigate to={safeNext} replace />;
   }
-  if (session.status === 'loading' || session.status === 'unavailable') {
+  if (session.status === 'loading') {
     return (
       <PageLayout>
         <div className="page"><div className="container page-stack">
-          {session.status === 'loading'
-            ? <Notice tone="info" role="status">Verificando sua sessão…</Notice>
-            : <Notice tone="danger" role="alert">
-                Não foi possível consultar sua sessão. Verifique a conexão e
-                <button type="button" className="live-text-button"
-                  onClick={() => void refreshSession()}>tente novamente</button>.
-              </Notice>}
+          <Notice tone="info" role="status">Verificando sua sessão…</Notice>
         </div></div>
       </PageLayout>
     );
@@ -63,6 +68,19 @@ export function AuthPage() {
     <PageLayout>
       <div className="page">
         <div className="container page-stack">
+          {session.status === 'unavailable' ? (
+            <Notice tone="danger" role="alert">
+              Não foi possível consultar sua sessão agora. Você ainda pode tentar entrar normalmente.
+              {' '}
+              <button
+                type="button"
+                className="live-text-button"
+                onClick={() => void refreshSession()}
+              >
+                Tentar novamente
+              </button>
+            </Notice>
+          ) : null}
           <div className="card card--padded live-auth">
             <h1>{register ? 'Criar conta' : 'Entrar na minha conta'}</h1>
             <p>Seus documentos são processados temporariamente. A conta guarda apenas dados operacionais e créditos.</p>

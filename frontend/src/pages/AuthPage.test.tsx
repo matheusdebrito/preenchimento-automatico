@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { App } from '../App';
@@ -27,6 +27,39 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     expect(screen.queryByRole('heading', { name: 'Entrar na minha conta' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Entrar' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Sair' })).toBeTruthy();
+  });
+
+  it('não bloqueia o login e mostra progresso ao repetir a consulta de sessão', async () => {
+    let meCalls = 0;
+    let resolveRetry!: (response: Response) => void;
+    const retryResponse = new Promise<Response>((resolve) => {
+      resolveRetry = resolve;
+    });
+    const fetcher = vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
+      const path = String(url);
+      if (path === '/api/auth/me') {
+        meCalls++;
+        if (meCalls === 1) return json({ error: 'unavailable' }, 503);
+        return retryResponse;
+      }
+      return json({ error: 'not_found' }, 404);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/entrar']}><App /></MemoryRouter>);
+
+    expect(await screen.findByText(/Não foi possível consultar sua sessão agora/)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(await screen.findByText('Verificando sua sessão…')).toBeTruthy();
+
+    resolveRetry(json({ error: 'unauthorized' }, 401));
+    await waitFor(() => {
+      expect(screen.queryByText('Verificando sua sessão…')).toBeNull();
+    });
+    expect(screen.getByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    expect(meCalls).toBe(2);
   });
 
   it('atualiza menu e rota após login sem precisar recarregar', async () => {
