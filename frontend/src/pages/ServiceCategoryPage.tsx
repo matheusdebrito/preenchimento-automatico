@@ -20,7 +20,6 @@ export function ServiceCategoryPage() {
   useEffect(() => {
     if (!category || typeof fetch !== 'function') return;
     let mounted = true;
-    setAvailabilityState('loading');
     void api<{services:LiveService[]}>('/api/services').then((result) => {
       if (!mounted) return;
       setAvailable(result.services);
