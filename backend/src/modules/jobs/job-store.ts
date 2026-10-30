@@ -15,7 +15,7 @@ export interface StoredDocument {
 // Only technical outcomes and catalog IDs are retained, never document content.
 export interface ExtractionDiagnostic {
   requirementId: string;
-  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
   /** Document analysis provider. */
   engine?: 'openai';
