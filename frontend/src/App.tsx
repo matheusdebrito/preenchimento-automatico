@@ -13,6 +13,9 @@ const ServiceCategoryPage = lazy(() =>
 const AccountPage = lazy(() =>
   import('./pages/AccountPage').then((module) => ({ default: module.AccountPage })),
 );
+const AdminPage = lazy(() =>
+  import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })),
+);
 const CreditsPage = lazy(() =>
   import('./pages/CreditsPage').then((module) => ({ default: module.CreditsPage })),
 );
@@ -41,6 +44,7 @@ export function App() {
         <Route path="/servicos/:categoryId" element={<ServiceCategoryPage />} />
         <Route path="/preencher-real/:serviceId" element={<LiveFlowPage />} />
         <Route path="/minha-conta" element={<AccountPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/creditos" element={<CreditsPage />} />
         <Route path="/creditos/historico" element={<CreditHistoryPage />} />
         <Route path="/preencher/*" element={<Navigate to="/" replace />} />
