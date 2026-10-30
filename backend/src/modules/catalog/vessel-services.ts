@@ -11,7 +11,6 @@ import {
   MOTOR_DOCUMENT_FIELDS,
   RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
-  NO_AUTOMATIC_FIELDS,
   SELLER_IDENTITY_FIELDS,
   TIE_FIELDS,
 } from './document-field-policies.js';
@@ -134,70 +133,6 @@ const motorProof: DocumentRequirement = {
     documentType: 'supporting-document',
     subjectRole: 'vessel',
     allowedFieldIds: MOTOR_DOCUMENT_FIELDS,
-  },
-};
-
-const technicalResponsibilityDocument: DocumentRequirement = {
-  id: 'technical-responsibility-document',
-  label: 'Documento do responsável técnico / ART',
-  description: 'No fluxo do item 2.12.1, o Anexo 3-C é aceito nos casos de estaleiro comprovadamente extinto ou construção artesanal. Envie também a ART/documentação técnica aplicável para conferência.',
-  required: false,
-  conditions: [
-    { questionId: 'vesselType', equals: 'embarcacao' },
-    {
-      questionId: 'responsibilityTermCase',
-      oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
-    },
-  ],
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'vessel',
-    allowedFieldIds: NO_AUTOMATIC_FIELDS,
-  },
-};
-
-const rowToMotorTechnicalDeclaration: DocumentRequirement = {
-  id: 'row-to-motor-technical-declaration',
-  label: 'Declaração do Responsável Técnico',
-  description: 'Exigida pela NORMAM-211/DPC para adaptação de embarcação miúda a remo para propulsão a motor a partir de 01/01/2025.',
-  required: false,
-  conditions: [
-    { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'rowToMotorConversion', equals: 'sim' },
-  ],
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'vessel',
-    allowedFieldIds: NO_AUTOMATIC_FIELDS,
-  },
-};
-
-const motoTechnicalResponsibilityDocument: DocumentRequirement = {
-  id: 'moto-technical-responsibility-document',
-  label: 'Responsável técnico / ART da alteração da moto aquática',
-  description: 'A NORMAM-212/DPC exige Responsável Técnico e ART para alterações de características da moto aquática.',
-  required: false,
-  conditions: [
-    { questionId: 'vesselType', equals: 'moto_aquatica' },
-    { questionId: 'motoCharacteristicAlteration', equals: 'sim' },
-  ],
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'vessel',
-    allowedFieldIds: NO_AUTOMATIC_FIELDS,
-  },
-};
-
-const motoMotorTechnicalResponsibilityDocument: DocumentRequirement = {
-  id: 'moto-motor-technical-responsibility-document',
-  label: 'Responsável técnico / ART da alteração do motor da moto aquática',
-  description: 'Mudança de motor é alteração de característica e exige Responsável Técnico e ART conforme a NORMAM-212/DPC.',
-  required: false,
-  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'vessel',
-    allowedFieldIds: NO_AUTOMATIC_FIELDS,
   },
 };
 
@@ -386,26 +321,21 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados ou características da embarcação',
-    description: 'Preenchimento para alteração de dados ou características. Em embarcação/barco, o Anexo 3-C só é gerado nos casos admitidos pelo item 2.12.1 da NORMAM-211/DPC. Em moto aquática, alterações de características exigem responsável técnico e ART conforme a NORMAM-212/DPC.',
+    description: 'Preenchimento para alteração de dados ou características. Em embarcação/barco, o Anexo 3-C só é gerado nos casos admitidos pelo item 2.12.1 da NORMAM-211/DPC. Em moto aquática, alterações de características exigem responsável técnico e ART no protocolo, mas esses documentos não são solicitados porque não fornecem campos para o preenchimento automático.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true, responsibilityTermCase: true, motoCharacteristicAlteration: true }),
     documentRequirements: [
       ...requirements({ tie: true, origin: true }),
-      technicalResponsibilityDocument,
-      motoTechnicalResponsibilityDocument,
     ],
   },
   {
     id: 'alteracao-motor-embarcacao',
     title: 'Troca, instalação ou retirada de motor',
-    description: 'Preenchimento para troca, instalação ou retirada de motor. O fluxo aplica as exigências técnicas específicas da NORMAM-211/DPC para embarcações/barcos e da NORMAM-212/DPC para moto aquática.',
+    description: 'Preenchimento para troca, instalação ou retirada de motor. Adaptação de embarcação miúda a remo para motor e alterações de motor de moto aquática possuem exigências de responsável técnico/ART no protocolo; esses documentos não são solicitados pela ferramenta quando não fornecem campos para o preenchimento automático.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true, responsibilityTermCase: true, rowToMotorConversion: true }),
     documentRequirements: [
       ...requirements({ tie: true, motor: true }),
-      technicalResponsibilityDocument,
-      rowToMotorTechnicalDeclaration,
-      motoMotorTechnicalResponsibilityDocument,
     ],
   },
   {
