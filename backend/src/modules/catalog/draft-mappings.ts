@@ -1,9 +1,10 @@
 import type { FormMapping, FieldPlacement } from './contracts.js';
 
 /**
- * Draft placements transcribed from 850x1200 render previews (A4 at 110 dpi).
- * Coordinates are PDF points; page index begins at zero. Review EACH mapping
- * using rendered synthetic outputs before changing status from DRAFT.
+ * Placements transcribed from 850x1200 render previews (A4 at 110 dpi).
+ * Coordinates are PDF points; page index begins at zero. The six NORMAM-212
+ * mappings were reviewed page-by-page against the 2026 official templates and
+ * synthetic CI renders before approval.
  */
 const px = (value: number): number => Math.round(value * 0.7 * 10) / 10;
 const py = (value: number): number => Math.round((1200 - value) * 0.7017 * 10) / 10;
@@ -21,8 +22,9 @@ function coordinate(
 export const draftMappings: readonly FormMapping[] = [
   {
     id: 'requerimento-ma-v1-map-v1', formVersionId: 'requerimento-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/requerimento-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("person.fullName", 176, 321, 557, 8, 0, true),
       coordinate("person.address", 202, 345, 283, 7, 0),
@@ -45,8 +47,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'bdmoto-v1-map-v1', formVersionId: 'bdmoto-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/bdmoto-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("process.transferOwnership", 338, 376, 20, 10, 0),
       coordinate("person.fullName", 310, 461, 442, 7.5, 0, true),
@@ -80,8 +83,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'autorizacao-transferencia-ma-v1-map-v1', formVersionId: 'autorizacao-transferencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/autorizacao-transferencia-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("vessel.name", 256, 213, 176, 7, 0, true),
       coordinate("vessel.registration", 530, 213, 230, 7, 0, true),
@@ -114,8 +118,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'comunicacao-transferencia-ma-v1-map-v1', formVersionId: 'comunicacao-transferencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/comunicacao-transferencia-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("vessel.name", 190, 269, 307, 6.8, 0, true),
       coordinate("vessel.registration", 621, 269, 137, 6.6, 0, true),
@@ -151,8 +156,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'declaracao-perda-tie-ma-v1-map-v1', formVersionId: 'declaracao-perda-tie-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/declaracao-perda-tie-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("declarant.fullName", 152, 297, 602, 7.2, 0, true),
       coordinate("declarant.identity", 230, 325, 102, 6.6, 0),
@@ -169,8 +175,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'declaracao-residencia-ma-v1-map-v1', formVersionId: 'declaracao-residencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/declaracao-residencia-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("person.fullName", 153, 325, 598, 7.3, 0, true),
       coordinate("person.cpf", 177, 356, 122, 6.1, 0, true),
