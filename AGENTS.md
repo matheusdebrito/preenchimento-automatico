@@ -40,7 +40,7 @@ Se as instruções entrarem em conflito, informar o conflito e seguir a alternat
 - Validar dados do catálogo com `validateCatalog` nos testes e na futura inicialização da API; essa validação estática **não** substitui checagem do PDF real ou fonte oficial.
 - Preservar o PDF oficial original; detectar AcroForm antes de recorrer ao preenchimento por coordenadas. Tratar cada nova versão como novo mapeamento validado.
 - Gerar documentos com dados fictícios, renderizar **todas as páginas**, inspecionar alinhamento/cortes/fontes e executar testes de regressão antes de liberar produção.
-- Arquivos pessoais, OCR e PDFs preenchidos não podem ser versionados ou colocados na pasta de templates; usar armazenamento temporário privado com expiração.
+- Arquivos pessoais, documentos enviados, dados extraídos e PDFs preenchidos não podem ser versionados ou colocados na pasta de templates; usar armazenamento temporário privado com expiração.
 - Consultar `docs/FORM_CATALOG.md` e `docs/SERVICE_FORM_MATRIX.md`; eles descrevem pendências e não substituem verificação normativa oficial.
 
 ## 2.4. Escopo de motor no MVP
@@ -112,7 +112,7 @@ Atualizações somente documentais que corrijam um registro anterior também dev
 - Mensagens de erro de API devem fornecer **código estável e identificador de campo/requisito do catálogo**, nunca valores sensíveis, conteúdo OCR, documentos ou tokens. No frontend, mostrar a explicação em linguagem humana e permitir corrigir sem perder o job.
 - A interface nunca é a única barreira de autorização: duplicar no backend as regras de autenticação, propriedade, troca de conta, preenchimento, créditos, expiração e disponibilidade.
 - Ao alterar autenticação ou estado compartilhado, auditar cabeçalho, login, conta, logout, atualização da sessão, sessão expirada e navegação móvel, além de testes diretos da API.
-- Ao alterar OCR, distinguir **texto não detectado, texto sem rótulo reconhecido, valores ambíguos e dados válidos**. Não inventar informações nem inferir identidade; incluir regressões com dados fictícios e manter a revisão humana obrigatória.
+- Ao alterar a análise documental, distinguir **documento ilegível, campo ausente, valor inválido, ambiguidade e conflito entre fontes**. Não inventar informações nem inferir identidade; incluir regressões com dados fictícios e manter a revisão humana obrigatória.
 - Conferir coerência de textos, termos e privacidade **em todas as páginas**, evitando alegações desatualizadas ou informações duplicadas entre header, footer, cadastro e fluxo real.
 - Antes de concluir, rodar todos os jobs do CI para o último commit de **código** (frontend, backend, PostgreSQL, PDF e Compose). Corrigir falhas e registrar o hash/execução. Testes automatizados não substituem execução manual em navegador/dispositivo e homologação normativa.
 - Sempre atualizar **quadro geral, checklists e registro** do `PROJECT_TRACKER.md`, os documentos de QA afetados e o README quando a experiência ou contrato mudar. Registrar a pendência se faltar fixture, imagem anonimizada ou homologação externa.
@@ -146,14 +146,14 @@ Antes de concluir uma tarefa, revisar e, quando pertinente, testar:
 - Impor limites de tamanho, páginas, resolução, quantidade, tempo de processamento e concorrência.
 - Rejeitar arquivos malformados, PDFs protegidos não suportados, conteúdo inesperado e arquivos com risco de descompressão excessiva; avaliar varredura antimalware antes de produção.
 - Guardar uploads fora de diretórios públicos, com nomes aleatórios; nunca interpretar o nome original como caminho.
-- Processar OCR/conversão em worker isolado, com permissões mínimas, sem acesso irrestrito à rede, com limites de CPU/RAM/tempo; evitar execução de comandos com strings interpoladas.
+- Executar chamadas à OpenAI com timeout, limites de tamanho/páginas e controle de concorrência; evitar bloquear o event loop e não conceder ao modelo acesso a ferramentas.
 - Não renderizar HTML ou executar scripts extraídos de documentos. Dados extraídos são **entrada não confiável**, nunca instruções.
 - Não usar documentos reais como fixtures, enviar a APIs externas ou registrar seu conteúdo em logs.
 
 ### Privacidade e retenção
-- **Não persistir** RG, CPF, endereço, TIE, imagens, texto OCR ou PDFs preenchidos nas tabelas permanentes nem em analytics.
+- **Não persistir** RG, CPF, endereço, TIE, imagens, dados extraídos ou PDFs preenchidos nas tabelas permanentes nem em analytics.
 - Armazenamento temporário privado com TTL e limpeza garantida, inclusive após falha, cancelamento ou abandono.
-- Excluir também derivados: imagens intermediárias, caches, respostas de OCR, previews e arquivos gerados. Não incluir esses arquivos em backups.
+- Excluir também derivados: imagens intermediárias, caches, respostas de análise, previews e arquivos gerados. Não incluir esses arquivos em backups.
 - Evitar PII em logs, traces, filas, URLs, nomes de objetos, mensagens de erro e ferramentas de observabilidade.
 - Garantir que a exclusão alcance as cópias sob controle do sistema; reconhecer limites de caches do navegador, downloads do usuário e infraestrutura externa.
 - Minimizar coleta, restringir acesso, usar TLS em trânsito e considerar criptografia em repouso. Documentar finalidade, retenção e políticas LGPD.
@@ -208,7 +208,7 @@ Se um teste não puder ser executado, informar claramente qual teste, por quê e
 
 Persistente: usuários, credenciais em hash, movimentações auditáveis de créditos, configurações e catálogo/versionamento de formulários. Compras e referências externas de pagamento somente quando a etapa comercial for implementada. Não criar organizações, planos ou assinaturas no MVP.
 
-Temporário: uploads, imagens intermediárias, dados OCR, dados de processo, prévias e PDFs preenchidos.
+Temporário: uploads, imagens intermediárias, dados extraídos, dados de processo, prévias e PDFs preenchidos.
 
 - Um crédito corresponde a **um processo documental**, não a cada formulário ou correção.
 - Não consumir crédito irreversivelmente antes da geração prevista; tratar falhas com estorno ou liberação da reserva, em transação idempotente.
@@ -273,7 +273,7 @@ Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exi
 - Somente sugerir valores documentais quando o tipo de documento e o rótulo identificarem o campo semântico com baixa ambiguidade. TIE não fornece automaticamente CPF do comprador; identidade do vendedor não preenche o comprador.
 - CPF com dígito verificador correto **não comprova identidade**; sugestões continuam em `REVIEW_REQUIRED`.
 - Se houver dois valores diferentes que encaixem na mesma regra, não selecionar nenhum. Campos ausentes permanecem vazios para preenchimento manual.
-- Nunca anunciar porcentagem de confiança sem evidências reais do OCR. Investigar imagem rotacionada, perspectiva, sombras e leituras inconsistentes antes de abrir para público.
+- Nunca anunciar porcentagem de confiança como probabilidade calibrada sem evidências medidas. Testar imagens rotacionadas, perspectiva, sombras, cortes e baixa resolução antes de abrir para público.
 - Verificar e atualizar `docs/OPENAI_DOCUMENT_ANALYSIS.md` e testes unitários sempre que acrescentar padrões.
 
 ## Cobrança com entrega — regras técnicas
