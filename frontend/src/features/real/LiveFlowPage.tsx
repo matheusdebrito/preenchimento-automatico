@@ -732,13 +732,13 @@ export function LiveFlowPage() {
                   ) : (
                     <Notice tone="danger" role="alert" title="Nenhum campo preenchido automaticamente">
                       O arquivo foi recebido, mas não foi possível aproveitar dados dele para os
-                      formulários selecionados. Confira o resultado da leitura por documento abaixo.
+                      formulários selecionados. Confira o resultado da análise por documento abaixo.
                       Se necessário, refaça a foto com o documento inteiro, bem iluminado, sem
                       reflexos e com o texto nítido. Você pode continuar preenchendo manualmente.
                     </Notice>
                   )}
                   {diagnostics.length > 0 ? (
-                    <div className="live-ocr-report">
+                    <div className="live-analysis-report">
                       <strong>Resultado da análise por documento</strong>
                       <ul>
                         {diagnostics.map((item) => (
@@ -753,25 +753,13 @@ export function LiveFlowPage() {
                                     ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
                                     : 'texto detectado, mas nenhum dado foi associado aos campos com segurança')}
                             {item.engine ? (
-                              <span className="live-ocr-name-stage">
-                                {' · Leitura: ' + (
+                              <span className="live-analysis-provider">
+                                {' · Provedor: ' + (
                                   'OpenAI'
                                 )}
                               </span>
                             ) : null}
-                            {item.nameStage ? (
-                              <span className="live-ocr-name-stage">
-                                {' · Nome: ' + (
-                                  item.nameStage === 'name_recognized'
-                                    ? 'identificado para revisão'
-                                    : item.nameStage === 'name_not_mapped'
-                                      ? 'identificado, mas sem campo no formulário'
-                                      : item.nameStage === 'label_seen_name_rejected'
-                                        ? 'rótulo encontrado, mas valor não validado'
-                                        : 'rótulo não localizado no documento'
-                                )}
-                              </span>
-                            ) : null}
+
                           </li>
                         ))}
                       </ul>
