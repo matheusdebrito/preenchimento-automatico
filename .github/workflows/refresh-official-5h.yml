@@ -22,31 +22,42 @@ jobs:
       - name: Install PDF inspection tools
         run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
 
-      - name: Download official two-page Anexo 5-H
+      - name: Extract complete Anexo 5-H from the official NORMAM-211
         shell: bash
         run: |
           set -euo pipefail
           target="backend/templates/requerimento-cha-amador/v1/original.pdf"
-          tmp="$(mktemp)"
+          source_pdf="$(mktemp --suffix=.pdf)"
+          page1="$(mktemp --suffix=.pdf)"
+          page2="$(mktemp --suffix=.pdf)"
+
           curl --fail --location --retry 3 --retry-delay 2 \
-            "https://www.marinha.mil.br/cpaor/sites/www.marinha.mil.br.cpaor/files/NORMAM%20211%20-%20ANEXO%205-H.pdf" \
-            --output "$tmp"
+            "https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf" \
+            --output "$source_pdf"
 
-          pages="$(pdfinfo "$tmp" | awk '/^Pages:/ {print $2}')"
+          total_pages="$(pdfinfo "$source_pdf" | awk '/^Pages:/ {print $2}')"
+          if [ "$total_pages" -lt 255 ]; then
+            echo "Official NORMAM-211 is shorter than expected: $total_pages pages" >&2
+            exit 1
+          fi
+
+          pdfseparate -f 254 -l 255 "$source_pdf" "$(dirname "$page1")/normam-211-page-%d.pdf"
+          mv "$(dirname "$page1")/normam-211-page-254.pdf" "$page1"
+          mv "$(dirname "$page2")/normam-211-page-255.pdf" "$page2"
+
+          pdftotext "$page1" - | grep -q "ANEXO 5-H"
+          pdftotext "$page1" - | grep -q "REQUERIMENTO"
+          pdftotext "$page2" - | grep -q "DESCRIÇÃO DO PEDIDO"
+
+          pdfunite "$page1" "$page2" "$target"
+
+          pages="$(pdfinfo "$target" | awk '/^Pages:/ {print $2}')"
           if [ "$pages" != "2" ]; then
-            echo "Expected official Anexo 5-H to have 2 pages, got: $pages" >&2
+            echo "Expected extracted Anexo 5-H to have 2 pages, got: $pages" >&2
             exit 1
           fi
 
-          page_size_count="$(pdfinfo "$tmp" | grep -c '^Page size:')"
-          if [ "$page_size_count" -lt 1 ]; then
-            echo "Could not verify page geometry" >&2
-            exit 1
-          fi
-
-          mkdir -p "$(dirname "$target")"
-          mv "$tmp" "$target"
-          echo "Downloaded official Anexo 5-H:"
+          echo "Extracted official Anexo 5-H:"
           pdfinfo "$target" | grep -E '^(Pages|Page size|PDF version):'
           echo "SHA256=$(sha256sum "$target" | awk '{print toupper($1)}')"
 
