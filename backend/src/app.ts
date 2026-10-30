@@ -9,6 +9,7 @@ import type { AppEnv } from './config/env.js';
 import { registerHealthRoutes } from './routes/health.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerAuthRoutes } from './routes/auth.js';
+import { registerAdminRoutes } from './routes/admin.js';
 import { registerJobRoutes } from './routes/jobs.js';
 import type { Database } from './modules/auth/db.js';
 import type { CatalogDefinition } from './modules/catalog/contracts.js';
@@ -53,7 +54,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     origin: [...env.CORS_ORIGINS],
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Idempotency-Key'],
     exposedHeaders: ['X-Request-Id'],
     maxAge: 600,
   });
@@ -68,6 +69,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerHealthRoutes(app);
   registerCatalogRoutes(app, options.catalogOverride);
   registerAuthRoutes(app, env, options.pool);
+  registerAdminRoutes(app, options.pool);
   // Vitest executes API suites in parallel. Give each test app a unique
   // private root so orphan cleanup cannot erase another suite's live job.
   const testRoot = isTest ? resolve(tmpdir(), 'pa-test-app-' + randomUUID()) : undefined;

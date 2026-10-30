@@ -79,9 +79,16 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
             Início
           </NavLink>
           {session.status === 'authenticated' ? (
-            <NavLink to="/minha-conta" className="site-nav__link" onClick={closeMenu}>
-              Minha conta
-            </NavLink>
+            <>
+              <NavLink to="/minha-conta" className="site-nav__link" onClick={closeMenu}>
+                Minha conta
+              </NavLink>
+              {session.user?.role === 'ADMIN' ? (
+                <NavLink to="/admin" className="site-nav__link" onClick={closeMenu}>
+                  Administração
+                </NavLink>
+              ) : null}
+            </>
           ) : session.status === 'guest' ? (
             <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
               Entrar
