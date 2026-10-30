@@ -143,6 +143,8 @@ jobs:
       - name: Install locked dependencies
         working-directory: backend
         run: npm ci
+      - name: Install PDF validation tools
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils qpdf
       - name: Run database integration tests
         working-directory: backend
         run: >-
