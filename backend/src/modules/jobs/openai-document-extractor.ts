@@ -280,7 +280,9 @@ function extractionPrompt(
 ): string {
   const fieldList = fields.map((field) => ({
     id: field.id,
-    label: field.label,
+    label: field.id.endsWith('.identity')
+      ? 'Número da identidade / Registro Geral (RG)'
+      : field.label,
     type: field.valueKind,
     required: field.required,
   }));
@@ -314,6 +316,9 @@ function extractionPrompt(
     '11c. Na CIN, o CPF é o número único da identidade. Retorne o CPF normalmente; o backend deriva o campo de identidade de forma determinística.',
     '11d. Não retorne identityType a partir de texto livre; o backend deriva RG, CIN ou CNH do subtipo classificado.',
     '11e. Em documentos de identidade, procure explicitamente e de forma independente: número da identidade, órgão emissor/expedidor e UF do órgão emissor.',
+    '11e.1. Em RG brasileiro, o valor associado a REGISTRO GERAL é o número da identidade. Trate também RG, Nº RG, NÚMERO DO RG e IDENTIDADE como rótulos equivalentes quando estiverem visíveis.',
+    '11e.2. Se REGISTRO GERAL estiver legível, retorne o número imediatamente associado como o campo *.identity; preserve pontuação e dígito verificador visíveis.',
+    '11e.3. Nunca substitua o Registro Geral por CPF, data de nascimento, número de CNH ou outro identificador.',
     '11f. Se órgão e UF estiverem impressos juntos, por exemplo SSP/RJ ou DETRAN-RJ, retorne issuer=SSP ou DETRAN e issuerState=RJ. Isso é separação de informação visível, não inferência.',
     '11g. Nunca use CPF como número de identidade em RG/CNH. Em CIN, a regra específica abaixo continua válida.',
     '11h. Em TIE digital, não invente endereço de proprietário/coproprietário se o bloco não existir. Em TIE/TIEM legado, extraia endereço somente quando estiver explicitamente impresso.',
