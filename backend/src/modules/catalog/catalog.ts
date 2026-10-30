@@ -17,10 +17,10 @@ import {
 } from './amateur-services.js';
 
 /**
- * This is configuration, not evidence of applicable official forms.
- * Keep the pilot in DRAFT until all required PDF versions are verified,
- * mapped, visually reviewed and associated with the service.
- * Frontend demo data remains separate; no document is generated here.
+ * Authoritative catalog of the forms currently released by the application.
+ * A service is AVAILABLE only when its applicable PDF versions are VERIFIED,
+ * mappings are APPROVED and the service/form relationships pass catalog validation.
+ * Protocol-only requirements remain outside automatic form generation.
  */
 export const catalog: CatalogDefinition = {
   fields: [
