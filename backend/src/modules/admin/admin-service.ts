@@ -91,7 +91,7 @@ function usagePeriodSql(period: AdminUsagePeriod): {
     end: "date_trunc('year', timezone('America/Sao_Paulo', now())) + interval '1 year'",
     step: "interval '1 month'",
     trunc: 'month',
-    label: "to_char(bucket, 'Mon')",
+    label: "to_char(bucket, 'MM/YYYY')",
   };
 }
 
