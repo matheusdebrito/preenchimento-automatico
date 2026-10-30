@@ -5,6 +5,7 @@ import { buildApp } from '../../app.js';
 import { connectDatabase } from '../auth/db.js';
 import type { Database } from '../auth/db.js';
 import { hashPassword } from '../auth/crypto.js';
+import { ensureBootstrapAdmin } from '../auth/auth-service.js';
 import type { AppEnv } from '../../config/env.js';
 
 const url = process.env.DATABASE_TEST_URL;
@@ -48,8 +49,13 @@ describePg('PostgreSQL: painel administrativo', () => {
     });
     expect(registered.statusCode).toBe(201);
     adminId = registered.json<{user:{id:string;role:string}}>().user.id;
-    expect(registered.json<{user:{role:string}}>().user.role).toBe('ADMIN');
+    expect(registered.json<{user:{role:string}}>().user.role).toBe('USER');
     adminCookie = String(registered.headers['set-cookie']).split(';')[0]!;
+    expect(await ensureBootstrapAdmin(pool, adminEmail)).toBe(true);
+    const bootstrapped = await app.inject({
+      method: 'GET', url: '/api/auth/me', headers: { cookie: adminCookie },
+    });
+    expect(bootstrapped.json<{user:{role:string}}>().user.role).toBe('ADMIN');
 
     userId = randomUUID();
     await pool.query(
