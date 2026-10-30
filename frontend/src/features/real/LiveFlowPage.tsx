@@ -19,8 +19,6 @@ type ExtractionDiagnostic = {
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
   suggestionCount: number;
   engine?: 'paddleocr' | 'pdf-text' | 'openai';
-  nameStage?: 'name_recognized' | 'name_not_mapped' |
-    'label_seen_name_rejected' | 'label_not_detected';
 };
 
 function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
@@ -785,19 +783,6 @@ export function LiveFlowPage() {
                                   item.engine === 'pdf-text' ? 'texto digital do PDF'
                                     : item.engine === 'openai' ? 'OpenAI'
                                       : 'PaddleOCR'
-                                )}
-                              </span>
-                            ) : null}
-                            {item.nameStage ? (
-                              <span className="live-ocr-name-stage">
-                                {' · Nome: ' + (
-                                  item.nameStage === 'name_recognized'
-                                    ? 'identificado para revisão'
-                                    : item.nameStage === 'name_not_mapped'
-                                      ? 'identificado, mas sem campo no formulário'
-                                      : item.nameStage === 'label_seen_name_rejected'
-                                        ? 'rótulo encontrado, mas valor não validado'
-                                        : 'rótulo não localizado na saída textual do OCR'
                                 )}
                               </span>
                             ) : null}
