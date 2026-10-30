@@ -10,6 +10,7 @@ export type DetectedDocumentSubtype =
   | 'rg'
   | 'cin'
   | 'cnh'
+  | 'cha'
   | 'tie-digital'
   | 'tie-legacy'
   | 'unknown'
@@ -91,6 +92,14 @@ const IDENTITY_FIELDS_BY_SUBTYPE: Readonly<Record<
     'parent1Name', 'parent2Name',
   ]),
 };
+
+export const CHA_FIELDS = [
+  'person.fullName',
+  'person.cpf',
+  'amateur.chaNumber',
+  'amateur.category',
+  'amateur.chaIssueDate',
+] as const;
 
 export const RESIDENCE_PROOF_FIELDS = [
   'person.address',
@@ -256,6 +265,10 @@ export function fieldsAllowedForDetectedSubtype(
   if (documentType === 'identity' && ['rg', 'cin', 'cnh'].includes(subtype)) {
     const allowed = IDENTITY_FIELDS_BY_SUBTYPE[subtype as 'rg' | 'cin' | 'cnh'];
     return configuredAllowedFieldIds.filter((fieldId) => allowed.has(semanticLeaf(fieldId)));
+  }
+  if (documentType === 'cha' && subtype === 'cha') {
+    const allowed = new Set<string>(CHA_FIELDS);
+    return configuredAllowedFieldIds.filter((fieldId) => allowed.has(fieldId));
   }
   if (documentType === 'tie' && subtype === 'tie-digital') {
     return configuredAllowedFieldIds.filter((fieldId) => TIE_DIGITAL_FIELDS.has(fieldId));

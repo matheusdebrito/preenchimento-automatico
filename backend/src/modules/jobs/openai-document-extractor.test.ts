@@ -310,8 +310,8 @@ describe('OpenAI document extractor', () => {
                   confidence: 'high',
                 }],
                 documents: [
-                  { requirementId: 'buyer-identity', status: 'readable' },
-                  { requirementId: 'tie', status: 'readable' },
+                  { requirementId: 'buyer-identity', status: 'readable', subtype: 'rg' },
+                  { requirementId: 'tie', status: 'readable', subtype: 'tie-digital' },
                 ],
               }),
             }],
@@ -319,9 +319,13 @@ describe('OpenAI document extractor', () => {
           usage: { input_tokens: 1000, output_tokens: 100, total_tokens: 1100 },
         }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
-      expect(serialized).not.toContain('person.fullName');
-      expect(serialized).toContain('person.cpf');
-      expect(serialized).toContain('vessel.registration');
+      const prompt = (body.input[0]?.content.find((item) =>
+        item.type === 'input_text') as { text?: string } | undefined)?.text ?? '';
+      const allowedFieldsLine = prompt.split('\n')
+        .find((line) => line.startsWith('Campos permitidos: ')) ?? '';
+      expect(allowedFieldsLine).not.toContain('person.fullName');
+      expect(allowedFieldsLine).toContain('person.cpf');
+      expect(allowedFieldsLine).toContain('vessel.registration');
       return new Response(JSON.stringify({
         output: [{
           type: 'message',
@@ -331,7 +335,7 @@ describe('OpenAI document extractor', () => {
               candidates: [
                 {
                   fieldId: 'person.cpf',
-                  value: '123.456.789-09',
+                  value: '529.982.247-25',
                   sourceRequirementId: 'buyer-identity',
                   confidence: 'high',
                 },
@@ -343,8 +347,8 @@ describe('OpenAI document extractor', () => {
                 },
               ],
               documents: [
-                { requirementId: 'buyer-identity', status: 'readable' },
-                { requirementId: 'tie', status: 'readable' },
+                { requirementId: 'buyer-identity', status: 'readable', subtype: 'rg' },
+                { requirementId: 'tie', status: 'readable', subtype: 'tie-digital' },
               ],
             }),
           }],
@@ -397,7 +401,7 @@ describe('OpenAI document extractor', () => {
     expect(Object.fromEntries(result.evidence.map((item) => [item.fieldId, item.value])))
       .toEqual({
         'person.fullName': 'MARIA DE SOUZA',
-        'person.cpf': '123.456.789-09',
+        'person.cpf': '529.982.247-25',
         'vessel.registration': '441M20200001',
       });
     expect(result.contingency).toMatchObject({
@@ -553,6 +557,243 @@ describe('OpenAI document extractor', () => {
     expect(result.contingency.documentCount).toBe(1);
   });
 
+
+  it('extrai número, categoria e emissão da CHA sem aceitar campos fora da política', async () => {
+    const cha = await fixture('cha.jpg', 'jpeg', 'current-cha');
+    const fakeFetch = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        input: Array<{content:Array<Record<string, unknown>>}>;
+      };
+      const serialized = JSON.stringify(body);
+      expect(serialized).toContain('Carteira de Habilitação de Amador como cha');
+      expect(serialized).toContain('amateur.chaNumber');
+      expect(serialized).toContain('amateur.category');
+      expect(serialized).toContain('amateur.chaIssueDate');
+      expect(serialized).toContain('QR Code');
+
+      return new Response(JSON.stringify({
+        output: [{
+          type: 'message',
+          content: [{
+            type: 'output_text',
+            text: JSON.stringify({
+              candidates: [
+                {
+                  fieldId: 'person.fullName',
+                  value: 'JOAO DA SILVA',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'person.cpf',
+                  value: '529.982.247-25',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'amateur.chaNumber',
+                  value: '123456789',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'amateur.category',
+                  value: 'ARRAIS-AMADOR',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'amateur.chaIssueDate',
+                  value: '15/03/2024',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'person.address',
+                  value: 'RUA QUE NAO DEVE SER ACEITA',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+              ],
+              documents: [{
+                requirementId: 'current-cha',
+                status: 'readable',
+                subtype: 'cha',
+              }],
+            }),
+          }],
+        }],
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+
+    const result = await extractDocumentsWithOpenAi([
+      {
+        document: cha,
+        label: 'Carteira de Habilitação de Amador (CHA)',
+        documentType: 'cha',
+        subjectRole: 'person',
+        allowedFieldIds: [
+          'person.fullName',
+          'person.cpf',
+          'person.address',
+          'amateur.chaNumber',
+          'amateur.category',
+          'amateur.chaIssueDate',
+        ],
+      },
+    ], [
+      { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: false },
+      {
+        id: 'person.cpf',
+        label: 'CPF',
+        valueKind: 'text',
+        validationRuleId: 'cpf',
+        required: false,
+      },
+      { id: 'person.address', label: 'Endereço', valueKind: 'text', required: false },
+      { id: 'amateur.chaNumber', label: 'Número da CHA', valueKind: 'text', required: false },
+      { id: 'amateur.category', label: 'Categoria da CHA', valueKind: 'text', required: false },
+      {
+        id: 'amateur.chaIssueDate',
+        label: 'Data de emissão da CHA',
+        valueKind: 'date',
+        required: false,
+      },
+    ], {
+      env: {
+        OPENAI_API_KEY: 'test-key',
+        OPENAI_MODEL: 'gpt-5.4-mini-2026-03-17',
+      },
+      fetchImpl: fakeFetch as unknown as typeof fetch,
+    });
+
+    expect(result.documentSubtypes).toEqual({ 'current-cha': 'cha' });
+    expect(Object.fromEntries(result.evidence.map((item) => [item.fieldId, item.value])))
+      .toEqual({
+        'person.fullName': 'JOAO DA SILVA',
+        'person.cpf': '529.982.247-25',
+        'amateur.chaNumber': '123456789',
+        'amateur.category': 'ARRAIS-AMADOR',
+        'amateur.chaIssueDate': '15/03/2024',
+      });
+  });
+
+  it('extrai dados estruturados da CHA e bloqueia campos fora da política', async () => {
+    const cha = await fixture('cha.jpg', 'jpeg', 'current-cha');
+    const fakeFetch = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const serialized = String(init?.body);
+      expect(serialized).toContain('Carteira de Habilitação de Amador como cha');
+      expect(serialized).toContain('amateur.chaNumber');
+      expect(serialized).toContain('amateur.category');
+      expect(serialized).toContain('amateur.chaIssueDate');
+      expect(serialized).toContain('QR Code');
+
+      return new Response(JSON.stringify({
+        output: [{
+          type: 'message',
+          content: [{
+            type: 'output_text',
+            text: JSON.stringify({
+              candidates: [
+                {
+                  fieldId: 'person.fullName',
+                  value: 'JOAO DA SILVA',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'person.cpf',
+                  value: '529.982.247-25',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'amateur.chaNumber',
+                  value: '123456789',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'amateur.category',
+                  value: 'ARRAIS-AMADOR',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'amateur.chaIssueDate',
+                  value: '15/03/2024',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'person.address',
+                  value: 'RUA NAO AUTORIZADA',
+                  sourceRequirementId: 'current-cha',
+                  confidence: 'high',
+                },
+              ],
+              documents: [{
+                requirementId: 'current-cha',
+                status: 'readable',
+                subtype: 'cha',
+              }],
+            }),
+          }],
+        }],
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+
+    const result = await extractDocumentsWithOpenAi([
+      {
+        document: cha,
+        label: 'Carteira de Habilitação de Amador (CHA)',
+        documentType: 'cha',
+        subjectRole: 'person',
+        allowedFieldIds: [
+          'person.fullName',
+          'person.cpf',
+          'person.address',
+          'amateur.chaNumber',
+          'amateur.category',
+          'amateur.chaIssueDate',
+        ],
+      },
+    ], [
+      { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: false },
+      {
+        id: 'person.cpf',
+        label: 'CPF',
+        valueKind: 'text',
+        validationRuleId: 'cpf',
+        required: false,
+      },
+      { id: 'person.address', label: 'Endereço', valueKind: 'text', required: false },
+      { id: 'amateur.chaNumber', label: 'Número da CHA', valueKind: 'text', required: false },
+      { id: 'amateur.category', label: 'Categoria da CHA', valueKind: 'text', required: false },
+      {
+        id: 'amateur.chaIssueDate',
+        label: 'Data de emissão da CHA',
+        valueKind: 'date',
+        required: false,
+      },
+    ], {
+      env: {
+        OPENAI_API_KEY: 'test-key',
+        OPENAI_MODEL: 'gpt-5.4-mini-2026-03-17',
+      },
+      fetchImpl: fakeFetch as unknown as typeof fetch,
+    });
+
+    expect(result.documentSubtypes).toEqual({ 'current-cha': 'cha' });
+    expect(Object.fromEntries(result.evidence.map((item) => [item.fieldId, item.value])))
+      .toEqual({
+        'person.fullName': 'JOAO DA SILVA',
+        'person.cpf': '529.982.247-25',
+        'amateur.chaNumber': '123456789',
+        'amateur.category': 'ARRAIS-AMADOR',
+        'amateur.chaIssueDate': '15/03/2024',
+      });
+  });
 
   it('deriva tipo e número da identidade corretamente para CIN', async () => {
     const identity = await fixture('cin.jpg', 'jpeg', 'buyer-identity');

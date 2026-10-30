@@ -151,7 +151,7 @@ describe('projeção pública do catálogo', () => {
     expect(enrollment).not.toBeNull();
     expect(enrollment?.formVersionIds).toEqual(['requerimento-cha-amador-2026-v1']);
     expect(enrollment?.documentRequirements.map((item) => item.id))
-      .toEqual(['applicant-identity', 'residence-proof']);
+      .toEqual(['applicant-identity', 'current-cha', 'residence-proof']);
     expect(enrollment?.documentRequirements.every((item) => item.required === false)).toBe(true);
   });
 
@@ -173,6 +173,8 @@ describe('projeção pública do catálogo', () => {
       'requerimento-cha-amador-2026-v1',
       'requerimento-motonauta-2026-v1',
     ]);
+    expect(mta?.documentRequirements.map((item) => item.id))
+      .toContain('current-cha');
   });
 
   it('publica renovação da CHA com uploads opcionais e pacote condicional 5-D', () => {
@@ -183,7 +185,16 @@ describe('projeção pública do catálogo', () => {
     expect(regular).not.toBeNull();
     expect(regular?.formVersionIds).toEqual(['requerimento-cha-amador-2026-v1']);
     expect(regular?.documentRequirements.map((item) => item.id))
-      .toEqual(['applicant-identity', 'residence-proof']);
+      .toEqual(['applicant-identity', 'current-cha', 'residence-proof']);
+    const cha = regular?.documentRequirements.find((item) => item.id === 'current-cha');
+    expect(cha?.extraction?.documentType).toBe('cha');
+    expect(cha?.extraction?.allowedFieldIds).toEqual([
+      'person.fullName',
+      'person.cpf',
+      'amateur.chaNumber',
+      'amateur.category',
+      'amateur.chaIssueDate',
+    ]);
     expect(regular?.documentRequirements.every((item) => item.required === false)).toBe(true);
 
     const lost = publicService(catalog, 'renovacao-cha-amador', {
