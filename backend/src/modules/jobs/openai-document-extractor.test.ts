@@ -37,70 +37,35 @@ describe('OpenAI document extractor', () => {
     const tie = await fixture('tie.pdf', 'pdf', 'tie');
 
     const fakeFetch = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
-      void input;
-      void init;
+      expect(input).toBe('https://api.openai.com/v1/responses');
+      expect(init?.method).toBe('POST');
       return new Response(JSON.stringify({
-      output: [{
-        type: 'message',
-        content: [{
-          type: 'output_text',
-          text: JSON.stringify({
-            candidates: [
-              {
-                fieldId: 'person.fullName',
-                value: 'MARIA DE SOUZA',
-                sourceRequirementId: 'buyer-identity',
-                confidence: 'high',
-              },
-              {
-                fieldId: 'person.cpf',
-                value: '111.111.111-11',
-                sourceRequirementId: 'buyer-identity',
-                confidence: 'high',
-              },
-              {
-                fieldId: 'person.identity',
-                value: '12.345.678-9',
-                sourceRequirementId: 'buyer-identity',
-                confidence: 'high',
-              },
-              {
-                fieldId: 'person.issuer',
-                value: 'SSP/RJ',
-                sourceRequirementId: 'buyer-identity',
-                confidence: 'high',
-              },
-              {
-                fieldId: 'vessel.registration',
-                value: '441M20200001',
-                sourceRequirementId: 'tie',
-                confidence: 'medium',
-              },
-              {
-                fieldId: 'vessel.registration',
-                value: '999M20209999',
-                sourceRequirementId: 'buyer-identity',
-                confidence: 'high',
-              },
-              {
-                fieldId: 'person.fullName',
-                value: 'OUTRO NOME',
-                sourceRequirementId: 'tie',
-                confidence: 'high',
-              },
-            ],
-            documents: [
-              { requirementId: 'buyer-identity', status: 'readable' },
-              { requirementId: 'tie', status: 'readable' },
-            ],
-          }),
+        output: [{
+          type: 'message',
+          content: [{
+            type: 'output_text',
+            text: JSON.stringify({
+              candidates: [
+                { fieldId: 'person.fullName', value: 'MARIA DE SOUZA', sourceRequirementId: 'buyer-identity', confidence: 'high' },
+                { fieldId: 'person.cpf', value: '111.111.111-11', sourceRequirementId: 'buyer-identity', confidence: 'high' },
+                { fieldId: 'person.identity', value: '12.345.678-9', sourceRequirementId: 'buyer-identity', confidence: 'high' },
+                { fieldId: 'person.issuer', value: 'SSP/RJ', sourceRequirementId: 'buyer-identity', confidence: 'high' },
+                { fieldId: 'vessel.registration', value: '441M20200001', sourceRequirementId: 'tie', confidence: 'medium' },
+                { fieldId: 'vessel.registration', value: '999M20209999', sourceRequirementId: 'buyer-identity', confidence: 'high' },
+                { fieldId: 'person.fullName', value: 'OUTRO NOME', sourceRequirementId: 'tie', confidence: 'high' },
+              ],
+              documents: [
+                { requirementId: 'buyer-identity', status: 'readable' },
+                { requirementId: 'tie', status: 'readable' },
+              ],
+            }),
+          }],
         }],
-      }],
-      usage: { input_tokens: 1200, output_tokens: 130, total_tokens: 1330 },
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+        usage: { input_tokens: 1200, output_tokens: 130, total_tokens: 1330 },
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     });
 
     const result = await extractDocumentsWithOpenAi([
