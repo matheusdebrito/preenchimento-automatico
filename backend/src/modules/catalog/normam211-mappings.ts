@@ -29,101 +29,102 @@ function top(
   };
 }
 
+export const BADE_ALLOWED_FIELD_NUMBERS = [
+  2, 3, 4, 8, 9, 10, 16, 17, 20, 21, 22, 23, 24, 25, 26,
+  39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
+  53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65,
+] as const;
+
 const badePlacements: readonly CoordinatePlacement[] = [
-  // Campos 1, 3, 4, 5, 7, 8 e 9 são reservados à CP/DL/AG no próprio anexo.
+  // Página 1 - somente os números autorizados pelo produto.
+  // 02 Nome da embarcação.
   top('vessel.name', 195, 305, 335, 7, 0, true),
-  top('vessel.type', 365, 331, 80, 6.5),
+  // 03 Número de inscrição.
+  top('vessel.registration', 175, 318, 130, 6.5),
+  // 04 Data da inscrição.
+  top('vessel.registrationDate', 430, 318, 95, 6.2),
+  // 08 Classificação quanto ao tipo/área de navegação.
+  top('vessel.navigationArea', 100, 365, 105, 5.8),
+  // 09 Classificação quanto à atividade/serviço.
+  top('vessel.activity', 220, 365, 95, 5.8),
+  // 10 Quantidade de passageiros.
   top('vessel.passengerCount', 345, 365, 35, 7),
-  top('vessel.mortgaged', 406, 350, 10, 8, 0, false, 'sim'),
-  top('vessel.mortgaged', 406, 362, 10, 8, 0, false, 'nao'),
-  top('vessel.helideck', 476, 350, 10, 8, 0, false, 'sim'),
-  top('vessel.helideck', 476, 362, 10, 8, 0, false, 'nao'),
-  top('vessel.imoNumber', 95, 445, 90, 6.5),
-  top('vessel.callSign', 210, 445, 85, 6.5),
-  top('vessel.tmRegistration', 325, 445, 120, 6.5),
+  // 16 Número do casco.
   top('vessel.hullId', 482, 445, 48, 5.5, 0, true),
+  // 17 Ano de construção.
   top('vessel.year', 100, 495, 43, 6.5),
-  top('vessel.keelDate', 157, 505, 16, 5.5, 0, false, undefined, 'DATE_DAY'),
-  top('vessel.keelDate', 181, 505, 16, 5.5, 0, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('vessel.keelDate', 205, 505, 16, 5.5, 0, false, undefined, 'DATE_YEAR'),
-  top('vessel.launchDate', 237, 493, 16, 5.5, 0, false, undefined, 'DATE_DAY'),
-  top('vessel.launchDate', 260, 493, 16, 5.5, 0, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('vessel.launchDate', 284, 493, 16, 5.5, 0, false, undefined, 'DATE_YEAR'),
+  // 20 Comprimento total.
   top('vessel.length', 327, 495, 55, 6.5),
+  // 21 Boca.
   top('vessel.breadth', 405, 495, 50, 6.5),
+  // 22 Pontal.
   top('vessel.depth', 478, 495, 52, 6.5),
+  // 23 Tipo de propulsão.
   top('vessel.propulsionType', 94, 570, 48, 5.5),
+  // 24 Quantidade de motores propulsores.
   top('vessel.motorCount', 160, 570, 56, 6),
+  // 25 Potência total de propulsão.
   top('vessel.totalPropulsionPowerKw', 238, 545, 63, 5.5),
+  // 26 Número(s) dos motores propulsores.
   top('vessel.motorSerial', 326, 536, 80, 5.5),
-  top('vessel.grossTonnage', 466, 530, 58, 5.5),
-  top('vessel.netTonnage', 466, 542, 58, 5.5),
-  top('vessel.tonnageMethod', 431, 561, 10, 8, 0, false, 'antes_t69'),
-  top('vessel.tonnageMethod', 431, 574, 10, 8, 0, false, 'depois_t69'),
-  top('vessel.lateralThrusterBow', 118, 666, 14, 5.5),
-  top('vessel.lateralThrusterMidship', 133, 678, 14, 5.5),
-  top('vessel.lateralThrusterStern', 104, 690, 14, 5.5),
-  top('vessel.fuelType1', 174, 648, 45, 5.5),
-  top('vessel.fuelType2', 174, 661, 45, 5.5),
-  top('vessel.fuelCapacity1', 294, 643, 18, 5.5),
-  top('vessel.fuelCapacity2', 294, 655, 18, 5.5),
-  top('vessel.constructionLicense', 345, 690, 48, 5.0),
-  top('vessel.staticTraction', 402, 642, 12, 5.5),
-  top('vessel.hullMaterial', 478, 650, 52, 5.5),
-  top('vessel.superstructureMaterial', 478, 690, 52, 5.5),
-  top('vessel.classificationSociety', 95, 730, 430, 6),
 
-  top('vessel.equipmentGps', 98, 116, 10, 8, 1, false, 'true'),
-  top('vessel.equipmentRadar', 98, 143, 10, 8, 1, false, 'true'),
-  top('vessel.equipmentEchoSounder', 98, 155, 10, 8, 1, false, 'true'),
-  top('vessel.equipmentAis', 98, 167, 10, 8, 1, false, 'true'),
-  top('vessel.communicationHf', 216, 104, 10, 8, 1, false, 'true'),
-  top('vessel.communicationUhf', 255, 104, 10, 8, 1, false, 'true'),
-  top('vessel.communicationVhfNoDsc', 296, 104, 10, 8, 1, false, 'true'),
-  top('vessel.communicationVhfDsc', 216, 116, 10, 8, 1, false, 'true'),
-  top('vessel.communicationGmdss', 216, 128, 10, 8, 1, false, 'true'),
-  top('vessel.inmarsatA', 286, 155, 66, 5.5, 1),
-  top('vessel.inmarsatB', 286, 167, 66, 5.5, 1),
-  top('vessel.inmarsatC', 286, 179, 66, 5.5, 1),
-  top('vessel.dpemNumber', 408, 132, 115, 6, 1),
-  top('vessel.dpemExpiry', 434, 145, 14, 5.5, 1, false, undefined, 'DATE_DAY'),
-  top('vessel.dpemExpiry', 452, 145, 14, 5.5, 1, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('vessel.dpemExpiry', 471, 145, 24, 5.5, 1, false, undefined, 'DATE_YEAR'),
-
+  // Página 2 - proprietário: campos 39 a 51. Campo 52 (telefax) não é preenchido.
+  // 39 Nome.
   top('person.fullName', 110, 247, 175, 6.5, 1, true),
+  // 40 CPF/CNPJ.
   top('person.cpf', 225, 247, 56, 5.5, 1, true),
+  // 41 Identidade.
   top('person.identity', 320, 247, 85, 5.5, 1),
+  // 42 Órgão emissor.
   top('person.issuer', 420, 247, 72, 5.5, 1),
+  // 43 UF do órgão emissor.
   top('person.issuerState', 520, 247, 16, 5.5, 1),
+  // 44 Endereço completo.
   top('person.address', 110, 277, 330, 6, 1),
   top('person.streetNumber', 450, 277, 35, 6, 1),
   top('person.apartment', 490, 277, 45, 6, 1),
+  // 45 CEP.
   top('person.postalCode', 110, 305, 82, 6, 1),
+  // 46 Bairro.
   top('person.neighborhood', 230, 305, 55, 6, 1),
+  // 47 Cidade.
   top('person.city', 320, 305, 165, 6, 1),
+  // 48 UF do endereço.
   top('person.state', 520, 305, 16, 5.5, 1),
+  // 49 E-mail.
   top('person.email', 110, 332, 85, 5.2, 1),
+  // 50 Nacionalidade.
   top('person.nationality', 225, 332, 56, 5.5, 1),
+  // 51 Telefone com DDD.
   top('person.phone', 320, 332, 82, 5.5, 1),
-  top('person.fax', 432, 332, 96, 5.5, 1),
 
+  // Página 2 - coproprietário: campos 53 a 65. Campo 66 (telefax) não é preenchido.
+  // 53 Nome.
   top('coOwner.fullName', 110, 389, 78, 5.5, 1),
+  // 54 CPF/CNPJ.
   top('coOwner.cpf', 217, 389, 62, 5.5, 1),
+  // 55 Identidade.
   top('coOwner.identity', 318, 389, 84, 5.5, 1),
+  // 56 Órgão emissor.
   top('coOwner.issuer', 420, 389, 72, 5.5, 1),
+  // 57 UF do órgão emissor.
   top('coOwner.issuerState', 520, 389, 16, 5.5, 1),
+  // 58 Endereço completo.
   top('coOwner.address', 110, 416, 415, 6, 1),
+  // 59 CEP.
   top('coOwner.postalCode', 110, 444, 95, 6, 1),
+  // 60 Bairro.
   top('coOwner.neighborhood', 240, 444, 45, 6, 1),
+  // 61 Cidade.
   top('coOwner.city', 320, 444, 165, 6, 1),
+  // 62 UF do endereço.
   top('coOwner.state', 520, 444, 16, 5.5, 1),
+  // 63 E-mail.
   top('coOwner.email', 110, 471, 75, 5, 1),
+  // 64 Nacionalidade.
   top('coOwner.nationality', 220, 471, 65, 5.5, 1),
+  // 65 Telefone com DDD.
   top('coOwner.phone', 320, 471, 82, 5.5, 1),
-  top('coOwner.fax', 432, 471, 96, 5.5, 1),
-  top('process.date', 428, 528, 16, 5.5, 1, false, undefined, 'DATE_DAY'),
-  top('process.date', 456, 528, 16, 5.5, 1, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('process.date', 484, 528, 20, 5.5, 1, false, undefined, 'DATE_YEAR'),
 ];
 
 const bsadePlacements: readonly CoordinatePlacement[] = [
