@@ -557,3 +557,21 @@ do servidor e sessão já existente (409) recebem tratamentos distintos.
 utilizável, retry com feedback de loading e recuperação para estado guest. O CI continua
 dependente de execução manual do workflow antes de considerar os gates automatizados
 confirmados.
+
+
+## Registro de execução — 29/10/2026, correção da ordem no QA Preview
+
+**Falha reproduzida no startup:** com `DEV_QA_PREVIEW=true`, o overlay local de
+Moto Aquática anexava cinco `ServiceForm` ao mesmo serviço
+`transferencia-propriedade-embarcacao` reutilizando as ordens 1–5 já ocupadas
+pelos formulários oficiais de embarcação. `validateCatalog()` corretamente recusava o
+catálogo e a API entrava em restart loop antes de abrir a porta HTTP.
+
+**Correção:** somente o overlay QA recebeu reindexação. As relações oficiais permanecem
+inalteradas; os cinco formulários adicionais da prévia usam a faixa posterior à maior ordem
+oficial do serviço, preservando sua ordem relativa. Foi adicionado teste explícito de
+unicidade das ordens, além do gate existente `validateCatalog(qaPreviewCatalog())`.
+
+**Observação operacional:** desabilitar `DEV_QA_PREVIEW` continua sendo uma forma segura
+de executar apenas o catálogo oficial; a correção permite manter a prévia local habilitada
+sem invalidar o startup.
