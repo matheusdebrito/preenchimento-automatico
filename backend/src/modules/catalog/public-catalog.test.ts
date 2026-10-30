@@ -276,13 +276,8 @@ describe('projeção pública do catálogo', () => {
         answers: {
           vesselType: 'moto_aquatica',
           tieSituation: 'regular',
-          motoDataChangeTarget: 'dados_embarcacao',
+          motoAlterationTarget: 'dados_embarcacao_motor',
         },
-        forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
-      },
-      {
-        id: 'alteracao-motor-embarcacao',
-        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
         forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
       },
       {
@@ -318,8 +313,10 @@ describe('projeção pública do catálogo', () => {
     const dataChange = catalog.serviceForms.find((relation) =>
       relation.serviceId === 'alteracao-dados-embarcacao' &&
       relation.formVersionId === 'requerimento-ma-v1');
-    expect(dataChange?.answerBindings).toMatchObject({
-      'process.dataChangeTarget': 'motoDataChangeTarget',
+    expect(dataChange?.answerValueMappings).toMatchObject({
+      'process.dataChangeTarget': {
+        questionId: 'motoAlterationTarget',
+      },
     });
   });
 
