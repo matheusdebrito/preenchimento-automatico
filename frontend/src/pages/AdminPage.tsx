@@ -124,6 +124,19 @@ function periodLabel(period: UsagePeriod): string {
   return 'Ano';
 }
 
+function compactNumber(value: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    notation: value >= 1000 ? 'compact' : 'standard',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function showChartTick(period: UsagePeriod, index: number, total: number): boolean {
+  if (total <= 8 || period === '7d' || period === 'year') return true;
+  if (period === 'today') return index % 3 === 0 || index === total - 1;
+  return index % 5 === 0 || index === total - 1;
+}
+
 async function readAdminUsage(period: UsagePeriod): Promise<UsageMetrics> {
   return api<UsageMetrics>('/api/admin/usage?period=' + encodeURIComponent(period));
 }
@@ -340,50 +353,90 @@ export function AdminPage() {
 
                     <div className="admin-chart-grid">
                       <section className="admin-chart-card" aria-labelledby="credits-chart-title">
-                        <div>
-                          <h3 id="credits-chart-title">Créditos utilizados</h3>
-                          <p>{usage.creditsUsed.toLocaleString('pt-BR')} crédito(s) consumido(s)</p>
+                        <div className="admin-chart-card__head">
+                          <div>
+                            <h3 id="credits-chart-title">Créditos utilizados</h3>
+                            <p>Consumo por {usage.period === 'today' ? 'hora' :
+                              usage.period === 'year' ? 'mês' : 'dia'}</p>
+                          </div>
+                          <strong>{usage.creditsUsed.toLocaleString('pt-BR')}</strong>
                         </div>
-                        <div className="admin-column-chart" role="img"
-                          aria-label={'Créditos utilizados — ' + periodLabel(usage.period)}>
-                          {usage.points.map((item) => (
-                            <div className="admin-column-group" key={item.bucket}
-                              title={item.label + ': ' + item.creditsUsed + ' créditos'}>
-                              <div className="admin-column-value">{item.creditsUsed}</div>
-                              <div className="admin-column-track">
-                                <span className="admin-column admin-column--credits"
-                                  style={{height: (item.creditsUsed / maxCredits * 100) + '%'}} />
-                              </div>
-                              <span className="admin-column-label">{item.label}</span>
+                        <div className="admin-chart-shell">
+                          <div className="admin-chart-y-axis" aria-hidden="true">
+                            <span>{compactNumber(maxCredits)}</span>
+                            <span>{compactNumber(Math.round(maxCredits / 2))}</span>
+                            <span>0</span>
+                          </div>
+                          <div className="admin-column-chart" role="img"
+                            aria-label={'Créditos utilizados — ' + periodLabel(usage.period)}>
+                            <div className="admin-chart-gridlines" aria-hidden="true">
+                              <i /><i /><i />
                             </div>
-                          ))}
+                            <div className="admin-chart-bars">
+                              {usage.points.map((item, index) => (
+                                <div className="admin-column-group" key={item.bucket}
+                                  title={item.label + ': ' + item.creditsUsed + ' créditos'}>
+                                  <div className="admin-column-track">
+                                    <span className="admin-column admin-column--credits"
+                                      style={{height: (item.creditsUsed / maxCredits * 100) + '%'}} />
+                                  </div>
+                                  <span className={showChartTick(usage.period, index, usage.points.length)
+                                    ? 'admin-column-label'
+                                    : 'admin-column-label admin-column-label--hidden'}>
+                                    {item.label}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </section>
 
                       <section className="admin-chart-card" aria-labelledby="tokens-chart-title">
-                        <div>
-                          <h3 id="tokens-chart-title">Tokens OpenAI</h3>
-                          <p>Entrada e saída por período</p>
+                        <div className="admin-chart-card__head">
+                          <div>
+                            <h3 id="tokens-chart-title">Tokens OpenAI</h3>
+                            <p>Entrada e saída por {usage.period === 'today' ? 'hora' :
+                              usage.period === 'year' ? 'mês' : 'dia'}</p>
+                          </div>
+                          <strong>{(usage.inputTokens + usage.outputTokens).toLocaleString('pt-BR')}</strong>
                         </div>
-                        <div className="admin-chart-legend" aria-hidden="true">
+                        <div className="admin-chart-legend" aria-label="Legenda do gráfico de tokens">
                           <span><i className="admin-legend-input" /> Entrada</span>
                           <span><i className="admin-legend-output" /> Saída</span>
                         </div>
-                        <div className="admin-column-chart admin-column-chart--tokens" role="img"
-                          aria-label={'Tokens OpenAI de entrada e saída — ' + periodLabel(usage.period)}>
-                          {usage.points.map((item) => (
-                            <div className="admin-column-group" key={item.bucket}
-                              title={item.label + ': ' + item.inputTokens +
-                                ' input, ' + item.outputTokens + ' output'}>
-                              <div className="admin-token-columns">
-                                <span className="admin-column admin-column--input"
-                                  style={{height: (item.inputTokens / maxTokens * 100) + '%'}} />
-                                <span className="admin-column admin-column--output"
-                                  style={{height: (item.outputTokens / maxTokens * 100) + '%'}} />
-                              </div>
-                              <span className="admin-column-label">{item.label}</span>
+                        <div className="admin-chart-shell">
+                          <div className="admin-chart-y-axis" aria-hidden="true">
+                            <span>{compactNumber(maxTokens)}</span>
+                            <span>{compactNumber(Math.round(maxTokens / 2))}</span>
+                            <span>0</span>
+                          </div>
+                          <div className="admin-column-chart admin-column-chart--tokens" role="img"
+                            aria-label={'Tokens OpenAI de entrada e saída — ' + periodLabel(usage.period)}>
+                            <div className="admin-chart-gridlines" aria-hidden="true">
+                              <i /><i /><i />
                             </div>
-                          ))}
+                            <div className="admin-chart-bars">
+                              {usage.points.map((item, index) => (
+                                <div className="admin-column-group" key={item.bucket}
+                                  title={item.label + ': ' +
+                                    item.inputTokens.toLocaleString('pt-BR') + ' entrada, ' +
+                                    item.outputTokens.toLocaleString('pt-BR') + ' saída'}>
+                                  <div className="admin-token-columns">
+                                    <span className="admin-column admin-column--input"
+                                      style={{height: (item.inputTokens / maxTokens * 100) + '%'}} />
+                                    <span className="admin-column admin-column--output"
+                                      style={{height: (item.outputTokens / maxTokens * 100) + '%'}} />
+                                  </div>
+                                  <span className={showChartTick(usage.period, index, usage.points.length)
+                                    ? 'admin-column-label'
+                                    : 'admin-column-label admin-column-label--hidden'}>
+                                    {item.label}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </section>
                     </div>
