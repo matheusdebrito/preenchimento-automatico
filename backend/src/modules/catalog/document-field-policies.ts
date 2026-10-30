@@ -37,6 +37,7 @@ export const BUYER_IDENTITY_FIELDS = [
   'person.identity',
   'person.identityType',
   'person.issuer',
+  'person.issuerState',
   'person.issueDate',
   'person.birthDate',
   'person.birthplace',
