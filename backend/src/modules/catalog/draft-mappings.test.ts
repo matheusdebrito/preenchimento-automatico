@@ -34,15 +34,15 @@ describe('official form map coordinates', () => {
   });
   it('mantém cada formulário independente com campos essenciais explícitos', () => {
     const required: Record<string, readonly string[]> = {
-      'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
-      'bdmoto-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
+      'bdmoto-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
       'autorizacao-transferencia-ma-v1': ['person.fullName', 'seller.fullName', 'person.cpf', 'seller.cpf'],
       'comunicacao-transferencia-ma-v1': ['person.fullName', 'seller.fullName', 'person.cpf', 'seller.cpf'],
       'declaracao-perda-tie-ma-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name'],
       'declaracao-residencia-ma-v1': ['person.fullName', 'person.cpf', 'person.address'],
       'bade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
-      'bsade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration', 'vessel.hullId'],
-      'requerimento-embarcacao-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'bsade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
+      'requerimento-embarcacao-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
       'declaracao-residencia-er-2026-v1': ['person.fullName', 'person.cpf', 'person.address'],
       'declaracao-perda-tie-er-2026-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name', 'vessel.registration'],
       'comunicacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
