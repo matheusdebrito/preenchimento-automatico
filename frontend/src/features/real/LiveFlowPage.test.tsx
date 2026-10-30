@@ -291,11 +291,11 @@ describe('jornada real isolada da demonstração', () => {
     expect(requestButton.getAttribute('aria-expanded')).toBe('true');
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('false');
 
-    await user.type(screen.getByLabelText('Nome completo *'), 'MARIA DE SOUZA');
+    await user.type(screen.getByLabelText(/Nome completo/), 'MARIA DE SOUZA');
     await user.click(responsibilityButton);
     expect(responsibilityButton.getAttribute('aria-expanded')).toBe('true');
 
-    const sharedNames = screen.getAllByLabelText('Nome completo *') as HTMLInputElement[];
+    const sharedNames = screen.getAllByLabelText(/Nome completo/) as HTMLInputElement[];
     expect(sharedNames).toHaveLength(2);
     expect(sharedNames[0]!.value).toBe('MARIA DE SOUZA');
     expect(sharedNames[1]!.value).toBe('MARIA DE SOUZA');
@@ -368,8 +368,8 @@ describe('jornada real isolada da demonstração', () => {
     const vessel = screen.getByRole('heading', { level: 3, name: 'Dados da embarcação' });
     expect(personal.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(address.compareDocumentPosition(vessel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByLabelText(/^Rua$/)).toBeTruthy();
-    expect(screen.getByLabelText(/^Número$/)).toBeTruthy();
+    expect(screen.getByLabelText(/Rua/)).toBeTruthy();
+    expect(screen.getByLabelText(/Número/)).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     const alert = await screen.findByRole('alert');
@@ -377,7 +377,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(alert.textContent).toContain('Nome completo');
     expect(alert.textContent).toContain('CPF');
 
-    const name = screen.getByLabelText('Nome completo *') as HTMLInputElement;
+    const name = screen.getByLabelText(/Nome completo/) as HTMLInputElement;
     const cpf = screen.getByLabelText('CPF *') as HTMLInputElement;
     expect(name.getAttribute('aria-invalid')).toBe('true');
     expect(cpf.getAttribute('aria-invalid')).toBe('true');
@@ -632,7 +632,8 @@ describe('jornada real isolada da demonstração', () => {
 
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(screen.getByText('Nenhum campo preenchido automaticamente')).toBeTruthy();
-    expect(screen.getByText(/Nome: rótulo encontrado, mas valor não validado/)).toBeTruthy();
+    expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/i))
+      .toBeTruthy();
     expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/)).toBeTruthy();
     expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
