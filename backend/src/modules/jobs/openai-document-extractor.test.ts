@@ -109,6 +109,7 @@ describe('OpenAI document extractor', () => {
       });
     });
 
+    const beforeRequest = vi.fn();
     const result = await extractDocumentsWithOpenAi([
       {
         document: identity,
@@ -171,8 +172,10 @@ describe('OpenAI document extractor', () => {
         OPENAI_DOCUMENT_DETAIL: 'high',
       },
       fetchImpl: fakeFetch as unknown as typeof fetch,
+      beforeRequest,
     });
 
+    expect(beforeRequest).toHaveBeenCalledTimes(1);
     expect(fakeFetch).toHaveBeenCalledTimes(1);
     const [, init] = fakeFetch.mock.calls[0]!;
     const body = JSON.parse(String(init?.body)) as {
