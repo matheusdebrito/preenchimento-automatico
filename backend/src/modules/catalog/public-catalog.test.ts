@@ -559,14 +559,14 @@ describe('projeção pública do catálogo', () => {
     const result = publicService(data, 's');
     expect(result?.formVersionIds).toEqual(['form-v1']);
     expect(result?.reviewFields).toEqual([
-      { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: true },
+      { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: false },
     ]);
     expect(result?.reviewForms).toEqual([{
       formVersionId: 'form-v1',
       formId: 'form',
       name: 'Teste',
       fields: [
-        { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: true },
+        { id: 'person.fullName', label: 'Nome', valueKind: 'text', required: false },
       ],
     }]);
     expect(JSON.stringify(result)).not.toContain('backend/templates');
@@ -602,7 +602,7 @@ describe('projeção pública do catálogo', () => {
     expect(result?.reviewFields).toHaveLength(1);
     expect(result?.reviewForms).toHaveLength(2);
     expect(result?.reviewForms[0]?.fields[0]?.id).toBe('person.fullName');
-    expect(result?.reviewForms[0]?.fields[0]?.required).toBe(true);
+    expect(result?.reviewForms[0]?.fields[0]?.required).toBe(false);
     expect(result?.reviewForms[1]?.fields[0]?.id).toBe('person.fullName');
     expect(result?.reviewForms[1]?.fields[0]?.required).toBe(false);
   });

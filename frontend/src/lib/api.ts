@@ -6,6 +6,7 @@ export class ApiError extends Error {
     public readonly errorCode?: string,
     public readonly requirementId?: string,
     public readonly fieldReason?: string,
+    public readonly formVersionId?: string,
   ) { super(message); }
 }
 
@@ -32,6 +33,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         ? value : undefined;
     const fieldId = safeIdentifier(body.fieldId);
     const requirementId = safeIdentifier(body.requirementId);
+    const formVersionId = safeIdentifier(body.formVersionId);
     const allowedReasons = new Set([
       'required', 'invalid_cpf', 'invalid_date', 'invalid_boolean',
       'invalid_choice', 'unsupported_character', 'text_too_long', 'text_overflow',
@@ -86,7 +88,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       : response.status === 422 ? 'Revise os documentos e valores informados.'
       : response.status === 429 ? 'Muitas tentativas. Aguarde antes de continuar.'
       : 'Não foi possível concluir a solicitação. Tente novamente.';
-    throw new ApiError(response.status, message, fieldId, code, requirementId, fieldReason);
+    throw new ApiError(
+      response.status, message, fieldId, code, requirementId, fieldReason, formVersionId,
+    );
   }
   const data: unknown = await response.json();
   return data as T;

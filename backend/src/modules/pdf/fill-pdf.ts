@@ -129,15 +129,9 @@ export async function fillPdf(
 
   for (const placement of placements) {
     const raw = values[placement.fieldId];
-    if (typeof raw !== 'string') {
-      if (placement.required) throw new FormFieldError('missing_required_fields', placement.fieldId, 'required');
-      continue;
-    }
+    if (typeof raw !== 'string') continue;
     const value = prepareValue(raw, placement.fieldId);
-    if (value === '') {
-      if (placement.required) throw new FormFieldError('missing_required_fields', placement.fieldId, 'required');
-      continue;
-    }
+    if (value === '') continue;
 
     if (placement.kind === 'ACROFORM') {
       const field = form.getField(placement.pdfFieldName);

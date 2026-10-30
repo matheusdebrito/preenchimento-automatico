@@ -26,11 +26,12 @@ describe('motor determinístico de PDF', () => {
     expect(rendered.getPages()).toHaveLength(1);
   });
 
-  it('rejeita campos ausentes, texto longo, quebras de linha e páginas incorretas', async () => {
+  it('aceita campos ausentes e rejeita somente valores inválidos', async () => {
     const input = await syntheticPdf();
     const field = { kind: 'COORDINATES' as const, fieldId: 'name', required: true,
       pageIndex: 0, x: 50, y: 640, fontSize: 12, maxWidth: 80 };
-    await expect(fillPdf(input, [field], {})).rejects.toThrow('missing_required_fields:name:required');
+    const blank = await fillPdf(input, [field], {});
+    expect((await PDFDocument.load(blank)).getPages()).toHaveLength(1);
     await expect(fillPdf(input, [field], { name: 'A'.repeat(100) })).rejects.toThrow('invalid_field_value:name:text_overflow');
     await expect(fillPdf(input, [field], { name: 'Maria\nTeste' })).rejects.toThrow('invalid_field_value:name:unsupported_character');
     await expect(fillPdf(input, [{ ...field, pageIndex: 100 }], { name: 'OK' })).rejects.toThrow('template_page_missing');
@@ -152,6 +153,13 @@ describe('motor determinístico de PDF', () => {
     });
     const rendered = await PDFDocument.load(output);
     expect(rendered.getPages()).toHaveLength(2);
+  });
+
+  it('gera todas as versões homologadas mesmo com todos os campos em branco', async () => {
+    for (const version of catalog.versions.filter((item) => item.status === 'VERIFIED')) {
+      const output = await fillApprovedTemplate(catalog, version.id, {});
+      expect((await PDFDocument.load(output)).getPages().length, version.id).toBeGreaterThan(0);
+    }
   });
 
   it('nunca gera os PDFs oficiais enquanto o mapeamento não estiver aprovado', async () => {

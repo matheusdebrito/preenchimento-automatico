@@ -169,6 +169,7 @@ export function LiveFlowPage() {
   const [sources, setSources] = useState<Record<string,string>>({});
   const [diagnostics, setDiagnostics] = useState<ExtractionDiagnostic[]>([]);
   const [invalidFieldIds, setInvalidFieldIds] = useState<string[]>([]);
+  const [blankFieldIds, setBlankFieldIds] = useState<string[]>([]);
   const [jobId, setJobId] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
@@ -328,6 +329,7 @@ export function LiveFlowPage() {
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
     setInvalidFieldIds([]);
+    setBlankFieldIds([]);
     if (service) setOpenReviewFormIds(firstReviewFormIds(service));
     setStep('review');
   };
@@ -441,6 +443,7 @@ export function LiveFlowPage() {
       setSources({});
       setDiagnostics([]);
       setInvalidFieldIds([]);
+      setBlankFieldIds([]);
       setOpenReviewFormIds([]);
       setDownloads([]);
       if (target === 'questions') setFiles({});
@@ -491,6 +494,7 @@ export function LiveFlowPage() {
       setSources({});
       setDiagnostics([]);
       setInvalidFieldIds([]);
+      setBlankFieldIds([]);
       setOpenReviewFormIds([]);
       setDownloads([]);
       setStep('questions');
@@ -501,24 +505,17 @@ export function LiveFlowPage() {
     }
   };
 
-  const generate = async () => {
+  const generate = async (allowBlankFields = false) => {
     if (!jobId || !service) return;
     setError('');
     setInvalidFieldIds([]);
-    const requiredFields = [...reviewForms.flatMap((form) => form.fields), ...service.reviewFields]
-      .filter((field) => field.required)
-      .filter((field, index, all) => all.findIndex((item) => item.id === field.id) === index);
-    const missing = requiredFields.filter((field) => !values[field.id]?.trim());
-    if (missing.length > 0) {
-      const ids = missing.map((field) => field.id);
-      setInvalidFieldIds(ids);
-      setError(
-        'Não é possível gerar os formulários. Preencha os campos obrigatórios pendentes: ' +
-        missing.map((field) => field.label).join(', ') + '.',
-      );
-      revealReviewFields(ids);
+
+    const blankFields = service.reviewFields.filter((field) => !values[field.id]?.trim());
+    if (!allowBlankFields && blankFields.length > 0) {
+      setBlankFieldIds(blankFields.map((field) => field.id));
       return;
     }
+    setBlankFieldIds([]);
 
     setBusy(true);
     try {
@@ -570,7 +567,13 @@ export function LiveFlowPage() {
         setError('Confira ' + label + ': ' + tip);
         revealReviewFields([issue.fieldId]);
       } else {
-        setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
+        if (issue instanceof ApiError && issue.formVersionId) {
+          const formName = reviewForms.find((form) =>
+            form.formVersionId === issue.formVersionId)?.name ?? issue.formVersionId;
+          setError(issue.message + ' Formulário: ' + formName + '.');
+        } else {
+          setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
+        }
       }
     } finally { setBusy(false); }
   };
@@ -811,8 +814,8 @@ export function LiveFlowPage() {
                       const isOpen = openReviewFormIds.includes(form.formVersionId);
                       const completed = form.fields.filter((field) =>
                         values[field.id]?.trim()).length;
-                      const requiredRemaining = form.fields.filter((field) =>
-                        field.required && !values[field.id]?.trim()).length;
+                      const blankRemaining = form.fields.filter((field) =>
+                        !values[field.id]?.trim()).length;
                       const hasError = form.fields.some((field) =>
                         invalidFieldIds.includes(field.id));
                       const triggerId = 'form-trigger-' + form.formVersionId;
@@ -843,8 +846,8 @@ export function LiveFlowPage() {
                               <strong>{form.name}</strong>
                               <span>
                                 {completed} de {form.fields.length} campos preenchidos
-                                {requiredRemaining > 0
-                                  ? ' · ' + requiredRemaining + ' obrigatório(s) pendente(s)'
+                                {blankRemaining > 0
+                                  ? ' · ' + blankRemaining + ' em branco'
                                   : ''}
                               </span>
                             </span>
@@ -888,12 +891,11 @@ export function LiveFlowPage() {
                                         className="field live-review-field"
                                       >
                                         <span className="field__label">
-                                          {field.label}{field.required ? ' *' : ''}
+                                          {field.label}
                                         </span>
                                         <input
                                           id={reviewInputId(form.formVersionId, field.id)}
                                           className="field__input"
-                                          required={field.required}
                                           value={values[field.id] ?? ''}
                                           aria-invalid={invalidFieldIds.includes(field.id) || undefined}
                                           inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
@@ -906,8 +908,7 @@ export function LiveFlowPage() {
                                               ? formatBrazilianDateInput(event.target.value)
                                               : event.target.value;
                                             setValues((prev) => ({ ...prev, [field.id]:typed }));
-                                            if (invalidFieldIds.includes(field.id) &&
-                                              (!field.required || typed.trim())) {
+                                            if (invalidFieldIds.includes(field.id) && typed.trim()) {
                                               const remaining = invalidFieldIds.filter((id) => id !== field.id);
                                               setInvalidFieldIds(remaining);
                                               if (remaining.length === 0) {
@@ -935,9 +936,7 @@ export function LiveFlowPage() {
                                         </span>
                                         {invalidFieldIds.includes(field.id)
                                           ? <span className="field__error">
-                                              {field.required && !values[field.id]?.trim()
-                                                ? 'Campo obrigatório pendente.'
-                                                : 'Confira o valor informado neste campo.'}
+                                              Confira o valor informado neste campo.
                                             </span>
                                           : null}
                                       </label>
@@ -955,6 +954,30 @@ export function LiveFlowPage() {
                     })}
                   </div>
 
+                  {blankFieldIds.length > 0 ? (
+                    <Notice tone="info" role="status">
+                      <strong>Existem campos em branco.</strong>{' '}
+                      Você pode preenchê-los agora ou continuar e gerar os PDFs deixando-os vazios.
+                      <div>
+                        Campos em branco: {service.reviewFields
+                          .filter((field) => blankFieldIds.includes(field.id))
+                          .map((field) => field.label)
+                          .join(', ')}.
+                      </div>
+                      <div className="live-upload-actions">
+                        <Button variant="ghost" disabled={busy} onClick={() => {
+                          const ids = [...blankFieldIds];
+                          setBlankFieldIds([]);
+                          revealReviewFields(ids);
+                        }}>
+                          Preencher campos
+                        </Button>
+                        <Button disabled={busy} onClick={() => void generate(true)}>
+                          Continuar mesmo assim
+                        </Button>
+                      </div>
+                    </Notice>
+                  ) : null}
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   <Button disabled={busy} onClick={() => void generate()}>
                     {busy ? 'Gerando…' : 'Confirmar e gerar formulários'}

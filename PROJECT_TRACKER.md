@@ -705,3 +705,14 @@ os mesmos PDFs e mappings já homologados.
 **Formulários afetados:** BADE, Autorização de Transferência NORMAM-211 e Autorização de Transferência NORMAM-212. Os demais formulários não são alterados porque não possuem campos de coproprietário.
 
 **UX:** a regra é centralizada no catálogo; o frontend continua renderizando perguntas e campos dinamicamente, sem lógica paralela específica para coproprietário.
+
+
+## Registro de execução — 30/10/2026, templates em runtime e geração com campos em branco
+
+**Diagnóstico do erro de versão homologada:** o repositório já valida o SHA-256 de todos os templates registrados no catálogo. O erro `template_hash_mismatch` em ambiente implantado indica divergência entre o catálogo compilado e os PDFs empacotados na imagem/runtime, não uma exigência de preenchimento dos campos.
+
+**Proteção de runtime:** a imagem da API passa a executar uma verificação de todos os templates VERIFIED durante o build. O build falha se um PDF estiver ausente, com caminho incorreto ou SHA-256 diferente do catálogo. A geração também registra e devolve o `formVersionId` exato quando houver falha de template.
+
+**Campos em branco:** nenhum campo de revisão é obrigatório para gerar PDF. Valores vazios são simplesmente deixados em branco no formulário. Validações de formato continuam sendo aplicadas somente quando um valor é informado.
+
+**UX:** ao tentar gerar com campos vazios, a interface lista os campos em branco e oferece duas ações: `Preencher campos` e `Continuar mesmo assim`. O aviso não consome crédito nem envia a confirmação enquanto o usuário não escolher continuar.
