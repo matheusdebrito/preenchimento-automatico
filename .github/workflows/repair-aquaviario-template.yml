@@ -1,4 +1,4 @@
-name: Repair Aquaviario PDF template
+name: Repair verified Aquaviario Anexo 1-E template
 
 on:
   push:
@@ -6,73 +6,132 @@ on:
       - feat/aquaviario-services
     paths:
       - .github/workflows/repair-aquaviario-template.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   repair:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout branch
+      - name: Checkout the exact PR branch
         uses: actions/checkout@v5
         with:
           ref: feat/aquaviario-services
           fetch-depth: 0
 
-      - name: Install PDF repair tools
-        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils ghostscript
+      - name: Install PDF inspection and conversion tools
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
 
-      - name: Normalize Anexo 1-E
+      - name: Download the reviewed official NORMAM-101 source
         shell: bash
         run: |
           set -euo pipefail
-          src="backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf"
-          tmp="$(mktemp -d)"
-          pdftops "$src" "$tmp/anexo-1-e.ps"
-          ps2pdf -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress "$tmp/anexo-1-e.ps" "$tmp/original.pdf"
-          test "$(pdfinfo "$tmp/original.pdf" | awk '/^Pages:/ {print $2}')" = "2"
-          mv "$tmp/original.pdf" "$src"
-          sha256sum "$src"
+          source="$RUNNER_TEMP/normam-101.pdf"
+          curl --fail --location --show-error --silent \
+            --retry 4 --retry-all-errors --retry-delay 5 --max-time 180 \
+            --output "$source" \
+            "https://www.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-101.pdf"
+          # SHA-256 of the official 267-page source used for the 2026 mapping and visual QA.
+          echo "74af4d83c26a255b7c8ef9a12359f905aef00488490d0347ad548ce0a24cd049  $source" | sha256sum --check
+          test "$(pdfinfo "$source" | awk '/^Pages:/ {print $2}')" = "267"
+          test "$(pdftotext -f 165 -l 166 "$source" - | grep -c 'ANEXO 1-E')" -eq 2
 
-      - name: Update registered hash
+      - name: Extract the original two Anexo 1-E pages
         shell: bash
         run: |
           set -euo pipefail
-          src="backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf"
-          hash="$(sha256sum "$src" | awk '{print toupper($1)}')"
+          source="$RUNNER_TEMP/normam-101.pdf"
+          template="backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf"
+          pdftocairo -f 165 -l 166 -pdf "$source" "$template"
+          test "$(pdfinfo "$template" | awk '/^Pages:/ {print $2}')" = "2"
+          test "$(pdftotext "$template" - | grep -c 'ANEXO 1-E')" -eq 2
+          pdfinfo "$template" | grep '^Page size:' | grep -q '595.304 x 841.89 pts'
+          sha256sum "$template"
+
+      - name: Update catalog integrity digest and QA report
+        shell: bash
+        run: |
+          set -euo pipefail
+          template="backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf"
+          hash="$(sha256sum "$template" | cut -d ' ' -f 1 | tr '[:lower:]' '[:upper:]')"
           python3 - "$hash" <<'PY'
           from pathlib import Path
           import re
           import sys
 
           digest = sys.argv[1]
-          service = Path("backend/src/modules/catalog/aquaviario-services.ts")
-          text = service.read_text()
+          service = Path('backend/src/modules/catalog/aquaviario-services.ts')
+          content = service.read_text()
           marker = "id: 'requerimento-certificacao-aquaviario-2026-v1'"
-          start = text.index(marker)
-          end = text.index("},", start)
-          block = text[start:end]
-          block = re.sub(r"sha256: '[0-9A-F]{64}'", f"sha256: '{digest}'", block)
-          service.write_text(text[:start] + block + text[end:])
+          start = content.index(marker)
+          end = content.index('},', start)
+          before = content[start:end]
+          after, count = re.subn(r"sha256: '[0-9A-F]{64}'", f"sha256: '{digest}'", before)
+          if count != 1:
+              raise RuntimeError('Expected exactly one certification template hash')
+          service.write_text(content[:start] + after + content[end:])
 
-          report = Path("docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md")
-          report_text = report.read_text()
-          report_text = re.sub(
-              r"(\| Anexo 1-E \| )[0-9A-F]{64}( \|)",
-              rf"\g<1>{digest}\2",
-              report_text,
+          report = Path('docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md')
+          content = report.read_text()
+          content, count = re.subn(
+              r'(\| Anexo 1-E \| )[0-9A-F]{64}( \|)',
+              lambda m: m.group(1) + digest + m.group(2),
+              content,
           )
-          report.write_text(report_text)
+          if count != 1:
+              raise RuntimeError('Expected exactly one Anexo 1-E report hash')
+          report.write_text(content)
           PY
 
-      - name: Commit repaired template
+      - name: Install locked backend dependencies
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Validate restored template with the production PDF parser
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { PDFDocument } from 'pdf-lib';
+          const file = 'templates/requerimento-certificacao-aquaviario/v1/original.pdf';
+          const pdf = await PDFDocument.load(readFileSync(file));
+          if (pdf.getPageCount() !== 2) throw Error('Anexo 1-E should have two pages');
+          for (const page of pdf.getPages()) {
+            const { width, height } = page.getSize();
+            if (Math.abs(width - 595.304) > 1 || Math.abs(height - 841.89) > 1)
+              throw Error('Anexo 1-E geometry differs from the reviewed official template');
+          }
+          JS
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+
+      - name: Render synthetic PDF previews before writing
+        working-directory: backend
+        run: node scripts/render-synthetic.mjs
+
+      - name: Commit only the validated official template and matching digests
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add             backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf             backend/src/modules/catalog/aquaviario-services.ts             docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md
-          git diff --cached --quiet && exit 0
-          git commit -m "Repair Aquaviario certification PDF template"
+          git add \
+            backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf \
+            backend/src/modules/catalog/aquaviario-services.ts \
+            docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+          git commit -m "fix: restore verified official NORMAM-101 Anexo 1-E PDF"
           git push origin HEAD:feat/aquaviario-services
