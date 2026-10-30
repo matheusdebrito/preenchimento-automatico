@@ -10,7 +10,6 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
   DATABASE_URL: z.string().trim().min(1).optional(),
   DEV_GRANT_SECRET: z.preprocess((value) => value === '' ? undefined : value, z.string().min(24).optional()),
-  ADMIN_EMAIL: z.preprocess((value) => value === '' ? undefined : value, z.email().max(254).transform((email) => email.toLowerCase()).optional()),
 });
 
 export type NodeEnvironment = z.infer<typeof envSchema>['NODE_ENV'];
@@ -24,7 +23,6 @@ export interface AppEnv {
   LOG_LEVEL: LogLevel;
   DATABASE_URL?: string;
   DEV_GRANT_SECRET?: string;
-  ADMIN_EMAIL?: string;
 }
 
 function normalizeOrigin(value: string): string {
@@ -88,9 +86,6 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   }
   if (result.data.DEV_GRANT_SECRET && result.data.NODE_ENV !== 'production') {
     env.DEV_GRANT_SECRET = result.data.DEV_GRANT_SECRET;
-  }
-  if (result.data.ADMIN_EMAIL) {
-    env.ADMIN_EMAIL = result.data.ADMIN_EMAIL;
   }
 
   return Object.freeze(env);
