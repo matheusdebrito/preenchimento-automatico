@@ -257,6 +257,22 @@ export function validateCatalog(data: CatalogDefinition): string[] {
         issues.push('relação: binding inválido: ' + fieldId + ' <- ' + questionId);
       }
     }
+    for (const fieldId of relation.excludedReviewFieldIds ?? []) {
+      if (!fields.has(fieldId)) {
+        issues.push('relação: campo de revisão excluído inexistente: ' + fieldId);
+      }
+    }
+    for (const [fieldId, conditions] of Object.entries(relation.reviewFieldConditions ?? {})) {
+      if (!fields.has(fieldId)) {
+        issues.push('relação: campo de revisão condicional inexistente: ' + fieldId);
+      }
+      validateConditions(
+        conditions,
+        questionsByService.get(relation.serviceId) ?? new Map(),
+        pair + ':campo:' + fieldId,
+        issues,
+      );
+    }
     for (const [fieldId, mapping] of Object.entries(relation.answerValueMappings ?? {})) {
       const question = questionsByService.get(relation.serviceId)?.get(mapping.questionId);
       const mappedOptions = Object.keys(mapping.values);
