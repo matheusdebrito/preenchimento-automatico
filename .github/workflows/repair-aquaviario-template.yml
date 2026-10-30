@@ -1,0 +1,78 @@
+name: Repair Aquaviario PDF template
+
+on:
+  push:
+    branches:
+      - feat/aquaviario-services
+    paths:
+      - .github/workflows/repair-aquaviario-template.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+        with:
+          ref: feat/aquaviario-services
+          fetch-depth: 0
+
+      - name: Install PDF repair tools
+        run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils ghostscript
+
+      - name: Normalize Anexo 1-E
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf"
+          tmp="$(mktemp -d)"
+          pdftops "$src" "$tmp/anexo-1-e.ps"
+          ps2pdf -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress "$tmp/anexo-1-e.ps" "$tmp/original.pdf"
+          test "$(pdfinfo "$tmp/original.pdf" | awk '/^Pages:/ {print $2}')" = "2"
+          mv "$tmp/original.pdf" "$src"
+          sha256sum "$src"
+
+      - name: Update registered hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf"
+          hash="$(sha256sum "$src" | awk '{print toupper($1)}')"
+          python3 - "$hash" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          digest = sys.argv[1]
+          service = Path("backend/src/modules/catalog/aquaviario-services.ts")
+          text = service.read_text()
+          marker = "id: 'requerimento-certificacao-aquaviario-2026-v1'"
+          start = text.index(marker)
+          end = text.index("},", start)
+          block = text[start:end]
+          block = re.sub(r"sha256: '[0-9A-F]{64}'", f"sha256: '{digest}'", block)
+          service.write_text(text[:start] + block + text[end:])
+
+          report = Path("docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md")
+          report_text = report.read_text()
+          report_text = re.sub(
+              r"(\| Anexo 1-E \| )[0-9A-F]{64}( \|)",
+              rf"\g<1>{digest}\2",
+              report_text,
+          )
+          report.write_text(report_text)
+          PY
+
+      - name: Commit repaired template
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add             backend/templates/requerimento-certificacao-aquaviario/v1/original.pdf             backend/src/modules/catalog/aquaviario-services.ts             docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md
+          git diff --cached --quiet && exit 0
+          git commit -m "Repair Aquaviario certification PDF template"
+          git push origin HEAD:feat/aquaviario-services
