@@ -44,6 +44,16 @@ export interface OpenAiExtractionResult {
   };
 }
 
+export interface OpenAiExtractionWithContingencyResult extends OpenAiExtractionResult {
+  contingency: {
+    used: boolean;
+    failed: boolean;
+    requestedFieldCount: number;
+    documentCount: number;
+    recoveredFieldCount: number;
+  };
+}
+
 export class OpenAiDocumentError extends Error {
   constructor(
     public readonly code: 'not_configured' | 'unavailable' | 'invalid_response',
@@ -429,4 +439,173 @@ export async function extractDocumentsWithOpenAi(
   });
 
   return { evidence, diagnostics, model, usage };
+}
+
+
+function canonicalEvidenceValue(value: string): string {
+  return value.normalize('NFC').replace(/\s+/g, ' ').trim().toUpperCase();
+}
+
+function fieldsNeedingContingency(
+  evidence: readonly FieldEvidence[],
+  fields: readonly OpenAiTargetField[],
+): Set<string> {
+  const valuesByField = new Map<string, Set<string>>();
+  for (const item of evidence) {
+    const values = valuesByField.get(item.fieldId) ?? new Set<string>();
+    values.add(canonicalEvidenceValue(item.value));
+    valuesByField.set(item.fieldId, values);
+  }
+
+  return new Set(fields
+    .filter((field) => {
+      const values = valuesByField.get(field.id);
+      return !values || values.size !== 1;
+    })
+    .map((field) => field.id));
+}
+
+function sumUsage(
+  first?: OpenAiExtractionResult['usage'],
+  second?: OpenAiExtractionResult['usage'],
+): OpenAiExtractionResult['usage'] | undefined {
+  if (!first && !second) return undefined;
+  const sum = (key: 'inputTokens' | 'outputTokens' | 'totalTokens') => {
+    const values = [first?.[key], second?.[key]].filter(
+      (value): value is number => typeof value === 'number',
+    );
+    return values.length > 0 ? values.reduce((total, value) => total + value, 0) : undefined;
+  };
+  return {
+    inputTokens: sum('inputTokens'),
+    outputTokens: sum('outputTokens'),
+    totalTokens: sum('totalTokens'),
+  };
+}
+
+function mergedDiagnostics(
+  documents: readonly OpenAiDocumentDescriptor[],
+  evidence: readonly FieldEvidence[],
+  primary: readonly ExtractionDiagnostic[],
+  contingency?: readonly ExtractionDiagnostic[],
+): ExtractionDiagnostic[] {
+  const primaryById = new Map(primary.map((item) => [item.requirementId, item]));
+  const contingencyById = new Map((contingency ?? []).map((item) => [item.requirementId, item]));
+
+  return documents.map((item) => {
+    const requirementId = item.document.requirementId;
+    const suggestionCount = evidence.filter((candidate) =>
+      candidate.sourceId === requirementId).length;
+    if (suggestionCount > 0) {
+      return {
+        requirementId,
+        outcome: 'suggested',
+        suggestionCount,
+        engine: 'openai',
+      };
+    }
+    const base = contingencyById.get(requirementId) ?? primaryById.get(requirementId);
+    return base ? { ...base, suggestionCount: 0 } : {
+      requirementId,
+      outcome: 'no_supported_labels',
+      suggestionCount: 0,
+      engine: 'openai',
+    };
+  });
+}
+
+/**
+ * Runs one primary extraction and, only when needed, one global selective
+ * contingency pass. The contingency receives every unresolved field together
+ * and only the documents authorized to provide at least one of those fields.
+ * There is deliberately no third attempt.
+ */
+export async function extractDocumentsWithOneContingency(
+  documents: readonly OpenAiDocumentDescriptor[],
+  fields: readonly OpenAiTargetField[],
+  options: {
+    env?: NodeJS.ProcessEnv;
+    fetchImpl?: FetchLike;
+    timeoutMs?: number;
+  } = {},
+): Promise<OpenAiExtractionWithContingencyResult> {
+  const primary = await extractDocumentsWithOpenAi(documents, fields, options);
+  const pending = fieldsNeedingContingency(primary.evidence, fields);
+
+  if (pending.size === 0) {
+    return {
+      ...primary,
+      contingency: {
+        used: false,
+        failed: false,
+        requestedFieldCount: 0,
+        documentCount: 0,
+        recoveredFieldCount: 0,
+      },
+    };
+  }
+
+  const retryFields = fields.filter((field) => pending.has(field.id));
+  const retryDocuments = documents
+    .filter((document) => document.allowedFieldIds.some((fieldId) => pending.has(fieldId)))
+    .map((document) => ({
+      ...document,
+      allowedFieldIds: document.allowedFieldIds.filter((fieldId) => pending.has(fieldId)),
+    }));
+
+  if (retryFields.length === 0 || retryDocuments.length === 0) {
+    const evidence = primary.evidence.filter((item) => !pending.has(item.fieldId));
+    return {
+      ...primary,
+      evidence,
+      diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics),
+      contingency: {
+        used: false,
+        failed: false,
+        requestedFieldCount: 0,
+        documentCount: 0,
+        recoveredFieldCount: 0,
+      },
+    };
+  }
+
+  try {
+    const retry = await extractDocumentsWithOpenAi(retryDocuments, retryFields, options);
+    // Successful primary fields are immutable. For unresolved/conflicting fields,
+    // discard first-pass evidence and trust only the isolated contingency result.
+    const evidence = [
+      ...primary.evidence.filter((item) => !pending.has(item.fieldId)),
+      ...retry.evidence,
+    ];
+    const recoveredFieldCount = new Set(retry.evidence.map((item) => item.fieldId)).size;
+    return {
+      evidence,
+      diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics, retry.diagnostics),
+      model: primary.model,
+      usage: sumUsage(primary.usage, retry.usage),
+      contingency: {
+        used: true,
+        failed: false,
+        requestedFieldCount: retryFields.length,
+        documentCount: retryDocuments.length,
+        recoveredFieldCount,
+      },
+    };
+  } catch (error) {
+    if (!(error instanceof OpenAiDocumentError)) throw error;
+    const evidence = primary.evidence.filter((item) => !pending.has(item.fieldId));
+    return {
+      evidence,
+      diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics),
+      model: primary.model,
+      usage: primary.usage,
+      contingency: {
+        used: true,
+        failed: true,
+        requestedFieldCount: retryFields.length,
+        documentCount: retryDocuments.length,
+        recoveredFieldCount: 0,
+      },
+    };
+  }
 }
