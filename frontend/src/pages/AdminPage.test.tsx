@@ -87,8 +87,8 @@ describe('painel administrativo', () => {
 
     expect(await screen.findByRole('heading', { name: 'Painel administrativo' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Administração' })).toBeTruthy();
-    expect(screen.getByText('Créditos usados hoje')).toBeTruthy();
-    expect(screen.getByText('Cliente Teste')).toBeTruthy();
+    expect(await screen.findByText('Créditos usados hoje')).toBeTruthy();
+    expect(await screen.findByText('Cliente Teste')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Ver' }));
     expect(await screen.findByRole('heading', { name: 'Cliente Teste' })).toBeTruthy();
