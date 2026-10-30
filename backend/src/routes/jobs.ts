@@ -242,7 +242,12 @@ export function registerJobRoutes(
 
         try {
           const startedAt = Date.now();
-          const extracted = await extractDocumentsWithOneContingency(documents, targetFields);
+          const extracted = await extractDocumentsWithOneContingency(documents, targetFields, {
+            beforeRequest: async () => {
+              if (!pool) throw new Error('Banco indisponível para cobrança.');
+              await chargeJobCredit(pool, userId, job.id, job.createdAt);
+            },
+          });
           evidence.push(...extracted.evidence);
           diagnostics.push(...extracted.diagnostics);
           req.log.info({
@@ -277,6 +282,19 @@ export function registerJobRoutes(
           job.values = {};
           job.sourceNotes = {};
           job.diagnostics = [];
+          if (error instanceof Error && error.message === 'Saldo insuficiente.') {
+            return reply.status(402).send({
+              error: 'insufficient_credits',
+              message: 'Saldo insuficiente para enviar os documentos para análise.',
+            });
+          }
+          if (error instanceof Error && (
+            error.message === 'Banco indisponível para cobrança.' ||
+            error.message === 'Usuário inexistente.'
+          )) {
+            req.log.error({ err: error, jobId: job.id }, 'analysis_credit_charge_failed');
+            return reply.status(503).send({ error: 'credit_charge_failed' });
+          }
           if (error instanceof OpenAiDocumentError && error.code === 'not_configured') {
             return reply.status(503).send({
               error: 'openai_not_configured',
@@ -382,7 +400,6 @@ export function registerJobRoutes(
     if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
     job.stage = 'GENERATING';
     const generated = new Map<string, string>();
-    let generationPhase: 'pdf' | 'credit' = 'pdf';
     let currentFormVersionId: string | undefined;
     try {
       for (const id of service.formVersionIds) {
@@ -395,8 +412,6 @@ export function registerJobRoutes(
         await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
         generated.set(id, path);
       }
-      generationPhase = 'credit';
-      await chargeJobCredit(pool!, userId, job.id, job.createdAt);
       job.outputs = generated;
       job.stage = 'GENERATED';
       return { downloads: [...generated.keys()], reused: false };
@@ -409,13 +424,6 @@ export function registerJobRoutes(
           fieldId: error.fieldId,
           reason: error.reason,
         });
-      }
-      if (generationPhase === 'credit') {
-        if (error instanceof Error && error.message === 'Saldo insuficiente.') {
-          return reply.status(402).send({ error: 'insufficient_credits' });
-        }
-        req.log.error({ err: error, jobId: job.id }, 'job_credit_charge_failed');
-        return reply.status(503).send({ error: 'credit_charge_failed' });
       }
       if (error instanceof TemplateGenerationError) {
         req.log.error({
@@ -457,8 +465,15 @@ export function registerJobRoutes(
       if (!finished) store.endOperation(job);
     });
     stream.once('error', () => store.endOperation(job));
+    const version = definitions.versions.find((item) => item.id === req.params.versionId);
+    const form = version ? definitions.forms.find((item) => item.id === version.formId) : undefined;
+    const filenameBase = (form?.name ?? 'Formulario')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z0-9 ]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() || 'Formulario';
     reply.header('Content-Type', 'application/pdf');
-    reply.header('Content-Disposition', 'attachment; filename="' + req.params.versionId + '.pdf"');
+    reply.header('Content-Disposition', 'attachment; filename="' + filenameBase + '.pdf"');
     return reply.send(stream);
   });
 
