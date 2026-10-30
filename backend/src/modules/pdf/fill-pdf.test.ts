@@ -33,7 +33,7 @@ describe('motor determinístico de PDF', () => {
     await expect(fillPdf(input, [field], {})).rejects.toThrow('missing_required_fields:name:required');
     await expect(fillPdf(input, [field], { name: 'A'.repeat(100) })).rejects.toThrow('invalid_field_value:name:text_overflow');
     await expect(fillPdf(input, [field], { name: 'Maria\nTeste' })).rejects.toThrow('invalid_field_value:name:unsupported_character');
-    await expect(fillPdf(input, [{ ...field, pageIndex: 100 }], { name: 'OK' })).rejects.toThrow('Página');
+    await expect(fillPdf(input, [{ ...field, pageIndex: 100 }], { name: 'OK' })).rejects.toThrow('template_page_missing');
   });
 
   it('aceita acentuação portuguesa e rejeita bidi, controles e glifos inexistentes', async () => {
@@ -135,11 +135,23 @@ describe('motor determinístico de PDF', () => {
     const placement = [{ kind: 'COORDINATES' as const, fieldId: 'name',
       required: true, pageIndex: 0, x: 50, y: 600, fontSize: 12, maxWidth: 200 }];
     await expect(fillPdf(bytes, placement, { name: 'Maria' }))
-      .rejects.toThrow('girada');
+      .rejects.toThrow('template_rotation_unsupported');
     page.setRotation(degrees(0));
     page.setCropBox(100, 100, 300, 400);
     await expect(fillPdf(await original.save(), placement, { name: 'Maria' }))
-      .rejects.toThrow('fora dos limites');
+      .rejects.toThrow('template_layout_invalid');
+  });
+
+  it('gera o 5-H real usado pela Renovação da CHA', async () => {
+    const output = await fillApprovedTemplate(catalog, 'requerimento-cha-amador-2026-v1', {
+      'person.fullName': 'Maria de Souza',
+      'person.cpf': '529.982.247-25',
+      'person.identity': '12345678',
+      'person.issuer': 'SSP/RJ',
+      'process.amateurRequest': 'emissao_renovacao',
+    });
+    const rendered = await PDFDocument.load(output);
+    expect(rendered.getPages()).toHaveLength(2);
   });
 
   it('nunca gera os PDFs oficiais enquanto o mapeamento não estiver aprovado', async () => {
@@ -152,6 +164,6 @@ describe('motor determinístico de PDF', () => {
     };
     await expect(fillApprovedTemplate(notApproved, 'bdmoto-v1', {
       'person.fullName': 'Pessoa de exemplo',
-    })).rejects.toThrow('não homologado');
+    })).rejects.toThrow('template_unapproved');
   });
 });
