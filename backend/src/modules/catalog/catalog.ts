@@ -22,13 +22,6 @@ import {
   aquaviarioServiceForms,
 } from './aquaviario-services.js';
 import { aquaviarioMappings } from './aquaviario-mappings.js';
-import {
-  aquaviarioForms,
-  aquaviarioVersions,
-  aquaviarioServices,
-  aquaviarioServiceForms,
-} from './aquaviario-services.js';
-import { aquaviarioMappings } from './aquaviario-mappings.js';
 
 /**
  * Authoritative catalog of the forms currently released by the application.
@@ -47,7 +40,6 @@ export const catalog: CatalogDefinition = {
   forms: [
     ...vesselForms,
     ...amateurForms,
-    ...aquaviarioForms,
     ...aquaviarioForms,
     {
       id: 'requerimento-ma',
@@ -83,7 +75,6 @@ export const catalog: CatalogDefinition = {
   versions: [
     ...vesselVersions,
     ...amateurVersions,
-    ...aquaviarioVersions,
     ...aquaviarioVersions,
     {
       id: 'requerimento-ma-v1',
