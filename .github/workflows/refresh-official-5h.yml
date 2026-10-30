@@ -31,9 +31,21 @@ jobs:
           page1="$(mktemp --suffix=.pdf)"
           page2="$(mktemp --suffix=.pdf)"
 
-          curl --fail --location --retry 3 --retry-delay 2 \
+          # marinha.mil.br currently serves an incomplete TLS chain to the GitHub runner.
+          # We do not trust the insecure transport: the downloaded bytes MUST match the
+          # SHA-256 of the user-supplied official NORMAM-211/DPC 2026 reference exactly.
+          curl --insecure --fail --location --retry 3 --retry-delay 2 \
             "https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf" \
             --output "$source_pdf"
+
+          expected_source_sha="D76588B47F792D49F36E69EF2571EA1F30596775D4FB7C0EF453E89A65835148"
+          actual_source_sha="$(sha256sum "$source_pdf" | awk '{print toupper($1)}')"
+          if [ "$actual_source_sha" != "$expected_source_sha" ]; then
+            echo "Downloaded NORMAM-211 does not match the pinned official reference." >&2
+            echo "Expected: $expected_source_sha" >&2
+            echo "Actual:   $actual_source_sha" >&2
+            exit 1
+          fi
 
           total_pages="$(pdfinfo "$source_pdf" | awk '/^Pages:/ {print $2}')"
           if [ "$total_pages" -lt 255 ]; then
