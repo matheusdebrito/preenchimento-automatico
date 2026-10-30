@@ -51,12 +51,12 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(21);
     expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(0);
     expect(catalog.forms).toHaveLength(21);
-    expect(catalog.versions).toHaveLength(20);
-    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(20);
+    expect(catalog.versions).toHaveLength(21);
+    expect(catalog.versions.filter((version) => version.status === 'VERIFIED')).toHaveLength(21);
     expect(catalog.versions.filter((version) => version.status === 'IDENTIFIED')).toHaveLength(0);
     expect(catalog.versions.filter((version) => version.status === 'VERIFIED').every((version) =>
       version.templatePath !== null && version.sha256 !== null)).toBe(true);
-    expect(catalog.mappings).toHaveLength(20);
+    expect(catalog.mappings).toHaveLength(21);
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.includes('-er-2026-')).every((mapping) =>
       mapping.status === 'APPROVED')).toBe(true);
