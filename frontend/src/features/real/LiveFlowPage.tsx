@@ -39,6 +39,13 @@ function firstReviewFormIds(service: LiveService): string[] {
   return first ? [first.formVersionId] : [];
 }
 
+function currentBrazilianDate(): string {
+  const today = new Date();
+  const day = String(today.getDate()).padStart(2, '0');
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  return day + '/' + month + '/' + today.getFullYear();
+}
+
 type ReviewFieldGroup = {
   id: string;
   title: string;
@@ -53,7 +60,7 @@ function reviewFieldGroup(fieldId: string): { id: string; title: string; order: 
   ]);
   const contactFields = new Set(['phone', 'mobile', 'email', 'fax']);
   const identityFields = new Set([
-    'identity', 'identityType', 'issuer', 'issueDate', 'documentOrigin',
+    'identity', 'identityType', 'issuer', 'issuerState', 'issueDate', 'documentOrigin',
     'parent1Name', 'parent2Name',
   ]);
   const personalFields = new Set([
@@ -304,7 +311,20 @@ export function LiveFlowPage() {
     reports: ExtractionDiagnostic[] = [],
   ) => {
     const visible = new Set(service?.reviewFields.map((field) => field.id) ?? []);
-    setValues(Object.fromEntries(Object.entries(fields).filter(([key]) => visible.has(key)).map(([key, value]) => [key, service?.reviewFields.find((field) => field.id === key)?.valueKind === 'date' ? formatBrazilianDateInput(value) : value])));
+    const visibleValues = Object.fromEntries(
+      Object.entries(fields)
+        .filter(([key]) => visible.has(key))
+        .map(([key, value]) => [
+          key,
+          service?.reviewFields.find((field) => field.id === key)?.valueKind === 'date'
+            ? formatBrazilianDateInput(value)
+            : value,
+        ]),
+    );
+    if (visible.has('process.date') && !visibleValues['process.date']) {
+      visibleValues['process.date'] = currentBrazilianDate();
+    }
+    setValues(visibleValues);
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
     setInvalidFieldIds([]);
