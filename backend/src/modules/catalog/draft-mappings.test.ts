@@ -52,6 +52,33 @@ describe('official form map coordinates', () => {
     }
   });
 
+  it('mantém endereço completo na declaração de residência e casco alinhado no requerimento', () => {
+    const residence = catalog.mappings.find((mapping) =>
+      mapping.formVersionId === 'declaracao-residencia-er-2026-v1')!;
+    const residenceFields = new Set(residence.placements.map((placement) => placement.fieldId));
+    for (const fieldId of [
+      'person.address', 'person.streetNumber', 'person.apartment',
+      'person.neighborhood', 'person.city', 'person.state', 'person.postalCode',
+    ]) {
+      expect(residenceFields.has(fieldId), fieldId).toBe(true);
+    }
+
+    const address = residence.placements.find((placement) =>
+      placement.kind === 'COORDINATES' && placement.fieldId === 'person.address');
+    expect(address?.kind).toBe('COORDINATES');
+    if (address?.kind === 'COORDINATES') expect(address.x).toBeGreaterThanOrEqual(320);
+
+    const request = catalog.mappings.find((mapping) =>
+      mapping.formVersionId === 'requerimento-embarcacao-er-2026-v1')!;
+    const hull = request.placements.find((placement) =>
+      placement.kind === 'COORDINATES' && placement.fieldId === 'vessel.hullId');
+    expect(hull?.kind).toBe('COORDINATES');
+    if (hull?.kind === 'COORDINATES') {
+      expect(hull.x).toBeLessThanOrEqual(300);
+      expect(hull.maxWidth).toBeGreaterThanOrEqual(120);
+    }
+  });
+
   it('mantém cada formulário independente com campos essenciais explícitos', () => {
     const required: Record<string, readonly string[]> = {
       'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
