@@ -175,16 +175,19 @@ describe('official form map coordinates', () => {
       const reviewedValues = Object.fromEntries((service?.reviewFields ?? [])
         .filter((field) => field.required)
         .map((field) => {
-          const value = field.id.endsWith('.cpf') ? '123.456.789-09'
-            : field.valueKind === 'date' ? '15/10/2026'
-              : field.valueKind === 'boolean' ? 'true'
-                : field.id.endsWith('fullName') ? 'MARIA TESTE'
-                  : field.id.includes('registration') ? 'RJ123456'
-                    : field.id.includes('hullId') ? 'BR-ABC-12345'
-                      : field.id.includes('address') ? 'RUA TESTE'
-                        : field.id === 'amateur.category' ? 'Mestre-Amador'
-                          : field.id === 'amateur.chaNumber' ? 'CHA123456'
-                            : 'DADO TESTE';
+          const definition = catalog.fields.find((item) => item.id === field.id);
+          const value = definition?.validationRuleId === 'cpf' || field.id.endsWith('.cpf')
+            ? '123.456.789-09'
+            : definition?.validationRuleId === 'simNao' ? 'nao'
+              : field.valueKind === 'date' ? '15/10/2026'
+                : field.valueKind === 'boolean' ? 'true'
+                  : field.id.endsWith('fullName') ? 'MARIA TESTE'
+                    : field.id.includes('registration') ? 'RJ123456'
+                      : field.id.includes('hullId') ? 'BR-ABC-12345'
+                        : field.id.includes('address') ? 'RUA TESTE'
+                          : field.id === 'amateur.category' ? 'Mestre-Amador'
+                            : field.id === 'amateur.chaNumber' ? 'CHA123456'
+                              : 'DADO TESTE';
           return [field.id, value];
         }));
 
@@ -238,14 +241,17 @@ describe('official form map coordinates', () => {
       const reviewedValues = Object.fromEntries((service?.reviewFields ?? [])
         .filter((field) => field.required)
         .map((field) => {
-          const value = field.id.endsWith('.cpf') ? '123.456.789-09'
-            : field.valueKind === 'date' ? '15/10/2026'
-              : field.valueKind === 'boolean' ? 'true'
-                : field.id.endsWith('fullName') ? 'MARIA TESTE'
-                  : field.id.includes('registration') ? 'RJ123456'
-                    : field.id.includes('hullId') ? 'BR-ABC-12345'
-                      : field.id.includes('address') ? 'RUA TESTE'
-                        : 'DADO TESTE';
+          const definition = catalog.fields.find((item) => item.id === field.id);
+          const value = definition?.validationRuleId === 'cpf' || field.id.endsWith('.cpf')
+            ? '123.456.789-09'
+            : definition?.validationRuleId === 'simNao' ? 'nao'
+              : field.valueKind === 'date' ? '15/10/2026'
+                : field.valueKind === 'boolean' ? 'true'
+                  : field.id.endsWith('fullName') ? 'MARIA TESTE'
+                    : field.id.includes('registration') ? 'RJ123456'
+                      : field.id.includes('hullId') ? 'BR-ABC-12345'
+                        : field.id.includes('address') ? 'RUA TESTE'
+                          : 'DADO TESTE';
           return [field.id, value];
         }));
 
