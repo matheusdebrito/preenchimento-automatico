@@ -104,6 +104,24 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     ]);
   });
 
+  it('mantém endereço editável no 1-L e usa endereço derivado somente no 1-E', () => {
+    const service = publicService(catalog, 'emissao-certificado-aquaviario', {
+      certificateModel: 'dpc1031',
+      personSex: 'masculino',
+    });
+    const residenceFields = service?.reviewForms.find((form) =>
+      form.formVersionId === 'declaracao-residencia-aquaviario-2026-v1')
+      ?.fields.map((field) => field.id) ?? [];
+    expect(residenceFields).toContain('person.address');
+    expect(residenceFields).toContain('person.postalCode');
+
+    const certificationFields = service?.reviewForms.find((form) =>
+      form.formVersionId === 'requerimento-certificacao-aquaviario-2026-v1')
+      ?.fields.map((field) => field.id) ?? [];
+    expect(certificationFields).not.toContain('person.fullAddress');
+    expect(certificationFields).not.toContain('person.sex');
+  });
+
   it('mantém todos os uploads como fontes opcionais', () => {
     for (const id of aquaviarioIds) {
       const service = publicService(catalog, id);
