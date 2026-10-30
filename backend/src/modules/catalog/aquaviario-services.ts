@@ -254,9 +254,6 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
       supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de um ano, conforme os padrões de saúde física, mental, visual e auditiva.'),
       supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento de revalidação.'),
-      supporting('dpc1032-revalidation-additional-documents', 'Documentos complementares para DPC-1032', 'A regra geral da NORMAM-101 inclui o DPC-1032 na revalidação, mas não apresenta um subitem próprio de documentação equivalente aos itens 1.22.2 e 1.22.3. Confirme exigências específicas com a CP/DL/AG.', [
-        { questionId: 'certificateModel', equals: 'dpc1032' },
-      ]),
       supporting('professional-qualification', 'Comprovantes de habilitação', 'Podem ser solicitados pela CP/DL/AG quando houver divergência entre a CIR e o SISAQUA.'),
     ]),
   base('transferencia-jurisdicao-aquaviario', 'Transferência de jurisdição',
@@ -379,6 +376,9 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('competency-certificates', 'Certificados de competência e habilitações', 'Documentos que comprovem as habilitações específicas a serem registradas no novo certificado.'),
       supporting('training-evidence', 'Comprovantes de treinamentos de segurança e proficiência', 'Quando aplicável, conforme o artigo 1.22.4 e as Regras VI/1, VI/2 e VI/3 da Convenção STCW-78.'),
       supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento de revalidação.'),
+      supporting('dpc1032-revalidation-additional-documents', 'Documentos complementares para DPC-1032', 'A regra geral da NORMAM-101 inclui o DPC-1032 na revalidação, mas não apresenta um subitem próprio de documentação equivalente aos itens 1.22.2 e 1.22.3. Confirme exigências específicas com a CP/DL/AG.', [
+        { questionId: 'certificateModel', equals: 'dpc1032' },
+      ]),
     ]),
 ];
 
