@@ -13,8 +13,8 @@ O template foi substituído pela página oficial do Anexo 3-C da NORMAM-211/DPC 
 
 Arquivo versionado:
 - caminho: `backend/templates/termo-responsabilidade-er/v1/original.pdf`;
-- SHA-256: `3937D3997C6BD49A31FFBBD7B4D19A195304FF6024D96D629079E5F327390DB3`;
-- uma página A4 rasterizada a partir da página oficial do Anexo 3-C e preservada como template estático. A reprodução foi escolhida após comparar o recorte vetorial: o recorte carregava recursos/credenciais do PDF completo e a limpeza vetorial alterava o mapeamento interno de alguns caracteres. A geometria e o conteúdo visual do formulário foram conferidos contra a página oficial.
+- SHA-256: `452A2248A98CD5157BA222184BE29D2A0C31F0C7CECD1F3EDEA8F39DA1E15A53`;
+- uma página A4 rasterizada a partir da página oficial do Anexo 3-C e preservada como template estático. O PDF foi reserializado em uma estrutura simples e compatível com o `pdf-lib`, sem alterar o conteúdo visual do formulário; a geometria foi conferida contra a página oficial.
 
 ## Campos homologados
 
