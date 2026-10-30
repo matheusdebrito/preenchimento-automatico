@@ -103,8 +103,6 @@ export function publicService(
         relation ? fieldApplies(relation, placement.fieldId, answers) : false);
     });
   const mappedFields = new Set(placements.map((placement) => placement.fieldId));
-  const requiredFields = new Set(placements
-    .filter((placement) => placement.required).map((placement) => placement.fieldId));
   const fieldById = new Map(catalog.fields.map((field) => [field.id, field]));
   const versionById = new Map(catalog.versions.map((version) => [version.id, version]));
   const formById = new Map(catalog.forms.map((form) => [form.id, form]));
@@ -138,8 +136,7 @@ export function publicService(
         id: field.id,
         label: field.label,
         valueKind: field.valueKind,
-        required: mapping.placements.some((placement) =>
-          placement.fieldId === fieldId && placement.required),
+        required: false,
       }];
     });
 
