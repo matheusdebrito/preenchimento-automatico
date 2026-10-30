@@ -8,6 +8,7 @@ import type {
 } from './contracts.js';
 import {
   APPLICANT_IDENTITY_FIELDS,
+  CHA_FIELDS,
   RESIDENCE_PROOF_FIELDS,
 } from './document-field-policies.js';
 
@@ -39,6 +40,17 @@ const commonDocuments: readonly DocumentRequirement[] = [
       documentType: 'identity',
       subjectRole: 'person',
       allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
+    },
+  },
+  {
+    id: 'current-cha',
+    label: 'Carteira de Habilitação de Amador (CHA)',
+    description: 'CHA física, impressão da CHA digital ou imagem legível. O arquivo é opcional e pode sugerir número de inscrição, categoria e data de emissão para revisão.',
+    required: false,
+    extraction: {
+      documentType: 'cha',
+      subjectRole: 'person',
+      allowedFieldIds: CHA_FIELDS,
     },
   },
   {
@@ -122,7 +134,7 @@ export const amateurServices: readonly ServiceDefinition[] = [
     status: 'AVAILABLE',
     questions: [amateurCategoryQuestion],
     documentRequirements: commonDocuments.filter((item) =>
-      ['applicant-identity', 'residence-proof'].includes(item.id)),
+      ['applicant-identity', 'current-cha', 'residence-proof'].includes(item.id)),
   },
   {
     id: 'renovacao-cha-amador',
