@@ -55,7 +55,7 @@ jobs:
           if changed '^(frontend/|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
             frontend=true
           fi
-          if changed '^(ocr-service/|backend/src/modules/jobs/|backend/src/modules/document-understanding/|backend/src/routes/qa-preview\.integration\.test\.ts$|backend/src/routes/jobs\.integration\.test\.ts$|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
+          if changed '^(ocr-service/|backend/src/modules/jobs/|backend/src/modules/document-understanding/|backend/src/routes/jobs\.integration\.test\.ts$|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
             ocr=true
           fi
           if changed '^(documentos/|ocr-service/|backend/src/modules/jobs/(paddle-ocr|pdf-paddle-pages|pdf-text-observation|reference-documents\.integration|reference-pdf-fast\.integration)\.|backend/src/modules/document-understanding/|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
@@ -271,7 +271,6 @@ jobs:
         run: >-
           npx vitest run
           src/routes/jobs.integration.test.ts
-          src/routes/qa-preview.integration.test.ts
           --maxWorkers=1
 
       - name: Validate repository reference documents serially

@@ -10,7 +10,7 @@
 | OCR do TIE | Ano, comprimento e lotação rotulados; complementa nome, registro e casco existentes | Dados sem rótulo ficam vazios; não presume proprietário/comprador |
 | OCR robustecido | Ignora fotos da moto aquática/GRU sem mapeamento semântico; publica revisão atomica e restaura upload após falha | OCR de imagem continua falível, sem precisão percentual medida |
 | Captura por câmera | Campo mobile `capture=environment` para JPG/PNG, mantendo upload PDF normal | Captura em aparelho físico e HTTPS local ainda não validados |
-| Modo QA local | `DEV_QA_PREVIEW=true`, sobreposição do serviço real `transferencia-moto-aquatica`, seis mapas completos com condições, PDFs AMOSTRA sem créditos | Só para dados fictícios; catálogo oficial segue DRAFT, sem homologação |
+| Modo QA local | Removido posteriormente. A aplicação passou a usar somente o catálogo oficial em runtime. | Testes sintéticos continuam na suíte automatizada; esta linha é apenas registro histórico. |
 | Integração técnica | Teste PNG sintético → Tesseract → Fastify → revisão → PDF → download → saldo de créditos 0 | Não comprova confiabilidade em fotos reais nem exatidão oficial |
 | Isolamento dos testes | Cada instância Fastify de teste ganha raiz temporária própria para impedir limpeza cruzada | Produção ainda é de instância única |
 
@@ -35,12 +35,12 @@
 ## 2. O que você pode testar amanhã, sem dados reais
 
 1. Ler [o roteiro do QA sintético](QA_SYNTHETIC_PREVIEW.md).
-2. Em `.env` **local**: `DEV_QA_PREVIEW=true` e senha de PostgreSQL exclusiva.
+2. Registro histórico: a antiga flag de prévia local foi removida; use apenas as variáveis atuais do `.env.example`.
 3. Executar `docker compose up -d --build` e abrir **http://127.0.0.1:8080** no mesmo computador.
 4. Criar conta de **teste**, entrar em **Transferência de moto aquática** (único serviço disponível no QA local) e escolher entre **não anexar nada**, anexar só um RG fictício ou usar vários arquivos sintéticos. O usuário nunca precisa enviar todos os documentos de origem para gerar PDF.
 5. Conferir se os campos sugeridos correspondem aos rótulos; corrigir manualmente o que estiver ausente ou incorreto.
 6. Gerar e visualizar os PDFs selecionados pelo serviço real (2-A/2-B sempre e os demais conforme respostas), todos com marca **AMOSTRA**. Conferir página a página, principalmente Endereço, Cidade, Bairro e CEP no BDMOTO. Encerrar e remover o job.
-7. Desligar `DEV_QA_PREVIEW` após o teste.
+7. O antigo modo especial de prévia não existe mais; nenhuma flag precisa ser desligada após o teste.
 
 **Não usar dados de clientes.** A stack local vincula suas portas a `127.0.0.1`; fotografar diretamente em celular na mesma rede exigirá uma solução segura de acesso HTTPS para testes. Não abra as portas para `0.0.0.0` apenas para contornar essa restrição.
 

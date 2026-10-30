@@ -44,16 +44,6 @@ describe('loadEnv', () => {
     expect(loadEnv({ NODE_ENV: 'production', DEV_GRANT_SECRET: 'a'.repeat(32) }).DEV_GRANT_SECRET).toBeUndefined();
   });
 
-  it('permite QA sintético apenas quando explicitamente habilitado em desenvolvimento', () => {
-    expect(loadEnv({}).DEV_QA_PREVIEW).toBeUndefined();
-    expect(loadEnv({ DEV_QA_PREVIEW: 'true' }).DEV_QA_PREVIEW).toBe(true);
-    expect(() => loadEnv({ NODE_ENV: 'production', DEV_QA_PREVIEW: 'true' }))
-      .toThrow('DEV_QA_PREVIEW');
-    expect(() => loadEnv({ NODE_ENV: 'test', DEV_QA_PREVIEW: 'true' }))
-      .toThrow('DEV_QA_PREVIEW');
-    expect(() => loadEnv({ DEV_QA_PREVIEW: 'sim' })).toThrow('DEV_QA_PREVIEW');
-  });
-
   it('rejeita curinga de CORS', () => {
     expect(() => loadEnv({ CORS_ORIGINS: '*' })).toThrow(/curinga/);
   });

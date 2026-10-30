@@ -19,8 +19,6 @@ interface BuildAppOptions {
   pool?: Database;
   /** Test-only override. Production always uses the verified default catalog. */
   catalogOverride?: CatalogDefinition;
-  /** Local/test-only synthetic QA. Never allow in production. */
-  qaPreview?: boolean;
 }
 
 const REDACTED_LOG_PATHS = [
@@ -35,11 +33,8 @@ const REDACTED_LOG_PATHS = [
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
   const env = options.env ?? loadEnv();
   const isTest = env.NODE_ENV === 'test';
-  if (env.NODE_ENV === 'production' && (options.catalogOverride || options.qaPreview)) {
-    throw new Error('Catálogo de QA não permitido em produção.');
-  }
-  if (options.qaPreview && !options.catalogOverride) {
-    throw new Error('Prévia QA exige catálogo sintético explícito.');
+  if (env.NODE_ENV === 'production' && options.catalogOverride) {
+    throw new Error('Catálogo de teste não permitido em produção.');
   }
 
   const app = Fastify({
@@ -77,7 +72,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // Vitest executes API suites in parallel. Give each test app a unique
   // private root so orphan cleanup cannot erase another suite's live job.
   const testRoot = isTest ? resolve(tmpdir(), 'pa-test-app-' + randomUUID()) : undefined;
-  registerJobRoutes(app, options.pool, options.catalogOverride, options.qaPreview === true, testRoot);
+  registerJobRoutes(app, options.pool, options.catalogOverride, testRoot);
   registerOcrDebugRoutes(app, options.pool);
 
   app.setNotFoundHandler(async (_request, reply) =>

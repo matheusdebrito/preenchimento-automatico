@@ -4,7 +4,7 @@ Instrumentação solicitada pelo usuário em 27/10/2026 para investigar nome aus
 
 ## Uso
 
-Com a aplicação em QA local (`DEV_QA_PREVIEW=true` no backend, `NODE_ENV=development`), abra a página em `http://127.0.0.1:8080` ou `http://localhost:8080`. Abra F12 > Console e filtre por `[OCR]`.
+Com a aplicação local em desenvolvimento, abra a página em `http://127.0.0.1:8080` ou `http://localhost:8080`. Abra F12 > Console e filtre por `[OCR]`. O antigo modo especial de prévia do catálogo foi removido.
 
 Ao analisar um documento de identidade, aparece:
 
