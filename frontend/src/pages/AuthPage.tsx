@@ -4,7 +4,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
 import { Button } from '../components/ui/Button';
 import { Notice } from '../components/ui/Notice';
-import { api } from '../lib/api';
+import { api, ApiError } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useAuth } from '../features/auth/AuthProvider';
 
@@ -33,8 +33,19 @@ export function AuthPage() {
       );
       acceptLogin(result.user);
       navigate(safeNext, { replace: true });
-    } catch {
-      setError('Não foi possível acessar a conta. Verifique os dados e tente novamente.');
+    } catch (cause) {
+      if (cause instanceof ApiError &&
+        cause.status === 409 && cause.errorCode === 'already_authenticated') {
+        await refreshSession();
+        return;
+      }
+      if (cause instanceof ApiError && cause.status === 401 && !register) {
+        setError('E-mail ou senha inválidos.');
+      } else if (!(cause instanceof ApiError) || cause.status >= 500) {
+        setError('Não foi possível conectar ao servidor. Tente novamente.');
+      } else {
+        setError('Não foi possível acessar a conta. Verifique os dados e tente novamente.');
+      }
     } finally {
       setBusy(false);
     }
