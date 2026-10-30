@@ -46,6 +46,27 @@ describe('serviceFormValues', () => {
       .toEqual({ 'process.notes': 'Inscrição para exame de Mestre-Amador' });
   });
 
+  it('reutiliza a categoria já escolhida no preenchimento da declaração de extravio', () => {
+    const relation: ServiceForm = {
+      serviceId: 'renovacao-cha-amador',
+      formVersionId: 'declaracao-extravio-cha-amador-2026-v1',
+      order: 2,
+      answerValueMappings: {
+        'amateur.category': {
+          questionId: 'amateurCategory',
+          values: {
+            arrais: 'Arrais-Amador',
+            mestre: 'Mestre-Amador',
+            capitao: 'Capitão-Amador',
+          },
+        },
+      },
+    };
+
+    expect(serviceFormValues(relation, { amateurCategory: 'capitao' }, {}))
+      .toEqual({ 'amateur.category': 'Capitão-Amador' });
+  });
+
   it('ignora binding sem resposta em vez de inventar valor', () => {
     const relation: ServiceForm = {
       serviceId: 's',
