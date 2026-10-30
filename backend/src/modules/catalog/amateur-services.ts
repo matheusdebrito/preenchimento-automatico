@@ -144,7 +144,7 @@ export const amateurServices: readonly ServiceDefinition[] = [
     status: 'AVAILABLE',
     questions: [amateurCategoryQuestion, chaSituationQuestion],
     documentRequirements: commonDocuments.filter((item) =>
-      ['applicant-identity', 'residence-proof'].includes(item.id)),
+      ['applicant-identity', 'current-cha', 'residence-proof'].includes(item.id)),
   },
   {
     id: 'emissao-cha-veleiro',
@@ -174,7 +174,7 @@ export const amateurServices: readonly ServiceDefinition[] = [
     status: 'AVAILABLE',
     questions: [amateurCategoryQuestion, motonautaDeclarationQuestion],
     documentRequirements: commonDocuments.filter((item) =>
-      ['applicant-identity', 'residence-proof'].includes(item.id)),
+      ['applicant-identity', 'current-cha', 'residence-proof'].includes(item.id)),
   },
 ];
 
