@@ -43,8 +43,6 @@ jobs:
 
           backend=false
           frontend=false
-          ocr=false
-          reference=false
 
           if changed '^(backend/|compose\.yaml$|\.github/workflows/ci\.yml$)'; then
             backend=true
