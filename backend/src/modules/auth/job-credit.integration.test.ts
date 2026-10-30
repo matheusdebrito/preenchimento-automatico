@@ -35,13 +35,13 @@ describePg('crédito consumido por análise OpenAI', () => {
       await chargeJobCredit(pool,id,deliveredJob,Date.now());
       expect(await markJobDelivered(pool,id,deliveredJob)).toBe(false);
       expect(await refundUndeliveredJobCredit(pool,deliveredJob)).toBe(false);
-      expect(await creditBalance(pool,id)).toBe(2);
+      expect(await creditBalance(pool,id)).toBe(1);
 
       const crashedJob = randomUUID();
       await chargeJobCredit(pool,id,crashedJob,Date.now());
-      expect(await creditBalance(pool,id)).toBe(1);
+      expect(await creditBalance(pool,id)).toBe(0);
       expect(await refundJobsAfterRestart(pool,id)).toBe(0);
-      expect(await creditBalance(pool,id)).toBe(1);
+      expect(await creditBalance(pool,id)).toBe(0);
       expect(await refundExpiredJobCredits(pool)).toBe(0);
     } finally {
       await pool.query('DELETE FROM app_users WHERE id=$1', [id]);
@@ -75,7 +75,7 @@ describePg('crédito consumido por análise OpenAI', () => {
       expect(await markJobDelivered(pool, user, delivered.id)).toBe(false);
       delivered.expiresAt = Date.now() - 1;
       await store.cleanup();
-      expect(await creditBalance(pool, user)).toBe(1);
+      expect(await creditBalance(pool, user)).toBe(0);
       expect(await refundUndeliveredJobCredit(pool, delivered.id)).toBe(false);
     } finally {
       await store.close();
