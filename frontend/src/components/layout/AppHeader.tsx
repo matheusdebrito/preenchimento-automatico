@@ -83,7 +83,7 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               <NavLink to="/minha-conta" className="site-nav__link" onClick={closeMenu}>
                 Minha conta
               </NavLink>
-              {session.user.role === 'ADMIN' ? (
+              {session.user?.role === 'ADMIN' ? (
                 <NavLink to="/admin" className="site-nav__link" onClick={closeMenu}>
                   Administração
                 </NavLink>
