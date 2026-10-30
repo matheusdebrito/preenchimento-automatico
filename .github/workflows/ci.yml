@@ -1,7 +1,10 @@
 name: CI
-# Temporariamente manual durante a fase de desenvolvimento do MVP.
-# Reative push/pull_request quando o pipeline voltar a ser um gate de entrega.
+# Pull requests para main voltam a usar o pipeline como gate de entrega.
+# O disparo manual permanece disponível para validações ad hoc.
 on:
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
