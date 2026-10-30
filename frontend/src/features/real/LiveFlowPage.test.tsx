@@ -396,6 +396,8 @@ describe('jornada real isolada da demonstração', () => {
         { id: 'person.fullName', label: 'Nome completo', valueKind: 'text', required: true },
         { id: 'person.cpf', label: 'CPF', valueKind: 'text', required: true },
         { id: 'person.identity', label: 'RG', valueKind: 'text', required: false },
+        { id: 'person.issuer', label: 'Órgão emissor', valueKind: 'text', required: false },
+        { id: 'person.issuerState', label: 'UF do órgão emissor', valueKind: 'text', required: false },
       ],
     };
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -412,13 +414,17 @@ describe('jornada real isolada da demonstração', () => {
           'person.fullName': 'MARIA DE SOUZA',
           'person.cpf': '123.456.789-09',
           'person.identity': '12.345.678-9',
+          'person.issuer': 'SSP',
+          'person.issuerState': 'RJ',
         },
         sources: {
           'person.fullName': 'buyer-identity',
           'person.cpf': 'buyer-identity',
           'person.identity': 'buyer-identity',
+          'person.issuer': 'buyer-identity',
+          'person.issuerState': 'buyer-identity',
         },
-        diagnostics: [{ requirementId: 'buyer-identity', outcome: 'suggested', suggestionCount: 3 }],
+        diagnostics: [{ requirementId: 'buyer-identity', outcome: 'suggested', suggestionCount: 5 }],
       });
       return json({ error: 'not_found' }, 404);
     });
@@ -436,7 +442,9 @@ describe('jornada real isolada da demonstração', () => {
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA DE SOUZA');
     expect((screen.getByLabelText(/^CPF/) as HTMLInputElement).value).toBe('123.456.789-09');
     expect((screen.getByLabelText(/^RG/) as HTMLInputElement).value).toBe('12.345.678-9');
-    expect(screen.getByText(/3 sugestão\(ões\) encontrada/)).toBeTruthy();
+    expect((screen.getByLabelText(/^Órgão emissor/) as HTMLInputElement).value).toBe('SSP');
+    expect((screen.getByLabelText(/^UF do órgão emissor/) as HTMLInputElement).value).toBe('RJ');
+    expect(screen.getByText(/5 sugestão\(ões\) encontrada/)).toBeTruthy();
     expect(screen.queryByText('Nenhum campo preenchido automaticamente')).toBeNull();
     expect(fetcher.mock.calls.some(([url]) =>
       String(url).endsWith('/documents/buyer-identity'))).toBe(true);
