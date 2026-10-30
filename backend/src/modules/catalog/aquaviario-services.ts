@@ -30,6 +30,13 @@ const certificateSecondCopyModel: ServiceQuestion = {
   options: ['dpc1031', 'dpc1033', 'dpc1034'],
 };
 
+const revalidatableCertificateModel: ServiceQuestion = {
+  id: 'certificateModel',
+  label: 'Modelo do certificado',
+  // A NORMAM-101 trata revalidação para DPC-1031, DPC-1032 e DPC-1034.
+  options: ['dpc1031', 'dpc1032', 'dpc1034'],
+};
+
 const certificateSecondCopyReason: ServiceQuestion = {
   id: 'certificateSecondCopyReason',
   label: 'Motivo da 2ª via do certificado',
@@ -144,37 +151,57 @@ export const aquaviarioVersions: readonly FormVersion[] = [
   },
 ];
 
-const base = (id: string, title: string, description: string, questions: readonly ServiceQuestion[] = []): ServiceDefinition => ({
+const docs = (...ids: string[]): readonly DocumentRequirement[] =>
+  commonDocuments.filter((item) => ids.includes(item.id));
+
+const base = (
+  id: string,
+  title: string,
+  description: string,
+  questions: readonly ServiceQuestion[] = [],
+  documentRequirements: readonly DocumentRequirement[] = docs('applicant-identity', 'residence-proof'),
+): ServiceDefinition => ({
   id,
   title,
   description,
   creditCost: 1,
   status: 'AVAILABLE',
   questions,
-  documentRequirements: commonDocuments,
+  documentRequirements,
 });
 
 export const aquaviarioServices: readonly ServiceDefinition[] = [
   base('inscricao-inicial-cir-aquaviario', 'Inscrição inicial / emissão da CIR',
     'Prepara a Declaração de Residência do Anexo 1-L. A NORMAM-101 não fornece um modelo único de requerimento para este processo; quando exigido, o requerimento do interessado permanece como documento de protocolo.'),
   base('segunda-via-cir-aquaviario', '2ª via da CIR',
-    'Prepara a Declaração de Residência e, em caso de extravio, roubo ou furto, a declaração do Anexo 1-K. O requerimento do interessado permanece como documento de protocolo.', [cirSecondCopyReason]),
+    'Prepara a Declaração de Residência e, em caso de extravio, roubo ou furto, a declaração do Anexo 1-K. O requerimento do interessado permanece como documento de protocolo.',
+    [cirSecondCopyReason], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('revalidacao-cir-aquaviario', 'Revalidação da CIR',
-    'Prepara a Declaração de Residência do Anexo 1-L. O requerimento do interessado permanece como documento de protocolo.'),
+    'Prepara a Declaração de Residência do Anexo 1-L. O requerimento do interessado permanece como documento de protocolo.',
+    [], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('transferencia-jurisdicao-aquaviario', 'Transferência de jurisdição',
-    'Prepara a Declaração de Residência do Anexo 1-L para o processo de transferência de jurisdição. O requerimento do interessado permanece como documento de protocolo.'),
+    'Prepara a Declaração de Residência do Anexo 1-L para o processo de transferência de jurisdição. O requerimento do interessado permanece como documento de protocolo.',
+    [], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('ascensao-categoria-aquaviario', 'Ascensão de categoria',
-    'Prepara a Declaração de Residência do Anexo 1-L. Comprovações de curso e tempo de embarque continuam sendo documentos de protocolo.'),
+    'Prepara a Declaração de Residência do Anexo 1-L. Comprovações de curso e tempo de embarque continuam sendo documentos de protocolo.',
+    [], docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
   base('transferencia-categoria-grupo-aquaviario', 'Transferência de categoria ou grupo',
-    'Prepara a Declaração de Residência do Anexo 1-L. A análise de equivalência e os certificados profissionais permanecem no protocolo.'),
+    'Prepara a Declaração de Residência do Anexo 1-L. A análise de equivalência e os certificados profissionais permanecem no protocolo.',
+    [], docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
   base('homologacao-lrm-aquaviario', 'Homologação do LRM',
-    'Serviço destinado a mergulhadores. Prepara a Declaração de Residência do Anexo 1-L; CIR e demais documentos são conferidos no protocolo.'),
+    'Serviço destinado a mergulhadores. Prepara a Declaração de Residência do Anexo 1-L; CIR e demais documentos são conferidos no protocolo.',
+    [], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
-    'Prepara o Requerimento de Certificação do Anexo 1-E e a Declaração de Residência do Anexo 1-L.', [certificateModel]),
+    'Prepara o Requerimento de Certificação do Anexo 1-E e a Declaração de Residência do Anexo 1-L.',
+    [certificateModel], docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
   base('segunda-via-certificado-aquaviario', '2ª via de certificado',
-    'Prepara o Requerimento de Certificação, a Declaração de Residência e, quando aplicável, a Declaração de Extravio, Roubo ou Furto.', [certificateSecondCopyModel, certificateSecondCopyReason]),
+    'Prepara o Requerimento de Certificação, a Declaração de Residência e, quando aplicável, a Declaração de Extravio, Roubo ou Furto.',
+    [certificateSecondCopyModel, certificateSecondCopyReason],
+    docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
   base('revalidacao-certificado-aquaviario', 'Revalidação de certificado',
-    'Prepara o Requerimento de Certificação do Anexo 1-E e a Declaração de Residência. A comprovação de manutenção da competência permanece no protocolo.', [certificateModel]),
+    'Prepara o Requerimento de Certificação do Anexo 1-E e a Declaração de Residência. A comprovação de manutenção da competência permanece no protocolo.',
+    [revalidatableCertificateModel],
+    docs('applicant-identity', 'current-cir', 'current-certificate', 'residence-proof')),
 ];
 
 const residence = (serviceId: string, order: number): ServiceForm => ({
@@ -219,7 +246,7 @@ export const aquaviarioServiceForms: readonly ServiceForm[] = [
     formVersionId: 'declaracao-extravio-aquaviario-2026-v1',
     order: 3,
     conditions: [{ questionId: 'certificateSecondCopyReason', oneOf: ['extravio', 'roubo', 'furto'] }],
-    answerBindings: { 'process.aquaviarioCertificateModel': 'certificateModel' },
+    answerBindings: { 'process.aquaviarioLostDocumentType': 'certificateModel' },
   },
   {
     serviceId: 'revalidacao-certificado-aquaviario',
