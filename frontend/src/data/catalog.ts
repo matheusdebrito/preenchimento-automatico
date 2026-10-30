@@ -78,10 +78,8 @@ export const PLANNED_VESSEL_SERVICES: readonly PlannedService[] = [
     summary: 'Preparação dos formulários para renovação do título.' },
   { id: 'segunda-via-tie-embarcacao', title: 'Renovação por perda ou extravio do TIE/TIEM',
     summary: 'Para documento antigo perdido, roubado ou extraviado; TIE digital pode ser reimpresso pelo Gov.br.' },
-  { id: 'alteracao-dados-embarcacao', title: 'Alteração de dados da embarcação',
-    summary: 'Atualização de características ou dados cadastrais.' },
-  { id: 'alteracao-motor-embarcacao', title: 'Troca, instalação ou retirada de motor',
-    summary: 'Alteração de características relacionada ao motor propulsor.' },
+  { id: 'alteracao-dados-embarcacao', title: 'Alteração de dados, características ou motor',
+    summary: 'Atualização de dados e características, inclusive troca, instalação ou retirada de motor.' },
   { id: 'comunicacao-venda-embarcacao', title: 'Comunicação de venda',
     summary: 'Comunicação do vendedor sem substituir a transferência de propriedade.' },
 ];
