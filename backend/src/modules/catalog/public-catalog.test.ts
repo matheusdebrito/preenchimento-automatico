@@ -37,7 +37,7 @@ function fixture(): CatalogDefinition {
 
 describe('projeção pública do catálogo', () => {
   it('publica todos os serviços homologados e aceita moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(11);
+    expect(publicServices(catalog)).toHaveLength(21);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
