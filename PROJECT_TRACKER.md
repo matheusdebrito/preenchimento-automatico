@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 29/10/2026. Matriz serviço -> formulário auditada contra as NORMAM-211/212 anexadas pelo usuário. Fluxos de barco homologados preservados; inscrição para exame de amador voltou a DRAFT por ausência de exigência expressa do 5-H no item 5.4.1; matriz de Moto Aquática foi completada, mas permanece bloqueada enquanto seus seis mapeamentos PDF estiverem DRAFT. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
+> Atualização: 29/10/2026. Matriz serviço -> formulário revalidada contra as NORMAM-211/212 completas fornecidas pelo usuário e evidência operacional atual da Marinha. Os 14 serviços catalogados estão `AVAILABLE`, as 17 versões de formulário estão `VERIFIED` e os 17 mappings estão `APPROVED`. Moto Aquática usa os mesmos cards de embarcação, o Anexo 3-C vigente substituiu o modelo antigo e a inscrição em exame usa o 5-H sem marcar uma opção inexistente no formulário. O próximo portão é a execução dos gates automatizados da branch e o QA manual na aplicação web.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de OCR abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -10,7 +10,7 @@ Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnico
 
 Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, texto OCR ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual inclui consolidar a arquitetura reutilizável, auditar os PDFs contra as NORMAM-211/212 completas fornecidas pelo usuário e evoluir OCR/document understanding, sem liberar produção, cobrar ou publicar dados pessoais. A auditoria revogou a antiga aprovação do 3-C incorreto; os portões de produção continuam vinculantes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
+A autorização atual inclui consolidar a arquitetura reutilizável, auditar os PDFs contra as NORMAM-211/212 completas fornecidas pelo usuário e evoluir OCR/document understanding, sem confundir disponibilidade para teste web com liberação de produção. O 3-C incorreto foi substituído pelo Anexo 3-C vigente e o logger temporário do antigo QA runtime foi removido. Os portões de segurança, OCR, pagamentos, infraestrutura e produção continuam vinculantes.
 
 ## 1. Quadro geral de progresso
 
@@ -20,7 +20,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] Concluída; evidências anteriores preservadas |
 | 02 | PDFs oficiais e versões, sem aprovar mapeamento | 01 | [x] Concluída; portão humano anterior preservado |
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — 7 mapas NORMAM-211 APPROVED; 3-C corrigido voltou a DRAFT; 6 mapas NORMAM-212 ainda DRAFT |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [x] Concluída para o catálogo atual — 17/17 versões VERIFIED e 17/17 mappings APPROVED; novo serviço exige novo gate documental/visual |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
 | 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade, TIE/TIEM e residência usam extração estruturada/semântica; venda ainda usa adaptador legado; corpus amplo pendente |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
@@ -34,9 +34,9 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — matriz serviço/formulário auditada contra NORMAM-211/212; 7 serviços de barco ativos, alterações seguem DRAFT com 3-C restrito aos casos previstos no item 2.12.1, inscrição para exame de amador voltou a DRAFT, matriz de Moto Aquática completa mas bloqueada por mapeamentos DRAFT e QA manual pendente |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 14/14 serviços catalogados disponíveis e formulários homologados; gates automatizados desta branch e QA manual navegador/celular ainda pendentes antes de tratar a expansão como encerrada |
 
-**Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
+**Correção de estado:** a Fase 06 permanece **Parcial** por qualidade/corpus/hardening do OCR, independentemente da homologação dos PDFs. A liberação dos 14 serviços para teste web não significa homologação de produção nem encerra os gates de OCR, segurança, E2E, carga ou infraestrutura.
 
 ## 2. Checklists preservados das outras fases
 
@@ -119,29 +119,28 @@ gates normativos, visuais e de produção.
 - [x] Garantir perfil OCR em todos os requisitos da expansão; documentos de apoio usam `supporting-document` e não inventam campos.
 - [x] Exibir no frontend os serviços planejados sem criar links de geração antes da homologação.
 - [x] Preservar os modelos oficiais já homologados e substituir o 3-C incorreto pelo Termo de Responsabilidade de Construção/Alteração.
-- [x] Manter sete versões/mapas NORMAM-211 em `VERIFIED/APPROVED`.
+- [x] Manter as versões/mapas NORMAM-211 usados pelo catálogo em `VERIFIED/APPROVED`, incluindo o Anexo 3-C vigente.
 - [x] Revogar a antiga aprovação do 3-C, descartar suas coordenadas e retornar a versão corrigida para `IDENTIFIED/DRAFT`.
 - [x] Corrigir BADE/BSADE: BSADE até 6 m; BADE acima de 6 m.
 - [x] Manter o domínio do MVP em um único motor e impedir reintrodução silenciosa de motor2/3/4.
 - [x] Remover fotos da embarcação do upload da aplicação; exigência oficial permanece apenas na documentação do procedimento.
 - [x] Validar os bytes versionados do 3-C correto; blob Git comparado byte a byte com o PDF enviado pelo usuário.
-- [x] Refazer o FormMapping do 3-C correto, revisar amostra sintética local e promover para `TESTED`.
+- [x] Refazer o FormMapping do 3-C correto, substituir o template antigo, revisar a amostra no formulário oficial vigente e promover para `APPROVED`.
 - [x] Fixar o MVP em um único motor; Motor 2–4 e caixas relacionadas permanecem fora do domínio e serão tratados em evolução futura.
-- [x] Manter sete serviços para embarcação/barco; alteração de dados, alteração de motor, moto aquática e inscrição >12 m permanecem em validação enquanto 3-C/NORMAM-212 não estiverem homologados.
+- [x] Liberar os nove serviços de embarcação/barco e os equivalentes de Moto Aquática após homologação do 3-C e dos seis mappings NORMAM-212.
 - [x] Auditar a matriz de formulários de todos os serviços atuais contra as NORMAM-211/212 fornecidas pelo usuário.
 - [x] Preservar renovação TIE/TIEM com BADE/BSADE somente quando houver alteração de características.
 - [x] Restringir o 3-C aos casos expressos no item 2.12.1 (estaleiro comprovadamente extinto ou construção artesanal) e registrar a exigência técnica específica da adaptação de remo para motor.
-- [x] Retornar inscrição para exame de amador a DRAFT até existir evidência operacional específica para uso do 5-H.
-- [x] Completar a matriz pendente NORMAM-212 para inscrição, transferências, renovação, extravio, alterações e comunicação de venda sem liberar Moto Aquática prematuramente.
+- [x] Localizar evidência operacional oficial de CP/DL/AG para o uso do 5-H na inscrição em exame e liberar o serviço sem inferir uma caixa inexistente no formulário.
+- [x] Completar e ativar a matriz NORMAM-212 para inscrição, transferências, renovação, perda/roubo/extravio, alterações e comunicação de venda após QA visual dos seis mappings e das caixas de serviço do 2-A/2-B.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
-**Aceite parcial atual:** sete mapas NORMAM-211 permanecem `APPROVED`. O
-3-C correto está `IDENTIFIED/DRAFT` e sua antiga homologação foi revogada.
-Sete serviços permanecem liberados nos cenários cobertos. Permanecem fail-closed:
-moto aquática, alteração de dados, alteração de motor, inscrição >12 m e inscrição
-de embarcação construída pelo próprio interessado. QA manual em navegador/celular
-continua pendente.
+**Aceite parcial atual:** o catálogo atual está pronto para QA web: 14 serviços
+`AVAILABLE`, 17 versões `VERIFIED`, 17 mappings `APPROVED`, Moto Aquática ativa e
+Anexo 3-C vigente. A expansão ainda não é marcada como concluída porque o workflow
+automatizado desta branch e o QA manual em navegador/celular continuam pendentes.
+Casos acima de 24 m / registro no Tribunal Marítimo permanecem fora do escopo atual.
 
 ## 3.2. Registro de execução — 28/10/2026, catálogo dos serviços NORMAM-211
 
