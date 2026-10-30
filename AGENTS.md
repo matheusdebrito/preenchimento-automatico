@@ -62,36 +62,34 @@ Para cada mudança:
 ### Gate obrigatório antes de abrir PR
 
 - Não usar o primeiro CI do PR como substituto de validação local/da branch.
-- Backend/document-understanding: executar `npm run verify:document-understanding` em `backend/` antes do push final.
-- Mudanças em OCR, `document-understanding`, documentos de referência, aliases, geometria ou validadores exigem também o workflow manual **Pre-PR OCR** na própria branch antes de abrir o PR.
-- Com GitHub CLI, após push: `gh workflow run pre-pr-ocr.yml --ref <branch>` e acompanhar até conclusão. Pela interface: Actions -> Pre-PR OCR -> Run workflow -> selecionar a branch.
-- Só abrir/marcar PR como pronto após esse preflight ficar verde. Se o ambiente não permitir executar o preflight, declarar a limitação e manter o PR como não validado; não assumir que testes sintéticos equivalem ao OCR real.
-- Ao alterar expectativas de documentos de referência, primeiro reproduzir a saída real e provar a causa. Nunca mudar `FOUND`/ `NOT_FOUND` apenas para refletir o resultado desejado.
-- Todo bug OCR real deve ganhar: (1) regressão determinística em `DocumentObservation`; (2) quando houver fixture pública equivalente, expectativa no teste de referência real.
+- Executar typecheck, lint, testes e build em cada pacote alterado antes do push.
+- Mudanças na análise documental OpenAI devem incluir testes determinísticos com Responses API simulada; CI nunca envia documentos reais nem consome créditos OpenAI.
+- Abrir o PR como rascunho e aguardar o CI completo da branch. Só marcar como pronto após backend, frontend, PostgreSQL, Compose e inspeção de PDFs aplicáveis passarem.
+- Para falhas com documentos, reproduzir com fixtures sintéticas ou amostras públicas autorizadas. Nunca incluir documentos pessoais, resposta bruta da API ou valores extraídos em logs/fixtures.
+- Nunca alterar expectativas de teste apenas para fazer o CI passar.
 
 Quando uma etapa exigir decisão de produto, alteração destrutiva, novos custos ou mudanças estruturais relevantes, solicitar aprovação antes de executar. Não avançar para outra etapa enquanto erros introduzidos pela etapa atual estiverem pendentes.
 
 ## 2.2. Testes sintéticos sem homologação implícita
 
-- O servidor em execução deve usar somente o catálogo oficial. Não criar flags ou overlays de runtime para promover temporariamente serviços ou mapeamentos `DRAFT`.
-- Testes podem usar `catalogOverride` isolado e fixtures sintéticas, sem alterar o comportamento do servidor normal.
-- Quando usuário questionar campo de PDF, conferir separadamente **rótulo impresso, área de preenchimento, identificador semântico, coordenadas e extração OCR**; não alterar/remover um campo normativo com base em suposição. Registrar divergência em `docs/mapping-reports/` e aguardar o portão de revisão visual.
-- Ao ampliar OCR, aceitar somente pistas consistentes por requisito/documento e gerar sugestões para campos presentes na seleção. Não prometer reconhecimento total sem corpus medido de layouts e imagens.
-- **Uploads de documentos de origem são sempre opcionais na ferramenta de preenchimento.** O usuário pode anexar zero, um ou vários documentos e deve conseguir revisar os mesmos campos mapeados ao PDF. Distinguir a validação de valores e campos necessários para gerar PDF da coleta de arquivos para OCR; jamais exigir RG/TIE/comprovante apenas por constarem do rol oficial de protocolo.
+- O servidor em execução deve usar somente o catálogo oficial. Não criar flags ou overlays de runtime para promover temporariamente serviços ou mapeamentos DRAFT.
+- Testes podem usar catalogOverride isolado e fixtures sintéticas, sem alterar o comportamento do servidor normal.
+- Ao revisar um campo PDF, conferir rótulo impresso, área de preenchimento, identificador semântico e coordenadas. Não alterar/remover campo normativo com base em suposição; registrar divergência em docs/mapping-reports/ e aguardar revisão visual.
+- A análise documental usa exclusivamente a OpenAI Responses API. Enviar somente arquivos com perfil de extração e campos permitidos para o serviço selecionado.
+- Uploads de documentos de origem são sempre opcionais. O usuário pode anexar zero, um ou vários documentos e revisar os campos mapeados. Nunca exigir RG/TIE/comprovante apenas por constarem do rol oficial de protocolo.
 
-## 2.3. Arquitetura obrigatória de formulários e entendimento de documentos
+## 2.3. Arquitetura obrigatória de formulários e análise documental
 
-- **Serviço é composição, não fonte de campos.** `ServiceDefinition` contém workflow/perguntas/requisitos e `ServiceForm` seleciona versões de formulários. Os campos revisáveis devem ser derivados dos `FormMapping.placements` das versões selecionadas; não criar listas paralelas de campos por serviço.
-- **Campo canônico é reutilizável.** IDs como `person.fullName`, `person.cpf` e `vessel.registration` não pertencem a um serviço, formulário ou motor OCR.
-- **Documento não conhece serviço nem formulário.** OCR produz `DocumentObservation`; um `DocumentExtractor` do tipo documental produz `FieldEvidence[]`; somente depois o processo filtra pelos campos exigidos pelos formulários.
-- **Formulário não conhece a origem do dado.** O preenchimento consome campos canônicos resolvidos, independentemente de terem vindo de RG, CNH, TIE, entrada manual ou outra fonte permitida.
-- **Conflitos nunca são resolvidos silenciosamente.** `FieldResolver` deve bloquear seleção automática quando evidências divergirem e encaminhar o campo para revisão.
-- **Não ampliar `suggestFields()` com novos tipos documentais.** Esse parser é apenas adaptador transitório para tipos ainda não migrados. RG/CNH, TIE, CHA, CIR e futuros documentos devem possuir extractors independentes com fixtures sintéticas e testes.
-- Coordenadas absolutas podem auxiliar, mas não devem ser a única regra de reconhecimento. Preferir âncoras semânticas, geometria relativa, validação de formato e evidências rastreáveis.
-- Otimizações de leitura devem preservar o contrato `DocumentObservation` e ter fallback seguro. Camada textual de PDF só pode substituir OCR quando houver conteúdo suficiente; documento escaneado ou ambíguo deve cair para PaddleOCR. Não acelerar removendo campos, revisão ou validações.
-- TIE e comprovante de residência usam extractors estruturados. Não voltar esses tipos para `suggestFields()`; o adaptador legado permanece apenas para tipos ainda não migrados.
-- Até existir classificação explícita/confiável, não afirmar que um upload é RG ou CNH apenas por estar no requisito “identidade”. O perfil `identity` é transitório e deve ser separado por tipo quando a classificação for implementada.
-- A especificação vigente está em `docs/DOCUMENT_UNDERSTANDING_ARCHITECTURE.md`. Mudanças que contradigam essa arquitetura exigem decisão explícita e atualização do documento.
+- Serviço é composição, não fonte de campos. ServiceDefinition contém workflow/perguntas/requisitos e ServiceForm seleciona versões de formulários. Os campos revisáveis são derivados dos FormMapping.placements.
+- Campo canônico é reutilizável. IDs como person.fullName, person.cpf e vessel.registration não pertencem a um serviço, formulário ou provedor.
+- Documento não conhece serviço nem formulário. O perfil documental declara os campos que pode fornecer; a OpenAI produz evidências estruturadas FieldEvidence[]; o backend filtra pelos campos exigidos e autorizados.
+- Formulário não conhece a origem do dado. O preenchimento consome campos canônicos resolvidos, independentemente de terem vindo de RG, CNH, TIE, entrada manual ou outra fonte permitida.
+- Conflitos nunca são resolvidos silenciosamente. FieldResolver deve bloquear seleção automática quando evidências divergirem e encaminhar o campo para revisão.
+- Não manter extratores locais de OCR, parser textual alternativo ou fallback Paddle/Tesseract. O arquivo original PDF/imagem é enviado diretamente à OpenAI, conforme o perfil documental.
+- O backend valida schema, origem documental, allowedFieldIds, CPF, datas, booleanos e demais regras determinísticas. Respostas do modelo são sugestões, nunca verdade automática.
+- Valores ausentes, ilegíveis, mascarados, ambíguos ou conflitantes não podem ser inventados; manter revisão humana obrigatória.
+- Até existir classificação explícita/confiável, não afirmar que um upload é RG ou CNH apenas por estar no requisito identidade. O perfil deve respeitar o papel e os campos permitidos no catálogo.
+- A especificação vigente está em docs/OPENAI_DOCUMENT_ANALYSIS.md. Mudanças que contradigam essa arquitetura exigem decisão explícita e atualização do documento.
 
 ## 3.1. Sincronização obrigatória do PROJECT_TRACKER.md
 
@@ -108,7 +106,7 @@ Atualizações somente documentais que corrijam um registro anterior também dev
 
 ## 3.2. Padrão de engenharia ponta a ponta e regressões de QA
 
-**Obrigatório após qualquer bug reportado pelo usuário:** investigar a causa-raiz e o fluxo completo (navegador, sessão, contrato HTTP, regras de domínio, armazenamento, OCR, geração e recuperação). Não corrigir apenas o sintoma visual ou reduzir validações de segurança para fazer um teste passar.
+**Obrigatório após qualquer bug reportado pelo usuário:** investigar a causa-raiz e o fluxo completo (navegador, sessão, contrato HTTP, regras de domínio, armazenamento, análise documental OpenAI, geração e recuperação). Não corrigir apenas o sintoma visual ou reduzir validações de segurança para fazer um teste passar.
 
 - Para toda operação do usuário, projetar e testar estados **inicial, carregando, sucesso, entrada ausente/inválida, indisponibilidade, retentativa, cancelamento e recuperação** conforme aplicáveis. Nenhum botão deve parecer inerte: informar a causa do bloqueio próximo à ação, inclusive para teclado/leitor de tela.
 - Mensagens de erro de API devem fornecer **código estável e identificador de campo/requisito do catálogo**, nunca valores sensíveis, conteúdo OCR, documentos ou tokens. No frontend, mostrar a explicação em linguagem humana e permitir corrigir sem perder o job.
@@ -169,41 +167,42 @@ Antes de concluir uma tarefa, revisar e, quando pertinente, testar:
 - Verificar dependências vulneráveis, licenças e origem de pacotes; atualizar com testes, não indiscriminadamente.
 - Usar HTTPS em ambientes públicos e ter backups/restauração testados para **contas, créditos, pagamentos e configurações**, nunca para documentos temporários.
 
-## 6. OCR, dados e geração documental
+## 6. Análise documental OpenAI, dados e geração documental
 
-- Preferir extração de texto nativo quando PDF já contiver camada textual; usar OCR somente quando necessário.
-- Não permitir que OCR ou IA invente campos. Campo ausente/ambíguo deve ser mostrado como pendente de revisão.
-- Guardar temporariamente a proveniência de cada dado (arquivo/campo/página), sem expô-la em logs persistentes.
+- Enviar os PDFs/imagens originais diretamente à Responses API; não adicionar OCR local, conversão de PDF em texto ou fallback de outro provedor.
+- Não permitir que a OpenAI invente campos. Campo ausente/ambíguo deve permanecer vazio ou ser mostrado como pendente de revisão.
+- Guardar temporariamente a proveniência de cada dado (documento/campo), sem expô-la em logs persistentes.
+- Enviar somente a interseção entre campos necessários no serviço e allowedFieldIds do requisito documental. Revalidar campo e origem no backend.
+- Usar store:false; nunca logar conteúdo do arquivo, texto extraído, PII, prompt ou resposta bruta. Medir tokens e custo sem registrar dados pessoais.
 - Validar CPF, formatos, datas, inscrições, campos obrigatórios e divergências entre fontes. Validação sintática não prova autenticidade.
 - Exigir confirmação humana antes da geração final e sinalizar claramente dados incertos.
-- Usar **PDFs oficiais versionados e mapeamento determinístico de campos**; não recriar livremente os layouts com IA.
+- Usar PDFs oficiais versionados e mapeamento determinístico de campos; não recriar livremente layouts com IA.
 - Testar campos longos, acentos, formatação, impressão, páginas, assinaturas e integridade visual do PDF.
-- Separar `ServiceDefinition`, `DocumentRequirement`, `FormDefinition`, `FormVersion`, `FormMapping` e `ServiceForm`. O backend associa versões de documentos a serviços somente após validar exigências e condições.
+- Separar ServiceDefinition, DocumentRequirement, FormDefinition, FormVersion, FormMapping e ServiceForm. O backend associa versões a serviços somente após validar exigências e condições.
 - Não afirmar que o documento gerado foi aprovado pela Marinha ou que substitui assinatura/protocolo oficial.
 
 ## 7. Desempenho e otimização
 
 - Priorizar experiência em celulares e computadores lentos: frontend leve, interface responsiva e upload com feedback.
-- Executar OCR no servidor, fora do processo HTTP principal quando necessário; evitar travar o event loop.
+- Executar chamadas à OpenAI com timeout, limites de tamanho/páginas e controle de concorrência; evitar bloquear o event loop.
 - Limitar trabalhos simultâneos e usar fila se os testes mostrarem necessidade; não adicionar complexidade antes disso.
-- Minimizar uploads por compressão/reescalonamento **sem perder legibilidade ou caracteres críticos**; preservar opção de arquivo original.
-- Evitar OCR duplicado, conversões redundantes, consultas N+1 e carregamento integral de arquivos grandes em memória.
-- Medir latência (upload, OCR, geração), uso de CPU/RAM, taxa de erro e custo por processo antes de otimizar.
-- Fazer benchmarks com PDFs nativos, scans e fotos de qualidade variada; registrar contexto e resultados. Não alegar ganho sem medição.
+- Evitar chamadas OpenAI duplicadas, consultas N+1 e carregamento desnecessário de arquivos grandes em memória.
+- Medir latência, tokens de entrada/saída, taxa de erro e custo por processo antes de otimizar.
+- Fazer benchmarks com PDFs digitais, scans e fotos de qualidade variada; registrar contexto e resultados. Não alegar ganho sem medição.
 - Otimizações nunca podem degradar precisão, privacidade ou segurança.
 
 ## 8. Testes e critérios mínimos de aceite
 
 Exigir, conforme a mudança:
-- `lint`, `typecheck`, `build` e testes automatizados existentes passando.
-- Testes unitários para o catálogo independente, relações muitos-para-muitos, versões, mapeamentos, condições, crédito, validação de campos e expiração. Criar fixtures sintéticas de dois serviços compartilhando um mesmo formulário.
-- Testes de integração para upload, OCR (com mocks quando apropriado), geração de PDF e autorização.
-- Testes de segurança para acesso indevido, extensão falsa, arquivo acima do limite, arquivo corrompido, repetição de requisições, concorrência e tentativas de path traversal.
-- Testes de falha: timeout OCR, falha do worker, usuário fechando navegador, sessão expirada, falta de espaço e limpeza de temporários.
-- Conferência visual dos formulários PDF gerados contra modelos oficiais, com dados **fictícios**, casos difíceis e relatório padronizado por versão (`docs/FORM_MAPPING_REPORT_TEMPLATE.md`).
+- lint, typecheck, build e testes automatizados existentes passando.
+- Testes unitários para catálogo, relações muitos-para-muitos, versões, mapeamentos, condições, crédito, validação de campos e expiração.
+- Testes de integração para upload, análise OpenAI simulada, geração de PDF e autorização.
+- Testes de segurança para acesso indevido, extensão falsa, arquivo acima do limite, arquivo corrompido, repetição de requisições, concorrência e path traversal.
+- Testes de falha: timeout OpenAI, resposta inválida, usuário fechando navegador, sessão expirada, falta de espaço e limpeza de temporários.
+- Conferência visual dos formulários PDF gerados contra modelos oficiais, com dados fictícios, casos difíceis e relatório padronizado por versão.
 - Teste de restauração dos dados persistentes financeiros antes de produção.
 
-Se um teste não puder ser executado, informar claramente **qual teste, por quê e qual risco permanece**. Nunca marcar validação como concluída sem executar.
+Se um teste não puder ser executado, informar claramente qual teste, por quê e qual risco permanece. Nunca marcar validação como concluída sem executar.
 
 ## 9. Escopo de dados e créditos
 
@@ -246,9 +245,9 @@ Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exi
 ## Regras adicionais para retentativas, documentos e autenticação
 
 - Não presumir que `CORS_ORIGINS` equivale a requisições **same-origin**. Uma chamada POST feita pelo navegador ao próprio frontend atrás do proxy deve ser permitida, mas `Origin` externo não autorizado deve ser recusado. Testar o fluxo no Nginx e no Fastify.
-- Nunca apagar um job enquanto OCR, geração ou streaming de download estiverem ativos. Implementar limites de concorrência e prazo temporário, documentar exceções de fechamento e monitorar discos e memória.
+- Nunca apagar um job enquanto chamada OpenAI, geração ou streaming de download estiverem ativos. Implementar limites de concorrência e prazo temporário, documentar exceções de fechamento e monitorar discos e memória.
 - Validar assinaturas/estrutura de arquivo antes de utilizar decodificadores; limites de tamanho, páginas e geometria não são substitutos de sandbox ou atualização de dependências.
-- Dados extraídos do documento do vendedor **não** podem ser atribuídos automaticamente aos campos do comprador. Candidatos de OCR, mesmo com dígitos validadores corretos, são sugestões e dependem de conferência.
+- Dados extraídos do documento do vendedor **não** podem ser atribuídos automaticamente aos campos do comprador. Sugestões da OpenAI, mesmo com dígitos validadores corretos, são sugestões e dependem de conferência.
 - Em retentativas, reutilizar o job idempotentemente e nunca cobrar duas vezes. O registro do estado de débito para recuperação após queda do processo ainda exige solução antes de produção.
 - A API deve rejeitar qualquer campo de revisão não incluído na projeção visível do serviço e confirmar todos os obrigatórios. Não preencher silenciosamente informações que o usuário não viu.
 
@@ -269,13 +268,13 @@ Siga as fases 10 a 18 de `PROJECT_TRACKER.md` após concluir o MVP técnico. Exi
 - Estado de sessão retomável do wizard: usar apenas UUID opaco no `sessionStorage` da aba. **Nunca armazenar CPF, OCR, campos digitados, nomes de documentos ou PDF no navegador.** Conferir propriedade/expiração no servidor a cada restauração.
 - Ao estender testes E2E, verificar que um usuário não pode ler, subir ou excluir documentos do outro e que falha de emissão não desconta créditos. A recuperação após crash com ledger persistente ainda não está implementada.
 
-## Regras adicionais de extração OCR — Fase 06
+## Regras adicionais de análise documental — Fase 06
 
 - Somente sugerir valores documentais quando o tipo de documento e o rótulo identificarem o campo semântico com baixa ambiguidade. TIE não fornece automaticamente CPF do comprador; identidade do vendedor não preenche o comprador.
 - CPF com dígito verificador correto **não comprova identidade**; sugestões continuam em `REVIEW_REQUIRED`.
 - Se houver dois valores diferentes que encaixem na mesma regra, não selecionar nenhum. Campos ausentes permanecem vazios para preenchimento manual.
 - Nunca anunciar porcentagem de confiança sem evidências reais do OCR. Investigar imagem rotacionada, perspectiva, sombras e leituras inconsistentes antes de abrir para público.
-- Verificar e atualizar `docs/OCR_EXTRACTION_RULES.md` e testes unitários sempre que acrescentar padrões.
+- Verificar e atualizar `docs/OPENAI_DOCUMENT_ANALYSIS.md` e testes unitários sempre que acrescentar padrões.
 
 ## Cobrança com entrega — regras técnicas
 
