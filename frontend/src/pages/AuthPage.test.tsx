@@ -95,6 +95,21 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     expect(await screen.findByRole('link', { name: 'Entrar' })).toBeTruthy();
   }, 25000);
 
+
+  it('abre diretamente no modo cadastro pelo link do cabeçalho', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
+      if (String(url) === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      return json({ error: 'not_found' }, 404);
+    }));
+
+    render(<MemoryRouter initialEntries={['/entrar?modo=cadastro']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Criar conta' })).toBeTruthy();
+    expect(screen.getByLabelText('Nome completo')).toBeTruthy();
+    expect(screen.getByLabelText('CPF')).toBeTruthy();
+    expect(screen.getByLabelText('Celular')).toBeTruthy();
+  });
+
   it('cadastra perfil completo e impede envio com confirmação de senha divergente', async () => {
     let registerBody: Record<string, unknown> | null = null;
     const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
