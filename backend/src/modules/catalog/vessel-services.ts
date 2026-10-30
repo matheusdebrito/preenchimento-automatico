@@ -55,10 +55,17 @@ const motoCharacteristicsChangedQuestion: ServiceQuestion = {
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 };
 
-const motoCharacteristicAlterationQuestion: ServiceQuestion = {
-  id: 'motoCharacteristicAlteration',
-  label: 'A alteração envolve características da moto aquática (por exemplo, motor, casco ou waterbox)?',
-  options: ['sim', 'nao'],
+const motoTieSecondCopyReasonQuestion: ServiceQuestion = {
+  id: 'motoTieSecondCopyReason',
+  label: 'Motivo da renovação do TIE da moto aquática',
+  options: ['perda', 'roubo', 'extravio'],
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+};
+
+const motoDataChangeTargetQuestion: ServiceQuestion = {
+  id: 'motoDataChangeTarget',
+  label: 'Quais dados cadastrais serão alterados?',
+  options: ['dados_embarcacao', 'dados_proprietario', 'ambos'],
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 };
 
@@ -232,7 +239,8 @@ function questions(options: {
   constructionCase?: boolean;
   responsibilityTermCase?: boolean;
   rowToMotorConversion?: boolean;
-  motoCharacteristicAlteration?: boolean;
+  motoTieSecondCopyReason?: boolean;
+  motoDataChangeTarget?: boolean;
 } = {}): readonly ServiceQuestion[] {
   const bandQuestion = options.dataChanged
     ? { ...vesselBandQuestion, conditions: [
@@ -248,7 +256,8 @@ function questions(options: {
     ...(options.constructionCase ? [initialResponsibilityTermQuestion] : []),
     ...(options.responsibilityTermCase ? [responsibilityTermCaseQuestion] : []),
     ...(options.rowToMotorConversion ? [rowToMotorConversionQuestion] : []),
-    ...(options.motoCharacteristicAlteration ? [motoCharacteristicAlterationQuestion] : []),
+    ...(options.motoTieSecondCopyReason ? [motoTieSecondCopyReasonQuestion] : []),
+    ...(options.motoDataChangeTarget ? [motoDataChangeTargetQuestion] : []),
   ];
 }
 
@@ -315,7 +324,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Renovação do TIE/TIEM por perda, roubo ou extravio',
     description: scopeNote + ' O TIE digital não possui segunda via; perda ou extravio do modelo antigo segue o fluxo de renovação.',
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ dataChanged: true }),
+    questions: questions({ dataChanged: true, motoTieSecondCopyReason: true }),
     documentRequirements: requirements(),
   },
   {
@@ -323,7 +332,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Alteração de dados ou características da embarcação',
     description: 'Preenchimento para alteração de dados ou características. Em embarcação/barco, o Anexo 3-C só é gerado nos casos admitidos pelo item 2.12.1 da NORMAM-211/DPC. Em moto aquática, alterações de características exigem responsável técnico e ART no protocolo, mas esses documentos não são solicitados porque não fornecem campos para o preenchimento automático.',
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ tie: true, responsibilityTermCase: true, motoCharacteristicAlteration: true }),
+    questions: questions({ tie: true, responsibilityTermCase: true, motoDataChangeTarget: true }),
     documentRequirements: [
       ...requirements({ tie: true, origin: true }),
     ],
@@ -341,7 +350,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'comunicacao-venda-embarcacao',
     title: 'Comunicação de venda de embarcação',
-    description: 'Comunicação do vendedor conforme a NORMAM-211/DPC. Não efetiva por si só a transferência.',
+    description: 'Comunicação do vendedor conforme a NORMAM-211/DPC ou NORMAM-212/DPC, conforme o tipo de embarcação. Não efetiva por si só a transferência.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ band: false }),
     documentRequirements: requirements({
@@ -508,12 +517,15 @@ const motoRequest = (
   order: number,
   action: string,
   extraConditions: ServiceForm['conditions'] = [],
+  answerBindings: ServiceForm['answerBindings'] = {},
+  extraFixedValues: Readonly<Record<string, string>> = {},
 ): ServiceForm => ({
   serviceId,
   formVersionId: 'requerimento-ma-v1',
   order,
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }, ...extraConditions],
-  fixedValues: { 'process.vesselAction': action },
+  fixedValues: { 'process.vesselAction': action, ...extraFixedValues },
+  answerBindings,
 });
 
 const motoBdmoto = (
@@ -588,25 +600,33 @@ export const motoAquaticaServiceForms: readonly ServiceForm[] = [
   motoLostTie('transferencia-propriedade-jurisdicao-embarcacao', 25),
 
   // NORMAM-212 2.2: BDMOTO is required on renewal only when characteristics changed.
-  motoRequest('renovacao-tie-embarcacao', 21, 'renovacao'),
+  motoRequest('renovacao-tie-embarcacao', 21, 'renovacao', [], {
+    'process.renewalCharacteristicsChanged': 'motoCharacteristicsChanged',
+  }),
   motoBdmoto('renovacao-tie-embarcacao', 22, 'alteracao_dados',
     [{ questionId: 'motoCharacteristicsChanged', equals: 'sim' }]),
   motoResidence('renovacao-tie-embarcacao', 23),
   motoLostTie('renovacao-tie-embarcacao', 24),
 
   // Old/non-digital TIE loss follows renewal; declaration substitutes the missing original.
-  motoRequest('segunda-via-tie-embarcacao', 21, 'segunda_via'),
+  motoRequest('segunda-via-tie-embarcacao', 21, 'segunda_via', [], {
+    'process.tieSecondCopyReason': 'motoTieSecondCopyReason',
+  }),
   motoLostTie('segunda-via-tie-embarcacao', 22, false),
   motoBdmoto('segunda-via-tie-embarcacao', 23, 'alteracao_dados',
     [{ questionId: 'motoCharacteristicsChanged', equals: 'sim' }]),
   motoResidence('segunda-via-tie-embarcacao', 24),
 
-  motoRequest('alteracao-dados-embarcacao', 21, 'alteracao_dados'),
+  motoRequest('alteracao-dados-embarcacao', 21, 'alteracao_dados', [], {
+    'process.dataChangeTarget': 'motoDataChangeTarget',
+  }),
   motoBdmoto('alteracao-dados-embarcacao', 22, 'alteracao_dados'),
   motoResidence('alteracao-dados-embarcacao', 23),
   motoLostTie('alteracao-dados-embarcacao', 24),
 
-  motoRequest('alteracao-motor-embarcacao', 21, 'alteracao_dados'),
+  motoRequest('alteracao-motor-embarcacao', 21, 'alteracao_dados', [], {}, {
+    'process.dataChangeTarget': 'dados_embarcacao',
+  }),
   motoBdmoto('alteracao-motor-embarcacao', 22, 'alteracao_dados'),
   motoResidence('alteracao-motor-embarcacao', 23),
   motoLostTie('alteracao-motor-embarcacao', 24),
