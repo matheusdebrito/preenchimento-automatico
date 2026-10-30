@@ -127,7 +127,10 @@ function validateCandidateValue(
   field: OpenAiTargetField,
 ): string | null {
   const normalized = normalizeSimple(value);
-  if (!normalized || normalized.length > 500 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(normalized)) {
+  if (!normalized || normalized.length > 500 || Array.from(normalized).some((character) => {
+    const code = character.charCodeAt(0);
+    return code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31);
+  })) {
     return null;
   }
   if (field.validationRuleId === 'cpf') {
