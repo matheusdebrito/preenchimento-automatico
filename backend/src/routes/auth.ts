@@ -76,7 +76,7 @@ export function registerAuthRoutes(app: FastifyInstance, env: AppEnv, pool?: Dat
       return reply.status(409).send({ error: 'already_authenticated' });
     }
     try {
-      const user = await registerUser(pool, request.body);
+      const user = await registerUser(pool, request.body, env.ADMIN_EMAIL);
       await issueSession(pool, reply, user.id, env.NODE_ENV === 'production');
       return reply.status(201).send({ user });
     } catch (error) {
