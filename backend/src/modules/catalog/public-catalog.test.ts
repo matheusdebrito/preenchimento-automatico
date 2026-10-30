@@ -51,6 +51,34 @@ describe('projeção pública do catálogo', () => {
     ]);
   });
 
+  it('condiciona documentos de propriedade no serviço unificado de transferência', () => {
+    const jurisdiction = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      transferTarget: 'jurisdicao',
+    });
+    expect(jurisdiction?.documentRequirements.map((item) => item.id))
+      .not.toContain('seller-identity-transfer');
+    expect(jurisdiction?.documentRequirements.map((item) => item.id))
+      .not.toContain('vessel-origin-document-transfer');
+    expect(jurisdiction?.formVersionIds)
+      .not.toContain('autorizacao-transferencia-er-2026-v1');
+
+    const combined = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      transferTarget: 'propriedade_jurisdicao',
+    });
+    expect(combined?.documentRequirements.map((item) => item.id))
+      .toContain('seller-identity-transfer');
+    expect(combined?.documentRequirements.map((item) => item.id))
+      .toContain('vessel-origin-document-transfer');
+    expect(combined?.formVersionIds)
+      .toContain('autorizacao-transferencia-er-2026-v1');
+  });
+
   it('publica inscrição para exame com 5-H e uploads opcionais', () => {
     const enrollment = publicService(catalog, 'inscricao-exame-amador', {
       amateurCategory: 'capitao',
