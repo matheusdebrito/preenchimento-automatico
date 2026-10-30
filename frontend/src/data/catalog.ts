@@ -81,6 +81,29 @@ export const PLANNED_VESSEL_SERVICES: readonly PlannedService[] = [
 ];
 
 
+export const PLANNED_AQUAVIARIO_SERVICES: readonly PlannedService[] = [
+  { id: 'inscricao-inicial-cir-aquaviario', title: 'Inscrição inicial / emissão da CIR',
+    summary: 'Preparação dos documentos disponíveis na NORMAM-101 para a inscrição inicial.' },
+  { id: 'segunda-via-cir-aquaviario', title: '2ª via da CIR',
+    summary: 'Para dano, extravio, roubo ou furto da Caderneta de Inscrição e Registro.' },
+  { id: 'revalidacao-cir-aquaviario', title: 'Revalidação da CIR',
+    summary: 'Preparação dos documentos para revalidação da Caderneta de Inscrição e Registro.' },
+  { id: 'transferencia-jurisdicao-aquaviario', title: 'Transferência de jurisdição',
+    summary: 'Mudança da Organização Militar de jurisdição do aquaviário.' },
+  { id: 'ascensao-categoria-aquaviario', title: 'Ascensão de categoria',
+    summary: 'Preparação documental para progressão de categoria profissional.' },
+  { id: 'transferencia-categoria-grupo-aquaviario', title: 'Transferência de categoria ou grupo',
+    summary: 'Processo excepcional de transferência entre categorias, seções ou grupos.' },
+  { id: 'homologacao-lrm-aquaviario', title: 'Homologação do LRM',
+    summary: 'Preparação documental para homologação do Livro de Registro do Mergulhador.' },
+  { id: 'emissao-certificado-aquaviario', title: 'Emissão de certificado',
+    summary: 'Requerimento de certificação DPC-1031, DPC-1032, DPC-1033 ou DPC-1034.' },
+  { id: 'segunda-via-certificado-aquaviario', title: '2ª via de certificado',
+    summary: 'Segunda via de certificado por dano, extravio, roubo ou furto.' },
+  { id: 'revalidacao-certificado-aquaviario', title: 'Revalidação de certificado',
+    summary: 'Revalidação de certificação profissional conforme a NORMAM-101.' },
+];
+
 export const PLANNED_AMATEUR_SERVICES: readonly PlannedService[] = [
   {
     id: 'inscricao-exame-amador',
