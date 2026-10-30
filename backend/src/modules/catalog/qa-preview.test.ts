@@ -43,6 +43,10 @@ describe('prévia local do MESMO serviço de transferência', () => {
       }
     }
     expect(validateCatalog(qa)).toEqual([]);
+    const serviceOrders = qa.serviceForms
+      .filter((relation) => relation.serviceId === QA_PREVIEW_SERVICE_ID)
+      .map((relation) => relation.order);
+    expect(new Set(serviceOrders).size).toBe(serviceOrders.length);
     expect(qa.services).toHaveLength(catalog.services.length);
     expect(qa.services.find((service) => service.id === QA_PREVIEW_SERVICE_ID)?.id)
       .toBe(QA_PREVIEW_SERVICE_ID);
