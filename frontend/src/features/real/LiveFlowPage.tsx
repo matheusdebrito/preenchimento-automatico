@@ -18,8 +18,6 @@ type ExtractionDiagnostic = {
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
   suggestionCount: number;
   engine?: 'openai';
-  nameStage?: 'name_recognized' | 'name_not_mapped' |
-    'label_seen_name_rejected' | 'label_not_detected';
 };
 
 function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
@@ -758,8 +756,7 @@ export function LiveFlowPage() {
                             {item.engine ? (
                               <span className="live-ocr-name-stage">
                                 {' · Leitura: ' + (
-                                  item.engine === 'pdf-text' ? 'texto digital do PDF'
-                                    : 'OpenAI'
+                                  'OpenAI'
                                 )}
                               </span>
                             ) : null}
