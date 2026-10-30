@@ -76,7 +76,7 @@ function assertStaticPlacement(
     throw new TemplateGenerationError('template_rotation_unsupported');
   }
   const crop = page.getCropBox();
-  const { x, y, fontSize, maxWidth, fieldId } = placement;
+  const { x, y, fontSize, maxWidth } = placement;
   if (![x, y, fontSize, maxWidth, crop.x, crop.y, crop.width, crop.height].every(Number.isFinite) ||
       x < 0 || y < 0 || fontSize < 4.5 || maxWidth <= 0 ||
       x < crop.x || y < crop.y ||
