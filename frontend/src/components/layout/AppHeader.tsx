@@ -78,9 +78,6 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
           <NavLink to="/" end className="site-nav__link" onClick={closeMenu}>
             Início
           </NavLink>
-          <NavLink to="/ocr" className="site-nav__link" onClick={closeMenu}>
-            OCR
-          </NavLink>
           {session.status === 'authenticated' ? (
             <NavLink to="/minha-conta" className="site-nav__link" onClick={closeMenu}>
               Minha conta
