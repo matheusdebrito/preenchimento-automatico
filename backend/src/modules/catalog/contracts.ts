@@ -119,10 +119,6 @@ export interface DocumentRequirement {
   extraction?: DocumentExtractionProfile;
   /** All conditions must match; absent means unconditional. */
   conditions?: readonly ServiceCondition[];
-  /** Fields physically present in the PDF but not applicable to this service relation. */
-  excludedReviewFieldIds?: readonly string[];
-  /** Additional per-field applicability rules evaluated against validated service answers. */
-  reviewFieldConditions?: Readonly<Record<string, readonly ServiceCondition[]>>;
 }
 
 export interface ServiceDefinition {
@@ -151,6 +147,10 @@ export interface ServiceForm {
   }>>;
   /** All conditions must match; absent means unconditional. */
   conditions?: readonly ServiceCondition[];
+  /** Fields physically present in the PDF but not applicable to this service relation. */
+  excludedReviewFieldIds?: readonly string[];
+  /** Additional per-field applicability rules evaluated against validated service answers. */
+  reviewFieldConditions?: Readonly<Record<string, readonly ServiceCondition[]>>;
 }
 
 export interface CatalogDefinition {
