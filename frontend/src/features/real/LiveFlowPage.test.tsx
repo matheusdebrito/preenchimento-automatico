@@ -166,7 +166,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(deleted).toBe(1);
   });
 
-  it('navega pelo ciclo upload, OCR, revisão e download com API simulada', async () => {
+  it('navega pelo ciclo upload, análise OpenAI, revisão e download com API simulada', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);
       if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
@@ -188,10 +188,6 @@ describe('jornada real isolada da demonstração', () => {
     expect(await screen.findByRole('heading',{name:'Serviço de teste'})).toBeTruthy();
     await user.click(screen.getByRole('button',{name:'Conferir documentos necessários'}));
     expect(await screen.findByRole('heading',{name:'Documentos para preenchimento automático (opcionais)'})).toBeTruthy();
-    const provider = screen.getByLabelText('Método de leitura automática') as HTMLSelectElement;
-    expect(provider.value).toBe('paddleocr');
-    await user.selectOptions(provider, 'openai');
-    expect(provider.value).toBe('openai');
     const uploader = screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement;
     const camera = screen.getByLabelText(/Fotografar documento de teste/i) as HTMLInputElement;
     expect(uploader.classList.contains('live-upload-input')).toBe(true);
@@ -222,7 +218,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(fetcher).toHaveBeenCalled();
     const extractCall = fetcher.mock.calls.find((call) => String(call[0]).endsWith('/extract'));
     expect(extractCall).toBeDefined();
-    expect(JSON.parse(extractCall![1]!.body as string).provider).toBe('openai');
+    expect(JSON.parse(extractCall![1]!.body as string)).toEqual({});
     const reviewCall = fetcher.mock.calls.find((call) => String(call[0]).endsWith('/review'));
     expect(reviewCall).toBeDefined();
     expect(JSON.parse(reviewCall![1]!.body as string).values['person.fullName']).toBe('MARIA CONFERIDA');
@@ -576,7 +572,7 @@ describe('jornada real isolada da demonstração', () => {
     )).toBeTruthy();
   }, 25000);
 
-  it('permite somente um RG, OCR sem sugestões e CPF corrigido no mesmo job', async () => {
+  it('permite somente um RG, análise sem sugestões e CPF corrigido no mesmo job', async () => {
     const anotherService = {
       ...service,
       documentRequirements: [
@@ -598,7 +594,7 @@ describe('jornada real isolada da demonstração', () => {
       if (path.endsWith('/extract')) return json({
         fields: {}, sources: {}, diagnostics: [
           { requirementId: 'buyer-identity', outcome: 'no_supported_labels', suggestionCount: 0,
-            nameStage: 'label_seen_name_rejected' },
+            },
           { requirementId: 'tie', outcome: 'no_text', suggestionCount: 0 },
         ],
       });
@@ -634,7 +630,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByText('Nenhum campo preenchido automaticamente')).toBeTruthy();
     expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/i))
       .toBeTruthy();
-    expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
+    expect(screen.getByText(/não foi possível ler o documento/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(screen.getByText(/campos obrigatórios pendentes: Nome completo/i)).toBeTruthy();
     expect(reviewAttempts).toBe(0);
