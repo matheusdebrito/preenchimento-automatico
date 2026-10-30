@@ -33,7 +33,7 @@ describe('motor determinístico de PDF', () => {
     await expect(fillPdf(input, [field], {})).rejects.toThrow('missing_required_fields:name:required');
     await expect(fillPdf(input, [field], { name: 'A'.repeat(100) })).rejects.toThrow('invalid_field_value:name:text_overflow');
     await expect(fillPdf(input, [field], { name: 'Maria\nTeste' })).rejects.toThrow('invalid_field_value:name:unsupported_character');
-    await expect(fillPdf(input, [{ ...field, pageIndex: 100 }], { name: 'OK' })).rejects.toThrow('Página');
+    await expect(fillPdf(input, [{ ...field, pageIndex: 100 }], { name: 'OK' })).rejects.toThrow('template_page_missing');
   });
 
   it('aceita acentuação portuguesa e rejeita bidi, controles e glifos inexistentes', async () => {
