@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { qaPreviewCatalog } from '../catalog/qa-preview.js';
+import { catalog } from '../catalog/catalog.js';
 import { publicService } from '../catalog/public-catalog.js';
 import { paddleToObservation } from '../document-understanding/paddle-observation.js';
 import { extractDocumentEvidence } from '../document-understanding/registry.js';
@@ -24,13 +24,9 @@ function identityResult(name: string, cpf: string): PaddleOcrResult {
 }
 
 describe('Transferência com document-understanding', () => {
-  const service = publicService(qaPreviewCatalog(), 'transferencia-moto-aquatica', {
+  const service = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+    vesselType: 'moto_aquatica',
     tieSituation: 'regular',
-    transferAuthorization: 'anexo_2d',
-    sellerCommunication: 'sim',
-    residenceProof: 'comprovante',
-    coOwner: 'nao',
-    representative: 'nao',
   });
 
   it('deriva campos dos formulários e extrai identidade sem regra de serviço', () => {
