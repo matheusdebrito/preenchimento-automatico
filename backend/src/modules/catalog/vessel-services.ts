@@ -480,6 +480,21 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
 ];
 
+const SALE_TRANSFER_REVIEW_FIELDS = [
+  'sale.invoice',
+  'sale.date',
+  'sale.place',
+  'seller.fullName',
+  'seller.cpf',
+] as const;
+
+const PROPERTY_TRANSFER_FIELD_CONDITIONS = Object.fromEntries(
+  SALE_TRANSFER_REVIEW_FIELDS.map((fieldId) => [fieldId, [{
+    questionId: 'transferTarget',
+    oneOf: ['propriedade', 'propriedade_jurisdicao'],
+  }]]),
+) as ServiceForm['reviewFieldConditions'];
+
 const bsade = (
   serviceId: string,
   order: number,
@@ -494,6 +509,7 @@ const bsade = (
     { questionId: 'vesselBand', equals: 'ate_6m' },
     ...extraConditions,
   ],
+  excludedReviewFieldIds: SALE_TRANSFER_REVIEW_FIELDS,
   ...(action ? { fixedValues: action === 'inscricao'
     ? { 'process.inscription': 'true' }
     : action === 'transf_prop'
@@ -578,6 +594,7 @@ const boatServiceForms: readonly ServiceForm[] = [
       { questionId: 'vesselType', equals: 'embarcacao' },
       { questionId: 'vesselBand', equals: 'ate_6m' },
     ],
+    reviewFieldConditions: PROPERTY_TRANSFER_FIELD_CONDITIONS,
     answerValueMappings: {
       'process.transferProperty': {
         questionId: 'transferTarget',
@@ -685,6 +702,7 @@ const motoBdmoto = (
   formVersionId: 'bdmoto-v1',
   order,
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }, ...extraConditions],
+  excludedReviewFieldIds: SALE_TRANSFER_REVIEW_FIELDS,
   fixedValues: action === 'inscricao'
     ? { 'process.inscription': 'true' }
     : action === 'transf_prop'
@@ -746,6 +764,7 @@ export const motoAquaticaServiceForms: readonly ServiceForm[] = [
     formVersionId: 'bdmoto-v1',
     order: 22,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+    reviewFieldConditions: PROPERTY_TRANSFER_FIELD_CONDITIONS,
     answerValueMappings: {
       'process.transferProperty': {
         questionId: 'transferTarget',

@@ -397,6 +397,96 @@ describe('projeção pública do catálogo', () => {
     });
   });
 
+  it('mostra local e data para revisão sem expor outros campos internos do processo', () => {
+    const service = publicService(catalog, 'inscricao-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      initialResponsibilityTerm: 'nao',
+    });
+    const ids = service?.reviewFields.map((field) => field.id) ?? [];
+    expect(ids).toContain('process.place');
+    expect(ids).toContain('process.date');
+    expect(ids).not.toContain('process.vesselAction');
+    expect(ids).not.toContain('process.inscription');
+  });
+
+  it('oculta venda e vendedor no BSADE fora de transferência de propriedade', () => {
+    const inscription = publicService(catalog, 'inscricao-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      initialResponsibilityTerm: 'nao',
+    });
+    const inscriptionIds = inscription?.reviewForms.find((form) =>
+      form.formVersionId === 'bsade-er-2026-v1')?.fields.map((field) => field.id) ?? [];
+    expect(inscriptionIds).not.toContain('sale.invoice');
+    expect(inscriptionIds).not.toContain('seller.fullName');
+
+    const jurisdiction = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      transferTarget: 'jurisdicao',
+    });
+    const jurisdictionIds = jurisdiction?.reviewForms.find((form) =>
+      form.formVersionId === 'bsade-er-2026-v1')?.fields.map((field) => field.id) ?? [];
+    expect(jurisdictionIds).not.toContain('sale.invoice');
+    expect(jurisdictionIds).not.toContain('seller.fullName');
+
+    const property = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      transferTarget: 'propriedade',
+    });
+    const propertyIds = property?.reviewForms.find((form) =>
+      form.formVersionId === 'bsade-er-2026-v1')?.fields.map((field) => field.id) ?? [];
+    expect(propertyIds).toContain('sale.invoice');
+    expect(propertyIds).toContain('seller.fullName');
+  });
+
+  it('oculta venda e vendedor no BDMOTO fora de transferência de propriedade', () => {
+    const alteration = publicService(catalog, 'alteracao-dados-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'regular',
+      motoAlterationTarget: 'dados_embarcacao_motor',
+    });
+    const alterationIds = alteration?.reviewForms.find((form) =>
+      form.formVersionId === 'bdmoto-v1')?.fields.map((field) => field.id) ?? [];
+    expect(alterationIds).not.toContain('sale.invoice');
+    expect(alterationIds).not.toContain('seller.fullName');
+
+    const jurisdiction = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'regular',
+      transferTarget: 'jurisdicao',
+    });
+    const jurisdictionIds = jurisdiction?.reviewForms.find((form) =>
+      form.formVersionId === 'bdmoto-v1')?.fields.map((field) => field.id) ?? [];
+    expect(jurisdictionIds).not.toContain('sale.invoice');
+    expect(jurisdictionIds).not.toContain('seller.fullName');
+
+    const property = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'regular',
+      transferTarget: 'propriedade',
+    });
+    const propertyIds = property?.reviewForms.find((form) =>
+      form.formVersionId === 'bdmoto-v1')?.fields.map((field) => field.id) ?? [];
+    expect(propertyIds).toContain('sale.invoice');
+    expect(propertyIds).toContain('seller.fullName');
+  });
+
+  it('não pede novamente a categoria da CHA quando ela vem da pergunta do serviço', () => {
+    const service = publicService(catalog, 'renovacao-cha-amador', {
+      amateurCategory: 'mestre',
+      chaSituation: 'furtada',
+    });
+    const lossFields = service?.reviewForms.find((form) =>
+      form.formVersionId === 'declaracao-extravio-cha-amador-2026-v1')
+      ?.fields.map((field) => field.id) ?? [];
+    expect(lossFields).not.toContain('amateur.category');
+  });
+
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();
     expect(publicService(data, 's')?.documentRequirements).toHaveLength(1);

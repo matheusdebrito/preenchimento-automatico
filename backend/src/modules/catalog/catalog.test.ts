@@ -183,6 +183,15 @@ describe('catálogo reutilizável de formulários', () => {
     expect(loss?.conditions).toContainEqual({ questionId: 'tieSituation', equals: 'extraviado' });
   });
 
+  it('separa a UF do órgão emissor da UF de endereço no BADE', () => {
+    const mapping = catalog.mappings.find((item) => item.formVersionId === 'bade-er-2026-v1');
+    const fieldIds = mapping?.placements.map((placement) => placement.fieldId) ?? [];
+    expect(fieldIds).toContain('person.issuerState');
+    expect(fieldIds).toContain('person.state');
+    expect(fieldIds).toContain('coOwner.issuerState');
+    expect(fieldIds).toContain('coOwner.state');
+  });
+
   it('publica toda a matriz NORMAM-212 homologada para Moto Aquática', () => {
     const byService = new Map<string, Set<string>>();
     for (const relation of motoAquaticaServiceForms) {

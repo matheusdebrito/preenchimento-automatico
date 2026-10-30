@@ -41,6 +41,24 @@ function matches(
     : rule.oneOf?.includes(answers[rule.questionId] ?? '') === true);
 }
 
+function isUserReviewField(fieldId: string): boolean {
+  return !fieldId.startsWith('process.') ||
+    fieldId === 'process.place' ||
+    fieldId === 'process.date';
+}
+
+function fieldApplies(
+  relation: CatalogDefinition['serviceForms'][number],
+  fieldId: string,
+  answers: Readonly<Record<string, string>>,
+): boolean {
+  if (relation.excludedReviewFieldIds?.includes(fieldId)) return false;
+  if (Object.hasOwn(relation.fixedValues ?? {}, fieldId) ||
+    Object.hasOwn(relation.answerBindings ?? {}, fieldId) ||
+    Object.hasOwn(relation.answerValueMappings ?? {}, fieldId)) return false;
+  return matches(relation.reviewFieldConditions?.[fieldId], answers);
+}
+
 /**
  * Authoritative public projection of AVAILABLE services only.
  * Unknown/unanswered conditions are false (fail closed).
@@ -71,13 +89,19 @@ export function publicService(
     return null;
   }
 
-  const versionIds = relations
+  const applicableRelations = relations
     .filter((relation) => matches(relation.conditions, answers))
-    .sort((a, b) => a.order - b.order)
-    .map((relation) => relation.formVersionId);
+    .sort((a, b) => a.order - b.order);
+  const versionIds = applicableRelations.map((relation) => relation.formVersionId);
+  const relationByVersion = new Map(applicableRelations.map((relation) =>
+    [relation.formVersionId, relation]));
   const placements = catalog.mappings
     .filter((mapping) => mapping.status === 'APPROVED' && versionIds.includes(mapping.formVersionId))
-    .flatMap((mapping) => mapping.placements);
+    .flatMap((mapping) => {
+      const relation = relationByVersion.get(mapping.formVersionId);
+      return mapping.placements.filter((placement) =>
+        relation ? fieldApplies(relation, placement.fieldId, answers) : false);
+    });
   const mappedFields = new Set(placements.map((placement) => placement.fieldId));
   const requiredFields = new Set(placements
     .filter((placement) => placement.required).map((placement) => placement.fieldId));
@@ -94,10 +118,15 @@ export function publicService(
     const form = version ? formById.get(version.formId) : undefined;
     if (!version || !mapping || !form) return [];
 
+    const relation = relationByVersion.get(formVersionId);
+    if (!relation) return [];
+
     const orderedIds: string[] = [];
     const seen = new Set<string>();
     for (const placement of mapping.placements) {
-      if (placement.fieldId.startsWith('process.') || seen.has(placement.fieldId)) continue;
+      if (!isUserReviewField(placement.fieldId) ||
+        !fieldApplies(relation, placement.fieldId, answers) ||
+        seen.has(placement.fieldId)) continue;
       seen.add(placement.fieldId);
       orderedIds.push(placement.fieldId);
     }
@@ -133,7 +162,7 @@ export function publicService(
       matches(requirement.conditions, answers)),
     formVersionIds: versionIds,
     reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
-      .filter((field) => !field.id.startsWith('process.'))
+      .filter((field) => isUserReviewField(field.id))
       .map(({ id, label, valueKind }) => ({ id, label, valueKind, required: requiredFields.has(id) })),
     reviewForms,
   };

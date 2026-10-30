@@ -198,6 +198,16 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     order: 2,
     conditions: [{ questionId: 'chaSituation', oneOf: ['extraviada', 'roubada', 'furtada', 'danificada'] }],
     answerBindings: { 'process.chaLossReason': 'chaSituation' },
+    answerValueMappings: {
+      'amateur.category': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Arrais-Amador',
+          mestre: 'Mestre-Amador',
+          capitao: 'Capitão-Amador',
+        },
+      },
+    },
   },
   {
     serviceId: 'emissao-cha-veleiro',

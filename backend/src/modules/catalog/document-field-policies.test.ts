@@ -24,6 +24,13 @@ describe('document field source policies', () => {
     expect(SELLER_RESIDENCE_PROOF_FIELDS).not.toContain('person.address');
   });
 
+  it('separa UF do órgão emissor da UF de endereço no BADE', () => {
+    expect(APPLICANT_IDENTITY_FIELDS).toContain('person.issuerState');
+    expect(RESIDENCE_PROOF_FIELDS).toContain('person.state');
+    expect(TIE_FIELDS).toContain('coOwner.issuerState');
+    expect(TIE_FIELDS).toContain('coOwner.state');
+  });
+
   it('não transforma TIE/TIEM em identidade de comprador ou vendedor', () => {
     expect(TIE_FIELDS).toContain('vessel.registration');
     expect(TIE_FIELDS).toContain('registeredOwner.fullName');
