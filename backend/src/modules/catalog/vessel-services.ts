@@ -43,7 +43,7 @@ const tieSituationQuestion: ServiceQuestion = {
 
 const dataChangedQuestion: ServiceQuestion = {
   id: 'dataChanged',
-  label: 'Houve alteração de dados do proprietário ou das características da embarcação?',
+  label: 'Houve alteração das características da embarcação (por exemplo, medidas, casco ou motor)?',
   options: ['sim', 'nao'],
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
