@@ -178,19 +178,3 @@ export async function pruneExpiredSessions(pool: Database): Promise<number> {
   return removed.rowCount ?? 0;
 }
 
-
-/**
- * Bootstrap an already-existing account as ADMIN from server-side configuration.
- * No password is read from environment variables and no account is created here.
- */
-export async function ensureBootstrapAdmin(
-  pool: Database,
-  adminEmail?: string,
-): Promise<boolean> {
-  if (!adminEmail) return false;
-  const result = await pool.query(
-    "UPDATE app_users SET role='ADMIN' WHERE email=$1 AND role<>'ADMIN'",
-    [adminEmail.toLowerCase()],
-  );
-  return (result.rowCount ?? 0) > 0;
-}
