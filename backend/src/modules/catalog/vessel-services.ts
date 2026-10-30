@@ -515,7 +515,7 @@ const boatServiceForms: readonly ServiceForm[] = [
 const motoRequest = (
   serviceId: string,
   order: number,
-  action: string,
+  action: string | null,
   extraConditions: ServiceForm['conditions'] = [],
   answerBindings: ServiceForm['answerBindings'] = {},
   extraFixedValues: Readonly<Record<string, string>> = {},
@@ -524,7 +524,10 @@ const motoRequest = (
   formVersionId: 'requerimento-ma-v1',
   order,
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }, ...extraConditions],
-  fixedValues: { 'process.vesselAction': action, ...extraFixedValues },
+  fixedValues: {
+    ...(action ? { 'process.vesselAction': action } : {}),
+    ...extraFixedValues,
+  },
   answerBindings,
 });
 
@@ -617,14 +620,14 @@ export const motoAquaticaServiceForms: readonly ServiceForm[] = [
     [{ questionId: 'motoCharacteristicsChanged', equals: 'sim' }]),
   motoResidence('segunda-via-tie-embarcacao', 24),
 
-  motoRequest('alteracao-dados-embarcacao', 21, 'alteracao_dados', [], {
+  motoRequest('alteracao-dados-embarcacao', 21, null, [], {
     'process.dataChangeTarget': 'motoDataChangeTarget',
   }),
   motoBdmoto('alteracao-dados-embarcacao', 22, 'alteracao_dados'),
   motoResidence('alteracao-dados-embarcacao', 23),
   motoLostTie('alteracao-dados-embarcacao', 24),
 
-  motoRequest('alteracao-motor-embarcacao', 21, 'alteracao_dados', [], {}, {
+  motoRequest('alteracao-motor-embarcacao', 21, null, [], {}, {
     'process.dataChangeTarget': 'dados_embarcacao',
   }),
   motoBdmoto('alteracao-motor-embarcacao', 22, 'alteracao_dados'),
