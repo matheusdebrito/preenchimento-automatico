@@ -13,8 +13,8 @@ import { chargeJobCredit, markJobDelivered, refundExpiredJobCredits,
 const url = process.env.DATABASE_TEST_URL;
 const describePg = url ? describe : describe.skip;
 
-describePg('crédito por processo e reembolso depois de falha abrupta', () => {
-  it('cobra atomicamente, não duplica cobranças e devolve pacote não entregue', async () => {
+describePg('crédito consumido por análise OpenAI', () => {
+  it('cobra atomicamente uma única vez e não estorna análise consumida', async () => {
     const pool = await connectDatabase(url!);
     const id = randomUUID();
     try {
@@ -27,14 +27,12 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       const second = await chargeJobCredit(pool, id, job, Date.now());
       expect(second.charged).toBe(false);
       expect(await creditBalance(pool,id)).toBe(2);
-      expect(await refundUndeliveredJobCredit(pool,job)).toBe(true);
       expect(await refundUndeliveredJobCredit(pool,job)).toBe(false);
-      expect(await creditBalance(pool,id)).toBe(3);
-      await expect(chargeJobCredit(pool,id,job,Date.now())).rejects.toThrow('estornado');
+      expect(await creditBalance(pool,id)).toBe(2);
+      expect((await chargeJobCredit(pool,id,job,Date.now())).charged).toBe(false);
 
       const deliveredJob = randomUUID();
       await chargeJobCredit(pool,id,deliveredJob,Date.now());
-      expect(await markJobDelivered(pool,id,deliveredJob)).toBe(true);
       expect(await markJobDelivered(pool,id,deliveredJob)).toBe(false);
       expect(await refundUndeliveredJobCredit(pool,deliveredJob)).toBe(false);
       expect(await creditBalance(pool,id)).toBe(2);
@@ -42,9 +40,8 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       const crashedJob = randomUUID();
       await chargeJobCredit(pool,id,crashedJob,Date.now());
       expect(await creditBalance(pool,id)).toBe(1);
-      expect(await refundJobsAfterRestart(pool,id)).toBe(1);
-      expect(await creditBalance(pool,id)).toBe(2);
       expect(await refundJobsAfterRestart(pool,id)).toBe(0);
+      expect(await creditBalance(pool,id)).toBe(1);
       expect(await refundExpiredJobCredits(pool)).toBe(0);
     } finally {
       await pool.query('DELETE FROM app_users WHERE id=$1', [id]);
@@ -52,7 +49,7 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
     }
   }, 30000);
 
-  it('estorna no TTL deslizante do job e preserva crédito de pacote entregue', async () => {
+  it('não estorna análise consumida por TTL ou limpeza do job', async () => {
     const pool = await connectDatabase(url!);
     const root = await mkdtemp(join(tmpdir(), 'pa-refund-ttl-'));
     const user = randomUUID();
@@ -70,12 +67,12 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       abandoned.expiresAt = Date.now() - 1;
       await store.cleanup();
       expect(store.get(abandoned.id, user)).toBeNull();
-      expect(await creditBalance(pool, user)).toBe(2);
+      expect(await creditBalance(pool, user)).toBe(1);
       expect(await refundUndeliveredJobCredit(pool, abandoned.id)).toBe(false);
 
       const delivered = await store.create(user, 'fixture-service');
       await chargeJobCredit(pool, user, delivered.id, delivered.createdAt);
-      expect(await markJobDelivered(pool, user, delivered.id)).toBe(true);
+      expect(await markJobDelivered(pool, user, delivered.id)).toBe(false);
       delivered.expiresAt = Date.now() - 1;
       await store.cleanup();
       expect(await creditBalance(pool, user)).toBe(1);
@@ -103,14 +100,14 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       ]);
       expect(results.filter((result) => result.charged)).toHaveLength(1);
       expect(await creditBalance(pool,id)).toBe(2);
-      expect(await refundUndeliveredJobCredit(pool,job)).toBe(true);
+      expect(await refundUndeliveredJobCredit(pool,job)).toBe(false);
     } finally {
       await pool.query('DELETE FROM app_users WHERE id=$1', [id]);
       await pool.end();
     }
   }, 30000);
 
-  it('impede confirmação de entrega por outra conta e estorna apenas o recibo vencido', async () => {
+  it('não transforma nem estorna recibo de análise consumida', async () => {
     const pool = await connectDatabase(url!);
     const owner = randomUUID();
     const stranger = randomUUID();
@@ -126,7 +123,7 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
       await chargeJobCredit(pool, owner, deliveredJob, Date.now());
 
       expect(await markJobDelivered(pool, stranger, deliveredJob)).toBe(false);
-      expect(await markJobDelivered(pool, owner, deliveredJob)).toBe(true);
+      expect(await markJobDelivered(pool, owner, deliveredJob)).toBe(false);
       expect(await creditBalance(pool, owner)).toBe(1);
 
       // Simulate a receipt reaching its stored deadline; no clock sleeping needed.
@@ -134,9 +131,8 @@ describePg('crédito por processo e reembolso depois de falha abrupta', () => {
         'UPDATE job_credit_receipts SET expires_at=now()-interval \'1 second\' WHERE job_id=$1',
         [expiredJob],
       );
-      expect(await refundExpiredJobCredits(pool)).toBe(1);
       expect(await refundExpiredJobCredits(pool)).toBe(0);
-      expect(await creditBalance(pool, owner)).toBe(2);
+      expect(await creditBalance(pool, owner)).toBe(1);
       expect(await refundUndeliveredJobCredit(pool, deliveredJob)).toBe(false);
     } finally {
       await pool.query('DELETE FROM app_users WHERE id = ANY($1::uuid[])', [[owner, stranger]]);
