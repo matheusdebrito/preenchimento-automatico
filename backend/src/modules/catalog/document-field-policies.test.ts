@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   APPLICANT_IDENTITY_FIELDS,
   BUYER_IDENTITY_FIELDS,
+  CHA_FIELDS,
   RESIDENCE_PROOF_FIELDS,
   SELLER_RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
@@ -74,6 +75,19 @@ describe('document field source policies', () => {
     expect(identityTypeValue('rg')).toBe('RG');
     expect(identityTypeValue('cin')).toBe('CIN');
     expect(identityTypeValue('cnh')).toBe('CNH');
+  });
+
+  it('limita CHA aos dados realmente presentes na habilitação', () => {
+    expect(CHA_FIELDS).toEqual([
+      'person.fullName',
+      'person.cpf',
+      'amateur.chaNumber',
+      'amateur.category',
+      'amateur.chaIssueDate',
+    ]);
+    const configured = [...CHA_FIELDS, 'person.address'];
+    expect(fieldsAllowedForDetectedSubtype('cha', 'cha', configured))
+      .toEqual(CHA_FIELDS);
   });
 
   it('restringe endereço de proprietário ao TIE/TIEM legado e mantém construtor legado', () => {
