@@ -198,7 +198,7 @@ describe('OpenAI document extractor', () => {
     expect(JSON.stringify(body)).not.toContain(tie.path);
     expect(JSON.stringify(body)).toContain('número da identidade/documento');
     expect(JSON.stringify(body)).toContain('órgão emissor/expedidor');
-    expect(JSON.stringify(body)).toContain('nunca deduza o órgão apenas pela UF');
+    expect(JSON.stringify(body)).toContain('issuerState=RJ');
 
     const values = Object.fromEntries(result.evidence.map((item) => [
       item.fieldId, item.value,
