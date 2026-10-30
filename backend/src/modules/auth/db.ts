@@ -23,7 +23,7 @@ export async function connectDatabase(databaseUrl: string): Promise<Database> {
     try {
       await client.query('BEGIN');
       await client.query('SELECT pg_advisory_xact_lock(145902, 1)');
-      for (const filename of ['001_initial.sql', '002_job_credit_receipts.sql']) {
+      for (const filename of ['001_initial.sql', '002_job_credit_receipts.sql', '003_user_profile_fields.sql']) {
         const sql = await readFile(resolve(process.cwd(), 'migrations', filename), 'utf8');
         await client.query(sql);
       }
