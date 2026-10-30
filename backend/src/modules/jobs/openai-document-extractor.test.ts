@@ -3,7 +3,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { StoredDocument } from './job-store.js';
-import { extractDocumentsWithOpenAi } from './openai-document-extractor.js';
+import {
+  extractDocumentsWithOneContingency,
+  extractDocumentsWithOpenAi,
+} from './openai-document-extractor.js';
 
 const roots: string[] = [];
 
@@ -265,4 +268,275 @@ describe('OpenAI document extractor', () => {
       code: 'not_configured',
     });
   });
+
+  it('faz uma única contingência global para todos os campos pendentes', async () => {
+    const identity = await fixture('identity.jpg', 'jpeg', 'buyer-identity');
+    const tie = await fixture('tie.jpg', 'jpeg', 'tie');
+    let calls = 0;
+    const fakeFetch = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      calls++;
+      const body = JSON.parse(String(init?.body)) as {
+        input: Array<{content:Array<Record<string, unknown>>}>;
+      };
+      const serialized = JSON.stringify(body);
+      if (calls === 1) {
+        expect(serialized).toContain('person.fullName');
+        expect(serialized).toContain('person.cpf');
+        expect(serialized).toContain('vessel.registration');
+        return new Response(JSON.stringify({
+          output: [{
+            type: 'message',
+            content: [{
+              type: 'output_text',
+              text: JSON.stringify({
+                candidates: [{
+                  fieldId: 'person.fullName',
+                  value: 'MARIA DE SOUZA',
+                  sourceRequirementId: 'buyer-identity',
+                  confidence: 'high',
+                }],
+                documents: [
+                  { requirementId: 'buyer-identity', status: 'readable' },
+                  { requirementId: 'tie', status: 'readable' },
+                ],
+              }),
+            }],
+          }],
+          usage: { input_tokens: 1000, output_tokens: 100, total_tokens: 1100 },
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      expect(serialized).not.toContain('person.fullName');
+      expect(serialized).toContain('person.cpf');
+      expect(serialized).toContain('vessel.registration');
+      return new Response(JSON.stringify({
+        output: [{
+          type: 'message',
+          content: [{
+            type: 'output_text',
+            text: JSON.stringify({
+              candidates: [
+                {
+                  fieldId: 'person.cpf',
+                  value: '123.456.789-09',
+                  sourceRequirementId: 'buyer-identity',
+                  confidence: 'high',
+                },
+                {
+                  fieldId: 'vessel.registration',
+                  value: '441M20200001',
+                  sourceRequirementId: 'tie',
+                  confidence: 'high',
+                },
+              ],
+              documents: [
+                { requirementId: 'buyer-identity', status: 'readable' },
+                { requirementId: 'tie', status: 'readable' },
+              ],
+            }),
+          }],
+        }],
+        usage: { input_tokens: 700, output_tokens: 60, total_tokens: 760 },
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+
+    const result = await extractDocumentsWithOneContingency([
+      {
+        document: identity,
+        label: 'Identidade',
+        allowedFieldIds: ['person.fullName', 'person.cpf'],
+      },
+      {
+        document: tie,
+        label: 'TIE',
+        allowedFieldIds: ['vessel.registration'],
+      },
+    ], [
+      {
+        id: 'person.fullName',
+        label: 'Nome completo',
+        valueKind: 'text',
+        required: false,
+      },
+      {
+        id: 'person.cpf',
+        label: 'CPF',
+        valueKind: 'text',
+        validationRuleId: 'cpf',
+        required: false,
+      },
+      {
+        id: 'vessel.registration',
+        label: 'Inscrição',
+        valueKind: 'text',
+        required: false,
+      },
+    ], {
+      env: {
+        OPENAI_API_KEY: 'test-key',
+        OPENAI_MODEL: 'gpt-5.4-mini-2026-03-17',
+        OPENAI_DOCUMENT_DETAIL: 'high',
+      },
+      fetchImpl: fakeFetch as unknown as typeof fetch,
+    });
+
+    expect(calls).toBe(2);
+    expect(Object.fromEntries(result.evidence.map((item) => [item.fieldId, item.value])))
+      .toEqual({
+        'person.fullName': 'MARIA DE SOUZA',
+        'person.cpf': '123.456.789-09',
+        'vessel.registration': '441M20200001',
+      });
+    expect(result.contingency).toMatchObject({
+      used: true,
+      failed: false,
+      requestedFieldCount: 2,
+      documentCount: 2,
+      recoveredFieldCount: 2,
+    });
+    expect(result.usage?.totalTokens).toBe(1860);
+  });
+
+  it('não faz terceira tentativa se a contingência falhar', async () => {
+    const identity = await fixture('identity.jpg', 'jpeg', 'buyer-identity');
+    let calls = 0;
+    const fakeFetch = vi.fn(async () => {
+      calls++;
+      if (calls === 1) {
+        return new Response(JSON.stringify({
+          output: [{
+            type: 'message',
+            content: [{
+              type: 'output_text',
+              text: JSON.stringify({
+                candidates: [],
+                documents: [{ requirementId: 'buyer-identity', status: 'readable' }],
+              }),
+            }],
+          }],
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response(JSON.stringify({ error: { message: 'temporary' } }), { status: 503 });
+    });
+
+    const result = await extractDocumentsWithOneContingency([
+      {
+        document: identity,
+        label: 'Identidade',
+        allowedFieldIds: ['person.cpf'],
+      },
+    ], [
+      {
+        id: 'person.cpf',
+        label: 'CPF',
+        valueKind: 'text',
+        validationRuleId: 'cpf',
+        required: false,
+      },
+    ], {
+      env: {
+        OPENAI_API_KEY: 'test-key',
+        OPENAI_MODEL: 'gpt-5.4-mini-2026-03-17',
+      },
+      fetchImpl: fakeFetch as unknown as typeof fetch,
+    });
+
+    expect(calls).toBe(2);
+    expect(result.evidence).toEqual([]);
+    expect(result.contingency).toMatchObject({
+      used: true,
+      failed: true,
+      requestedFieldCount: 1,
+      documentCount: 1,
+      recoveredFieldCount: 0,
+    });
+  });
+
+  it('na contingência reenvia somente documentos capazes de fornecer campos pendentes', async () => {
+    const identity = await fixture('identity.jpg', 'jpeg', 'buyer-identity');
+    const tie = await fixture('tie.jpg', 'jpeg', 'tie');
+    let secondBody = '';
+    let calls = 0;
+    const fakeFetch = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      calls++;
+      if (calls === 1) {
+        return new Response(JSON.stringify({
+          output: [{
+            type: 'message',
+            content: [{
+              type: 'output_text',
+              text: JSON.stringify({
+                candidates: [{
+                  fieldId: 'vessel.registration',
+                  value: '441M20200001',
+                  sourceRequirementId: 'tie',
+                  confidence: 'high',
+                }],
+                documents: [
+                  { requirementId: 'buyer-identity', status: 'readable' },
+                  { requirementId: 'tie', status: 'readable' },
+                ],
+              }),
+            }],
+          }],
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      secondBody = String(init?.body);
+      return new Response(JSON.stringify({
+        output: [{
+          type: 'message',
+          content: [{
+            type: 'output_text',
+            text: JSON.stringify({
+              candidates: [{
+                fieldId: 'person.cpf',
+                value: '123.456.789-09',
+                sourceRequirementId: 'buyer-identity',
+                confidence: 'high',
+              }],
+              documents: [{ requirementId: 'buyer-identity', status: 'readable' }],
+            }),
+          }],
+        }],
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+
+    const result = await extractDocumentsWithOneContingency([
+      {
+        document: identity,
+        label: 'Identidade',
+        allowedFieldIds: ['person.cpf'],
+      },
+      {
+        document: tie,
+        label: 'TIE',
+        allowedFieldIds: ['vessel.registration'],
+      },
+    ], [
+      {
+        id: 'person.cpf',
+        label: 'CPF',
+        valueKind: 'text',
+        validationRuleId: 'cpf',
+        required: false,
+      },
+      {
+        id: 'vessel.registration',
+        label: 'Inscrição',
+        valueKind: 'text',
+        required: false,
+      },
+    ], {
+      env: {
+        OPENAI_API_KEY: 'test-key',
+        OPENAI_MODEL: 'gpt-5.4-mini-2026-03-17',
+      },
+      fetchImpl: fakeFetch as unknown as typeof fetch,
+    });
+
+    expect(calls).toBe(2);
+    expect(secondBody).toContain('buyer-identity');
+    expect(secondBody).not.toContain('requirementId=tie');
+    expect(result.contingency.documentCount).toBe(1);
+  });
+
 });

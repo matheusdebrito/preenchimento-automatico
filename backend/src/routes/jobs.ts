@@ -18,7 +18,7 @@ import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '.
 import { JobStore } from '../modules/jobs/job-store.js';
 import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
 import {
-  extractDocumentsWithOpenAi,
+  extractDocumentsWithOneContingency,
   OpenAiDocumentError,
 } from '../modules/jobs/openai-document-extractor.js';
 import { resolveFieldEvidence } from '../modules/document-understanding/resolver.js';
@@ -241,7 +241,7 @@ export function registerJobRoutes(
 
         try {
           const startedAt = Date.now();
-          const extracted = await extractDocumentsWithOpenAi(documents, targetFields);
+          const extracted = await extractDocumentsWithOneContingency(documents, targetFields);
           evidence.push(...extracted.evidence);
           diagnostics.push(...extracted.diagnostics);
           req.log.info({
@@ -252,6 +252,11 @@ export function registerJobRoutes(
             inputTokens: extracted.usage?.inputTokens,
             outputTokens: extracted.usage?.outputTokens,
             totalTokens: extracted.usage?.totalTokens,
+            contingencyUsed: extracted.contingency.used,
+            contingencyFailed: extracted.contingency.failed,
+            contingencyRequestedFieldCount: extracted.contingency.requestedFieldCount,
+            contingencyDocumentCount: extracted.contingency.documentCount,
+            contingencyRecoveredFieldCount: extracted.contingency.recoveredFieldCount,
             elapsedMs: Date.now() - startedAt,
           }, 'document_extraction_usage');
         } catch (error) {
