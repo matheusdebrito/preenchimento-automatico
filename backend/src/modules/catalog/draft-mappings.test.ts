@@ -34,6 +34,24 @@ describe('official form map coordinates', () => {
       }
     }
   });
+  it('mantém o BADE com data de inscrição separada e nome restrito à célula 39', () => {
+    const bade = catalog.mappings.find((mapping) =>
+      mapping.formVersionId === 'bade-er-2026-v1')!;
+    const date = bade.placements.filter((placement) =>
+      placement.kind === 'COORDINATES' && placement.fieldId === 'vessel.registrationDate');
+    expect(date).toHaveLength(3);
+    expect(date.map((placement) =>
+      placement.kind === 'COORDINATES' ? placement.valueTransform : undefined))
+      .toEqual(['DATE_DAY', 'DATE_MONTH_NUMBER', 'DATE_YEAR']);
+
+    const ownerName = bade.placements.find((placement) =>
+      placement.kind === 'COORDINATES' && placement.fieldId === 'person.fullName');
+    expect(ownerName?.kind).toBe('COORDINATES');
+    if (ownerName?.kind === 'COORDINATES') {
+      expect(ownerName.x + ownerName.maxWidth).toBeLessThanOrEqual(218);
+    }
+  });
+
   it('mantém cada formulário independente com campos essenciais explícitos', () => {
     const required: Record<string, readonly string[]> = {
       'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
