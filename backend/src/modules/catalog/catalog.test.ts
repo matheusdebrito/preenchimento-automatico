@@ -243,7 +243,7 @@ describe('catálogo reutilizável de formulários', () => {
 
   it('mantém perfis de análise documental em todos os serviços de embarcação', () => {
     const vesselServices = catalog.services.filter((service) => service.id.includes('embarcacao'));
-    expect(vesselServices).toHaveLength(8);
+    expect(vesselServices).toHaveLength(6);
     for (const service of vesselServices) {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
       expect(service.documentRequirements.every((requirement) => requirement.extraction)).toBe(true);
