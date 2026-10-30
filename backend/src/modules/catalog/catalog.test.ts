@@ -345,7 +345,8 @@ describe('catálogo reutilizável de formulários', () => {
 
   it('valida bindings entre respostas do serviço e campos semânticos', () => {
     const fixture = sharedFormFixture();
-    fixture.serviceForms = [{
+    const serviceA = fixture.serviceForms[0]!;
+    fixture.serviceForms = [serviceA, {
       serviceId: 'service-b',
       formVersionId: 'example-form-v1',
       order: 1,
@@ -353,7 +354,7 @@ describe('catálogo reutilizável de formulários', () => {
     }];
     expect(validateCatalog(fixture)).toEqual([]);
 
-    fixture.serviceForms = [{
+    fixture.serviceForms = [serviceA, {
       serviceId: 'service-b',
       formVersionId: 'example-form-v1',
       order: 1,
@@ -364,7 +365,8 @@ describe('catálogo reutilizável de formulários', () => {
 
   it('valida mapeamentos de respostas enumeradas para texto revisado', () => {
     const fixture = sharedFormFixture();
-    fixture.serviceForms = [{
+    const serviceA = fixture.serviceForms[0]!;
+    fixture.serviceForms = [serviceA, {
       serviceId: 'service-b',
       formVersionId: 'example-form-v1',
       order: 1,
@@ -377,7 +379,7 @@ describe('catálogo reutilizável de formulários', () => {
     }];
     expect(validateCatalog(fixture)).toEqual([]);
 
-    fixture.serviceForms = [{
+    fixture.serviceForms = [serviceA, {
       serviceId: 'service-b',
       formVersionId: 'example-form-v1',
       order: 1,
@@ -393,7 +395,8 @@ describe('catálogo reutilizável de formulários', () => {
 
   it('aceita condição oneOf somente com opções declaradas', () => {
     const fixture = sharedFormFixture();
-    fixture.serviceForms = [{
+    const serviceA = fixture.serviceForms[0]!;
+    fixture.serviceForms = [serviceA, {
       serviceId: 'service-b',
       formVersionId: 'example-form-v1',
       order: 1,
@@ -401,7 +404,7 @@ describe('catálogo reutilizável de formulários', () => {
     }];
     expect(validateCatalog(fixture)).toEqual([]);
 
-    fixture.serviceForms = [{
+    fixture.serviceForms = [serviceA, {
       serviceId: 'service-b',
       formVersionId: 'example-form-v1',
       order: 1,
