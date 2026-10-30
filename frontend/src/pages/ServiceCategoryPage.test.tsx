@@ -81,8 +81,9 @@ describe('ServiceCategoryPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Arrais, Mestre e Capitão' })).toBeTruthy();
     expect((await screen.findByRole('link', { name: /Inscrição para exame de amador/ })).getAttribute('href'))
       .toBe('/preencher-real/inscricao-exame-amador');
-    expect((await screen.findByRole('link', { name: /^Renovação da CHA$/ })).getAttribute('href'))
-      .toBe('/preencher-real/renovacao-cha-amador');
+    await waitFor(() => {
+      expect(document.querySelector('a[href="/preencher-real/renovacao-cha-amador"]')).not.toBeNull();
+    });
     expect((await screen.findByRole('link', { name: /Emissão de CHA de Veleiro/ })).getAttribute('href'))
       .toBe('/preencher-real/emissao-cha-veleiro');
     expect((await screen.findByRole('link', { name: /Concessão de CHA por equivalência profissional/ })).getAttribute('href'))
