@@ -11,17 +11,19 @@ const py = (value: number): number => Math.round((1200 - value) * 0.7017 * 10) /
 function coordinate(
   fieldId: string, x: number, baselineY: number, maxWidthPx: number,
   fontSize: number, pageIndex = 0, required = false, markWhen?: string,
+  markAliases?: readonly string[],
 ): FieldPlacement {
   return {
     kind: 'COORDINATES', fieldId, required, pageIndex,
     x: px(x), y: py(baselineY), maxWidth: px(maxWidthPx), fontSize,
     ...(markWhen === undefined ? {} : { markWhen }),
+    ...(markAliases === undefined ? {} : { markAliases }),
   };
 }
 
 export const draftMappings: readonly FormMapping[] = [
   {
-    id: 'requerimento-ma-v1-map-v1', formVersionId: 'requerimento-ma-v1', revision: 'v1',
+    id: 'requerimento-ma-v1-map-v1', formVersionId: 'requerimento-ma-v1', revision: 'v2',
     status: 'APPROVED', reviewedAt: '2026-10-29',
     reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
     reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
@@ -41,17 +43,34 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("vessel.name", 177, 488, 375, 7.6, 0, true),
       coordinate("vessel.length", 241, 515, 134, 7.5, 0),
       coordinate("vessel.hullId", 230, 536, 340, 7.5, 0, true),
-      coordinate("process.transferOwnership", 137, 655, 20, 9, 0),
+      coordinate("process.vesselAction", 137, 633, 20, 9, 0, false, "inscricao"),
+      coordinate("process.vesselAction", 137, 655, 20, 9, 0, false, "transf_prop"),
+      coordinate("process.vesselAction", 371, 655, 20, 9, 0, false, "transf_jur"),
+      coordinate("process.vesselAction", 614, 655, 20, 9, 0, false, "transf_prop_jur"),
+      coordinate("process.vesselAction", 137, 752, 20, 9, 0, false, "renovacao"),
+      coordinate("process.renewalCharacteristicsChanged", 137, 776, 20, 9, 0, false, "sim"),
+      coordinate("process.renewalCharacteristicsChanged", 192, 776, 20, 9, 0, false, "nao"),
+      coordinate("process.vesselAction", 137, 800, 20, 9, 0, false, "segunda_via"),
+      coordinate("process.tieSecondCopyReason", 371, 800, 20, 9, 0, false, "perda"),
+      coordinate("process.tieSecondCopyReason", 457, 800, 20, 9, 0, false, "roubo"),
+      coordinate("process.tieSecondCopyReason", 548, 800, 20, 9, 0, false, "extravio"),
+      coordinate("process.dataChangeTarget", 137, 850, 20, 9, 0, false,
+        "dados_embarcacao", ["ambos"]),
+      coordinate("process.dataChangeTarget", 506, 850, 20, 9, 0, false,
+        "dados_proprietario", ["ambos"]),
       coordinate("person.placeDate", 132, 1011, 284, 8, 0),
     ],
   },
   {
-    id: 'bdmoto-v1-map-v1', formVersionId: 'bdmoto-v1', revision: 'v1',
+    id: 'bdmoto-v1-map-v1', formVersionId: 'bdmoto-v1', revision: 'v2',
     status: 'APPROVED', reviewedAt: '2026-10-29',
     reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
     reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
-      coordinate("process.transferOwnership", 338, 376, 20, 10, 0),
+      coordinate("process.inscription", 145, 376, 20, 10, 0, false, "true"),
+      coordinate("process.transferProperty", 338, 376, 20, 10, 0, false, "true"),
+      coordinate("process.updateVesselData", 606, 376, 20, 10, 0, false, "true"),
+      coordinate("process.transferJurisdiction", 338, 408, 20, 10, 0, false, "true"),
       coordinate("person.fullName", 310, 461, 442, 7.5, 0, true),
       coordinate("person.address", 205, 485, 545, 7.4, 0, true),
       coordinate("person.city", 182, 509, 130, 7.2, 0),
