@@ -47,6 +47,7 @@ const synthetic = {
   'person.birthplace': 'NITEROI',
   'person.placeDate': 'NITERÓI, 26/10/2026',
   'vessel.name': 'MARÉ TESTE',
+  'vessel.builderName': 'ESTALEIRO TESTE',
   'vessel.registration': '1234567890',
   'vessel.hullId': 'BR-ABC-12345',
   'vessel.length': '3,10 M',
