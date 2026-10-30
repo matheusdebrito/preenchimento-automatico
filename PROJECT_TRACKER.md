@@ -56,12 +56,13 @@ Fases 10–18 e expansão: todos os critérios, dependências e autorizações a
 - [x] Removidos serviço Python PaddleOCR, módulos de OCR local, extração de texto PDF para OCR, extractors espaciais antigos e testes de referência acoplados ao Paddle.
 - [x] Mantidos upload/validação de arquivos, políticas `allowedFieldIds`, validações determinísticas, FieldResolver, revisão humana e motor `fillPdf`.
 - [x] Documentação de operação e CI atualizadas para análise OpenAI; CI automatizado usa respostas simuladas e não precisa de chave real.
-- [ ] Executar typecheck, lint, testes, build, PostgreSQL e smoke Compose no head final desta branch.
+- [x] CI executado: typecheck/lint e Compose build passaram; inspeção NORMAM-211 e integração PostgreSQL passaram. A suíte completa ainda falha em 18 expectativas antigas de catálogo/PDF e o gate de mapeamento visual falha com `Página inexistente: 1`; esses problemas não são causados pela remoção do OCR e precisam ser triados antes de merge.
+- [ ] Confirmar rerun do CI no head mais recente e decidir como tratar os testes/mapeamentos preexistentes sem mascarar falhas.
 - [ ] Confirmar que a implantação possui `OPENAI_API_KEY` configurada somente no backend.
 - [ ] Homologar com documentos sintéticos/autorizados de RG, CNH, TIE/TIEM, comprovante de residência e documentos de venda; medir precisão por campo, latência, tokens e custo.
 - [ ] Validar concorrência, timeout, resposta inválida, falha de API, limites e política de privacidade antes de produção.
 
-**Estado desta entrega:** código alterado na branch `refactor/openai-only-document-extraction`; não houve merge na `main`. A remoção está implementada no repositório, mas não está validada pelo CI final nem homologada com uma chamada real à OpenAI.
+**Estado desta entrega:** código alterado na branch `refactor/openai-only-document-extraction` e PR #57 aberto como draft; não houve merge na `main`. A remoção está implementada e os gates de tipo/lint/Compose/inspeção normativa passaram, mas a suíte completa e o gate visual de PDF ainda estão vermelhos. A OpenAI ainda precisa ser homologada com amostras autorizadas e chave de projeto.
 
 Os itens de PaddleOCR/Tesseract abaixo são evidências históricas de implementações removidas nesta migração; não descrevem o runtime atual. As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, venda, mapeamento, conflitos e diagnósticos continuam no [checklist anterior](PROJECT_TRACKER_HISTORY_2026-10-27.md#fase-06--pdf-textual-ocr-e-extração-estruturada). Os marcos antigos de leitura de identidade descrevem implementações substituídas pela correção atual, não o algoritmo vigente.
 
