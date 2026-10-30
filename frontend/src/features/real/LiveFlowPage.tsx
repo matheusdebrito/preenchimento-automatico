@@ -12,13 +12,12 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
 type Step = 'questions' | 'files' | 'review' | 'download';
-type ExtractionProvider = 'paddleocr' | 'openai';
 
 type ExtractionDiagnostic = {
   requirementId: string;
   outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
   suggestionCount: number;
-  engine?: 'paddleocr' | 'pdf-text' | 'openai';
+  engine?: 'openai';
   nameStage?: 'name_recognized' | 'name_not_mapped' |
     'label_seen_name_rejected' | 'label_not_detected';
 };
@@ -170,8 +169,6 @@ export function LiveFlowPage() {
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [extractionProvider, setExtractionProvider] =
-    useState<ExtractionProvider>('paddleocr');
   const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const cancelRequested = useRef(false);
@@ -369,9 +366,9 @@ export function LiveFlowPage() {
         diagnostics?: ExtractionDiagnostic[];
       }>(
         '/api/jobs/' + currentJob + '/extract',
-        { method:'POST', body:JSON.stringify({ provider: extractionProvider }) },
+        { method:'POST', body:JSON.stringify({}) },
       );
-      // A concurrent cancellation wins over a late OCR response.
+      // A concurrent cancellation wins over a late document-analysis response.
       if (cancelRequested.current) return;
       // Present and send only fields that the user can visibly review.
       showReview(read.fields, read.sources, read.diagnostics ?? []);
@@ -639,24 +636,6 @@ export function LiveFlowPage() {
                     preencha cada formulário manualmente na próxima etapa.</p>
                   <p className="field__hint">Os arquivos escolhidos são enviados temporariamente
                     ao servidor e excluídos ao cancelar ou expirar o processo.</p>
-                  <label className="field">
-                    <span className="field__label">Método de leitura automática</span>
-                    <select
-                      className="field__input"
-                      aria-label="Método de leitura automática"
-                      value={extractionProvider}
-                      disabled={busy}
-                      onChange={(event) =>
-                        setExtractionProvider(event.target.value as ExtractionProvider)}
-                    >
-                      <option value="paddleocr">PaddleOCR local</option>
-                      <option value="openai">OpenAI — GPT-5.4 mini por padrão</option>
-                    </select>
-                    <span className="field__hint">
-                      OpenAI envia os documentos à API externa para análise. PaddleOCR processa
-                      localmente no servidor. Em ambos os casos, confira os campos antes de gerar.
-                    </span>
-                  </label>
                   <div className="live-upload-list">
                     {service.documentRequirements.map((required) => {
                       const uploaded = uploadedRequirements.includes(required.id);
@@ -780,8 +759,7 @@ export function LiveFlowPage() {
                               <span className="live-ocr-name-stage">
                                 {' · Leitura: ' + (
                                   item.engine === 'pdf-text' ? 'texto digital do PDF'
-                                    : item.engine === 'openai' ? 'OpenAI'
-                                      : 'PaddleOCR'
+                                    : 'OpenAI'
                                 )}
                               </span>
                             ) : null}
@@ -794,7 +772,7 @@ export function LiveFlowPage() {
                                       ? 'identificado, mas sem campo no formulário'
                                       : item.nameStage === 'label_seen_name_rejected'
                                         ? 'rótulo encontrado, mas valor não validado'
-                                        : 'rótulo não localizado na saída textual do OCR'
+                                        : 'rótulo não localizado no documento'
                                 )}
                               </span>
                             ) : null}
