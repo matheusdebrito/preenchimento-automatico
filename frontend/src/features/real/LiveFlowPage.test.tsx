@@ -204,6 +204,8 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByText(/0 MB/)).toBeTruthy();
     expect(uploader.disabled).toBe(false);
     await user.click(screen.getByRole('button',{name:'Analisar documentos e revisar campos'}));
+    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    await user.click(screen.getByRole('button',{name:'Confirmar e consumir 1 crédito'}));
     expect(await screen.findByRole('heading',{name:'Preencha e confira os formulários'})).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA EXEMPLO');
     expect(screen.getByText(/Sugestão de Documento de teste/)).toBeTruthy();
@@ -213,7 +215,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.type(screen.getByLabelText(/Nome completo/), 'MARIA CONFERIDA');
     await user.click(screen.getByRole('button',{name:'Confirmar e gerar formulários'}));
     expect(await screen.findByRole('heading',{name:'Formulários gerados'})).toBeTruthy();
-    expect(screen.getByRole('link',{name:'Baixar PDF — requerimento-ma-v1'})
+    expect(screen.getByRole('link',{name:'Baixar PDF - Requerimento'})
       .getAttribute('href')).toBe('/api/jobs/job-fixture/download/requerimento-ma-v1');
     expect(fetcher).toHaveBeenCalled();
     const extractCall = fetcher.mock.calls.find((call) => String(call[0]).endsWith('/extract'));
@@ -428,6 +430,8 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Identidade do comprador$/) as HTMLInputElement,
       new File(['synthetic'], 'rg-ficticio.jpg', { type: 'image/jpeg' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA DE SOUZA');
     expect((screen.getByLabelText(/^CPF/) as HTMLInputElement).value).toBe('123.456.789-09');
@@ -517,6 +521,8 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     const date = screen.getByLabelText(/Data da venda/) as HTMLInputElement;
     expect(date.placeholder).toBe('DD/MM/AAAA');
@@ -631,6 +637,8 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Identidade fictícia$/) as HTMLInputElement,
       new File(['ficticio'], 'fake.jpg', { type: 'image/jpeg' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(fetcher.mock.calls.filter(([url]) =>
       String(url).includes('/documents/tie'))).toHaveLength(0);
 
@@ -699,8 +707,12 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(jobsCreated).toBe(1);
     expect(uploadsAttempted).toBe(2);
@@ -735,6 +747,8 @@ describe('jornada real isolada da demonstração', () => {
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['example'], 'image.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByRole('heading', { name: 'Formulários gerados' })).toBeTruthy();
