@@ -20,10 +20,10 @@ describe('validação semântica por versão do formulário', () => {
     const mapping = catalog.mappings.find((m) => m.formVersionId === 'bdmoto-v1')!;
     expect(() => validateMappedFieldValues(catalog.fields, mapping.placements, {
       'person.cpf': '000.000.000-00',
-    })).toThrow('CPF');
+    })).toThrow('invalid_field_value:person.cpf:invalid_cpf');
     expect(() => validateMappedFieldValues(catalog.fields, mapping.placements, {
       'person.issueDate': '31/02/2026',
-    })).toThrow('Data');
+    })).toThrow('invalid_field_value:person.issueDate:invalid_date');
   });
   it('reutiliza dados do pacote sem tentar validar campos de outras versões', () => {
     const mapping = catalog.mappings.find((m) => m.formVersionId === 'requerimento-ma-v1')!;
