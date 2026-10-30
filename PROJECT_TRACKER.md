@@ -694,3 +694,14 @@ os mesmos PDFs e mappings já homologados.
 **Mapeamento:** foram removidos do mapping do BADE campos como hipoteca, helideque, IMO, IRIN, Registro no TM, arqueação, propulsores laterais, combustíveis, equipamentos, DPEM, telefax e data de assinatura. Foram adicionados ao mapping os campos 3 (inscrição), 4 (data da inscrição), 8 (navegação) e 9 (atividade), que estavam fora do mapping anterior.
 
 **Observação normativa:** o formulário oficial indica que 3, 4, 8 e 9 são de preenchimento da CP/DL/AG. A aplicação os mantém no escopo por decisão explícita do produto; eles não são tratados como obrigatórios.
+
+
+## Registro de execução — 30/10/2026, coproprietário condicional nos serviços de embarcação
+
+**Pergunta comum:** todos os serviços de embarcação passam a perguntar `A embarcação possui coproprietário?`, com respostas `sim` ou `nao`.
+
+**Regra de revisão:** campos `coOwner.*` só são projetados para a tela de revisão quando `hasCoOwner=sim`. Com `nao` ou sem resposta, esses campos permanecem ocultos.
+
+**Formulários afetados:** BADE, Autorização de Transferência NORMAM-211 e Autorização de Transferência NORMAM-212. Os demais formulários não são alterados porque não possuem campos de coproprietário.
+
+**UX:** a regra é centralizada no catálogo; o frontend continua renderizando perguntas e campos dinamicamente, sem lógica paralela específica para coproprietário.

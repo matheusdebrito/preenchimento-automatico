@@ -51,6 +51,71 @@ describe('projeção pública do catálogo', () => {
     ]);
   });
 
+  it('pergunta sobre coproprietário em todos os serviços de embarcação', () => {
+    const vesselServiceIds = [
+      'inscricao-embarcacao',
+      'transferencia-propriedade-embarcacao',
+      'renovacao-tie-embarcacao',
+      'segunda-via-tie-embarcacao',
+      'alteracao-dados-embarcacao',
+      'comunicacao-venda-embarcacao',
+    ];
+    for (const serviceId of vesselServiceIds) {
+      const service = publicService(catalog, serviceId);
+      expect(service?.questions.find((question) => question.id === 'hasCoOwner')).toMatchObject({
+        label: 'A embarcação possui coproprietário?',
+        options: ['sim', 'nao'],
+      });
+    }
+  });
+
+  it('mostra campos de coproprietário somente quando a resposta for sim', () => {
+    const noCoOwner = publicService(catalog, 'inscricao-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'maior_6_ate_12m',
+      initialResponsibilityTerm: 'nao',
+      hasCoOwner: 'nao',
+    });
+    const noCoOwnerBade = noCoOwner?.reviewForms.find((form) =>
+      form.formVersionId === 'bade-er-2026-v1')?.fields.map((field) => field.id) ?? [];
+    expect(noCoOwnerBade.some((fieldId) => fieldId.startsWith('coOwner.'))).toBe(false);
+
+    const withCoOwner = publicService(catalog, 'inscricao-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'maior_6_ate_12m',
+      initialResponsibilityTerm: 'nao',
+      hasCoOwner: 'sim',
+    });
+    const withCoOwnerBade = withCoOwner?.reviewForms.find((form) =>
+      form.formVersionId === 'bade-er-2026-v1')?.fields.map((field) => field.id) ?? [];
+    expect(withCoOwnerBade).toContain('coOwner.fullName');
+    expect(withCoOwnerBade).toContain('coOwner.cpf');
+    expect(withCoOwnerBade).toContain('coOwner.address');
+
+    const transferNo = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'regular',
+      transferTarget: 'propriedade',
+      hasCoOwner: 'nao',
+    });
+    const transferNoAuth = transferNo?.reviewForms.find((form) =>
+      form.formVersionId === 'autorizacao-transferencia-ma-v1')
+      ?.fields.map((field) => field.id) ?? [];
+    expect(transferNoAuth.some((fieldId) => fieldId.startsWith('coOwner.'))).toBe(false);
+
+    const transferYes = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'moto_aquatica',
+      tieSituation: 'regular',
+      transferTarget: 'propriedade',
+      hasCoOwner: 'sim',
+    });
+    const transferYesAuth = transferYes?.reviewForms.find((form) =>
+      form.formVersionId === 'autorizacao-transferencia-ma-v1')
+      ?.fields.map((field) => field.id) ?? [];
+    expect(transferYesAuth).toContain('coOwner.fullName');
+    expect(transferYesAuth).toContain('coOwner.cpf');
+  });
+
   it('condiciona documentos de propriedade no serviço unificado de transferência', () => {
     const jurisdiction = publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'embarcacao',
