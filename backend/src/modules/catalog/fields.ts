@@ -181,6 +181,11 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'aquaviario.cirNumber', label: 'Número da CIR', valueKind: 'text' },
   { id: 'aquaviario.category', label: 'Categoria do aquaviário', valueKind: 'text' },
   { id: 'aquaviario.documentNumber', label: 'Número do documento profissional', valueKind: 'text' },
+  { id: 'aquaviario.authorityName', label: 'Capitania, Delegacia ou Agência', valueKind: 'text' },
+  { id: 'aquaviario.observations', label: 'Observações', valueKind: 'text' },
+  { id: 'aquaviario.lossEventDate', label: 'Data do extravio, roubo ou furto', valueKind: 'date' },
+  { id: 'aquaviario.lossDescription', label: 'Breve relato do extravio, roubo ou furto', valueKind: 'text' },
+
   { id: 'process.aquaviarioCertificationAction', label: 'Ação de certificação do aquaviário', valueKind: 'text' },
   { id: 'process.aquaviarioCertificateModel', label: 'Modelo do certificado do aquaviário', valueKind: 'text' },
   { id: 'process.aquaviarioLostDocumentType', label: 'Documento profissional perdido', valueKind: 'text' },
