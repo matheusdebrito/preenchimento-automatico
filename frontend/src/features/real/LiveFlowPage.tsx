@@ -567,7 +567,13 @@ export function LiveFlowPage() {
         setError('Confira ' + label + ': ' + tip);
         revealReviewFields([issue.fieldId]);
       } else {
-        setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
+        if (issue instanceof ApiError && issue.formVersionId) {
+          const formName = reviewForms.find((form) =>
+            form.formVersionId === issue.formVersionId)?.name ?? issue.formVersionId;
+          setError(issue.message + ' Formulário: ' + formName + '.');
+        } else {
+          setError(issue instanceof ApiError ? issue.message : 'Não foi possível gerar os formulários.');
+        }
       }
     } finally { setBusy(false); }
   };
