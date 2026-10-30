@@ -36,10 +36,7 @@ describe('OpenAI document extractor', () => {
     const identity = await fixture('identity.jpg', 'jpeg', 'buyer-identity');
     const tie = await fixture('tie.pdf', 'pdf', 'tie');
 
-    const fakeFetch = vi.fn(async (
-      _input: string | URL | Request,
-      _init?: RequestInit,
-    ) => new Response(JSON.stringify({
+    const fakeFetch = vi.fn(async () => new Response(JSON.stringify({
       output: [{
         type: 'message',
         content: [{
