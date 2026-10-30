@@ -16,10 +16,19 @@ describe('API catalog', () => {
   beforeAll(async () => { app = await buildApp({ env }); });
   afterAll(async () => { await app.close(); });
 
-  it('esconde formulários sem aprovação e retorna lista vazia', async () => {
+  it('publica somente os serviços homologados sem expor caminhos internos', async () => {
     const result = await app.inject({ method: 'GET', url: '/api/services' });
     expect(result.statusCode).toBe(200);
-    expect(result.json()).toEqual({ services: [] });
+    const body = result.json<{ services: Array<{ id: string }> }>();
+    expect(body.services).toHaveLength(14);
+    expect(body.services.map((service) => service.id)).toEqual(expect.arrayContaining([
+      'inscricao-embarcacao',
+      'alteracao-dados-embarcacao',
+      'alteracao-motor-embarcacao',
+      'inscricao-exame-amador',
+      'renovacao-cha-agregacao-mta',
+    ]));
+    expect(result.body).not.toContain('backend/templates');
   });
 
   it('não disponibiliza cotações para serviço não homologado', async () => {
