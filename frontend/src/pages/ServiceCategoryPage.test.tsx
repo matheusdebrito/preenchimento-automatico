@@ -95,9 +95,36 @@ describe('ServiceCategoryPage', () => {
     expect(screen.queryByText('Formulário em validação')).toBeNull();
     unmount();
 
-    renderCategory('/servicos/aquaviarios');
+    renderCategory('/servicos/aquaviarios', [{
+      id: 'inscricao-inicial-cir-aquaviario',
+      title: 'Inscrição inicial / emissão da CIR',
+      description: 'Fluxo homologado',
+      creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+      formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
+    }, {
+      id: 'segunda-via-cir-aquaviario',
+      title: '2ª via da CIR',
+      description: 'Fluxo homologado',
+      creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+      formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
+    }, {
+      id: 'emissao-certificado-aquaviario',
+      title: 'Emissão de certificado',
+      description: 'Fluxo homologado',
+      creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+      formVersionIds: [
+        'requerimento-certificacao-aquaviario-2026-v1',
+        'declaracao-residencia-aquaviario-2026-v1',
+      ],
+    }]);
     expect(screen.getByRole('heading', { level: 1, name: 'Aquaviários' })).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 2, name: 'Serviços em preparação' })).toBeTruthy();
+    expect((await screen.findByRole('link', { name: /Inscrição inicial \/ emissão da CIR/ }))
+      .getAttribute('href')).toBe('/preencher-real/inscricao-inicial-cir-aquaviario');
+    expect((await screen.findByRole('link', { name: /2ª via da CIR/ }))
+      .getAttribute('href')).toBe('/preencher-real/segunda-via-cir-aquaviario');
+    expect((await screen.findByRole('link', { name: /Emissão de certificado/ }))
+      .getAttribute('href')).toBe('/preencher-real/emissao-certificado-aquaviario');
+    expect(screen.getAllByText('Formulário em validação')).toHaveLength(7);
   });
 
   it('não confunde falha da API com formulário em validação', async () => {
