@@ -5,8 +5,7 @@ import { buildApp } from '../../app.js';
 import { connectDatabase } from '../auth/db.js';
 import type { Database } from '../auth/db.js';
 import { hashPassword } from '../auth/crypto.js';
-import { ensureBootstrapAdmin } from '../auth/auth-service.js';
-import { changeUserStatus } from './admin-service.js';
+import { changeUserStatus, setUserRoleByEmailFromCli } from './admin-service.js';
 import type { AppEnv } from '../../config/env.js';
 
 const url = process.env.DATABASE_TEST_URL;
@@ -30,7 +29,6 @@ describePg('PostgreSQL: painel administrativo', () => {
     API_PORT: 3000,
     CORS_ORIGINS: ['http://localhost:5173'],
     LOG_LEVEL: 'silent',
-    ADMIN_EMAIL: adminEmail,
   };
 
   beforeAll(async () => {
@@ -52,11 +50,15 @@ describePg('PostgreSQL: painel administrativo', () => {
     adminId = registered.json<{user:{id:string;role:string}}>().user.id;
     expect(registered.json<{user:{role:string}}>().user.role).toBe('USER');
     adminCookie = String(registered.headers['set-cookie']).split(';')[0]!;
-    expect(await ensureBootstrapAdmin(pool, adminEmail)).toBe(true);
-    const bootstrapped = await app.inject({
+    expect(await setUserRoleByEmailFromCli(pool, adminEmail, 'ADMIN')).toMatchObject({
+      email: adminEmail,
+      role: 'ADMIN',
+      changed: true,
+    });
+    const promoted = await app.inject({
       method: 'GET', url: '/api/auth/me', headers: { cookie: adminCookie },
     });
-    expect(bootstrapped.json<{user:{role:string}}>().user.role).toBe('ADMIN');
+    expect(promoted.json<{user:{role:string}}>().user.role).toBe('ADMIN');
 
     userId = randomUUID();
     await pool.query(
@@ -83,6 +85,30 @@ describePg('PostgreSQL: painel administrativo', () => {
       await pool.query('DELETE FROM app_users WHERE id IN ($1,$2)', [adminId, userId]);
       await pool.end();
     }
+  });
+
+
+  it('registra promoção CLI e rejeita e-mail inexistente', async () => {
+    const audit = await pool.query<{ actor_label:string|null; metadata:Record<string,unknown> }>(
+      `SELECT actor_label,metadata
+       FROM admin_audit_log
+       WHERE target_user_id=$1 AND action='ROLE_CHANGE'
+       ORDER BY created_at ASC
+       LIMIT 1`,
+      [adminId],
+    );
+    expect(audit.rows[0]?.actor_label).toBe('CLI');
+    expect(audit.rows[0]?.metadata).toMatchObject({
+      from: 'USER',
+      to: 'ADMIN',
+      source: 'cli',
+    });
+
+    await expect(setUserRoleByEmailFromCli(
+      pool,
+      'missing-' + suffix + '@example.invalid',
+      'ADMIN',
+    )).rejects.toThrow('user_not_found');
   });
 
   it('nega todas as APIs administrativas a usuário comum', async () => {
