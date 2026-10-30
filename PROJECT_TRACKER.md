@@ -672,3 +672,16 @@ os mesmos PDFs e mappings já homologados.
 **Comportamento:** a pergunta `transferTarget` permite escolher `propriedade`, `jurisdicao` ou `propriedade_jurisdicao`. O requerimento e o BADE/BSADE/BDMOTO recebem as marcações correspondentes. A autorização de transferência e os documentos do vendedor/origem só aparecem quando a operação inclui propriedade. Transferência apenas de jurisdição não solicita esses itens. O fluxo vale para embarcação/barco e moto aquática.
 
 **Compatibilidade:** os IDs antigos `transferencia-jurisdicao-embarcacao` e `transferencia-propriedade-jurisdicao-embarcacao` deixam de ser publicados. O ID `transferencia-propriedade-embarcacao` foi mantido como canônico para reduzir quebra de links existentes.
+
+
+## Registro de execução — 30/10/2026, auditoria e correção de campos dos formulários
+
+**Campos de revisão:** `process.place` e `process.date` passam a ser campos revisáveis quando existem no PDF. A data é inicialmente preenchida no navegador com a data local atual e continua editável.
+
+**Aplicabilidade por serviço:** relações serviço/formulário agora podem excluir campos físicos não aplicáveis e condicionar campos a respostas do serviço. BSADE e BDMOTO deixam de pedir dados de venda/vendedor em inscrição, renovação, alteração cadastral e transferência apenas de jurisdição; esses campos aparecem quando a transferência inclui propriedade.
+
+**CHA:** a categoria escolhida no início da renovação é reutilizada para preencher `amateur.category` na declaração 5-D, sem pedir o mesmo dado novamente.
+
+**BADE:** o campo de UF do órgão emissor foi separado da UF do endereço para proprietário e coproprietário. A distinção foi confirmada no formulário oficial e impede que uma única UF seja escrita em dois campos semanticamente diferentes.
+
+**Validação:** CI completo aprovado no run `41060533509`: backend, frontend, PostgreSQL, Compose, inspeção NORMAM-211 e QA visual dos PDFs.
