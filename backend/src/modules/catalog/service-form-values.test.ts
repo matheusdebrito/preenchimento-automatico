@@ -67,6 +67,26 @@ describe('serviceFormValues', () => {
       .toEqual({ 'amateur.category': 'Capitão-Amador' });
   });
 
+  it('deriva endereço completo sem exigir digitação duplicada', () => {
+    const relation: ServiceForm = {
+      serviceId: 'inscricao-inicial-cir-aquaviario',
+      formVersionId: 'declaracao-residencia-aquaviario-2026-v1',
+      order: 1,
+    };
+
+    expect(serviceFormValues(relation, {}, {
+      'person.address': 'Rua das Acácias',
+      'person.streetNumber': '123',
+      'person.apartment': 'Apto 301',
+      'person.neighborhood': 'Centro',
+      'person.city': 'Niterói',
+      'person.state': 'RJ',
+      'person.postalCode': '24000-000',
+    })['person.fullAddress']).toBe(
+      'Rua das Acácias, 123, Apto 301, Centro, Niterói/RJ, 24000-000',
+    );
+  });
+
   it('ignora binding sem resposta em vez de inventar valor', () => {
     const relation: ServiceForm = {
       serviceId: 's',
