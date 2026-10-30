@@ -228,6 +228,7 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('cpf-document', 'CPF', 'Envie o CPF separadamente se o número não constar do documento de identificação.'),
       supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de um ano, conforme os padrões de saúde física, mental, visual e auditiva previstos na norma.'),
       supporting('professional-qualification', 'Certificado de habilitação profissional ou conclusão do curso', 'Comprovação de habilitação profissional ou conclusão de curso reconhecido pela DPC.'),
+      supporting('guardian-authorization', 'Autorização do pai, tutor ou juiz competente', 'Somente para Aprendiz de Pesca ou Aprendiz de Motorista menor de idade, conforme o artigo 1.6.2.'),
       supporting('diving-course', 'Certificado do curso de mergulho profissional raso', 'Exigido especificamente para o 4º Grupo - Mergulhadores.', [
         { questionId: 'initialAquaviarioGroup', equals: 'mergulhadores' },
       ]),
@@ -253,6 +254,9 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
       supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de um ano, conforme os padrões de saúde física, mental, visual e auditiva.'),
       supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento de revalidação.'),
+      supporting('dpc1032-revalidation-additional-documents', 'Documentos complementares para DPC-1032', 'A regra geral da NORMAM-101 inclui o DPC-1032 na revalidação, mas não apresenta um subitem próprio de documentação equivalente aos itens 1.22.2 e 1.22.3. Confirme exigências específicas com a CP/DL/AG.', [
+        { questionId: 'certificateModel', equals: 'dpc1032' },
+      ]),
       supporting('professional-qualification', 'Comprovantes de habilitação', 'Podem ser solicitados pela CP/DL/AG quando houver divergência entre a CIR e o SISAQUA.'),
     ]),
   base('transferencia-jurisdicao-aquaviario', 'Transferência de jurisdição',
@@ -285,14 +289,14 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('education-proof', 'Comprovante de escolaridade', 'Emitido por instituição reconhecida pelo Ministério da Educação e compatível com a categoria pretendida.'),
     ]),
   base('homologacao-lrm-aquaviario', 'Homologação do LRM',
-    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. O LRM é adquirido na EMGEPRON e apresentado à CP/DL/AG para homologação após a inscrição do mergulhador no SISAQUA.',
+    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. O LRM é adquirido na EMGEPRON e apresentado à CP/DL/AG para homologação após a inscrição do mergulhador no SISAQUA. A fotografia prevista na norma é capturada no atendimento.',
     [], [
       ...docs('applicant-identity', 'current-cir', 'residence-proof'),
       supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
       supporting('lrm-book', 'Livro de Registro do Mergulhador (LRM)', 'Livro modelo DPC-2212 adquirido na EMGEPRON para homologação pela CP/DL/AG.'),
     ]),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. Os documentos de apoio variam conforme o modelo de certificado.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. Os documentos de apoio variam conforme o modelo de certificado. A fotografia prevista na norma é capturada no atendimento.',
     [certificateModel, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
       supporting('current-cir-certification', 'CIR', 'Folha de rosto e, quando aplicável, folhas de registros de embarque. Exigida para DPC-1031 e DPC-1034.', [
@@ -308,6 +312,9 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
         { questionId: 'certificateModel', equals: 'dpc1031' },
       ]),
       supporting('course-certificates', 'Certificados de cursos e habilitações', 'Comprovantes das qualificações necessárias para o certificado DPC-1034.', [
+        { questionId: 'certificateModel', equals: 'dpc1034' },
+      ]),
+      supporting('training-evidence', 'Comprovante de estágio de familiarização em navio-tanque', 'Documento emitido pelo comandante, quando o processo DPC-1034 envolver familiarização em navio-tanque.', [
         { questionId: 'certificateModel', equals: 'dpc1034' },
       ]),
       supporting('source-country-certificate', 'Certificado de competência do país de origem', 'Exigido para reconhecimento e inscrição inicial no modelo DPC-1033.', [
@@ -336,7 +343,7 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       ]),
     ]),
   base('segunda-via-certificado-aquaviario', '2ª via de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E, a Declaração de Residência do Anexo 1-L e, para extravio, roubo ou furto, a Declaração do Anexo 1-K.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E, a Declaração de Residência do Anexo 1-L e, para extravio, roubo ou furto, a Declaração do Anexo 1-K. A fotografia prevista na norma é capturada no atendimento.',
     [certificateSecondCopyModel, certificateSecondCopyReason, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
       supporting('current-cir-certification', 'CIR', 'Folha de rosto da CIR, conforme o modelo de certificado solicitado.'),
