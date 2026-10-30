@@ -87,7 +87,6 @@ export function AdminPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [creditAmount, setCreditAmount] = useState('10');
-  const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -122,21 +121,20 @@ export function AdminPage() {
     if (selectedUserId) await loadSelected(selectedUserId);
   }, [loadOverview, loadSelected, loadUsers]);
 
+  const loadAdminPage = useCallback(async () => {
+    try {
+      await Promise.all([loadOverview(), loadUsers()]);
+    } catch (cause) {
+      setError(cause instanceof ApiError && cause.status === 403
+        ? 'Sua conta não possui permissão administrativa.'
+        : 'Não foi possível carregar o painel administrativo.');
+    }
+  }, [loadOverview, loadUsers]);
+
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'ADMIN') return;
-    let active = true;
-    void Promise.all([loadOverview(), loadUsers()])
-      .catch((cause) => {
-        if (!active) return;
-        setError(cause instanceof ApiError && cause.status === 403
-          ? 'Sua conta não possui permissão administrativa.'
-          : 'Não foi possível carregar o painel administrativo.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, [currentUser, loadOverview, loadUsers]);
+    void loadAdminPage();
+  }, [currentUser, loadAdminPage]);
 
   const maxDaily = useMemo(
     () => Math.max(1, ...(dashboard?.usageByDay.map((item) => item.used) ?? [1])),
@@ -199,7 +197,7 @@ export function AdminPage() {
 
           {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
           {success ? <Notice tone="success" role="status">{success}</Notice> : null}
-          {loading ? <Notice tone="info">Carregando dados administrativos…</Notice> : null}
+          {!dashboard && !error ? <Notice tone="info">Carregando dados administrativos…</Notice> : null}
 
           {dashboard ? (
             <>
