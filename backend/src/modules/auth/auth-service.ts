@@ -109,16 +109,21 @@ export async function getCurrentUser(
   return user ? toSessionUser(user) : null;
 }
 
-export async function registerUser(pool: Database, body: unknown): Promise<SessionUser> {
+export async function registerUser(
+  pool: Database,
+  body: unknown,
+  bootstrapAdminEmail?: string,
+): Promise<SessionUser> {
   const input = registrationSchema.parse(body);
   const hash = await hashPassword(input.password);
   const id = randomUUID();
   try {
     const result = await pool.query<Omit<UserRecord, 'password_hash'>>(
-      `INSERT INTO app_users(id,email,password_hash,full_name,cellphone,cpf)
-       VALUES($1,$2,$3,$4,$5,$6)
+      `INSERT INTO app_users(id,email,password_hash,full_name,cellphone,cpf,role)
+       VALUES($1,$2,$3,$4,$5,$6,$7)
        RETURNING id,email,full_name,cellphone,cpf,status,role`,
-      [id, input.email, hash, input.fullName, input.cellphone, input.cpf],
+      [id, input.email, hash, input.fullName, input.cellphone, input.cpf,
+        input.email === bootstrapAdminEmail ? 'ADMIN' : 'USER'],
     );
     return toSessionUser(result.rows[0]!);
   } catch (error) {
@@ -176,4 +181,21 @@ export async function removeSession(
 export async function pruneExpiredSessions(pool: Database): Promise<number> {
   const removed = await pool.query('DELETE FROM app_sessions WHERE expires_at <= now()');
   return removed.rowCount ?? 0;
+}
+
+
+/**
+ * Bootstrap an already-existing account as ADMIN from server-side configuration.
+ * No password is read from environment variables and no account is created here.
+ */
+export async function ensureBootstrapAdmin(
+  pool: Database,
+  adminEmail?: string,
+): Promise<boolean> {
+  if (!adminEmail) return false;
+  const result = await pool.query(
+    "UPDATE app_users SET role='ADMIN' WHERE email=$1 AND role<>'ADMIN'",
+    [adminEmail.toLowerCase()],
+  );
+  return (result.rowCount ?? 0) > 0;
 }
