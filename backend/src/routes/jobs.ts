@@ -335,10 +335,6 @@ export function registerJobRoutes(
               .filter((item) => allowedDocumentFields.has(item.fieldId));
             evidence.push(...documentEvidence);
 
-            const recognized = Object.fromEntries(documentEvidence.map((item) => [
-              item.fieldId,
-              { value: item.value, source: item.sourceId, status: item.status },
-            ]));
             const applicableCount = documentEvidence
               .filter((item) => reviewableFields.has(item.fieldId)).length;
             diagnostics.push({
