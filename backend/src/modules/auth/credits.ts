@@ -3,7 +3,7 @@ import type { Database } from './db.js';
 
 export interface CreditMovement {
   id: string;
-  reason: 'test_grant' | 'consume' | 'refund' | 'adjust';
+  reason: 'test_grant' | 'consume' | 'refund' | 'adjust' | 'admin_grant' | 'admin_reversal';
   amount: number;
   created_at: Date;
 }
@@ -35,13 +35,16 @@ export async function applyCreditMovement(
   amount: number,
   idempotencyKey: string,
 ): Promise<{ balance: number; applied: boolean }> {
-  if (!Number.isInteger(amount) || amount === 0 || Math.abs(amount) > 100 ||
+  const maxAmount = reason === 'admin_grant' || reason === 'admin_reversal' ? 1000 : 100;
+  if (!Number.isInteger(amount) || amount === 0 || Math.abs(amount) > maxAmount ||
     !/^[A-Za-z0-9:_-]{4,128}$/.test(idempotencyKey)) {
     throw new Error('Movimentação de créditos inválida.');
   }
   if ((reason === 'consume' && amount !== -1) ||
       (reason === 'test_grant' && amount <= 0) ||
-      (reason === 'refund' && amount <= 0)) {
+      (reason === 'refund' && amount <= 0) ||
+      (reason === 'admin_grant' && amount <= 0) ||
+      (reason === 'admin_reversal' && amount >= 0)) {
     throw new Error('Movimentação incompatível com o motivo.');
   }
   const client = await pool.connect();
