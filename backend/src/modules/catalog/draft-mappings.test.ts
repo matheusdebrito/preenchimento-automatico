@@ -16,7 +16,7 @@ describe('versioned form map coordinates', () => {
     expect(catalog.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
     expect(catalog.services.every((service) => service.status === 'AVAILABLE')).toBe(true);
   });
-  it('positions stay within the dimensions of the real official PDF pages', async () => {
+  it('positions stay within the dimensions of the versioned PDF templates', async () => {
     for (const mapping of catalog.mappings) {
       const version = catalog.versions.find((v) => v.id === mapping.formVersionId);
       expect(version?.templatePath).toBeTruthy();
