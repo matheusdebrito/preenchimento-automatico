@@ -77,3 +77,6 @@ O catálogo agora exibe, por serviço e por modelo de certificado, a lista de do
 Os documentos de apoio são apresentados como uploads opcionais, seguindo a regra do produto de permitir continuar sem anexos. A lista orienta a preparação do protocolo; não afirma que o upload pelo sistema substitui a apresentação exigida pela CP/DL/AG. A fotografia prevista em alguns processos é capturada no atendimento e não é solicitada como upload.
 
 A revalidação do DPC-1033 continua indisponível, pois a NORMAM-101 informa que a AMB não revalida esse modelo.
+
+
+**Ponto de atenção - revalidação DPC-1032:** a regra geral do artigo 1.22 inclui o modelo DPC-1032, mas a NORMAM-101 não apresenta um subitem de documentação equivalente aos itens 1.22.2 (DPC-1031) e 1.22.3 (DPC-1034). O catálogo mantém a opção e sinaliza a necessidade de confirmar documentos específicos com a CP/DL/AG, sem inventar uma lista normativa.
