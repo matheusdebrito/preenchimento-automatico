@@ -14,11 +14,11 @@ A inspeção visual confirmou que o Anexo 1-E é específico de certificação. 
 
 | Formulário | SHA-256 | Observação |
 | --- | --- | --- |
-| Anexo 1-E | B00D4869DEDA33EFCC1B8F0A6283A5AF5794FD5A12E6AC0BCA13A11DA7009D9B | recorte direto das duas páginas oficiais |
-| Anexo 1-K | 973BDBE9BB5C4AA0C9B05C8665AE7EBA0902E7E7BEDC663AE9E4A0C11E6B4390 | página oficial preservada em A4 e normalizada para imagem monocromática legível |
-| Anexo 1-L | 401109FF4F65F10D1544CDC76D0C748CF5B69824F041D0E3FA8806C713EAD2DF | página oficial preservada em A4 e normalizada para imagem monocromática legível |
+| Anexo 1-E | 58F0FE7372FC9BC99236AA3B384DF9A32796C45D34B17226564DDBE1FA1A5C30 | duas páginas oficiais extraídas e normalizadas para template estático |
+| Anexo 1-K | 4D17057BFF256919E8381BE1310449609D86701427331736127A959D8FAD599A | página oficial preservada em A4 e normalizada para template estático |
+| Anexo 1-L | 401109FF4F65F10D1544CDC76D0C748CF5B69824F041D0E3FA8806C713EAD2DF | página oficial preservada em A4 e normalizada para template estático |
 
-A normalização dos anexos 1-K e 1-L não redesenha o formulário: ela rasteriza a própria página oficial, preservando geometria e conteúdo para estabilizar o template estático.
+A normalização não redesenha os formulários: preserva a página oficial e sua geometria para estabilizar o preenchimento por coordenadas.
 
 ## Decisões normativas
 
@@ -32,4 +32,12 @@ A normalização dos anexos 1-K e 1-L não redesenha o formulário: ela rasteriz
 
 Os mapeamentos são por coordenadas sobre os templates estáticos. Todos os campos de geração permanecem opcionais, seguindo a regra geral do produto: campos ausentes devem ir para revisão e podem permanecer em branco se o usuário decidir continuar.
 
-A homologação final depende do pipeline de CI `pdf-mapping-visual`, que gera amostras sintéticas, preenche os PDFs e renderiza o resultado para inspeção/regressão.
+## Homologação visual manual
+
+Em 30/10/2026 foram geradas amostras sintéticas sobre os três templates e renderizadas para inspeção visual, sem depender do CI:
+
+- **1-E:** nome, nascimento, nacionalidade, naturalidade, sexo, telefone, CIR, categoria, endereço completo, observações, motivo da solicitação, modelo do certificado e local/data foram reposicionados após a primeira renderização.
+- **1-K:** identidade, órgão expedidor, CPF, endereço, documento perdido, número, data/relato do fato e CP/DL/AG + data foram revisados visualmente. O checkbox do documento foi reposicionado dentro dos parênteses.
+- **1-L:** os dados pessoais permaneceram nas linhas corretas; o endereço passou a ser composto semanticamente em uma única linha com rua, número, complemento, bairro, cidade/UF e CEP; cidade e data da assinatura foram separados conforme o layout impresso.
+
+As amostras confirmaram ausência de sobreposição material nos campos revisados. A validação integrada da aplicação ficará para a etapa de teste manual combinada para o módulo de Aquaviários.
