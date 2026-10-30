@@ -222,6 +222,18 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     });
     expect(domesticCertificate?.documentRequirements.map((item) => item.id)).not.toContain('source-country-certificate');
     expect(domesticCertificate?.documentRequirements.map((item) => item.id)).toContain('competency-certificates');
+
+    const dpc1032Revalidation = publicService(catalog, 'revalidacao-certificado-aquaviario', {
+      certificateModel: 'dpc1032',
+    });
+    expect(dpc1032Revalidation?.documentRequirements.map((item) => item.id))
+      .toContain('dpc1032-revalidation-additional-documents');
+
+    const dpc1034Revalidation = publicService(catalog, 'revalidacao-certificado-aquaviario', {
+      certificateModel: 'dpc1034',
+    });
+    expect(dpc1034Revalidation?.documentRequirements.map((item) => item.id))
+      .not.toContain('dpc1032-revalidation-additional-documents');
   });
 
   it('mantém todos os uploads como fontes opcionais', () => {
