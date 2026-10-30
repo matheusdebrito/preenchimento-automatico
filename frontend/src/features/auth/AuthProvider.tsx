@@ -2,7 +2,15 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode } from 'react';
 import { api, ApiError } from '../../lib/api';
 
-export interface SessionUser { id: string; email: string }
+export interface SessionUser {
+  id: string;
+  email: string;
+  fullName: string | null;
+  cellphone: string | null;
+  cpfMasked: string | null;
+  status: 'ACTIVE' | 'BLOCKED' | 'PENDING';
+  role: 'USER' | 'ADMIN';
+}
 type SessionState =
   | { status: 'loading' | 'guest' | 'unavailable'; user: null }
   | { status: 'authenticated'; user: SessionUser };
