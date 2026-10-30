@@ -90,9 +90,14 @@ export function AppHeader({ variant = 'default' }: AppHeaderProps) {
               ) : null}
             </>
           ) : session.status === 'guest' ? (
-            <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
-              Entrar
-            </NavLink>
+            <>
+              <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
+                Entrar
+              </NavLink>
+              <NavLink to="/entrar?modo=cadastro" className="site-nav__link" onClick={closeMenu}>
+                Criar Conta
+              </NavLink>
+            </>
           ) : session.status === 'unavailable' ? (
             <NavLink to="/entrar" className="site-nav__link" onClick={closeMenu}>
               Verificar sessão

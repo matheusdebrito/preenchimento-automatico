@@ -39,6 +39,8 @@ describe('AppHeader', () => {
     expect(navigation).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Início' }).getAttribute('href')).toBe('/');
     expect(await screen.findByRole('link', { name: 'Entrar' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Criar Conta' }).getAttribute('href'))
+      .toBe('/entrar?modo=cadastro');
     expect(screen.queryByRole('link', { name: 'Minha conta' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Créditos' }).getAttribute('href')).toBe('/creditos');
   });
@@ -47,9 +49,11 @@ describe('AppHeader', () => {
     const { fetcher } = renderHeader(true);
     expect(await screen.findByRole('link', { name: 'Minha conta' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Entrar' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Criar Conta' })).toBeNull();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Sair' }));
     expect(await screen.findByRole('link', { name: 'Entrar' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Criar Conta' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Minha conta' })).toBeNull();
     expect(fetcher.mock.calls.some(([url]) => String(url) === '/api/auth/logout')).toBe(true);
   });
