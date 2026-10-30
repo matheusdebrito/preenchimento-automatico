@@ -234,10 +234,11 @@ Sete mapas NORMAM-211 permanecem homologados; o 3-C foi rebaixado para
 porte: BSADE somente até 6 m; acima de 6 m usa BADE. Os serviços de alteração e
 a inscrição de médio porte continuam fail-closed até completar essa homologação.
 
-Todos os documentos de origem cadastrados para essa expansão entram no pipeline
-OCR quando enviados. Tipos já estruturados podem sugerir campos; documentos de
-apoio sem extractor semântico são lidos sem gerar palpites. O usuário sempre
-revisa ou preenche manualmente antes da geração.
+Documentos de origem com perfil de extração são enviados diretamente à
+OpenAI quando aplicáveis ao serviço selecionado. O backend restringe cada
+documento aos campos autorizados no catálogo; documentos de apoio sem campos
+permitidos não são enviados. O usuário sempre revisa ou preenche manualmente
+antes da geração.
 
 Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 [relatório de QA técnico dos mapas](docs/mapping-reports/normam211-2026-technical-qa.md).
