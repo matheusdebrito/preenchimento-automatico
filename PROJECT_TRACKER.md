@@ -557,3 +557,21 @@ do servidor e sessão já existente (409) recebem tratamentos distintos.
 utilizável, retry com feedback de loading e recuperação para estado guest. O CI continua
 dependente de execução manual do workflow antes de considerar os gates automatizados
 confirmados.
+
+
+## Registro de execução — 29/10/2026, remoção do DEV_QA_PREVIEW
+
+**Decisão:** o modo `DEV_QA_PREVIEW` foi removido do runtime. A aplicação passa a
+usar um único catálogo oficial em execução normal, sem overlays de ambiente que promovam
+serviços/mapeamentos `DRAFT`, zerem créditos ou alterem a composição de formulários.
+
+**Removido:** variável do `.env.example` e `compose.yaml`, parsing em `env.ts`,
+override em `server.ts`, opção `qaPreview` de `buildApp/registerJobRoutes`, exceções
+de cobrança/entrega/estorno, watermark exclusivo desse modo e os testes/módulos dedicados
+à prévia de runtime. O `catalogOverride` genérico continua disponível somente para testes
+isolados.
+
+**Motivo operacional:** o overlay havia criado relações duplicadas de formulário para o
+mesmo serviço e invalidado o catálogo durante o startup da API. A remoção elimina essa
+segunda fonte de comportamento. Serviços e mappings só passam a `AVAILABLE/APPROVED`
+pelo catálogo oficial após seus gates de homologação.
