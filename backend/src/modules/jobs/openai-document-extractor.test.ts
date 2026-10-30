@@ -100,7 +100,8 @@ describe('OpenAI document extractor', () => {
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
-    }));
+    });
+    });
 
     const result = await extractDocumentsWithOpenAi([
       {
