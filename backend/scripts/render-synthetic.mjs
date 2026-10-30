@@ -85,7 +85,8 @@ const synthetic = {
   'process.amateurRequest': 'emissao_renovacao',
   'process.chaLossReason': 'extraviada',
   'process.motonautaRequest': 'renovacao_agregacao_mta',
-  'process.motonautaDeclaration': 'sim',
+  // Synthetic mapping values are semantic PDF values, after service answer conversion.
+  'process.motonautaDeclaration': 'true',
   'amateur.chaNumber': 'CHA123456',
   'amateur.chaIssueDate': '01/01/2025',
   'amateur.category': 'ARRAIS-AMADOR',
