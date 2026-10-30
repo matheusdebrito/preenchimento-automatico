@@ -46,14 +46,15 @@ Os oito PDFs são estáticos, sem campos AcroForm.
 
 ### 2-A — BADE
 
-- páginas 1 e 2: campos do requerente/embarcação renderizados e revisados;
-- datas de quilha, lançamento, DPEM e requerente são escritas em segmentos,
-  respeitando os separadores impressos;
-- campos administrativos reservados à CP/DL/AG não são preenchidos;
-- páginas 3 e 4 são checklist/uso administrativo e permanecem intactas;
-- páginas 5 a 7 são instruções e permanecem intactas;
-- marcações e campos densos de propulsão/combustível foram reposicionados após
-  revisão visual.
+- o produto preenche somente os campos numerados 2, 3, 4, 8, 9, 10, 16, 17,
+  20, 21, 22, 23, 24, 25, 26 e 39 a 65, exceto o 52;
+- os campos 52 e 66 (telefax) não são preenchidos;
+- todos os demais campos do BADE permanecem intactos, inclusive processo,
+  hipoteca, helideque, IMO, IRIN, registro no TM, arqueação, combustíveis,
+  equipamentos, DPEM, assinatura e datas administrativas;
+- por decisão de produto, os campos 3, 4, 8 e 9 também recebem dados quando
+  disponíveis, embora a instrução impressa do BADE os atribua à CP/DL/AG;
+- páginas posteriores de checklist/instruções permanecem intactas.
 
 ### 2-B — BSADE
 
