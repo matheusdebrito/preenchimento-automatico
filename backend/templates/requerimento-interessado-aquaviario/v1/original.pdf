@@ -1,74 +1,75 @@
 %PDF-1.4
-%“Œ‹ž ReportLab Generated PDF document (opensource)
 1 0 obj
-<<
-/F1 2 0 R /F2 3 0 R
->>
+<< /Type /Catalog /Pages 2 0 R >>
 endobj
 2 0 obj
-<<
-/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
->>
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
 endobj
 3 0 obj
-<<
-/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
->>
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.276 841.89] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
 endobj
 4 0 obj
-<<
-/Contents 8 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 7 0 R /Resources <<
-/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
->> /Rotate 0 /Trans <<
-
->> 
-  /Type /Page
->>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
 endobj
 5 0 obj
-<<
-/PageMode /UseNone /Pages 7 0 R /Type /Catalog
->>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
 endobj
 6 0 obj
-<<
-/Author (Preenchimento Assistido) /CreationDate (D:20261030231527+00'00') /Creator (anonymous) /Keywords () /ModDate (D:20261030231527+00'00') /Producer (ReportLab PDF Library - \(opensource\)) 
-  /Subject (Modelo auxiliar nao oficial para requerimentos de aquaviarios) /Title (Requerimento do interessado - modelo auxiliar nao oficial) /Trapped /False
->>
+<< /Length 3245 >>
+stream
+BT /F2 15 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 783.89 Tm (REQUERIMENTO DO INTERESSADO) Tj ET
+BT /F2 7.2 Tf 0.545 0.227 0.18 rg 1 0 0 1 44 763.89 Tm (MODELO AUXILIAR - N\303O \311 FORMUL\301RIO OFICIAL DA MARINHA DO BRASIL) Tj ET
+0.68 0.72 0.75 RG 0.8 w 44 745.89 m 551.276 745.89 l S
+BT /F2 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 717.89 Tm (\300 ORGANIZA\307\303O MILITAR DESTINAT\301RIA \(CP/DL/AG\):) Tj ET
+0.68 0.72 0.75 RG 0.8 w 44 690.89 m 551.276 690.89 l S
+BT /F2 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 661.89 Tm (ASSUNTO:) Tj ET
+0.68 0.72 0.75 RG 0.8 w 105 658.89 m 551.276 658.89 l S
+BT /F1 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 623.89 Tm (Eu,) Tj ET
+0.68 0.72 0.75 RG 0.8 w 64 620.89 m 551.276 620.89 l S
+BT /F1 6.8 Tf 0.357 0.396 0.439 rg 1 0 0 1 44 603.89 Tm (NOME COMPLETO) Tj ET
+BT /F2 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 581.89 Tm (CPF:) Tj ET
+BT /F2 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 294 581.89 Tm (IDENTIDADE:) Tj ET
+0.68 0.72 0.75 RG 0.8 w 73 578.89 m 269 578.89 l S
+0.68 0.72 0.75 RG 0.8 w 353 578.89 m 551.276 578.89 l S
+BT /F2 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 548.89 Tm (ENDERE\307O:) Tj ET
+0.68 0.72 0.75 RG 0.8 w 102 545.89 m 551.276 545.89 l S
+BT /F1 8.5 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 504.89 Tm (Venho, respeitosamente, requerer:) Tj ET
+0.68 0.72 0.75 RG 0.8 w 44 474.89 m 551.276 474.89 l S
+BT /F1 6.8 Tf 0.357 0.396 0.439 rg 1 0 0 1 44 459.89 Tm (PEDIDO / FINALIDADE DO REQUERIMENTO) Tj ET
+BT /F1 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 421.89 Tm (O pedido \351 apresentado com fundamento na NORMAM-101/DPC e nas demais regras) Tj ET
+BT /F1 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 407.89 Tm (aplic\341veis ao caso. Os documentos comprobat\363rios pertinentes dever\343o acompanhar) Tj ET
+BT /F1 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 393.89 Tm (o protocolo e ser conferidos pela Organiza\347\343o Militar competente.) Tj ET
+BT /F1 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 346.89 Tm (Declaro que as informa\347\365es acima s\343o verdadeiras e que estou ciente de que este) Tj ET
+BT /F1 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 332.89 Tm (modelo auxiliar n\343o substitui anexos oficiais, exig\352ncias adicionais ou a an\341lise) Tj ET
+BT /F1 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 318.89 Tm (da Autoridade Mar\355tima.) Tj ET
+BT /F1 8.5 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 267.89 Tm (Nestes termos, pe\347o deferimento.) Tj ET
+BT /F2 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 44 221.89 Tm (LOCAL:) Tj ET
+BT /F2 8 Tf 0.094 0.129 0.169 rg 1 0 0 1 314 221.89 Tm (DATA:) Tj ET
+0.68 0.72 0.75 RG 0.8 w 87 218.89 m 289 218.89 l S
+0.68 0.72 0.75 RG 0.8 w 349 218.89 m 551.276 218.89 l S
+0.094 0.129 0.169 RG 0.7 w 124 137.89 m 471.27599999999995 137.89 l S
+BT /F1 7 Tf 0.094 0.129 0.169 rg 1 0 0 1 236.63799999999998 122.88999999999999 Tm (ASSINATURA DO REQUERENTE) Tj ET
+0.68 0.72 0.75 RG 0.8 w 44 72 m 551.276 72 l S
+BT /F2 6.6 Tf 0.545 0.227 0.18 rg 1 0 0 1 44 58 Tm (ATEN\307\303O: MODELO AUXILIAR N\303O OFICIAL.) Tj ET
+BT /F1 6.2 Tf 0.357 0.396 0.439 rg 1 0 0 1 44 46 Tm (Confira, complemente e assine antes do protocolo. A CP/DL/AG pode solicitar documentos adicionais.) Tj ET
+BT /F1 6.2 Tf 0.357 0.396 0.439 rg 1 0 0 1 44 35 Tm (Este documento n\343o representa deferimento, homologa\347\343o ou aprova\347\343o da Marinha do Brasil.) Tj ET
+endstream
 endobj
 7 0 obj
-<<
-/Count 1 /Kids [ 4 0 R ] /Type /Pages
->>
-endobj
-8 0 obj
-<<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 1440
->>
-stream
-Gatm:?#QJt'RfGR\;rGH%`QF)Qo>ps(FanfTrZ]n0:p*r=X?$8Uf6ZahePc7gEtBK1TK/n)uH4J^CHT\NBa694'r(p(N=LaJ5@Y[5a]N`(dhP5=E_Icn\HC`s.T50I82r(+"k,T'StLLnTPer8p7od"4)0Bh[f5"213R,5ORPoRD`g%6'OZu(3(BkVdYg<L>j:'Id7PNk1Y'tU=<[*5t'UR!brj(<l`Xt3'.Vm%F@Z^`T%BDqnJ;6''AZedP-:jDR+Y157[91KBsp&-/f]8&12']Ih+EKlTC[aA!7c(WT-$IH,Sae_bX@s"S1:TbD5O&<JSiS*d\@!9.]A=I'B_\H:C5L*F*"Bj0927Li);,2IuW#QmR<<pu(,7PJIAH/MP[&Seam9(2,">'#O"akjBo=?\PtqcX5!+XG_o?p7%EZ[U0RZk@BAtS5/OX5L/C]C_sVI^EpD!SO8LO6]`2q'lPbOji6uD,IsR]mMm%RTE?S"[YGP72ETk%2/`5<]9<opCkH#^9k"rNPIkg>]U5^k/!9-:,oYUqR,p%tU@4F=P6cq,M8CZ)]:b_tY'6fljh^Gbo2U@UBq./You42.NL0H1`R>*89$c*Zg6/1o[p%^=6jp4NX^5:M/U>B]g2,^CVlUri-.K6RaKeg*=Nd_0g@4Q3f!>:rbVP<niI8$0R_E?N0Q=dbUBF$[$>r\F`a-Vu&N3u6+6_j2k*])A75NT;7Cc5KF7=#k2OH[%Rm=krX^ScB(0qsr<!#sFBnV['`$SR5h$>:[)Hb(g-l^D$6S4beF.k=*6b(*I<R,4e,>Sqj$A9%OZ62MIC;0)n)@aH\eMkn$*:D<&=uN[(b=WRNUHZd<>rW1E4t3L%;4g7#!^e1HT\iepeOj6UNN<_l>07bITJ9IKZMHjdjaR@1HTfBE>a;Fi4&WB7'WfbkN"9<YS?G>_!*^!g=_5!?om5eg],6?kQYQUr%tcSg`'TcW8Yi6PaJMsAR$S^(KAPADBlo+?k\ISf(o>kK,CcLroe=Ya>LSo*[KKILB8g"GbB\qE]EJ%85%#bb$D3I9!q!#9ogKVtO6`gJb2rs(`/p"5J8j6m9J&^;'7gm>h%g*AQ+_6NST:KX;OrFE>$8$DZJJ-C;2#>)FmL%1%Dk2i8'R_EB;9En6KB0Xl>RFQiRurEHU,[qmsZrQmc9oBk)"`e]Jt(,!;%o+Fh8Ka%#Es2h(Wd1k$U8HJA#:+N\$W`3L7\f#Eat"_t?I%>k`M'a;9_8quQ'Tk_nPbp.XB"MRfnU&sqY:`2d?;Y_^cGWq[<8YK(@l6LIl`Z\Qg<I+gAaa7jVoqt1!/"pb(3dup!_?;dH8Tg<P5$1$*ccmT8gfIsD3_1@>1TmV$(AB<jdW]s<,[st)1>"eQjpS(L-^%Rq*F:""CN@Z+Z1"9*OoUZI)%Q[@/M'B%3?_`(8/!C3Cr!tZm5XY~>endstream
+<< /Title (Requerimento do interessado - modelo auxiliar nao oficial) /Author (Preenchimento Assistido) /Subject (Modelo auxiliar nao oficial para requerimentos de aquaviarios) >>
 endobj
 xref
-0 9
+0 8
 0000000000 65535 f 
-0000000061 00000 n 
-000000102 00000 n 
-0000000209 00000 n 
-0000000321 00000 n 
-0000000524 00000 n 
-0000000592 00000 n 
-0000000966 00000 n 
-0000001025 00000 n 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000258 00000 n 
+0000000355 00000 n 
+0000000457 00000 n 
+0000003753 00000 n 
 trailer
-<<
-/ID
-[<e26e59803f927d2ea2dbb6f6911f2bc1><e26e59803f927d2ea2dbb6f6911f2bc1>]
-% ReportLab generated PDF document -- digest (opensource)
-
-/Info 6 0 R
-/Root 5 0 R
-/Size 9
->>
+<< /Size 8 /Root 1 0 R /Info 7 0 R >>
 startxref
-2556
+3948
 %%EOF
