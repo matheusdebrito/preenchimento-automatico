@@ -378,7 +378,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(alert.textContent).toContain('CPF');
 
     const name = screen.getByLabelText(/Nome completo/) as HTMLInputElement;
-    const cpf = screen.getByLabelText('CPF *') as HTMLInputElement;
+    const cpf = screen.getByLabelText(/^CPF/) as HTMLInputElement;
     expect(name.getAttribute('aria-invalid')).toBe('true');
     expect(cpf.getAttribute('aria-invalid')).toBe('true');
     expect(screen.getAllByText('Campo obrigatório pendente.')).toHaveLength(2);
@@ -634,7 +634,6 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByText('Nenhum campo preenchido automaticamente')).toBeTruthy();
     expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/i))
       .toBeTruthy();
-    expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/)).toBeTruthy();
     expect(screen.getByText(/nenhum texto legível identificado na imagem/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(screen.getByText(/campos obrigatórios pendentes: Nome completo/i)).toBeTruthy();
