@@ -62,6 +62,7 @@ export const SELLER_IDENTITY_FIELDS = [
   'seller.identity',
   'seller.identityType',
   'seller.issuer',
+  'seller.issuerState',
   'seller.issueDate',
   'seller.nationality',
   'seller.birthplace',

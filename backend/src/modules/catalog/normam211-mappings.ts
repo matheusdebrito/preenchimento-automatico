@@ -41,8 +41,10 @@ const badePlacements: readonly CoordinatePlacement[] = [
   top('vessel.name', 195, 305, 335, 7, 0, true),
   // 03 Número de inscrição.
   top('vessel.registration', 175, 318, 130, 6.5),
-  // 04 Data da inscrição.
-  top('vessel.registrationDate', 430, 318, 95, 6.2),
+  // 04 Data da inscrição: o layout possui células separadas para dia/mês/ano.
+  top('vessel.registrationDate', 430, 318, 18, 6.2, 0, false, undefined, 'DATE_DAY'),
+  top('vessel.registrationDate', 456, 318, 18, 6.2, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('vessel.registrationDate', 482, 318, 42, 6.2, 0, false, undefined, 'DATE_YEAR'),
   // 08 Classificação quanto ao tipo/área de navegação.
   top('vessel.navigationArea', 100, 365, 105, 5.8),
   // 09 Classificação quanto à atividade/serviço.
@@ -69,8 +71,8 @@ const badePlacements: readonly CoordinatePlacement[] = [
   top('vessel.motorSerial', 326, 536, 80, 5.5),
 
   // Página 2 - proprietário: campos 39 a 51. Campo 52 (telefax) não é preenchido.
-  // 39 Nome.
-  top('person.fullName', 110, 247, 175, 6.5, 1, true),
+  // 39 Nome. Limite revisado para terminar antes da célula 40 (CPF/CNPJ).
+  top('person.fullName', 110, 247, 108, 5.8, 1, true),
   // 40 CPF/CNPJ.
   top('person.cpf', 225, 247, 56, 5.5, 1, true),
   // 41 Identidade.

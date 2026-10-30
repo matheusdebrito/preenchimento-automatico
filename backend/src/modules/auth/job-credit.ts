@@ -3,17 +3,18 @@ import type { Database } from './db.js';
 
 interface JobReceipt {
   user_id: string;
-  state: 'charged' | 'delivered' | 'refunded';
+  state: 'charged' | 'delivered' | 'refunded' | 'consumed';
 }
 
 const ONE_HOUR = 60 * 60_000;
 
 /**
- * A PDF job must be payable only once, even across crashes.
+ * Consume one credit at most once when the job dispatches document analysis
+ * to OpenAI. Once the external request is attempted, this cost is final and
+ * must not be refunded merely because the user skips PDF generation/download.
  *
- * The credit ledger debit and the minimal receipt are inserted in the SAME
- * PostgreSQL transaction under the same per-user row lock used by grants.
- * Nothing from the uploaded documents, OCR or form fields is persisted.
+ * The ledger debit and receipt are inserted atomically under the user row lock.
+ * Nothing from uploaded documents or extracted field values is persisted here.
  */
 export async function chargeJobCredit(
   pool: Database, userId: string, jobId: string, createdAt: number,
@@ -55,7 +56,7 @@ export async function chargeJobCredit(
       [randomUUID(), userId, 'consume', 'job_' + jobId],
     );
     await client.query(
-      'INSERT INTO job_credit_receipts(job_id,user_id,expires_at) VALUES($1,$2,$3)',
+      "INSERT INTO job_credit_receipts(job_id,user_id,state,expires_at) VALUES($1,$2,'consumed',$3)",
       [jobId, userId, new Date(createdAt + ONE_HOUR)],
     );
     await client.query('COMMIT');

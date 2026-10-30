@@ -30,6 +30,30 @@ function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
   }];
 }
 
+function downloadName(
+  service: { reviewForms?: readonly { formVersionId:string; formId:string; name:string }[] },
+  versionId: string,
+): string {
+  const form = service.reviewForms?.find((item) => item.formVersionId === versionId);
+  const fallbackId = form?.formId ?? versionId;
+  if (!form) {
+    if (fallbackId.includes('bade')) return fallbackId.includes('bsade') ? 'BSADE' : 'BADE';
+    if (fallbackId.includes('bdmoto')) return 'BDMOTO';
+    if (fallbackId.startsWith('requerimento')) return 'Requerimento';
+    return 'Formulário';
+  }
+  const id = form.formId;
+  if (id.includes('bade')) return id.includes('bsade') ? 'BSADE' : 'BADE';
+  if (id.includes('bdmoto')) return 'BDMOTO';
+  if (id.startsWith('requerimento')) return 'Requerimento';
+  if (id.startsWith('autorizacao-transferencia')) return 'Autorização de Transferência';
+  if (id.startsWith('comunicacao-transferencia')) return 'Comunicação de Transferência';
+  if (id.startsWith('declaracao-residencia')) return 'Declaração de Residência';
+  if (id.startsWith('declaracao-perda')) return 'Declaração de Perda ou Extravio';
+  if (id.startsWith('termo-responsabilidade')) return 'Termo de Responsabilidade';
+  return form.name;
+}
+
 function reviewInputId(formVersionId: string, fieldId: string): string {
   return 'review-' + formVersionId + '-' + fieldId;
 }
@@ -174,6 +198,7 @@ export function LiveFlowPage() {
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<readonly string[]>([]);
+  const [confirmAnalysisCharge, setConfirmAnalysisCharge] = useState(false);
   const [busy, setBusy] = useState(false);
   const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
@@ -303,6 +328,7 @@ export function LiveFlowPage() {
       return;
     }
     setFiles((prev) => ({ ...prev, [id]: file }));
+    setConfirmAnalysisCharge(false);
     setError('');
   };
 
@@ -405,6 +431,7 @@ export function LiveFlowPage() {
       }
     } finally {
       setBusy(false);
+      setConfirmAnalysisCharge(false);
     }
   };
 
@@ -446,6 +473,7 @@ export function LiveFlowPage() {
       setBlankFieldIds([]);
       setOpenReviewFormIds([]);
       setDownloads([]);
+      setConfirmAnalysisCharge(false);
       if (target === 'questions') setFiles({});
       setStep(target);
     } catch {
@@ -497,6 +525,7 @@ export function LiveFlowPage() {
       setBlankFieldIds([]);
       setOpenReviewFormIds([]);
       setDownloads([]);
+      setConfirmAnalysisCharge(false);
       setStep('questions');
     } catch {
       setError('Não foi possível excluir este processo agora. Tente novamente antes de sair.');
@@ -727,12 +756,36 @@ export function LiveFlowPage() {
                     })}
                   </div>
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
-                  <Button disabled={busy} onClick={() => void extract()}>
-                    {busy ? 'Preparando revisão…' :
-                      Object.keys(files).length > 0 || uploadedRequirements.length > 0
-                        ? 'Analisar documentos e revisar campos'
-                        : 'Continuar sem anexos — preencher manualmente'}
-                  </Button>
+                  {confirmAnalysisCharge &&
+                  (Object.keys(files).length > 0 || uploadedRequirements.length > 0) ? (
+                    <Notice tone="info" title="Confirmar análise com IA">
+                      Ao continuar, os documentos serão enviados para a OpenAI e 1 crédito será
+                      consumido quando a requisição externa for iniciada. Esse crédito não é
+                      estornado apenas por você não gerar ou baixar os PDFs depois.
+                      <div className="state__actions">
+                        <Button variant="ghost" disabled={busy}
+                          onClick={() => setConfirmAnalysisCharge(false)}>
+                          Voltar
+                        </Button>
+                        <Button disabled={busy} onClick={() => void extract()}>
+                          {busy ? 'Enviando para análise…' : 'Confirmar e consumir 1 crédito'}
+                        </Button>
+                      </div>
+                    </Notice>
+                  ) : (
+                    <Button disabled={busy} onClick={() => {
+                      if (Object.keys(files).length > 0 || uploadedRequirements.length > 0) {
+                        setConfirmAnalysisCharge(true);
+                      } else {
+                        void extract();
+                      }
+                    }}>
+                      {busy ? 'Preparando revisão…' :
+                        Object.keys(files).length > 0 || uploadedRequirements.length > 0
+                          ? 'Analisar documentos e revisar campos'
+                          : 'Continuar sem anexos — preencher manualmente'}
+                    </Button>
+                  )}
                 </>
               ) : null}
               {step === 'review' ? (
@@ -1012,12 +1065,12 @@ export function LiveFlowPage() {
                     onClick={() => navigate(-1)}>Voltar</Button>
                   <h2>Formulários gerados</h2>
                   <Notice tone="success">
-                    Pacote preparado. Um único crédito foi reservado no processo e será mantido após o download. Se a entrega não ocorrer, poderá ser estornado.
+                    Pacote preparado. O crédito da análise já foi consumido quando os documentos foram enviados à OpenAI; baixar os PDFs não gera novo débito.
                   </Notice>
                   {downloads.map((version) => (
                     <a className="btn btn--secondary" key={version}
                       href={'/api/jobs/' + jobId + '/download/' + encodeURIComponent(version)} download>
-                      Baixar PDF — {version}
+                      Baixar PDF - {downloadName(service, version)}
                     </a>
                   ))}
                   <p className="field__hint">Confira as informações e assine os documentos conforme orientações oficiais.</p>

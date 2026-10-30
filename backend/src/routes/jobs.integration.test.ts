@@ -74,7 +74,7 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     await pool?.end();
   });
 
-  it('uploads -> text extraction -> review -> two official template PDFs -> one debit', async () => {
+  it('fluxo manual sem OpenAI não consome crédito na geração', async () => {
     const created = await app.inject({method:'POST',url:'/api/jobs',
       headers:{cookie}, payload:{serviceId:'ci-only-service',answers:{}}});
     expect(created.statusCode,created.body).toBe(201);
@@ -208,27 +208,17 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
       headers:{cookie},payload:{}});
     expect(generate.statusCode,generate.body).toBe(200);
     expect(generate.json<{downloads:string[]}>().downloads).toHaveLength(2);
-    expect(await creditBalance(pool,userId)).toBe(2);
+    expect(await creditBalance(pool,userId)).toBe(3);
     const again=await app.inject({method:'POST',url:'/api/jobs/'+jobId+'/generate',
       headers:{cookie},payload:{}});
     expect(again.statusCode).toBe(200);
     expect(again.json<{reused:boolean}>().reused).toBe(true);
-    expect(await creditBalance(pool,userId)).toBe(2);
+    expect(await creditBalance(pool,userId)).toBe(3);
 
     const download=await app.inject({method:'GET',
       url:'/api/jobs/'+jobId+'/download/requerimento-ma-v1',headers:{cookie}});
     expect(download.statusCode,download.body.slice(0,100)).toBe(200);
     expect(download.body.startsWith('%PDF-')).toBe(true);
-    // Delivery receipt is recorded asynchronously after HTTP finish.
-    let delivered = false;
-    for (let attempt = 0; attempt < 40; attempt++) {
-      const row = await pool.query<{state:string}>(
-        'SELECT state FROM job_credit_receipts WHERE job_id=$1', [jobId],
-      );
-      if (row.rows[0]?.state === 'delivered') { delivered = true; break; }
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
-    expect(delivered).toBe(true);
     const noAuth=await app.inject({method:'GET',
       url:'/api/jobs/'+jobId+'/download/requerimento-ma-v1'});
     expect(noAuth.statusCode).toBe(401);
@@ -246,7 +236,7 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const notFound=await app.inject({method:'GET',url:'/api/jobs/'+jobId,headers:{cookie}});
     expect(notFound.statusCode).toBe(404);
   });
-  it('estorna na API ao cancelar pacote gerado que ainda não foi baixado', async () => {
+  it('cancelar fluxo manual sem OpenAI não cria nem estorna cobrança', async () => {
     const initialBalance = await creditBalance(pool, userId);
     const created = await app.inject({ method:'POST', url:'/api/jobs',
       headers:{cookie}, payload:{serviceId:'ci-only-service',answers:{}} });
@@ -271,15 +261,15 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const generated = await app.inject({method:'POST',url:'/api/jobs/'+id+'/generate',
       headers:{cookie},payload:{}});
     expect(generated.statusCode,generated.body).toBe(200);
-    expect(await creditBalance(pool,userId)).toBe(initialBalance - 1);
+    expect(await creditBalance(pool,userId)).toBe(initialBalance);
     const cancelled = await app.inject({method:'DELETE',url:'/api/jobs/'+id,
       headers:{cookie}});
     expect(cancelled.statusCode,cancelled.body).toBe(200);
-    expect(cancelled.json<{creditRefunded:boolean}>().creditRefunded).toBe(true);
+    expect(cancelled.json<{creditRefunded:boolean}>().creditRefunded).toBe(false);
     expect(await creditBalance(pool,userId)).toBe(initialBalance);
-    const receipt = await pool.query<{state:string}>(
-      'SELECT state FROM job_credit_receipts WHERE job_id=$1',[id]);
-    expect(receipt.rows[0]?.state).toBe('refunded');
+    const receipt = await pool.query<{count:string}>(
+      'SELECT COUNT(*)::text AS count FROM job_credit_receipts WHERE job_id=$1',[id]);
+    expect(Number(receipt.rows[0]?.count)).toBe(0);
   });
 
 });

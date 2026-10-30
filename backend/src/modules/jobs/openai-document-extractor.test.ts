@@ -109,13 +109,16 @@ describe('OpenAI document extractor', () => {
       });
     });
 
+    const beforeRequest = vi.fn();
     const result = await extractDocumentsWithOpenAi([
       {
         document: identity,
         label: 'Identidade do comprador',
         documentType: 'identity',
         subjectRole: 'person',
-        allowedFieldIds: ['person.fullName', 'person.cpf', 'person.identity', 'person.issuer'],
+        allowedFieldIds: [
+          'person.fullName', 'person.cpf', 'person.identity', 'person.issuer', 'person.issuerState',
+        ],
       },
       {
         document: tie,
@@ -151,6 +154,12 @@ describe('OpenAI document extractor', () => {
         required: false,
       },
       {
+        id: 'person.issuerState',
+        label: 'UF do órgão emissor',
+        valueKind: 'text',
+        required: false,
+      },
+      {
         id: 'vessel.registration',
         label: 'Número de inscrição',
         valueKind: 'text',
@@ -163,8 +172,10 @@ describe('OpenAI document extractor', () => {
         OPENAI_DOCUMENT_DETAIL: 'high',
       },
       fetchImpl: fakeFetch as unknown as typeof fetch,
+      beforeRequest,
     });
 
+    expect(beforeRequest).toHaveBeenCalledTimes(1);
     expect(fakeFetch).toHaveBeenCalledTimes(1);
     const [, init] = fakeFetch.mock.calls[0]!;
     const body = JSON.parse(String(init?.body)) as {
@@ -187,7 +198,7 @@ describe('OpenAI document extractor', () => {
     expect(JSON.stringify(body)).not.toContain(tie.path);
     expect(JSON.stringify(body)).toContain('número da identidade/documento');
     expect(JSON.stringify(body)).toContain('órgão emissor/expedidor');
-    expect(JSON.stringify(body)).toContain('nunca deduza o órgão apenas pela UF');
+    expect(JSON.stringify(body)).toContain('issuerState=RJ');
 
     const values = Object.fromEntries(result.evidence.map((item) => [
       item.fieldId, item.value,
@@ -196,7 +207,8 @@ describe('OpenAI document extractor', () => {
     // Invalid CPF from an external model response must never be promoted.
     expect(values['person.cpf']).toBeUndefined();
     expect(values['person.identity']).toBe('12.345.678-9');
-    expect(values['person.issuer']).toBe('SSP/RJ');
+    expect(values['person.issuer']).toBe('SSP');
+    expect(values['person.issuerState']).toBe('RJ');
     expect(values['vessel.registration']).toBe('441M20200001');
     expect(result.evidence.filter((item) => item.fieldId === 'person.fullName'))
       .toEqual([expect.objectContaining({
@@ -213,7 +225,7 @@ describe('OpenAI document extractor', () => {
         requirementId: 'buyer-identity',
         engine: 'openai',
         outcome: 'suggested',
-        suggestionCount: 3,
+        suggestionCount: 4,
       }),
       expect.objectContaining({
         requirementId: 'tie',

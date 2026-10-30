@@ -5,6 +5,7 @@ import { TemplateGenerationError } from './template-error.js';
 
 const MAX_TEMPLATE_BYTES = 12 * 1024 * 1024;
 const MAX_FIELD_CHARS = 500;
+const STATIC_TEXT_LIFT = 1.5;
 
 /**
  * Sanitize one-line fields without silently truncating or transliterating
@@ -174,8 +175,14 @@ export async function fillPdf(
       throw new FormFieldError('invalid_field_value', placement.fieldId, 'text_overflow');
     }
     page.drawText(printed, {
-      x: placement.x, y: placement.y, size: placement.fontSize,
-      font, color: rgb(0, 0, 0),
+      x: placement.x,
+      // Static templates frequently use an underline as the writing baseline.
+      // Lift normal text slightly so the printed rule stays below the glyphs.
+      // Checkbox marks remain centered in their reviewed boxes.
+      y: placement.y + (placement.markWhen === undefined ? STATIC_TEXT_LIFT : 0),
+      size: placement.fontSize,
+      font,
+      color: rgb(0, 0, 0),
     });
   }
 

@@ -41,6 +41,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: "sale.price", label: "Valor da venda", valueKind: 'text' },
   { id: "seller.identity", label: "Identidade do vendedor", valueKind: 'text' },
   { id: "seller.issuer", label: "Órgão emissor do vendedor", valueKind: 'text' },
+  { id: "seller.issuerState", label: "UF do órgão emissor do vendedor", valueKind: 'text' },
   { id: "seller.address", label: "Rua do vendedor", valueKind: 'text' },
   { id: "seller.streetNumber", label: "Número do vendedor", valueKind: 'text' },
   { id: "seller.neighborhood", label: "Bairro do vendedor", valueKind: 'text' },
