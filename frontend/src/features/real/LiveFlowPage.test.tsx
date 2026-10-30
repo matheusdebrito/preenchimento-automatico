@@ -373,7 +373,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(alert.textContent).toContain('Nome completo');
     expect(alert.textContent).toContain('CPF');
 
-    const name = screen.getByLabelText('Nome completo *') as HTMLInputElement;
+    const name = screen.getByLabelText(/Nome completo/) as HTMLInputElement;
     const cpf = screen.getByLabelText(/CPF/) as HTMLInputElement;
     expect(name.getAttribute('aria-invalid')).toBe('true');
     expect(cpf.getAttribute('aria-invalid')).toBe('true');
