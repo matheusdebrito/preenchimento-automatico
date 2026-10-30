@@ -35,7 +35,7 @@ Durante o teste do modo QA local, o usuário interrompeu a jornada na revisão a
 
 ## Roteiro de reteste manual (prioridade)
 
-1. Na sua máquina, atualizar a branch `main`, manter `DEV_QA_PREVIEW=true` **somente em desenvolvimento** e executar `docker compose up -d --build`. Verificar os três containers e `http://127.0.0.1:3000/health`.
+1. Registro histórico: o antigo modo de prévia em runtime foi removido. Para validar a stack atual, atualizar a branch `main`, executar `docker compose up -d --build` e verificar os containers e `http://127.0.0.1:3000/health`.
 2. Criar ou acessar uma conta de teste. Após login, o cabeçalho deve mostrar **Minha conta** e **Sair**, nunca **Entrar**; acessar `/entrar` deve redirecionar para a conta.
 3. Conferir o rodapé sem links de navegação duplicados e com aviso de processamento temporário correto.
 4. Abrir o serviço `qa-synthetic-moto`, avançar até documentos e clicar **Enviar e analisar documentos** sem anexar os dois obrigatórios. Devem aparecer nomes dos arquivos faltantes perto do botão; enviar só um deve informar somente o outro.
