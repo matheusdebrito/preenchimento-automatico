@@ -272,7 +272,8 @@ describe('projeção pública do catálogo', () => {
           vesselType: 'embarcacao', vesselBand: 'ate_6m',
           tieSituation: 'regular', dataChanged: 'nao',
         },
-        forms: ['requerimento-embarcacao-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
+        forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
+          'declaracao-residencia-er-2026-v1'],
       },
       {
         id: 'segunda-via-tie-embarcacao',
@@ -291,6 +292,24 @@ describe('projeção pública do catálogo', () => {
       expect(publicService(catalog, item.id, item.answers)?.formVersionIds)
         .toEqual(item.forms);
     }
+  });
+
+  it('inclui BSADE ou BADE na renovação mesmo quando dataChanged é nao', () => {
+    expect(publicService(catalog, 'renovacao-tie-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      dataChanged: 'nao',
+    })?.formVersionIds).toContain('bsade-er-2026-v1');
+
+    const larger = publicService(catalog, 'renovacao-tie-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'maior_6_ate_12m',
+      tieSituation: 'regular',
+      dataChanged: 'nao',
+    })?.formVersionIds ?? [];
+    expect(larger).toContain('bade-er-2026-v1');
+    expect(larger).not.toContain('bsade-er-2026-v1');
   });
 
   it('seleciona BSADE até 6 m e BADE acima de 6 m conforme a NORMAM-211', () => {

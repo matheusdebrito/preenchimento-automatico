@@ -168,7 +168,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(term?.fixedValues).toMatchObject({ 'process.constructionAction': 'construída' });
   });
 
-  it('mantém a renovação de TIE/TIEM sem BADE/BSADE quando não houve alteração', () => {
+  it('mantém BADE/BSADE na renovação de TIE/TIEM mesmo sem alteração', () => {
     const relations = catalog.serviceForms.filter((relation) =>
       relation.serviceId === 'renovacao-tie-embarcacao');
     const request = relations.find((relation) =>
@@ -179,8 +179,8 @@ describe('catálogo reutilizável de formulários', () => {
       relation.formVersionId === 'declaracao-perda-tie-er-2026-v1');
 
     expect(request?.conditions).toEqual([{ questionId: 'vesselType', equals: 'embarcacao' }]);
-    expect(bsade?.conditions).toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
-    expect(bade?.conditions).toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
+    expect(bsade?.conditions).not.toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
+    expect(bade?.conditions).not.toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
     expect(loss?.conditions).toContainEqual({ questionId: 'tieSituation', equals: 'extraviado' });
   });
 

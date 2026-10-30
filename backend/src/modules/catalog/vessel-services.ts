@@ -652,10 +652,8 @@ const boatServiceForms: readonly ServiceForm[] = [
   lostTie('transferencia-propriedade-embarcacao', 6),
 
   request('renovacao-tie-embarcacao', 1, 'renovacao'),
-  bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados',
-    [{ questionId: 'dataChanged', equals: 'sim' }]),
-  bade('renovacao-tie-embarcacao', 3,
-    [{ questionId: 'dataChanged', equals: 'sim' }]),
+  bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados'),
+  bade('renovacao-tie-embarcacao', 3),
   residence('renovacao-tie-embarcacao', 4),
   lostTie('renovacao-tie-embarcacao', 5),
 
