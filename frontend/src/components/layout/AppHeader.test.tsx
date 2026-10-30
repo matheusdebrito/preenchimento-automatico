@@ -38,7 +38,6 @@ describe('AppHeader', () => {
     const navigation = screen.getByRole('navigation', { name: 'Navegação principal' });
     expect(navigation).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Início' }).getAttribute('href')).toBe('/');
-    expect(screen.getByRole('link', { name: 'OCR' }).getAttribute('href')).toBe('/ocr');
     expect(await screen.findByRole('link', { name: 'Entrar' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Minha conta' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Créditos' }).getAttribute('href')).toBe('/creditos');

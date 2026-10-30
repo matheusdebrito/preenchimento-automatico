@@ -8,7 +8,7 @@
 | Anexo | Páginas | Tamanho | AcroForm | SHA-256 local |
 | --- | ---: | --- | --- | --- |
 | 5-D | 1 | A4 595x842 pt | não | `53DD1F6576B3B9C6C4D1B056B18F4333DBCC24C3DE8FB18047B32B6AEBE9850E` |
-| 5-H | 2 | A4 595x842 pt | não | `06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF` |
+| 5-H | 2 | A4 595x842 pt | não | `E8E988F19C5E09C3307201003DD81ACF7932C964E25E4CD8B4262AC9369A1D9F` |
 
 Ambos estão sem criptografia, sem anexos e sem anotações. A inspeção estrutural foi feita
 com `pdf_inspect.py` e a revisão visual com renderização a 180 dpi.
@@ -41,9 +41,15 @@ Assinatura permanece manual.
 
 ## Estado de homologação
 
-Os mappings 5-D e 5-H foram promovidos para `APPROVED` após QA visual sintético, verificação dos blobs versionados e autorização explícita do responsável pelo produto para liberar o serviço de preenchimento de Renovação da CHA. A geometria foi conferida com amostras sintéticas locais,
-mas os PDFs 5-D/5-H estão versionados em
-`backend/templates/<form>/v1/original.pdf`. As FormVersion foram promovidas para `VERIFIED` após comparação byte a byte entre os uploads locais e os blobs Git versionados. Os mappings 5-D e 5-H estão `APPROVED`. O serviço `renovacao-cha-amador` pode ser publicado; `inscricao-exame-amador` continua `DRAFT` porque não possui formulário oficial associado pela norma.
+Os mappings 5-D e 5-H estão `APPROVED` após QA visual sintético, verificação dos
+blobs versionados e revisão dos usos publicados. Os PDFs estão versionados em
+`backend/templates/<form>/v1/original.pdf` e suas `FormVersion` permanecem
+`VERIFIED`.
+
+Os serviços de renovação, emissão de Veleiro, equivalência profissional, renovação com
+agregação de MTA e inscrição em exame estão publicados quando usam somente relações
+homologadas. A inscrição em exame usa o 5-H por evidência operacional oficial de CP/DL/AG,
+sem inventar um formulário alternativo.
 
 A promoção exige:
 
@@ -63,14 +69,19 @@ a página da DPC "Para quem quer se tornar um Navegador Amador" oferece o
 Requerimento de Inscrição para o Exame, e a lista operacional do COM8DN identifica
 o requerimento de inscrição como Anexo 5-H da NORMAM-211.
 
-O serviço marca a opção 2 - Emissão/Renovação e escreve na descrição do pedido a
-categoria selecionada (Arrais-Amador, Mestre-Amador ou Capitão-Amador). Não é criado
-nenhum formulário alternativo ou não oficial.
+O Anexo 5-H vigente **não possui uma caixa específica “Inscrição para exame”**. Por
+isso, o serviço não marca automaticamente a opção 2 “Emissão/Renovação” por inferência.
+A aplicação escreve no campo **Descrição do pedido** exatamente “Inscrição para exame de
+Arrais-Amador”, “Mestre-Amador” ou “Capitão-Amador”, conforme a categoria escolhida.
+
+Essa decisão preserva simultaneamente as duas evidências disponíveis: a orientação
+operacional oficial exige o 5-H para a inscrição, enquanto o próprio PDF não oferece uma
+opção impressa equivalente ao nome do serviço.
 
 
 ## Revisão v2 do 5-H - expansão de serviços de amadores
 
-Em 29/10/2026 o mapping do 5-H foi ampliado sem alterar o PDF versionado. Foram
+Em 29/10/2026 o mapping do 5-H foi ampliado e o template foi corrigido para conter as duas páginas do Anexo 5-H. O arquivo anterior tinha apenas a primeira página, embora o mapping já utilizasse campos da página 2. O novo template estático vetorial reproduz o conteúdo e a geometria do Anexo 5-H oficial da NORMAM-211/DPC, permanece sem AcroForm e foi renderizado página a página antes da validação. Foram
 adicionadas e revisadas visualmente as marcações das opções 1, 3 e 12, preservando a
 opção 2 já homologada:
 
@@ -81,3 +92,16 @@ opção 2 já homologada:
 
 As amostras sintéticas locais confirmaram o X dentro dos respectivos quadrículos. A
 revisão do mapping passou para v2 e permanece APPROVED.
+
+
+## Correção estrutural final do 5-H
+
+O gate automatizado revelou que o binário anteriormente versionado possuía somente uma
+página. Isso tornava impossível preencher **Descrição do pedido**, local, data e CPF,
+que pertencem à página 2 do Anexo 5-H.
+
+A correção substitui esse arquivo por um template estático vetorial A4 de duas páginas,
+reproduzido a partir do Anexo 5-H da NORMAM-211/DPC fornecida ao projeto. O novo
+arquivo possui SHA-256 `E8E988F19C5E09C3307201003DD81ACF7932C964E25E4CD8B4262AC9369A1D9F` e Git blob
+`21a74b96d6ecc305030cef4e378c4e7c5e22b851`. A estrutura foi validada com duas
+páginas e a renderização visual foi comparada com as páginas 5-H-1 e 5-H-2 oficiais.

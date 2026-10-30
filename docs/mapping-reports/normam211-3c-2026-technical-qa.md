@@ -1,19 +1,24 @@
-# QA técnica - NORMAM-211 Anexo 3-C corrigido
+# QA técnica — NORMAM-211/DPC 2026, Anexo 3-C
 
 **Data:** 29/10/2026
 
-O Anexo 3-C vigente é o **Termo de Responsabilidade de Construção/Alteração**.
+## Correção do template
 
-## Arquivo local usado na revisão
+A revisão visual identificou que o binário anteriormente versionado como Anexo 3-C era um
+modelo antigo de **Termo de Responsabilidade para Inscrição/Transferência de Propriedade**.
+Ele não correspondia ao Anexo 3-C vigente.
 
-- páginas: 1;
-- tamanho: A4 595x842 pt;
-- sem criptografia;
-- sem AcroForm;
-- SHA-256 local:
-  `63B31E5D256B8B178E88D1689AE0087C49ECB89EBB012B9F8B465B095F50F005`.
+O template foi substituído pela página oficial do Anexo 3-C da NORMAM-211/DPC 2026:
+**Termo de Responsabilidade de Construção/Alteração**.
 
-## Campos mapeados
+Arquivo versionado:
+- caminho: `backend/templates/termo-responsabilidade-er/v1/original.pdf`;
+- SHA-256: `C147B08055BDED745B03269EF3FB4373F6E2FA90BBE1AA9B6C2939DEEEF7ACD5`;
+- uma página A4 rasterizada a partir da página oficial do Anexo 3-C e preservada como template estático. O PDF foi reserializado em uma estrutura simples e compatível com o `pdf-lib`, sem alterar o conteúdo visual do formulário; a geometria foi conferida contra a página oficial.
+
+## Campos homologados
+
+O mapping atual posiciona:
 
 - OM de inscrição;
 - nome da embarcação;
@@ -21,15 +26,30 @@ O Anexo 3-C vigente é o **Termo de Responsabilidade de Construção/Alteração
 - estaleiro ou construtor;
 - comprimento total;
 - comprimento entre perpendiculares;
-- boca;
-- pontal;
+- boca moldada;
+- pontal moldado;
 - área de navegação;
-- lotação total;
+- lotação;
+- construída/alterada na declaração final;
 - local e data.
 
-Assinatura e ART permanecem fora do preenchimento automático.
+Assinatura do responsável técnico e ART não são preenchidas automaticamente.
 
-## Estado
+## QA visual
 
-O novo mapping está `TESTED` e a amostra sintética local foi revisada visualmente.
-A FormVersion foi promovida para `VERIFIED` após a comparação byte a byte entre o PDF local e o blob versionado no caminho canônico. O mapping permanece `TESTED`, não `APPROVED`; ainda falta executar o gate do motor real/CI antes de liberar cenários dependentes dele.
+O formulário oficial foi preenchido com dados sintéticos usando as coordenadas do mapping
+`responsibilityConstructionPlacements` e renderizado novamente. A inspeção página a página
+confirmou alinhamento dos textos e marcações nos campos corretos, sem sobreposição
+material. O mapping foi promovido de `TESTED` para `APPROVED`.
+
+## Aplicação normativa
+
+- inscrição inicial: o 3-C pode ser gerado quando o interessado informa que irá apresentá-lo;
+  isso cobre construção pelo próprio interessado e a dispensa de vistoria de embarcação de
+  médio porte prevista nos itens 2.5 e 3.34;
+- alteração de dados/motor de barco: o 3-C permanece condicionado aos casos do item
+  2.12.1 (estaleiro comprovadamente extinto ou construção artesanal);
+- adaptação de embarcação miúda a remo para motor continua sujeita à declaração técnica
+  prevista na NORMAM, mas a ferramenta não solicita esse documento como fonte de OCR;
+- ART e responsabilidade técnica continuam sendo requisitos externos ao preenchimento
+  automático.

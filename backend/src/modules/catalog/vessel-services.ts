@@ -11,7 +11,6 @@ import {
   MOTOR_DOCUMENT_FIELDS,
   RESIDENCE_PROOF_FIELDS,
   SALE_DOCUMENT_FIELDS,
-  NO_AUTOMATIC_FIELDS,
   SELLER_IDENTITY_FIELDS,
   TIE_FIELDS,
 } from './document-field-policies.js';
@@ -20,7 +19,6 @@ const vesselTypeQuestion: ServiceQuestion = {
   id: 'vesselType',
   label: 'Tipo de embarcação',
   options: ['embarcacao', 'moto_aquatica'],
-  unavailableOptions: ['moto_aquatica'],
 };
 
 const vesselBandQuestion: ServiceQuestion = {
@@ -30,11 +28,10 @@ const vesselBandQuestion: ServiceQuestion = {
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
-const builtByApplicantQuestion: ServiceQuestion = {
-  id: 'builtByApplicant',
-  label: 'A embarcação foi construída pelo próprio interessado?',
+const initialResponsibilityTermQuestion: ServiceQuestion = {
+  id: 'initialResponsibilityTerm',
+  label: 'Será apresentado o Termo de Responsabilidade de Construção/Alteração (Anexo 3-C)? Se a embarcação foi construída pelo interessado, selecione Sim. Para embarcação de médio porte, selecione Sim quando o termo for usado para dispensa da vistoria inicial.',
   options: ['nao', 'sim'],
-  unavailableOptions: ['sim'],
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
@@ -46,20 +43,44 @@ const tieSituationQuestion: ServiceQuestion = {
 
 const dataChangedQuestion: ServiceQuestion = {
   id: 'dataChanged',
-  label: 'Houve alteração de dados do proprietário ou das características da embarcação?',
+  label: 'Houve alteração das características da embarcação (por exemplo, medidas, casco ou motor)?',
   options: ['sim', 'nao'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+};
+
+const motoCharacteristicsChangedQuestion: ServiceQuestion = {
+  id: 'motoCharacteristicsChanged',
+  label: 'Houve alteração das características da moto aquática (por exemplo, motor, casco ou waterbox)?',
+  options: ['sim', 'nao'],
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+};
+
+const motoTieSecondCopyReasonQuestion: ServiceQuestion = {
+  id: 'motoTieSecondCopyReason',
+  label: 'Motivo da renovação do TIE da moto aquática',
+  options: ['perda', 'roubo', 'extravio'],
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+};
+
+const motoDataChangeTargetQuestion: ServiceQuestion = {
+  id: 'motoDataChangeTarget',
+  label: 'Quais dados cadastrais serão alterados?',
+  options: ['dados_embarcacao', 'dados_proprietario', 'ambos'],
+  conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 };
 
 const responsibilityTermCaseQuestion: ServiceQuestion = {
   id: 'responsibilityTermCase',
   label: 'O caso envolve estaleiro comprovadamente extinto ou embarcação de construção artesanal?',
   options: ['nao', 'estaleiro_extinto', 'construcao_artesanal'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
 const rowToMotorConversionQuestion: ServiceQuestion = {
   id: 'rowToMotorConversion',
   label: 'É uma adaptação de embarcação miúda a remo para propulsão a motor?',
   options: ['nao', 'sim'],
+  conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
 };
 
 const commonApplicantDocuments: readonly DocumentRequirement[] = [
@@ -119,35 +140,6 @@ const motorProof: DocumentRequirement = {
     documentType: 'supporting-document',
     subjectRole: 'vessel',
     allowedFieldIds: MOTOR_DOCUMENT_FIELDS,
-  },
-};
-
-const technicalResponsibilityDocument: DocumentRequirement = {
-  id: 'technical-responsibility-document',
-  label: 'Documento do responsável técnico / ART',
-  description: 'No fluxo do item 2.12.1, o Anexo 3-C é aceito nos casos de estaleiro comprovadamente extinto ou construção artesanal. Envie também a ART/documentação técnica aplicável para conferência.',
-  required: false,
-  conditions: [{
-    questionId: 'responsibilityTermCase',
-    oneOf: ['estaleiro_extinto', 'construcao_artesanal'],
-  }],
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'vessel',
-    allowedFieldIds: NO_AUTOMATIC_FIELDS,
-  },
-};
-
-const rowToMotorTechnicalDeclaration: DocumentRequirement = {
-  id: 'row-to-motor-technical-declaration',
-  label: 'Declaração do Responsável Técnico',
-  description: 'Exigida pela NORMAM-211/DPC para adaptação de embarcação miúda a remo para propulsão a motor a partir de 01/01/2025.',
-  required: false,
-  conditions: [{ questionId: 'rowToMotorConversion', equals: 'sim' }],
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'vessel',
-    allowedFieldIds: NO_AUTOMATIC_FIELDS,
   },
 };
 
@@ -236,7 +228,7 @@ export const vesselVersions: readonly FormVersion[] = [
     officialRevision: 'NORMAM-211/DPC 2026 - Anexo 3-C',
     regulation: 'NORMAM-211/DPC 2026, Anexo 3-C',
     sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
-    verifiedAt: '2026-10-29', sha256: '63B31E5D256B8B178E88D1689AE0087C49ECB89EBB012B9F8B465B095F50F005', templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
+    verifiedAt: '2026-10-29', sha256: 'C147B08055BDED745B03269EF3FB4373F6E2FA90BBE1AA9B6C2939DEEEF7ACD5', templatePath: 'backend/templates/termo-responsabilidade-er/v1/original.pdf', pdfKind: 'STATIC', status: 'VERIFIED',
   },
 ];
 
@@ -244,28 +236,28 @@ function questions(options: {
   band?: boolean;
   tie?: boolean;
   dataChanged?: boolean;
-  blockMediumBand?: boolean;
   constructionCase?: boolean;
   responsibilityTermCase?: boolean;
   rowToMotorConversion?: boolean;
+  motoTieSecondCopyReason?: boolean;
+  motoDataChangeTarget?: boolean;
 } = {}): readonly ServiceQuestion[] {
-  const baseBandQuestion = options.blockMediumBand
-    ? { ...vesselBandQuestion, unavailableOptions: ['maior_12_menor_24m'] }
-    : vesselBandQuestion;
   const bandQuestion = options.dataChanged
-    ? { ...baseBandQuestion, conditions: [
+    ? { ...vesselBandQuestion, conditions: [
         { questionId: 'vesselType', equals: 'embarcacao' },
         { questionId: 'dataChanged', equals: 'sim' },
       ] }
-    : baseBandQuestion;
+    : vesselBandQuestion;
   return [
     vesselTypeQuestion,
     ...(options.tie ? [tieSituationQuestion] : []),
-    ...(options.dataChanged ? [dataChangedQuestion] : []),
+    ...(options.dataChanged ? [dataChangedQuestion, motoCharacteristicsChangedQuestion] : []),
     ...(options.band === false ? [] : [bandQuestion]),
-    ...(options.constructionCase ? [builtByApplicantQuestion] : []),
+    ...(options.constructionCase ? [initialResponsibilityTermQuestion] : []),
     ...(options.responsibilityTermCase ? [responsibilityTermCaseQuestion] : []),
     ...(options.rowToMotorConversion ? [rowToMotorConversionQuestion] : []),
+    ...(options.motoTieSecondCopyReason ? [motoTieSecondCopyReasonQuestion] : []),
+    ...(options.motoDataChangeTarget ? [motoDataChangeTargetQuestion] : []),
   ];
 }
 
@@ -284,8 +276,7 @@ function requirements(options: {
   ];
 }
 
-const scopeNote = 'Serviço liberado para embarcação/barco. Moto aquática permanece em validação, ' +
-  'sem protocolo automático e com revisão dos dados pelo usuário.';
+const scopeNote = 'Serviço disponível para embarcação/barco e moto aquática, com seleção automática dos formulários aplicáveis conforme a NORMAM-211/DPC e a NORMAM-212/DPC. A ferramenta não protocola o processo e os dados devem ser revisados pelo usuário.';
 
 export const vesselServices: readonly ServiceDefinition[] = [
   {
@@ -293,7 +284,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Inscrição inicial de embarcação',
     description: scopeNote,
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ blockMediumBand: true, constructionCase: true }),
+    questions: questions({ constructionCase: true }),
     documentRequirements: requirements({ origin: true }),
   },
   {
@@ -333,36 +324,33 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Renovação do TIE/TIEM por perda, roubo ou extravio',
     description: scopeNote + ' O TIE digital não possui segunda via; perda ou extravio do modelo antigo segue o fluxo de renovação.',
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ dataChanged: true }),
+    questions: questions({ dataChanged: true, motoTieSecondCopyReason: true }),
     documentRequirements: requirements(),
   },
   {
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados ou características da embarcação',
-    description: 'Em validação normativa. O Anexo 3-C só se aplica em situações específicas de construção/alteração; não deve ser incluído automaticamente.',
-    creditCost: 1, status: 'DRAFT',
-    questions: questions({ tie: true, responsibilityTermCase: true }),
+    description: 'Preenchimento para alteração de dados ou características. Em embarcação/barco, o Anexo 3-C só é gerado nos casos admitidos pelo item 2.12.1 da NORMAM-211/DPC. Em moto aquática, alterações de características exigem responsável técnico e ART no protocolo, mas esses documentos não são solicitados porque não fornecem campos para o preenchimento automático.',
+    creditCost: 1, status: 'AVAILABLE',
+    questions: questions({ tie: true, responsibilityTermCase: true, motoDataChangeTarget: true }),
     documentRequirements: [
       ...requirements({ tie: true, origin: true }),
-      technicalResponsibilityDocument,
     ],
   },
   {
     id: 'alteracao-motor-embarcacao',
     title: 'Troca, instalação ou retirada de motor',
-    description: 'Em validação normativa. O fluxo distingue troca cadastral de alteração estrutural e a adaptação de embarcação miúda a remo para motor, que possui exigência técnica específica.',
-    creditCost: 1, status: 'DRAFT',
+    description: 'Preenchimento para troca, instalação ou retirada de motor. Adaptação de embarcação miúda a remo para motor e alterações de motor de moto aquática possuem exigências de responsável técnico/ART no protocolo; esses documentos não são solicitados pela ferramenta quando não fornecem campos para o preenchimento automático.',
+    creditCost: 1, status: 'AVAILABLE',
     questions: questions({ tie: true, responsibilityTermCase: true, rowToMotorConversion: true }),
     documentRequirements: [
       ...requirements({ tie: true, motor: true }),
-      technicalResponsibilityDocument,
-      rowToMotorTechnicalDeclaration,
     ],
   },
   {
     id: 'comunicacao-venda-embarcacao',
     title: 'Comunicação de venda de embarcação',
-    description: 'Comunicação do vendedor conforme a NORMAM-211/DPC. Não efetiva por si só a transferência.',
+    description: 'Comunicação do vendedor conforme a NORMAM-211/DPC ou NORMAM-212/DPC, conforme o tipo de embarcação. Não efetiva por si só a transferência.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ band: false }),
     documentRequirements: requirements({
@@ -432,11 +420,18 @@ const lostTie = (serviceId: string, order: number): ServiceForm => ({
     { questionId: 'tieSituation', equals: 'extraviado' },
   ],
 });
-export const vesselServiceForms: readonly ServiceForm[] = [
+const boatServiceForms: readonly ServiceForm[] = [
   request('inscricao-embarcacao', 1, 'inscricao'),
   bsade('inscricao-embarcacao', 2, 'inscricao'),
   bade('inscricao-embarcacao', 3),
   residence('inscricao-embarcacao', 4),
+  { serviceId: 'inscricao-embarcacao',
+    formVersionId: 'termo-responsabilidade-er-2026-v1', order: 5,
+    conditions: [
+      { questionId: 'vesselType', equals: 'embarcacao' },
+      { questionId: 'initialResponsibilityTerm', equals: 'sim' },
+    ],
+    fixedValues: { 'process.constructionAction': 'construída' } },
 
   request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
   bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
@@ -515,19 +510,25 @@ export const vesselServiceForms: readonly ServiceForm[] = [
     conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
 ];
 
-// NORMAM-212 relationships are kept explicit even while Moto Aquática remains blocked.
-// They are not part of the active catalog until every corresponding PDF mapping is approved.
+// NORMAM-212 relationships validated against the 2026 forms. Orders use a separate
+// range from boat forms because the catalog invariant requires unique order per service.
 const motoRequest = (
   serviceId: string,
   order: number,
-  action: string,
+  action: string | null,
   extraConditions: ServiceForm['conditions'] = [],
+  answerBindings: ServiceForm['answerBindings'] = {},
+  extraFixedValues: Readonly<Record<string, string>> = {},
 ): ServiceForm => ({
   serviceId,
   formVersionId: 'requerimento-ma-v1',
   order,
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }, ...extraConditions],
-  fixedValues: { 'process.vesselAction': action },
+  fixedValues: {
+    ...(action ? { 'process.vesselAction': action } : {}),
+    ...extraFixedValues,
+  },
+  answerBindings,
 });
 
 const motoBdmoto = (
@@ -575,62 +576,75 @@ const motoLostTie = (
     : [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 });
 
-export const pendingMotoAquaticaServiceForms: readonly ServiceForm[] = [
-  motoRequest('inscricao-embarcacao', 1, 'inscricao'),
-  motoBdmoto('inscricao-embarcacao', 2, 'inscricao'),
-  motoResidence('inscricao-embarcacao', 3),
+export const motoAquaticaServiceForms: readonly ServiceForm[] = [
+  motoRequest('inscricao-embarcacao', 21, 'inscricao'),
+  motoBdmoto('inscricao-embarcacao', 22, 'inscricao'),
+  motoResidence('inscricao-embarcacao', 23),
 
-  motoRequest('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
-  motoBdmoto('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
+  motoRequest('transferencia-propriedade-embarcacao', 21, 'transf_prop'),
+  motoBdmoto('transferencia-propriedade-embarcacao', 22, 'transf_prop'),
   { serviceId: 'transferencia-propriedade-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 23,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
-  motoResidence('transferencia-propriedade-embarcacao', 4),
-  motoLostTie('transferencia-propriedade-embarcacao', 5),
+  motoResidence('transferencia-propriedade-embarcacao', 24),
+  motoLostTie('transferencia-propriedade-embarcacao', 25),
 
-  motoRequest('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
-  motoBdmoto('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'),
-  motoResidence('transferencia-jurisdicao-embarcacao', 3),
-  motoLostTie('transferencia-jurisdicao-embarcacao', 4),
+  motoRequest('transferencia-jurisdicao-embarcacao', 21, 'transf_jur'),
+  motoBdmoto('transferencia-jurisdicao-embarcacao', 22, 'transf_jur'),
+  motoResidence('transferencia-jurisdicao-embarcacao', 23),
+  motoLostTie('transferencia-jurisdicao-embarcacao', 24),
 
-  motoRequest('transferencia-propriedade-jurisdicao-embarcacao', 1, 'transf_prop_jur'),
-  motoBdmoto('transferencia-propriedade-jurisdicao-embarcacao', 2, 'transf_prop_jur'),
+  motoRequest('transferencia-propriedade-jurisdicao-embarcacao', 21, 'transf_prop_jur'),
+  motoBdmoto('transferencia-propriedade-jurisdicao-embarcacao', 22, 'transf_prop_jur'),
   { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 3,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 23,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
-  motoResidence('transferencia-propriedade-jurisdicao-embarcacao', 4),
-  motoLostTie('transferencia-propriedade-jurisdicao-embarcacao', 5),
+  motoResidence('transferencia-propriedade-jurisdicao-embarcacao', 24),
+  motoLostTie('transferencia-propriedade-jurisdicao-embarcacao', 25),
 
   // NORMAM-212 2.2: BDMOTO is required on renewal only when characteristics changed.
-  motoRequest('renovacao-tie-embarcacao', 1, 'renovacao'),
-  motoBdmoto('renovacao-tie-embarcacao', 2, 'alteracao_dados',
-    [{ questionId: 'dataChanged', equals: 'sim' }]),
-  motoResidence('renovacao-tie-embarcacao', 3),
-  motoLostTie('renovacao-tie-embarcacao', 4),
+  motoRequest('renovacao-tie-embarcacao', 21, 'renovacao', [], {
+    'process.renewalCharacteristicsChanged': 'motoCharacteristicsChanged',
+  }),
+  motoBdmoto('renovacao-tie-embarcacao', 22, 'alteracao_dados',
+    [{ questionId: 'motoCharacteristicsChanged', equals: 'sim' }]),
+  motoResidence('renovacao-tie-embarcacao', 23),
+  motoLostTie('renovacao-tie-embarcacao', 24),
 
   // Old/non-digital TIE loss follows renewal; declaration substitutes the missing original.
-  motoRequest('segunda-via-tie-embarcacao', 1, 'segunda_via'),
-  motoLostTie('segunda-via-tie-embarcacao', 2, false),
-  motoBdmoto('segunda-via-tie-embarcacao', 3, 'alteracao_dados',
-    [{ questionId: 'dataChanged', equals: 'sim' }]),
-  motoResidence('segunda-via-tie-embarcacao', 4),
+  motoRequest('segunda-via-tie-embarcacao', 21, 'segunda_via', [], {
+    'process.tieSecondCopyReason': 'motoTieSecondCopyReason',
+  }),
+  motoLostTie('segunda-via-tie-embarcacao', 22, false),
+  motoBdmoto('segunda-via-tie-embarcacao', 23, 'alteracao_dados',
+    [{ questionId: 'motoCharacteristicsChanged', equals: 'sim' }]),
+  motoResidence('segunda-via-tie-embarcacao', 24),
 
-  motoRequest('alteracao-dados-embarcacao', 1, 'alteracao_dados'),
-  motoBdmoto('alteracao-dados-embarcacao', 2, 'alteracao_dados'),
-  motoResidence('alteracao-dados-embarcacao', 3),
-  motoLostTie('alteracao-dados-embarcacao', 4),
+  motoRequest('alteracao-dados-embarcacao', 21, null, [], {
+    'process.dataChangeTarget': 'motoDataChangeTarget',
+  }),
+  motoBdmoto('alteracao-dados-embarcacao', 22, 'alteracao_dados'),
+  motoResidence('alteracao-dados-embarcacao', 23),
+  motoLostTie('alteracao-dados-embarcacao', 24),
 
-  motoRequest('alteracao-motor-embarcacao', 1, 'alteracao_dados'),
-  motoBdmoto('alteracao-motor-embarcacao', 2, 'alteracao_dados'),
-  motoResidence('alteracao-motor-embarcacao', 3),
-  motoLostTie('alteracao-motor-embarcacao', 4),
+  motoRequest('alteracao-motor-embarcacao', 21, null, [], {}, {
+    'process.dataChangeTarget': 'dados_embarcacao',
+  }),
+  motoBdmoto('alteracao-motor-embarcacao', 22, 'alteracao_dados'),
+  motoResidence('alteracao-motor-embarcacao', 23),
+  motoLostTie('alteracao-motor-embarcacao', 24),
 
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'comunicacao-transferencia-ma-v1', order: 1,
+    formVersionId: 'comunicacao-transferencia-ma-v1', order: 21,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
   { serviceId: 'comunicacao-venda-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 2,
+    formVersionId: 'autorizacao-transferencia-ma-v1', order: 22,
     conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
+];
+
+export const vesselServiceForms: readonly ServiceForm[] = [
+  ...boatServiceForms,
+  ...motoAquaticaServiceForms,
 ];
 
 export const vesselServiceIds = vesselServices.map((service) => service.id);

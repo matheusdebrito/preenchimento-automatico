@@ -4,20 +4,17 @@ import { validateCatalog } from './validate-catalog.js';
 import { PDFDocument } from 'pdf-lib';
 import { fillPdf } from '../pdf/fill-pdf.js';
 import { validateMappedFieldValues } from './field-validation.js';
+import { publicService } from './public-catalog.js';
+import { serviceFormValues } from './service-form-values.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-describe('draft form map coordinates', () => {
-  it('all draft placements refer to known semantic fields and remain unpublished', () => {
-    expect(catalog.mappings).toHaveLength(14);
+describe('official form map coordinates', () => {
+  it('mantém todos os mapas homologados e o catálogo publicável', () => {
+    expect(catalog.mappings).toHaveLength(17);
     expect(validateCatalog(catalog)).toEqual([]);
-    expect(catalog.mappings.filter((m) =>
-      m.formVersionId.includes('-er-2026-')).every((m) =>
-      m.status === 'TESTED')).toBe(true);
-    expect(catalog.mappings.filter((m) =>
-      !m.formVersionId.includes('-er-2026-')).every((m) =>
-      m.status === 'DRAFT')).toBe(true);
-    expect(catalog.services[0]?.status).toBe('DRAFT');
+    expect(catalog.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
+    expect(catalog.services.every((service) => service.status === 'AVAILABLE')).toBe(true);
   });
   it('positions stay within the dimensions of the real official PDF pages', async () => {
     for (const mapping of catalog.mappings) {
@@ -39,20 +36,20 @@ describe('draft form map coordinates', () => {
   });
   it('mantém cada formulário independente com campos essenciais explícitos', () => {
     const required: Record<string, readonly string[]> = {
-      'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
-      'bdmoto-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
+      'bdmoto-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
       'autorizacao-transferencia-ma-v1': ['person.fullName', 'seller.fullName', 'person.cpf', 'seller.cpf'],
       'comunicacao-transferencia-ma-v1': ['person.fullName', 'seller.fullName', 'person.cpf', 'seller.cpf'],
       'declaracao-perda-tie-ma-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name'],
       'declaracao-residencia-ma-v1': ['person.fullName', 'person.cpf', 'person.address'],
       'bade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
-      'bsade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration', 'vessel.hullId'],
-      'requerimento-embarcacao-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'bsade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
+      'requerimento-embarcacao-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
       'declaracao-residencia-er-2026-v1': ['person.fullName', 'person.cpf', 'person.address'],
       'declaracao-perda-tie-er-2026-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name', 'vessel.registration'],
       'comunicacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
       'autorizacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
-      'termo-responsabilidade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
+      'termo-responsabilidade-er-2026-v1': ['vessel.name', 'vessel.builderName'],
     };
     expect(catalog.mappings).toHaveLength(
       catalog.versions.filter((version) => version.status === 'VERIFIED').length,
@@ -129,6 +126,148 @@ describe('draft form map coordinates', () => {
     }
   }, 30_000);
 
+  it('gera pacotes representativos de todos os serviços publicados', async () => {
+    const cases = [
+      ['inscricao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', initialResponsibilityTerm: 'nao',
+      }],
+      ['inscricao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'maior_12_menor_24m',
+        initialResponsibilityTerm: 'sim',
+      }],
+      ['transferencia-propriedade-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+      }],
+      ['transferencia-jurisdicao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'maior_6_ate_12m', tieSituation: 'regular',
+      }],
+      ['transferencia-propriedade-jurisdicao-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'extraviado',
+      }],
+      ['renovacao-tie-embarcacao', {
+        vesselType: 'embarcacao', tieSituation: 'regular', dataChanged: 'nao',
+      }],
+      ['segunda-via-tie-embarcacao', {
+        vesselType: 'embarcacao', dataChanged: 'nao',
+      }],
+      ['alteracao-dados-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+        responsibilityTermCase: 'construcao_artesanal',
+      }],
+      ['alteracao-motor-embarcacao', {
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+        responsibilityTermCase: 'nao', rowToMotorConversion: 'nao',
+      }],
+      ['comunicacao-venda-embarcacao', { vesselType: 'embarcacao' }],
+      ['inscricao-exame-amador', { amateurCategory: 'arrais' }],
+      ['renovacao-cha-amador', { amateurCategory: 'mestre', chaSituation: 'regular' }],
+      ['emissao-cha-veleiro', {}],
+      ['concessao-cha-equivalencia', { amateurCategory: 'capitao' }],
+      ['renovacao-cha-agregacao-mta', {
+        amateurCategory: 'arrais', motonautaDeclaration: 'sim',
+      }],
+    ] as const;
+
+    for (const [serviceId, answers] of cases) {
+      const service = publicService(catalog, serviceId, answers);
+      expect(service, serviceId).not.toBeNull();
+
+      const reviewedValues = Object.fromEntries((service?.reviewFields ?? [])
+        .filter((field) => field.required)
+        .map((field) => {
+          const definition = catalog.fields.find((item) => item.id === field.id);
+          const value = definition?.validationRuleId === 'cpf' || field.id.endsWith('.cpf')
+            ? '123.456.789-09'
+            : definition?.validationRuleId === 'simNao' ? 'nao'
+              : field.valueKind === 'date' ? '15/10/2026'
+                : field.valueKind === 'boolean' ? 'true'
+                  : field.id.endsWith('fullName') ? 'MARIA TESTE'
+                    : field.id.includes('registration') ? 'RJ123456'
+                      : field.id.includes('hullId') ? 'BR-ABC-12345'
+                        : field.id.includes('address') ? 'RUA TESTE'
+                          : field.id === 'amateur.category' ? 'Mestre-Amador'
+                            : field.id === 'amateur.chaNumber' ? 'CHA123456'
+                              : 'DADO TESTE';
+          return [field.id, value];
+        }));
+
+      for (const versionId of service?.formVersionIds ?? []) {
+        const relation = catalog.serviceForms.find((item) =>
+          item.serviceId === serviceId && item.formVersionId === versionId);
+        const mapping = catalog.mappings.find((item) => item.formVersionId === versionId)!;
+        const version = catalog.versions.find((item) => item.id === versionId)!;
+        const values = serviceFormValues(relation, answers, reviewedValues);
+        validateMappedFieldValues(catalog.fields, mapping.placements, values);
+        const original = await readFile(resolve(process.cwd(), '..', version.templatePath!));
+        await expect(fillPdf(original, mapping.placements, values), serviceId + '/' + versionId)
+          .resolves.toBeInstanceOf(Uint8Array);
+      }
+    }
+  }, 60_000);
+
+  it('gera todos os pacotes liberados de moto aquática com marcações de serviço válidas', async () => {
+    const cases = [
+      ['inscricao-embarcacao', { vesselType: 'moto_aquatica' }],
+      ['transferencia-propriedade-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['transferencia-jurisdicao-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['transferencia-propriedade-jurisdicao-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['renovacao-tie-embarcacao', {
+        vesselType: 'moto_aquatica', tieSituation: 'regular',
+        motoCharacteristicsChanged: 'nao',
+      }],
+      ['renovacao-tie-embarcacao', {
+        vesselType: 'moto_aquatica', tieSituation: 'extraviado',
+        motoCharacteristicsChanged: 'sim',
+      }],
+      ['segunda-via-tie-embarcacao', {
+        vesselType: 'moto_aquatica', motoCharacteristicsChanged: 'nao',
+        motoTieSecondCopyReason: 'extravio',
+      }],
+      ['alteracao-dados-embarcacao', {
+        vesselType: 'moto_aquatica', tieSituation: 'regular',
+        motoDataChangeTarget: 'ambos',
+      }],
+      ['alteracao-motor-embarcacao',
+        { vesselType: 'moto_aquatica', tieSituation: 'regular' }],
+      ['comunicacao-venda-embarcacao', { vesselType: 'moto_aquatica' }],
+    ] as const;
+
+    for (const [serviceId, answers] of cases) {
+      const service = publicService(catalog, serviceId, answers);
+      expect(service, serviceId).not.toBeNull();
+      const reviewedValues = Object.fromEntries((service?.reviewFields ?? [])
+        .filter((field) => field.required)
+        .map((field) => {
+          const definition = catalog.fields.find((item) => item.id === field.id);
+          const value = definition?.validationRuleId === 'cpf' || field.id.endsWith('.cpf')
+            ? '123.456.789-09'
+            : definition?.validationRuleId === 'simNao' ? 'nao'
+              : field.valueKind === 'date' ? '15/10/2026'
+                : field.valueKind === 'boolean' ? 'true'
+                  : field.id.endsWith('fullName') ? 'MARIA TESTE'
+                    : field.id.includes('registration') ? 'RJ123456'
+                      : field.id.includes('hullId') ? 'BR-ABC-12345'
+                        : field.id.includes('address') ? 'RUA TESTE'
+                          : 'DADO TESTE';
+          return [field.id, value];
+        }));
+
+      for (const versionId of service?.formVersionIds ?? []) {
+        const relation = catalog.serviceForms.find((item) =>
+          item.serviceId === serviceId && item.formVersionId === versionId);
+        const mapping = catalog.mappings.find((item) => item.formVersionId === versionId)!;
+        const version = catalog.versions.find((item) => item.id === versionId)!;
+        const values = serviceFormValues(relation, answers, reviewedValues);
+        validateMappedFieldValues(catalog.fields, mapping.placements, values);
+        const original = await readFile(resolve(process.cwd(), '..', version.templatePath!));
+        await expect(fillPdf(original, mapping.placements, values)).resolves.toBeInstanceOf(Uint8Array);
+      }
+    }
+  }, 30_000);
+
   it('impede a impressão de texto excessivo em cada modelo mapeado', async () => {
     for (const mapping of catalog.mappings) {
       const version = catalog.versions.find((v) => v.id === mapping.formVersionId)!;
@@ -137,7 +276,7 @@ describe('draft form map coordinates', () => {
         p.kind === 'COORDINATES' && p.markWhen === undefined)!;
       await expect(fillPdf(original, [{ ...firstText, required: true }],
         { [firstText.fieldId]: 'NOME'.repeat(100) }))
-        .rejects.toThrow(/excede|comprimento/);
+        .rejects.toThrow(/text_too_long|text_overflow/);
     }
   }, 30_000);
 

@@ -37,9 +37,12 @@ describe('OpenAI document extractor', () => {
     const tie = await fixture('tie.pdf', 'pdf', 'tie');
 
     const fakeFetch = vi.fn(async (
-      _input: string | URL | Request,
-      _init?: RequestInit,
-    ) => new Response(JSON.stringify({
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      void input;
+      void init;
+      return new Response(JSON.stringify({
       output: [{
         type: 'message',
         content: [{
@@ -98,9 +101,10 @@ describe('OpenAI document extractor', () => {
       }],
       usage: { input_tokens: 1200, output_tokens: 130, total_tokens: 1330 },
     }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    }));
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
 
     const result = await extractDocumentsWithOpenAi([
       {

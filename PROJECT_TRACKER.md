@@ -1,16 +1,16 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 29/10/2026. Matriz serviço -> formulário auditada contra as NORMAM-211/212 anexadas pelo usuário. Fluxos de barco homologados preservados; inscrição para exame de amador voltou a DRAFT por ausência de exigência expressa do 5-H no item 5.4.1; matriz de Moto Aquática foi completada, mas permanece bloqueada enquanto seus seis mapeamentos PDF estiverem DRAFT. Modelo de créditos avulsos e pacotes; sem assinatura, sem planos empresariais e sem integração oficial com a Marinha.
+> Atualização: 29/10/2026. Matriz serviço -> formulário revalidada contra as NORMAM-211/212 completas fornecidas pelo usuário e evidência operacional atual da Marinha. Os 14 serviços catalogados estão `AVAILABLE`, as 17 versões de formulário estão `VERIFIED` e os 17 mappings estão `APPROVED`. Moto Aquática usa os mesmos cards de embarcação, o Anexo 3-C vigente substituiu o modelo antigo e a inscrição em exame usa o 5-H sem marcar uma opção inexistente no formulário. O próximo portão é a execução dos gates automatizados da branch e o QA manual na aplicação web.
 >
-> O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de OCR abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
+> O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de análise documental abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
 ## 0. Protocolo de continuidade
 
 Seguir `AGENTS.md`, `MVP_PLAN.md`, `UI_DESIGN_GUIDE.md` e os catálogos técnicos. Conferir branch, alterações locais e último commit antes de editar; preservar trabalho do usuário. Inspecionar, planejar, implementar a menor alteração coesa, validar e registrar resultados reais. Não inventar testes executados nem marcar fases completas a partir de código escrito.
 
-Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a extração funcionar. Não versionar imagens/documentos pessoais, texto OCR ou valores reais. Testes automatizados e CI usam dados fictícios.
+Os checklists detalhados das fases não alteradas continuam vinculantes no [histórico integral](PROJECT_TRACKER_HISTORY_2026-10-27.md). Atualizar este quadro, o checklist afetado e o registro na mesma entrega. Não sacrificar segurança, privacidade ou revisão humana para fazer a análise documental funcionar. Não versionar imagens/documentos pessoais, arquivos enviados, dados extraídos ou valores reais. Testes automatizados e CI usam dados fictícios.
 
-A autorização atual inclui consolidar a arquitetura reutilizável, auditar os PDFs contra as NORMAM-211/212 completas fornecidas pelo usuário e evoluir OCR/document understanding, sem liberar produção, cobrar ou publicar dados pessoais. A auditoria revogou a antiga aprovação do 3-C incorreto; os portões de produção continuam vinculantes. Em 27/10, o usuário também solicitou explicitamente console.log dos dados para diagnóstico; a exceção fica restrita ao console do navegador no QA local, sem logs de servidor ou texto OCR bruto.
+A autorização atual inclui consolidar a arquitetura reutilizável e auditar os PDFs contra as NORMAM-211/212 completas fornecidas pelo usuário. A implementação OpenAI-only remove o PaddleOCR/Tesseract, parsers locais, sidecar Python e página de inspeção; PDFs/imagens são enviados diretamente à Responses API, com campos autorizados por documento/serviço, validação determinística e revisão humana. O 3-C incorreto foi substituído pelo Anexo 3-C vigente. A migração está no PR #58, empilhado sobre o PR #56; o PR #57 anterior foi substituído por esta branch corrigida. CI completo verde; não foi feito merge nem deploy. Os portões de segurança, privacidade, custos, infraestrutura e produção continuam vinculantes.
 
 ## 1. Quadro geral de progresso
 
@@ -20,10 +20,10 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] Concluída; evidências anteriores preservadas |
 | 02 | PDFs oficiais e versões, sem aprovar mapeamento | 01 | [x] Concluída; portão humano anterior preservado |
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — 7 mapas NORMAM-211 APPROVED; 3-C corrigido voltou a DRAFT; 6 mapas NORMAM-212 ainda DRAFT |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [x] Concluída para o catálogo atual — 17/17 versões VERIFIED e 17/17 mappings APPROVED; novo serviço exige novo gate documental/visual |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
-| 06 | OCR e extração estruturada | 05 | [ ] Parcial — PaddleOCR é o único motor; identidade, TIE/TIEM e residência usam extração estruturada/semântica; venda ainda usa adaptador legado; corpus amplo pendente |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — console QA distingue nova extração de recuperação, CI aprovado; E2E/browser/mobile real pendentes |
+| 06 | Análise documental estruturada | 05 | [ ] Parcial — OpenAI Responses API como único provedor; testes simulados; homologação de precisão, custo, latência e privacidade ainda pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — revisão humana preservada; E2E/browser/mobile real e homologação OpenAI pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
 | 10 | Pagamentos reais | 09 e autorização | [ ] Pendente |
@@ -31,12 +31,12 @@ A autorização atual inclui consolidar a arquitetura reutilizável, auditar os 
 | 12 | Segurança de produção e segredos | 11 | [ ] Pendente |
 | 13 | LGPD, políticas e retenção | 09, 11 e revisão responsável | [ ] Pendente |
 | 14 | Observabilidade, backup e recuperação | 11, 12 | [ ] Pendente |
-| 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — auto-tuning OCR implementado; benchmark real de CPU/RAM/latência ainda obrigatório |
+| 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — medir tokens, custo por documento, latência, concorrência e limites da OpenAI |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — matriz serviço/formulário auditada contra NORMAM-211/212; 7 serviços de barco ativos, alterações seguem DRAFT com 3-C restrito aos casos previstos no item 2.12.1, inscrição para exame de amador voltou a DRAFT, matriz de Moto Aquática completa mas bloqueada por mapeamentos DRAFT e QA manual pendente |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 14/14 serviços catalogados disponíveis e formulários homologados; gates automatizados desta branch e QA manual navegador/celular ainda pendentes antes de tratar a expansão como encerrada |
 
-**Correção de estado:** a marcação anterior de Fase 06 como concluída devido ao fallback por coordenadas fixas era incompatível com os testes e com as pendências do próprio checklist. O estado correto é **Parcial**. A reprodução anterior no núcleo e o CI de código não comprovam resolução no ambiente do usuário, que voltou a relatar nome vazio no formulário. Os formulários e o serviço de produção permanecem DRAFT; QA local mantém AMOSTRA e revisão explícita.
+**Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 14 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
 
 ## 2. Checklists preservados das outras fases
 
@@ -47,6 +47,19 @@ Fases 07–09: seguir a [revisão integrada e suas pendências](PROJECT_TRACKER_
 Fases 10–18 e expansão: todos os critérios, dependências e autorizações anteriores permanecem no [plano histórico completo](PROJECT_TRACKER_HISTORY_2026-10-27.md). Não avançar de fase apenas por esta correção.
 
 ## 3. Fase 06 — checklist atual
+
+**Implementação vigente — OpenAI-only (30/10/2026):**
+- [x] Integrar o extrator OpenAI Responses API como único provedor de interpretação documental.
+- [x] Remover serviço PaddleOCR/Tesseract, parsers locais, sidecar Python, endpoint e página de inspeção.
+- [x] Enviar somente arquivos com campos aplicáveis e autorizados por `allowedFieldIds`.
+- [x] Preservar validação determinística, proveniência, resolução de conflitos e revisão humana.
+- [x] Atualizar Compose, ambiente de exemplo, documentação e CI sem chamadas reais à OpenAI nos testes.
+- [ ] Confirmar CI completo na branch empilhada sobre o PR #56; corrigir regressões reais sem enfraquecer as expectativas.
+- [ ] Homologar documentos sintéticos e amostras autorizadas por tipo e campo; medir precisão, falsos positivos/negativos, latência, tokens e custo.
+- [ ] Confirmar limites de tamanho/páginas, timeout, concorrência, falhas da API, retenção temporária e avisos de privacidade antes de produção.
+
+**Histórico:** os itens seguintes registram a implementação OCR anterior e foram preservados como trilha de auditoria; não descrevem o runtime atual.
+
 
 As evidências históricas de PDF nativo, rasterização, CPF, TIE, endereço, venda, mapeamento, conflitos e diagnósticos continuam no [checklist anterior](PROJECT_TRACKER_HISTORY_2026-10-27.md#fase-06--pdf-textual-ocr-e-extração-estruturada). Os marcos antigos de leitura de identidade descrevem implementações substituídas pela correção atual, não o algoritmo vigente.
 
@@ -119,29 +132,28 @@ gates normativos, visuais e de produção.
 - [x] Garantir perfil OCR em todos os requisitos da expansão; documentos de apoio usam `supporting-document` e não inventam campos.
 - [x] Exibir no frontend os serviços planejados sem criar links de geração antes da homologação.
 - [x] Preservar os modelos oficiais já homologados e substituir o 3-C incorreto pelo Termo de Responsabilidade de Construção/Alteração.
-- [x] Manter sete versões/mapas NORMAM-211 em `VERIFIED/APPROVED`.
+- [x] Manter as versões/mapas NORMAM-211 usados pelo catálogo em `VERIFIED/APPROVED`, incluindo o Anexo 3-C vigente.
 - [x] Revogar a antiga aprovação do 3-C, descartar suas coordenadas e retornar a versão corrigida para `IDENTIFIED/DRAFT`.
 - [x] Corrigir BADE/BSADE: BSADE até 6 m; BADE acima de 6 m.
 - [x] Manter o domínio do MVP em um único motor e impedir reintrodução silenciosa de motor2/3/4.
 - [x] Remover fotos da embarcação do upload da aplicação; exigência oficial permanece apenas na documentação do procedimento.
 - [x] Validar os bytes versionados do 3-C correto; blob Git comparado byte a byte com o PDF enviado pelo usuário.
-- [x] Refazer o FormMapping do 3-C correto, revisar amostra sintética local e promover para `TESTED`.
+- [x] Refazer o FormMapping do 3-C correto, substituir o template antigo, revisar a amostra no formulário oficial vigente e promover para `APPROVED`.
 - [x] Fixar o MVP em um único motor; Motor 2–4 e caixas relacionadas permanecem fora do domínio e serão tratados em evolução futura.
-- [x] Manter sete serviços para embarcação/barco; alteração de dados, alteração de motor, moto aquática e inscrição >12 m permanecem em validação enquanto 3-C/NORMAM-212 não estiverem homologados.
+- [x] Liberar os nove serviços de embarcação/barco e os equivalentes de Moto Aquática após homologação do 3-C e dos seis mappings NORMAM-212.
 - [x] Auditar a matriz de formulários de todos os serviços atuais contra as NORMAM-211/212 fornecidas pelo usuário.
 - [x] Preservar renovação TIE/TIEM com BADE/BSADE somente quando houver alteração de características.
 - [x] Restringir o 3-C aos casos expressos no item 2.12.1 (estaleiro comprovadamente extinto ou construção artesanal) e registrar a exigência técnica específica da adaptação de remo para motor.
-- [x] Retornar inscrição para exame de amador a DRAFT até existir evidência operacional específica para uso do 5-H.
-- [x] Completar a matriz pendente NORMAM-212 para inscrição, transferências, renovação, extravio, alterações e comunicação de venda sem liberar Moto Aquática prematuramente.
+- [x] Localizar evidência operacional oficial de CP/DL/AG para o uso do 5-H na inscrição em exame e liberar o serviço sem inferir uma caixa inexistente no formulário.
+- [x] Completar e ativar a matriz NORMAM-212 para inscrição, transferências, renovação, perda/roubo/extravio, alterações e comunicação de venda após QA visual dos seis mappings e das caixas de serviço do 2-A/2-B.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
-**Aceite parcial atual:** sete mapas NORMAM-211 permanecem `APPROVED`. O
-3-C correto está `IDENTIFIED/DRAFT` e sua antiga homologação foi revogada.
-Sete serviços permanecem liberados nos cenários cobertos. Permanecem fail-closed:
-moto aquática, alteração de dados, alteração de motor, inscrição >12 m e inscrição
-de embarcação construída pelo próprio interessado. QA manual em navegador/celular
-continua pendente.
+**Aceite parcial atual:** o catálogo atual está pronto para QA web: 14 serviços
+`AVAILABLE`, 17 versões `VERIFIED`, 17 mappings `APPROVED`, Moto Aquática ativa e
+Anexo 3-C vigente. A expansão ainda não é marcada como concluída porque o workflow
+automatizado desta branch e o QA manual em navegador/celular continuam pendentes.
+Casos acima de 24 m / registro no Tribunal Marítimo permanecem fora do escopo atual.
 
 ## 3.2. Registro de execução — 28/10/2026, catálogo dos serviços NORMAM-211
 
@@ -211,7 +223,7 @@ caixas SIM/NÃO manuais em vez de inferir informação ausente. Fotos da embarca
 também foram retiradas do upload da aplicação, sem afirmar dispensa no
 procedimento oficial.
 
-**OCR/document understanding:** identidade passou a extrair data de nascimento;
+**Análise documental:** histórico anterior da implementação OCR; substituído pela arquitetura OpenAI-only descrita acima.
 TIE/TIEM passou a reconhecer tipo, área de navegação, pontal, material do casco
 e tipo de propulsão nos layouts confirmados. O modelo `tie digital 2.pdf`
 entrou no teste de referência. Revisão humana permanece obrigatória.
@@ -535,9 +547,10 @@ blobs Git foram comparados byte a byte com os arquivos locais usados no QA:
 - Anexo 5-H: Git blob `0eeb17b1f83f17ac788d68d3fdeeb98e26868bd4`, SHA-256
   `06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF`.
 
-As três `FormVersion` estão `VERIFIED`. Os mappings 5-D e 5-H foram promovidos
-para `APPROVED` após QA visual e autorização explícita do responsável pelo produto para
-liberar Renovação da CHA. O 3-C permanece `TESTED`.
+As três `FormVersion` estavam `VERIFIED` nesse ponto do histórico. Os mappings 5-D e
+5-H já haviam sido promovidos para `APPROVED`; o 3-C ainda permanecia `TESTED` naquele
+snapshot. Esse estado do 3-C foi posteriormente substituído pela homologação registrada
+abaixo, após troca do template antigo pelo Anexo 3-C oficial vigente.
 
 
 ## Registro de execução — 29/10/2026, recuperação da verificação de sessão
@@ -575,3 +588,46 @@ isolados.
 mesmo serviço e invalidado o catálogo durante o startup da API. A remoção elimina essa
 segunda fonte de comportamento. Serviços e mappings só passam a `AVAILABLE/APPROVED`
 pelo catálogo oficial após seus gates de homologação.
+
+
+## Registro de execução — 29/10/2026, homologação integral dos serviços em validação
+
+### Estado do catálogo após a revisão
+
+- [x] 14/14 serviços catalogados em `AVAILABLE`.
+- [x] 17/17 versões de formulários em `VERIFIED`.
+- [x] 17/17 mappings em `APPROVED`.
+- [x] Nenhuma opção de serviço permanece bloqueada por `unavailableOptions` no catálogo oficial.
+- [x] Moto Aquática liberada nos mesmos nove cards de serviços de embarcação por meio de `vesselType`.
+- [x] Inscrição para exame de Arrais/Mestre/Capitão liberada com o Anexo 5-H, sustentada pela NORMAM e por procedimentos operacionais atuais de CP/DL/AG.
+- [x] Alteração de dados e alteração de motor de embarcação liberadas com as condições normativas do Anexo 3-C.
+- [x] Faixa de embarcação maior que 12 m e menor que 24 m liberada na inscrição inicial.
+- [x] Opção do Anexo 3-C na inscrição inicial liberada, incluindo construção pelo interessado e uso do termo para dispensa de vistoria de embarcação de médio porte.
+- [x] Documentos apenas de protocolo (GRU, ART, atestados/certificados sem campos automáticos) não são solicitados como uploads de OCR.
+
+### Correções encontradas durante a homologação
+
+1. **Template 3-C incorreto:** o PDF anteriormente versionado era um termo antigo de inscrição/transferência, e não o Anexo 3-C vigente. O binário foi substituído pelo **Termo de Responsabilidade de Construção/Alteração** da NORMAM-211/DPC 2026, SHA-256 `452A2248A98CD5157BA222184BE29D2A0C31F0C7CECD1F3EDEA8F39DA1E15A53`. O mapping foi revisado visualmente e promovido para `APPROVED`.
+2. **Moto Aquática incompleta fora da transferência:** a revisão visual anterior cobria alinhamento, mas o Requerimento 2-A e o BDMOTO não possuíam todas as marcações semânticas usadas por inscrição, jurisdição, renovação, 2ª via e alteração de dados. Os mappings foram atualizados para revisão v2.
+3. **Inscrição inicial bloqueada por número inexistente:** `vessel.registration` deixou de ser obrigatório no 2-A/BDMOTO e também nos formulários de barco reutilizados pela inscrição inicial. O campo permanece disponível nos serviços posteriores.
+4. **2ª via de moto aquática:** passou a perguntar explicitamente perda, roubo ou extravio para marcar o motivo correspondente no Anexo 2-A.
+5. **Alteração cadastral de moto aquática:** passou a distinguir dados da moto aquática, do proprietário ou de ambos, marcando corretamente o Anexo 2-A; o BDMOTO usa `Atualização de dados`.
+6. **Renovação de moto aquática:** o BDMOTO continua condicionado exclusivamente à alteração de características, conforme item 2.2 da NORMAM-212.
+7. **Frontend:** removidas mensagens residuais do antigo QA runtime; serviços liberados são apresentados pelo fluxo normal com custo de 1 crédito.
+
+### Cobertura adicionada
+
+- [x] Testes de catálogo exigem 14 serviços disponíveis, 17 mappings aprovados e catálogo sem erros.
+- [x] Testes de projeção pública cobrem os pacotes de formulários de barco e moto aquática.
+- [x] Teste de geração percorre todos os pacotes liberados de moto aquática, aplica `serviceFormValues` e chama o motor real `fillPdf` para detectar opções de checkbox inválidas.
+- [x] Testes de mapping mantêm coordenadas dentro das páginas oficiais e campos obrigatórios compatíveis com inscrição inicial.
+
+### Gate técnico da homologação
+
+O workflow de CI foi ajustado para executar também em `pull_request`, mantendo
+`workflow_dispatch` para uso manual. A branch só deve ser tratada como validada para
+merge quando o CI do **head definitivo** concluir com sucesso.
+
+A homologação normativa/visual acima é independente desse gate, mas typecheck, lint,
+testes, build, integração, assets de referência, Compose smoke e QA sintético de PDF
+continuam sendo evidências obrigatórias antes do merge.

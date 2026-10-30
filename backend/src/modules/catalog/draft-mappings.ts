@@ -1,28 +1,32 @@
 import type { FormMapping, FieldPlacement } from './contracts.js';
 
 /**
- * Draft placements transcribed from 850x1200 render previews (A4 at 110 dpi).
- * Coordinates are PDF points; page index begins at zero. Review EACH mapping
- * using rendered synthetic outputs before changing status from DRAFT.
+ * Placements transcribed from 850x1200 render previews (A4 at 110 dpi).
+ * Coordinates are PDF points; page index begins at zero. The six NORMAM-212
+ * mappings were reviewed page-by-page against the 2026 official templates and
+ * synthetic CI renders before approval.
  */
 const px = (value: number): number => Math.round(value * 0.7 * 10) / 10;
 const py = (value: number): number => Math.round((1200 - value) * 0.7017 * 10) / 10;
 function coordinate(
   fieldId: string, x: number, baselineY: number, maxWidthPx: number,
   fontSize: number, pageIndex = 0, required = false, markWhen?: string,
+  markAliases?: readonly string[],
 ): FieldPlacement {
   return {
     kind: 'COORDINATES', fieldId, required, pageIndex,
     x: px(x), y: py(baselineY), maxWidth: px(maxWidthPx), fontSize,
     ...(markWhen === undefined ? {} : { markWhen }),
+    ...(markAliases === undefined ? {} : { markAliases }),
   };
 }
 
 export const draftMappings: readonly FormMapping[] = [
   {
-    id: 'requerimento-ma-v1-map-v1', formVersionId: 'requerimento-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/requerimento-ma-v1.md',
+    id: 'requerimento-ma-v1-map-v1', formVersionId: 'requerimento-ma-v1', revision: 'v2',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("person.fullName", 176, 321, 557, 8, 0, true),
       coordinate("person.address", 202, 345, 283, 7, 0),
@@ -35,20 +39,38 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("person.postalCode", 354, 392, 133, 7, 0),
       coordinate("person.phone", 520, 392, 48, 5.8, 0),
       coordinate("person.cpf", 700, 392, 66, 5.2, 0, true),
-      coordinate("vessel.registration", 232, 466, 324, 7.6, 0, true),
+      coordinate("vessel.registration", 232, 466, 324, 7.6, 0),
       coordinate("vessel.name", 177, 488, 375, 7.6, 0, true),
       coordinate("vessel.length", 241, 515, 134, 7.5, 0),
       coordinate("vessel.hullId", 230, 536, 340, 7.5, 0, true),
-      coordinate("process.transferOwnership", 137, 655, 20, 9, 0),
+      coordinate("process.vesselAction", 137, 633, 20, 9, 0, false, "inscricao"),
+      coordinate("process.vesselAction", 137, 655, 20, 9, 0, false, "transf_prop"),
+      coordinate("process.vesselAction", 371, 655, 20, 9, 0, false, "transf_jur"),
+      coordinate("process.vesselAction", 614, 655, 20, 9, 0, false, "transf_prop_jur"),
+      coordinate("process.vesselAction", 137, 752, 20, 9, 0, false, "renovacao"),
+      coordinate("process.renewalCharacteristicsChanged", 137, 776, 20, 9, 0, false, "sim"),
+      coordinate("process.renewalCharacteristicsChanged", 192, 776, 20, 9, 0, false, "nao"),
+      coordinate("process.vesselAction", 137, 800, 20, 9, 0, false, "segunda_via"),
+      coordinate("process.tieSecondCopyReason", 371, 800, 20, 9, 0, false, "perda"),
+      coordinate("process.tieSecondCopyReason", 457, 800, 20, 9, 0, false, "roubo"),
+      coordinate("process.tieSecondCopyReason", 548, 800, 20, 9, 0, false, "extravio"),
+      coordinate("process.dataChangeTarget", 137, 850, 20, 9, 0, false,
+        "dados_embarcacao", ["ambos"]),
+      coordinate("process.dataChangeTarget", 506, 850, 20, 9, 0, false,
+        "dados_proprietario", ["ambos"]),
       coordinate("person.placeDate", 132, 1011, 284, 8, 0),
     ],
   },
   {
-    id: 'bdmoto-v1-map-v1', formVersionId: 'bdmoto-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/bdmoto-v1.md',
+    id: 'bdmoto-v1-map-v1', formVersionId: 'bdmoto-v1', revision: 'v2',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
-      coordinate("process.transferOwnership", 338, 376, 20, 10, 0),
+      coordinate("process.inscription", 145, 376, 20, 10, 0, false, "true"),
+      coordinate("process.transferProperty", 338, 376, 20, 10, 0, false, "true"),
+      coordinate("process.updateVesselData", 606, 376, 20, 10, 0, false, "true"),
+      coordinate("process.transferJurisdiction", 338, 408, 20, 10, 0, false, "true"),
       coordinate("person.fullName", 310, 461, 442, 7.5, 0, true),
       coordinate("person.address", 205, 485, 545, 7.4, 0, true),
       coordinate("person.city", 182, 509, 130, 7.2, 0),
@@ -67,7 +89,7 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("seller.fullName", 207, 1054, 300, 6.4, 0),
       coordinate("seller.cpf", 614, 1054, 141, 6.2, 0),
       coordinate("vessel.name", 169, 155, 156, 6.6, 1, true),
-      coordinate("vessel.registration", 419, 155, 95, 6.5, 1, true),
+      coordinate("vessel.registration", 419, 155, 95, 6.5, 1),
       coordinate("vessel.year", 674, 155, 84, 6, 1),
       coordinate("vessel.length", 236, 178, 88, 6.1, 1),
       coordinate("vessel.hullId", 411, 178, 104, 6, 1, true),
@@ -80,8 +102,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'autorizacao-transferencia-ma-v1-map-v1', formVersionId: 'autorizacao-transferencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/autorizacao-transferencia-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("vessel.name", 256, 213, 176, 7, 0, true),
       coordinate("vessel.registration", 530, 213, 230, 7, 0, true),
@@ -114,8 +137,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'comunicacao-transferencia-ma-v1-map-v1', formVersionId: 'comunicacao-transferencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/comunicacao-transferencia-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("vessel.name", 190, 269, 307, 6.8, 0, true),
       coordinate("vessel.registration", 621, 269, 137, 6.6, 0, true),
@@ -151,8 +175,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'declaracao-perda-tie-ma-v1-map-v1', formVersionId: 'declaracao-perda-tie-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/declaracao-perda-tie-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("declarant.fullName", 152, 297, 602, 7.2, 0, true),
       coordinate("declarant.identity", 230, 325, 102, 6.6, 0),
@@ -169,8 +194,9 @@ export const draftMappings: readonly FormMapping[] = [
   },
   {
     id: 'declaracao-residencia-ma-v1-map-v1', formVersionId: 'declaracao-residencia-ma-v1', revision: 'v1',
-    status: 'DRAFT', reviewedAt: null, reviewer: null,
-    reportPath: 'docs/mapping-reports/declaracao-residencia-ma-v1.md',
+    status: 'APPROVED', reviewedAt: '2026-10-29',
+    reviewer: 'OpenAI visual QA against NORMAM-212/DPC 2026 official templates',
+    reportPath: 'docs/mapping-reports/normam212-2026-technical-qa.md',
     placements: [
       coordinate("person.fullName", 153, 325, 598, 7.3, 0, true),
       coordinate("person.cpf", 177, 356, 122, 6.1, 0, true),

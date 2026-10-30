@@ -12,15 +12,12 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
 
 type Step = 'questions' | 'files' | 'review' | 'download';
-type ExtractionProvider = 'paddleocr' | 'openai';
 
 type ExtractionDiagnostic = {
   requirementId: string;
-  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed' | 'read_failed';
+  outcome: 'suggested' | 'no_text' | 'no_supported_labels' | 'no_applicable_fields' | 'not_analyzed';
   suggestionCount: number;
-  engine?: 'paddleocr' | 'pdf-text' | 'openai';
-  nameStage?: 'name_recognized' | 'name_not_mapped' |
-    'label_seen_name_rejected' | 'label_not_detected';
+  engine?: 'openai';
 };
 
 function groupedReviewForms(service: LiveService): readonly LiveReviewForm[] {
@@ -170,8 +167,6 @@ export function LiveFlowPage() {
   const [uploadedRequirements, setUploadedRequirements] = useState<string[]>([]);
   const [downloads, setDownloads] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
-  const [extractionProvider, setExtractionProvider] =
-    useState<ExtractionProvider>('paddleocr');
   const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const cancelRequested = useRef(false);
@@ -369,7 +364,7 @@ export function LiveFlowPage() {
         diagnostics?: ExtractionDiagnostic[];
       }>(
         '/api/jobs/' + currentJob + '/extract',
-        { method:'POST', body:JSON.stringify({ provider: extractionProvider }) },
+        { method:'POST', body:JSON.stringify({}) },
       );
       // A concurrent cancellation wins over a late OCR response.
       if (cancelRequested.current) return;
@@ -384,7 +379,7 @@ export function LiveFlowPage() {
         setExpiresAt(null);
         setError('O processo expirou. Tente enviar novamente os documentos.');
       } else {
-        setError(issue instanceof ApiError ? issue.message : 'Falha na leitura. Tente novamente.');
+        setError(issue instanceof ApiError ? issue.message : 'Falha na análise documental. Tente novamente.');
       }
     } finally {
       setBusy(false);
@@ -572,18 +567,13 @@ export function LiveFlowPage() {
           {error && step !== 'files' && step !== 'review'
             ? <Notice tone="danger" role="alert">{error}</Notice> : null}
           {!service ? (
-            <Notice tone="info">Os formulários só serão liberados após validação oficial e revisão do preenchimento. <Link to="/preencher/servico">Conhecer demonstração</Link>.</Notice>
+            <Notice tone="danger">
+              Este serviço não está disponível com a seleção informada. <Link to="/">Voltar aos serviços</Link>.
+            </Notice>
           ) : (
             <section className="card card--padded live-form">
-              <p className="eyebrow">{service.id === 'transferencia-propriedade-embarcacao' && service.creditCost === 0
-                ? 'Simulação técnica: sem cobrança de créditos'
-                : 'Custo: ' + service.creditCost + ' crédito por processo'}</p>
-              {service.id === 'transferencia-propriedade-embarcacao' && service.creditCost === 0 ? (
-                <Notice tone="danger" role="alert">
-                  SOMENTE QA LOCAL do serviço de transferência: utilize documentos e fotos inteiramente fictícios.
-                  Os PDFs gerados terão marca d’água AMOSTRA e não podem ser usados em processos oficiais.
-                </Notice>
-              ) : null}
+              <p className="eyebrow">Custo: {service.creditCost} crédito por processo</p>
+              <p className="lead">{service.description}</p>
               <Notice tone="info">Ferramenta independente. Não protocola documentos na Marinha e não substitui assinaturas, reconhecimento de firmas ou conferência.</Notice>
               {step === 'questions' ? (
                 <>
@@ -614,11 +604,20 @@ export function LiveFlowPage() {
                                           : value === 'sim' ? 'Sim'
                                             : value === 'nao' ? 'Não'
                                               : value === 'regular' ? 'Regular'
-                                                : value === 'extraviada' ? 'Extraviada'
+                                                : value === 'extraviado' ? 'Perdido, roubado ou extraviado'
+                                                  : value === 'extraviada' ? 'Extraviada'
                                                   : value === 'roubada' ? 'Roubada'
                                                     : value === 'furtada' ? 'Furtada'
                                                       : value === 'danificada' ? 'Danificada'
-                                                        : value.replaceAll('_',' ');
+                                                        : value === 'perda' ? 'Perda'
+                                                          : value === 'roubo' ? 'Roubo'
+                                                            : value === 'extravio' ? 'Extravio'
+                                                              : value === 'dados_embarcacao' ? 'Dados da moto aquática'
+                                                                : value === 'dados_proprietario' ? 'Dados do proprietário'
+                                                                  : value === 'ambos' ? 'Moto aquática e proprietário'
+                                                                    : value === 'estaleiro_extinto' ? 'Estaleiro comprovadamente extinto'
+                                                                      : value === 'construcao_artesanal' ? 'Construção artesanal'
+                                                                        : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
                             {label}{unavailable ? ' (em validação)' : ''}
                           </option>;
@@ -639,24 +638,6 @@ export function LiveFlowPage() {
                     preencha cada formulário manualmente na próxima etapa.</p>
                   <p className="field__hint">Os arquivos escolhidos são enviados temporariamente
                     ao servidor e excluídos ao cancelar ou expirar o processo.</p>
-                  <label className="field">
-                    <span className="field__label">Método de leitura automática</span>
-                    <select
-                      className="field__input"
-                      aria-label="Método de leitura automática"
-                      value={extractionProvider}
-                      disabled={busy}
-                      onChange={(event) =>
-                        setExtractionProvider(event.target.value as ExtractionProvider)}
-                    >
-                      <option value="paddleocr">PaddleOCR local</option>
-                      <option value="openai">OpenAI — GPT-5.4 mini por padrão</option>
-                    </select>
-                    <span className="field__hint">
-                      OpenAI envia os documentos à API externa para análise. PaddleOCR processa
-                      localmente no servidor. Em ambos os casos, confira os campos antes de gerar.
-                    </span>
-                  </label>
                   <div className="live-upload-list">
                     {service.documentRequirements.map((required) => {
                       const uploaded = uploadedRequirements.includes(required.id);
@@ -761,8 +742,8 @@ export function LiveFlowPage() {
                     </Notice>
                   )}
                   {diagnostics.length > 0 ? (
-                    <div className="live-ocr-report">
-                      <strong>Resultado da leitura por documento</strong>
+                    <div className="live-analysis-report">
+                      <strong>Resultado da análise por documento</strong>
                       <ul>
                         {diagnostics.map((item) => (
                           <li key={item.requirementId}>
@@ -770,31 +751,15 @@ export function LiveFlowPage() {
                               doc.id === item.requirementId)?.label ?? 'Documento enviado'}:
                             {' ' + (item.outcome === 'suggested'
                               ? item.suggestionCount + ' sugestão(ões) encontrada(s), sujeitas à revisão'
-                              : item.outcome === 'no_text' ? 'nenhum texto legível identificado na imagem'
+                              : item.outcome === 'no_text' ? 'não foi possível ler o documento'
                                 : item.outcome === 'not_analyzed' ? 'não há extração automática configurada'
-                                  : item.outcome === 'read_failed' ? 'a leitura deste arquivo falhou; os demais documentos foram preservados'
                                   : item.outcome === 'no_applicable_fields'
                                     ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
                                     : 'texto detectado, mas nenhum dado foi associado aos campos com segurança')}
                             {item.engine ? (
-                              <span className="live-ocr-name-stage">
-                                {' · Leitura: ' + (
-                                  item.engine === 'pdf-text' ? 'texto digital do PDF'
-                                    : item.engine === 'openai' ? 'OpenAI'
-                                      : 'PaddleOCR'
-                                )}
-                              </span>
-                            ) : null}
-                            {item.nameStage ? (
-                              <span className="live-ocr-name-stage">
-                                {' · Nome: ' + (
-                                  item.nameStage === 'name_recognized'
-                                    ? 'identificado para revisão'
-                                    : item.nameStage === 'name_not_mapped'
-                                      ? 'identificado, mas sem campo no formulário'
-                                      : item.nameStage === 'label_seen_name_rejected'
-                                        ? 'rótulo encontrado, mas valor não validado'
-                                        : 'rótulo não localizado na saída textual do OCR'
+                              <span className="live-analysis-provider">
+                                {' · Provedor: ' + (
+                                  'OpenAI'
                                 )}
                               </span>
                             ) : null}
@@ -1003,9 +968,9 @@ export function LiveFlowPage() {
                   <Button variant="ghost" icon={<ArrowLeft aria-hidden="true" />}
                     onClick={() => navigate(-1)}>Voltar</Button>
                   <h2>Formulários gerados</h2>
-                  <Notice tone="success">{service.id === 'transferencia-propriedade-embarcacao' && service.creditCost === 0
-                    ? 'Amostras preparadas. Nenhum crédito foi cobrado. Não utilize estes PDFs oficialmente.'
-                    : 'Pacote preparado. Um único crédito foi reservado no processo e será mantido após o download. Se a entrega não ocorrer, poderá ser estornado.'}</Notice>
+                  <Notice tone="success">
+                    Pacote preparado. Um único crédito foi reservado no processo e será mantido após o download. Se a entrega não ocorrer, poderá ser estornado.
+                  </Notice>
                   {downloads.map((version) => (
                     <a className="btn btn--secondary" key={version}
                       href={'/api/jobs/' + jobId + '/download/' + encodeURIComponent(version)} download>

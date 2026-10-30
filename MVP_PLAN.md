@@ -1,5 +1,8 @@
 # MVP — Preenchimento Automático de Formulários da Marinha
 
+> **Decisão arquitetural vigente (29/10/2026):** esta implementação substitui a proposta histórica de OCR local. A aplicação envia os PDFs/imagens originais diretamente à OpenAI Responses API, com schema JSON estrito, políticas `allowedFieldIds`, validação no backend e revisão humana. Não instalar nem reintroduzir Tesseract, PaddleOCR, sidecar Python ou extração local de texto para alimentar os formulários. A chave OpenAI permanece somente no backend; testes/CI simulam a API e não consomem créditos. Ver [docs/OPENAI_DOCUMENT_ANALYSIS.md](docs/OPENAI_DOCUMENT_ANALYSIS.md).
+
+
 **Execução por fases:** seguir `PROJECT_TRACKER.md` (checklists, bloqueios, evidências e solicitação de PDFs oficiais) | **Status:** plano de implementação | **Prioridade:** colocar um fluxo ponta a ponta em funcionamento antes de ampliar serviços.
 
 ## 1. Objetivo
@@ -13,7 +16,7 @@ Criar um SaaS web, mobile-first, que permita ao usuário selecionar um serviço 
 - **Um único serviço inicial:** transferência de propriedade de moto aquática (jet ski), com regras e formulários confirmados antes da implementação.
 - Seleção do serviço e visualização do checklist de documentos de origem.
 - Upload de JPG, JPEG, PNG e PDF pelo celular ou computador; captura por câmera quando o navegador oferecer suporte.
-- Extração direta de texto de PDFs digitais; OCR no servidor para imagens e PDFs digitalizados.
+- Análise dos PDFs/imagens originais diretamente pela OpenAI Responses API.
 - Extração estruturada de campos necessários, com indicação da origem e sinalização de campos não encontrados ou divergentes.
 - Tela de revisão **obrigatória**: usuário corrige e confirma cada dado antes da geração.
 - Preenchimento determinístico dos **modelos oficiais e vigentes** de PDF, preservando o layout.
@@ -64,11 +67,11 @@ Antes de mapear PDFs:
 - **Frontend:** React + TypeScript + Vite, interface mobile-first.
 - **Backend:** Node.js LTS compatível com as dependências + TypeScript + Fastify (ou stack existente, se já houver código).
 - **Banco persistente:** PostgreSQL + Prisma apenas para usuários, créditos, sessões operacionais mínimas, templates e auditoria sem dados documentais.
-- **OCR:** worker no servidor com Tesseract inicialmente; avaliar PaddleOCR somente após testes comparativos.
+- **Análise documental:** OpenAI Responses API no backend; schema estrito, políticas por documento/campo, validação determinística e revisão humana.
 - **Fila:** para o protótipo, fila simples com controle de concorrência; introduzir Redis/BullMQ somente se necessário para recuperação e volume. Se houver tarefas assíncronas, preservar estado e expiração sem registrar dados pessoais nos jobs.
 - **PDF:** pdf-lib ou biblioteca compatível, sempre com modelos oficiais versionados.
 - **Arquivos:** diretório/volume temporário privado, **fora** da pasta pública, com expiração e exclusão; nunca incluído em backups.
-- **Implantação:** Docker Compose com API, frontend, Postgres e worker OCR; configurar limites de recursos e healthchecks.
+- **Implantação:** Docker Compose com API, frontend e Postgres; configurar limites de recursos e healthchecks.
 
 ### Separação de responsabilidades
 
@@ -77,7 +80,7 @@ Antes de mapear PDFs:
 - `payments` (fase comercial posterior): compra de créditos, conciliação e confirmação pelo provedor.
 - `catalog`: formulários independentes (`FormDefinition`), versões (`FormVersion`), mapeamentos (`FormMapping`), serviços, perguntas/requisitos e associações (`ServiceForm`).
 - `upload`: recepção, limites, inspeção e armazenamento temporário.
-- `extraction`: PDF textual/OCR, parsing, origem e validação dos campos.
+- `extraction`: PDF/imagem original, extração OpenAI estruturada, origem e validação dos campos.
 - `review`: confirmação explícita de dados.
 - `forms`: mapeamento e geração determinística dos PDFs.
 - `cleanup`: expiração e descarte.
@@ -92,7 +95,7 @@ Antes de mapear PDFs:
 - `FormVersion`: versão/arquivo PDF oficial, revisão interna, revisão normativa quando conhecida, hash SHA-256, fonte, status e caminho `backend/templates/<form-id>/<revisao-interna>/original.pdf`.
 - `FormMapping`: revisão técnica independente da versão PDF, posições/nomes de campos, status e evidência de revisão visual.
 - `ServiceForm`: associação muitos-para-muitos entre serviço e **FormVersion**, com condições declarativas e ordem.
-- `FieldDefinition`: identificadores de campos semânticos independentes do OCR e da posição no PDF.
+- `FieldDefinition`: identificadores de campos semânticos independentes do provedor de análise e da posição no PDF.
 - O catálogo inicial pode ser versionado em código; não criar tabelas Prisma para configuração estática antes de haver necessidade comprovada.
 
 **Não criar** tabelas permanentes de comprador, vendedor, documentos, OCR, nome da embarcação ou campos preenchidos. Evitar dados pessoais também em logs, filas, rastreamento de erros e backups. Lembrar que e-mail e dados de conta ainda são dados pessoais sob a LGPD.
@@ -128,7 +131,7 @@ Antes de mapear PDFs:
 ## 9. Critérios de aceitação do MVP
 
 - [ ] Um usuário novo consegue se cadastrar, autenticar-se e ver créditos de teste.
-- [ ] O fluxo funciona em celular e computador sem executar OCR pesado no navegador.
+- [ ] O fluxo funciona em celular e computador sem executar análise documental pesada no navegador.
 - [ ] O sistema recebe JPG/PNG/PDF e rejeita arquivos inválidos com mensagens claras.
 - [ ] Extrai texto de um PDF digital e de uma foto de teste com qualidade suficiente para permitir revisão.
 - [ ] Campos ausentes ou conflitantes aparecem como **pendentes de confirmação**, nunca como corretos.
@@ -136,7 +139,7 @@ Antes de mapear PDFs:
 - [ ] O PDF oficial gerado mantém campos alinhados, texto legível e modelo correto.
 - [ ] O usuário pode baixar o arquivo gerado no celular.
 - [ ] Um processo concluído consome exatamente um crédito; reenvios e retentativas não duplicam débito.
-- [ ] Falhas de OCR, PDF e rede não removem créditos indevidamente.
+- [ ] Falhas da OpenAI, PDF e rede não removem créditos indevidamente.
 - [ ] Dados documentais não ficam no PostgreSQL nem aparecem em logs.
 - [ ] Sessões encerradas/expiradas e falhas são cobertas pela limpeza de arquivos temporários.
 - [ ] Typecheck, testes principais e build passam; o fluxo ponta a ponta foi validado manualmente.
@@ -162,7 +165,7 @@ Antes de mapear PDFs:
 - **Validar:** fotos do celular e PDFs abrem; arquivos malformados são rejeitados; nenhum upload vai para pasta pública.
 
 ### Etapa D — Extração
-- Extrair texto de PDF digital; OCR no worker para imagens/digitalizações; mapear somente campos do formulário-piloto.
+- Extrair texto de PDF digital; análise OpenAI para imagens/digitalizações; mapear somente campos do formulário-piloto.
 - **Validar:** casos sintéticos com texto legível, campo ausente e conflito; nenhuma inferência silenciosa.
 
 ### Etapa E — Revisão e geração

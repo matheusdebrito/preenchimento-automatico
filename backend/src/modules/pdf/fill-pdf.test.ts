@@ -30,9 +30,9 @@ describe('motor determinístico de PDF', () => {
     const input = await syntheticPdf();
     const field = { kind: 'COORDINATES' as const, fieldId: 'name', required: true,
       pageIndex: 0, x: 50, y: 640, fontSize: 12, maxWidth: 80 };
-    await expect(fillPdf(input, [field], {})).rejects.toThrow('obrigatório');
-    await expect(fillPdf(input, [field], { name: 'A'.repeat(100) })).rejects.toThrow('excede');
-    await expect(fillPdf(input, [field], { name: 'Maria\nTeste' })).rejects.toThrow('Quebra');
+    await expect(fillPdf(input, [field], {})).rejects.toThrow('missing_required_fields:name:required');
+    await expect(fillPdf(input, [field], { name: 'A'.repeat(100) })).rejects.toThrow('invalid_field_value:name:text_overflow');
+    await expect(fillPdf(input, [field], { name: 'Maria\nTeste' })).rejects.toThrow('invalid_field_value:name:unsupported_character');
     await expect(fillPdf(input, [{ ...field, pageIndex: 100 }], { name: 'OK' })).rejects.toThrow('Página');
   });
 
@@ -43,11 +43,11 @@ describe('motor determinístico de PDF', () => {
     const result = await fillPdf(input, placement, { name: 'João Gonçalves – São Luís' });
     expect((await PDFDocument.load(result)).getPages()).toHaveLength(1);
     await expect(fillPdf(input, placement, { name: 'Maria' + String.fromCharCode(0x202e) + 'Anulada' }))
-      .rejects.toThrow('caracteres');
+      .rejects.toThrow('unsupported_character');
     await expect(fillPdf(input, placement, { name: 'Maria' + String.fromCharCode(9) + 'Teste' }))
-      .rejects.toThrow('caracteres');
+      .rejects.toThrow('unsupported_character');
     await expect(fillPdf(input, placement, { name: 'Maria 你好' }))
-      .rejects.toThrow('Caractere');
+      .rejects.toThrow('unsupported_character');
   });
 
   it('marca somente a escolha selecionada, não imprime o valor literal', async () => {
@@ -76,7 +76,7 @@ describe('motor determinístico de PDF', () => {
     const output = await fillPdf(input, placements, { area: 'NAVEGAÇÃO INTERIOR' });
     expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
     await expect(fillPdf(input, placements, { area: 'área desconhecida' }))
-      .rejects.toThrow('Opção não prevista');
+      .rejects.toThrow('invalid_choice');
   });
 
   it('aceita false em checkbox estático unilateral deixando a caixa em branco', async () => {
@@ -89,7 +89,7 @@ describe('motor determinístico de PDF', () => {
     const output = await fillPdf(input, placement, { equipment: 'false' });
     expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
     await expect(fillPdf(input, placement, { equipment: 'maybe' }))
-      .rejects.toThrow('Opção não prevista');
+      .rejects.toThrow('invalid_choice');
   });
 
   it('formata a mesma data canônica em partes exigidas pelo formulário', async () => {
@@ -106,7 +106,7 @@ describe('motor determinístico de PDF', () => {
     await expect(fillPdf(input, [{
       kind: 'COORDINATES', fieldId: 'date', required: true, pageIndex: 0,
       x: 50, y: 600, fontSize: 10, maxWidth: 20, valueTransform: 'DATE_DAY',
-    }], { date: '2026-10-29' })).rejects.toThrow('Data inválida');
+    }], { date: '2026-10-29' })).rejects.toThrow('invalid_date');
   });
 
   it('identifica tipos reais de AcroForm em vez de confundir texto true com checkbox', async () => {
@@ -124,7 +124,7 @@ describe('motor determinístico de PDF', () => {
     expect(filled.getCheckBox('field_check').isChecked()).toBe(false);
     await expect(fillPdf(await original.save(), [{
       kind: 'ACROFORM', fieldId: 'checked', required: true, pdfFieldName: 'field_check',
-    }], { checked: 'yes' })).rejects.toThrow('true ou false');
+    }], { checked: 'yes' })).rejects.toThrow('invalid_boolean');
   });
 
   it('recusa mapeamento em página girada ou com campo fora de CropBox', async () => {
@@ -143,7 +143,14 @@ describe('motor determinístico de PDF', () => {
   });
 
   it('nunca gera os PDFs oficiais enquanto o mapeamento não estiver aprovado', async () => {
-    await expect(fillApprovedTemplate(catalog, 'bdmoto-v1', {
+    const notApproved = {
+      ...catalog,
+      mappings: catalog.mappings.map((mapping) =>
+        mapping.formVersionId === 'bdmoto-v1'
+          ? { ...mapping, status: 'TESTED' as const }
+          : mapping),
+    };
+    await expect(fillApprovedTemplate(notApproved, 'bdmoto-v1', {
       'person.fullName': 'Pessoa de exemplo',
     })).rejects.toThrow('não homologado');
   });

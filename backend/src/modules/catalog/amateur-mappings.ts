@@ -97,7 +97,7 @@ const motonautaRequestPlacements: readonly CoordinatePlacement[] = [
   top('person.mobile', 155, 339, 145, 7),
   top('person.email', 340, 339, 195, 7),
   top('process.motonautaRequest', 89, 435, 10, 9, 0, false, 'renovacao_agregacao_mta'),
-  top('process.motonautaDeclaration', 145, 452, 10, 9, 0, false, 'sim'),
+  top('process.motonautaDeclaration', 145, 452, 10, 9, 0, false, 'true'),
   top('process.notes', 205, 203, 325, 7, 1),
   top('process.place', 92, 367, 145, 7, 1),
   top('process.date', 315, 367, 20, 7, 1, false, undefined, 'DATE_DAY'),

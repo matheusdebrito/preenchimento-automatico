@@ -8,7 +8,6 @@ import type {
 } from './contracts.js';
 import {
   APPLICANT_IDENTITY_FIELDS,
-  NO_AUTOMATIC_FIELDS,
   RESIDENCE_PROOF_FIELDS,
 } from './document-field-policies.js';
 
@@ -32,30 +31,6 @@ const motonautaDeclarationQuestion: ServiceQuestion = {
 
 const commonDocuments: readonly DocumentRequirement[] = [
   {
-    id: 'training-certificate-arrais',
-    label: 'Atestado de Treinamento Náutico para Arrais-Amador',
-    description: 'Anexo 5-E. Aplicável à inscrição inicial para Arrais-Amador.',
-    required: false,
-    conditions: [{ questionId: 'amateurCategory', equals: 'arrais' }],
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
-    id: 'current-cha-prerequisite',
-    label: 'CHA atual da categoria anterior',
-    description: 'Arrais válido para Mestre; Mestre válido para Capitão.',
-    required: false,
-    conditions: [{ questionId: 'amateurCategory', oneOf: ['mestre', 'capitao'] }],
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
     id: 'applicant-identity',
     label: 'Documento oficial de identificação',
     description: 'RG, CIN ou CNH. O arquivo é opcional e pode sugerir dados para revisão.',
@@ -66,7 +41,6 @@ const commonDocuments: readonly DocumentRequirement[] = [
       allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
     },
   },
-
   {
     id: 'residence-proof',
     label: 'Comprovante de residência',
@@ -75,27 +49,6 @@ const commonDocuments: readonly DocumentRequirement[] = [
       documentType: 'residence-proof',
       subjectRole: 'person',
       allowedFieldIds: RESIDENCE_PROOF_FIELDS,
-    },
-  },
-  {
-    id: 'medical-or-cnh',
-    label: 'Atestado médico ou CNH válida',
-    description: 'A NORMAM permite dispensar o atestado médico quando apresentada CNH válida.',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
-    },
-  },
-  {
-    id: 'gru-receipt',
-    label: 'Comprovante de pagamento da GRU',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: NO_AUTOMATIC_FIELDS,
     },
   },
 ];
@@ -127,7 +80,7 @@ export const amateurVersions: readonly FormVersion[] = [
     regulation: 'NORMAM-211/DPC 2026, Anexo 5-H',
     sourceUrl: 'https://assets.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-211.pdf',
     verifiedAt: '2026-10-29',
-    sha256: '06E753608DE9B2C8D29B4380EB2EFF7D81B9E5376B4AE2011AFD5F2AEAAC78BF',
+    sha256: 'E8E988F19C5E09C3307201003DD81ACF7932C964E25E4CD8B4262AC9369A1D9F',
     templatePath: 'backend/templates/requerimento-cha-amador/v1/original.pdf',
     pdfKind: 'STATIC',
     status: 'VERIFIED',
@@ -164,9 +117,9 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'inscricao-exame-amador',
     title: 'Inscrição para exame de amador',
-    description: 'Em validação operacional. O item 5.4.1 da NORMAM-211/DPC lista a documentação da inscrição para ARA/MSA/CPA, mas não determina expressamente o uso do Anexo 5-H. O fluxo permanece indisponível até existir evidência operacional específica da CP/DL/AG ou DPC para esse requerimento.',
+    description: 'Preenchimento do Anexo 5-H para inscrição nos exames de Arrais-Amador, Mestre-Amador ou Capitão-Amador. A aplicação prepara o requerimento; documentos de treinamento, habilitação anterior, GRU e requisitos médicos continuam sendo conferidos no protocolo pela CP/DL/AG.',
     creditCost: 1,
-    status: 'DRAFT',
+    status: 'AVAILABLE',
     questions: [amateurCategoryQuestion],
     documentRequirements: commonDocuments.filter((item) =>
       ['applicant-identity', 'residence-proof'].includes(item.id)),
@@ -218,7 +171,10 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     serviceId: 'inscricao-exame-amador',
     formVersionId: 'requerimento-cha-amador-2026-v1',
     order: 1,
-    fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
+    // The current 5-H has no dedicated "inscrição para exame" checkbox.
+    // Operational CP/DL/AG pages require 5-H for exam enrollment, so record
+    // the exact request in "Descrição do pedido" instead of marking
+    // "Emissão/Renovação" by inference.
     answerValueMappings: {
       'process.notes': {
         questionId: 'amateurCategory',
@@ -279,6 +235,11 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-motonauta-2026-v1',
     order: 2,
     fixedValues: { 'process.motonautaRequest': 'renovacao_agregacao_mta' },
-    answerBindings: { 'process.motonautaDeclaration': 'motonautaDeclaration' },
+    answerValueMappings: {
+      'process.motonautaDeclaration': {
+        questionId: 'motonautaDeclaration',
+        values: { sim: 'true', nao: 'false' },
+      },
+    },
   },
 ];

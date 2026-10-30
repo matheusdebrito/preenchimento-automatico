@@ -6,7 +6,6 @@ import { AuthProvider } from './features/auth/AuthProvider';
 
 const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
 const LiveFlowPage = lazy(() => import('./features/real/LiveFlowPage').then((module) => ({ default: module.LiveFlowPage })));
-const OcrPage = lazy(() => import('./pages/OcrPage').then((module) => ({ default: module.OcrPage })));
 const ServiceCategoryPage = lazy(() =>
   import('./pages/ServiceCategoryPage').then((module) => ({ default: module.ServiceCategoryPage })),
 );
@@ -39,7 +38,6 @@ export function App() {
         <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/entrar" element={<AuthPage />} />
-        <Route path="/ocr" element={<OcrPage />} />
         <Route path="/servicos/:categoryId" element={<ServiceCategoryPage />} />
         <Route path="/preencher-real/:serviceId" element={<LiveFlowPage />} />
         <Route path="/minha-conta" element={<AccountPage />} />

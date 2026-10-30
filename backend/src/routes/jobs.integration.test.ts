@@ -23,7 +23,7 @@ function fixture(): CatalogDefinition {
     .map((map) => ({
       ...map,
       placements: map.placements.filter((placement) =>
-        ['person.fullName', 'vessel.name', 'person.cpf', 'process.transferOwnership'].includes(placement.fieldId))
+        ['person.fullName', 'vessel.name', 'person.cpf', 'process.transferProperty'].includes(placement.fieldId))
         .map((placement) => ({
           ...placement,
           required: placement.fieldId === 'person.fullName',
@@ -44,7 +44,7 @@ function fixture(): CatalogDefinition {
     }],
     serviceForms: versions.map((version, index) => ({
       serviceId: 'ci-only-service', formVersionId: version.id, order: index+1,
-      fixedValues: { 'process.transferOwnership': 'X' },
+      fixedValues: { 'process.transferProperty': 'true' },
     })),
   };
 }
