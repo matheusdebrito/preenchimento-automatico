@@ -23,6 +23,9 @@ COPY --from=build /app/dist ./dist
 COPY --chown=node:node templates ./templates
 COPY --chown=node:node migrations ./migrations
 
+# Fail the image build if compiled catalog metadata and bundled official PDFs diverge.
+RUN node dist/scripts/verify-runtime-templates.js
+
 USER node
 EXPOSE 3000
 
