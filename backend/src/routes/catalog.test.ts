@@ -20,7 +20,7 @@ describe('API catalog', () => {
     const result = await app.inject({ method: 'GET', url: '/api/services' });
     expect(result.statusCode).toBe(200);
     const body = result.json<{ services: Array<{ id: string }> }>();
-    expect(body.services).toHaveLength(11);
+    expect(body.services).toHaveLength(21);
     expect(body.services.map((service) => service.id)).toEqual(expect.arrayContaining([
       'inscricao-embarcacao',
       'alteracao-dados-embarcacao',
