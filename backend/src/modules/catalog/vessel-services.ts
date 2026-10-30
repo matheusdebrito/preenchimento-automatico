@@ -101,28 +101,44 @@ const rowToMotorConversionQuestion: ServiceQuestion = {
   ],
 };
 
+const applicantIdentity: DocumentRequirement = {
+  id: 'applicant-identity',
+  label: 'Documento de identificação do requerente',
+  description: 'RG, CIN ou CNH. O arquivo é opcional e serve para sugerir dados para revisão.',
+  required: false,
+  extraction: {
+    documentType: 'identity',
+    subjectRole: 'person',
+    allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
+  },
+};
+
+const residenceProof: DocumentRequirement = {
+  id: 'residence-proof',
+  label: 'Comprovante de residência',
+  required: false,
+  extraction: {
+    documentType: 'residence-proof',
+    subjectRole: 'person',
+    allowedFieldIds: RESIDENCE_PROOF_FIELDS,
+  },
+};
+
+const buyerIdentity: DocumentRequirement = {
+  id: 'buyer-identity',
+  label: 'Documento de identificação do comprador',
+  description: 'RG, CIN ou CNH do comprador. O arquivo é opcional e serve para sugerir os dados do comprador para revisão.',
+  required: false,
+  extraction: {
+    documentType: 'identity',
+    subjectRole: 'person',
+    allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
+  },
+};
+
 const commonApplicantDocuments: readonly DocumentRequirement[] = [
-  {
-    id: 'applicant-identity',
-    label: 'Documento de identificação do requerente',
-    description: 'RG, CIN ou CNH. O arquivo é opcional e serve para sugerir dados para revisão.',
-    required: false,
-    extraction: {
-      documentType: 'identity',
-      subjectRole: 'person',
-      allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
-    },
-  },
-  {
-    id: 'residence-proof',
-    label: 'Comprovante de residência',
-    required: false,
-    extraction: {
-      documentType: 'residence-proof',
-      subjectRole: 'person',
-      allowedFieldIds: RESIDENCE_PROOF_FIELDS,
-    },
-  },
+  applicantIdentity,
+  residenceProof,
 ];
 
 const currentTie: DocumentRequirement = {
@@ -170,6 +186,13 @@ const sellerIdentity: DocumentRequirement = {
     subjectRole: 'seller',
     allowedFieldIds: SELLER_IDENTITY_FIELDS,
   },
+};
+
+const sellerApplicantIdentity: DocumentRequirement = {
+  ...sellerIdentity,
+  id: 'seller-applicant-identity',
+  label: 'Documento de identificação do requerente/vendedor',
+  description: 'Neste serviço, o vendedor é o requerente. Envie RG, CIN ou CNH para sugerir os dados do vendedor para revisão.',
 };
 
 export const vesselForms: readonly FormDefinition[] = [
@@ -409,12 +432,16 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'comunicacao-venda-embarcacao',
     title: 'Comunicação de venda de embarcação',
-    description: 'Comunicação do vendedor conforme a NORMAM-211/DPC ou NORMAM-212/DPC, conforme o tipo de embarcação. Não efetiva por si só a transferência.',
+    description: 'Comunicação do vendedor conforme a NORMAM-211/DPC ou NORMAM-212/DPC, conforme o tipo de embarcação. Neste serviço, o vendedor é o requerente. Não efetiva por si só a transferência.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ band: false }),
-    documentRequirements: requirements({
-      tie: true, seller: true, origin: true,
-    }),
+    documentRequirements: [
+      sellerApplicantIdentity,
+      buyerIdentity,
+      residenceProof,
+      currentTie,
+      vesselProof,
+    ],
   },
 ];
 
