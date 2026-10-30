@@ -44,7 +44,7 @@ describe('ServiceCategoryPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Embarcações e jet skis' })).toBeTruthy();
     const available = await screen.findByRole('link', { name: /Inscrição inicial de embarcação/ });
     expect(available.getAttribute('href')).toBe('/preencher-real/inscricao-embarcacao');
-    expect(screen.getByText('Transferência de propriedade')).toBeTruthy();
+    expect(screen.getByText('Transferência de propriedade e/ou jurisdição')).toBeTruthy();
     expect(screen.getAllByText('Formulário em validação').length).toBeGreaterThan(0);
   });
 

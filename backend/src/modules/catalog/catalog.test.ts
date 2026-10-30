@@ -46,8 +46,8 @@ function sharedFormFixture(): CatalogDefinition {
 
 describe('catálogo reutilizável de formulários', () => {
   it('publica todos os serviços homologados somente com versões e mapas aprovados', () => {
-    expect(catalog.services).toHaveLength(13);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(13);
+    expect(catalog.services).toHaveLength(11);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(11);
     expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(0);
     expect(catalog.forms).toHaveLength(17);
     expect(catalog.versions).toHaveLength(17);
@@ -66,19 +66,17 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'APPROVED')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(78);
+    expect(catalog.serviceForms).toHaveLength(58);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
-  it('publica os oito serviços de embarcação com as condições normativas validadas', () => {
+  it('publica os seis serviços de embarcação com as condições normativas validadas', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
       'inscricao-embarcacao',
       'transferencia-propriedade-embarcacao',
-      'transferencia-jurisdicao-embarcacao',
-      'transferencia-propriedade-jurisdicao-embarcacao',
       'renovacao-tie-embarcacao',
       'segunda-via-tie-embarcacao',
       'alteracao-dados-embarcacao',
@@ -88,6 +86,24 @@ describe('catálogo reutilizável de formulários', () => {
       expect(catalog.services.find((service) => service.id === id)?.status).toBe('AVAILABLE');
       expect(catalog.serviceForms.some((relation) => relation.serviceId === id)).toBe(true);
     }
+  });
+
+  it('unifica transferência de propriedade e/ou jurisdição em um único serviço', () => {
+    const service = catalog.services.find((item) => item.id === 'transferencia-propriedade-embarcacao');
+    expect(service?.title).toBe('Transferência de propriedade e/ou jurisdição');
+    expect(service?.questions.find((question) => question.id === 'transferTarget')?.options)
+      .toEqual(['propriedade', 'jurisdicao', 'propriedade_jurisdicao']);
+    expect(catalog.services.some((item) => item.id === 'transferencia-jurisdicao-embarcacao')).toBe(false);
+    expect(catalog.services.some((item) =>
+      item.id === 'transferencia-propriedade-jurisdicao-embarcacao')).toBe(false);
+
+    const authorization = catalog.serviceForms.find((relation) =>
+      relation.serviceId === 'transferencia-propriedade-embarcacao' &&
+      relation.formVersionId === 'autorizacao-transferencia-er-2026-v1');
+    expect(authorization?.conditions).toContainEqual({
+      questionId: 'transferTarget',
+      oneOf: ['propriedade', 'propriedade_jurisdicao'],
+    });
   });
 
   it('publica inscrição para exame e os demais serviços de CHA sustentados pelos anexos', () => {
@@ -197,10 +213,6 @@ describe('catálogo reutilizável de formulários', () => {
       'requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
       'declaracao-residencia-ma-v1', 'declaracao-perda-tie-ma-v1',
     ]));
-    expect(byService.get('transferencia-jurisdicao-embarcacao')).toEqual(new Set([
-      'requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1',
-      'declaracao-perda-tie-ma-v1',
-    ]));
     expect(byService.get('renovacao-tie-embarcacao')).toEqual(new Set([
       'requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1',
       'declaracao-perda-tie-ma-v1',
@@ -231,7 +243,7 @@ describe('catálogo reutilizável de formulários', () => {
 
   it('mantém perfis de análise documental em todos os serviços de embarcação', () => {
     const vesselServices = catalog.services.filter((service) => service.id.includes('embarcacao'));
-    expect(vesselServices).toHaveLength(8);
+    expect(vesselServices).toHaveLength(6);
     for (const service of vesselServices) {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
       expect(service.documentRequirements.every((requirement) => requirement.extraction)).toBe(true);

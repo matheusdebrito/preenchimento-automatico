@@ -43,6 +43,12 @@ const tieSituationQuestion: ServiceQuestion = {
   options: ['regular', 'extraviado'],
 };
 
+const transferTargetQuestion: ServiceQuestion = {
+  id: 'transferTarget',
+  label: 'Qual transferência deseja realizar?',
+  options: ['propriedade', 'jurisdicao', 'propriedade_jurisdicao'],
+};
+
 const dataChangedQuestion: ServiceQuestion = {
   id: 'dataChanged',
   label: 'Houve alteração das características da embarcação (por exemplo, medidas, casco ou motor)?',
@@ -306,6 +312,7 @@ function questions(options: {
   rowToMotorConversion?: boolean;
   motoTieSecondCopyReason?: boolean;
   alterationTarget?: boolean;
+  transferTarget?: boolean;
 } = {}): readonly ServiceQuestion[] {
   const bandQuestion = options.dataChanged
     ? { ...vesselBandQuestion, conditions: [
@@ -315,6 +322,7 @@ function questions(options: {
     : vesselBandQuestion;
   return [
     vesselTypeQuestion,
+    ...(options.transferTarget ? [transferTargetQuestion] : []),
     ...(options.tie ? [tieSituationQuestion] : []),
     ...(options.dataChanged ? [dataChangedQuestion, motoCharacteristicsChangedQuestion] : []),
     ...(options.band === false ? [] : [bandQuestion]),
@@ -356,27 +364,29 @@ export const vesselServices: readonly ServiceDefinition[] = [
   },
   {
     id: 'transferencia-propriedade-embarcacao',
-    title: 'Transferência de propriedade',
-    description: scopeNote,
+    title: 'Transferência de propriedade e/ou jurisdição',
+    description: scopeNote + ' O usuário escolhe no início se deseja transferir propriedade, jurisdição ou ambas.',
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ tie: true }),
-    documentRequirements: requirements({ tie: true, seller: true, origin: true }),
-  },
-  {
-    id: 'transferencia-jurisdicao-embarcacao',
-    title: 'Transferência de jurisdição de embarcação',
-    description: scopeNote,
-    creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ tie: true }),
-    documentRequirements: requirements({ tie: true }),
-  },
-  {
-    id: 'transferencia-propriedade-jurisdicao-embarcacao',
-    title: 'Transferência de propriedade e jurisdição',
-    description: scopeNote,
-    creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ tie: true }),
-    documentRequirements: requirements({ tie: true, seller: true, origin: true }),
+    questions: questions({ tie: true, transferTarget: true }),
+    documentRequirements: [
+      ...requirements({ tie: true }),
+      {
+        ...sellerIdentity,
+        id: 'seller-identity-transfer',
+        conditions: [{
+          questionId: 'transferTarget',
+          oneOf: ['propriedade', 'propriedade_jurisdicao'],
+        }],
+      },
+      {
+        ...vesselProof,
+        id: 'vessel-origin-document-transfer',
+        conditions: [{
+          questionId: 'transferTarget',
+          oneOf: ['propriedade', 'propriedade_jurisdicao'],
+        }],
+      },
+    ],
   },
   {
     id: 'renovacao-tie-embarcacao',
@@ -544,29 +554,50 @@ const boatServiceForms: readonly ServiceForm[] = [
     ],
     fixedValues: { 'process.constructionAction': 'construída' } },
 
-  request('transferencia-propriedade-embarcacao', 1, 'transf_prop'),
-  bsade('transferencia-propriedade-embarcacao', 2, 'transf_prop'),
+  {
+    serviceId: 'transferencia-propriedade-embarcacao',
+    formVersionId: 'requerimento-embarcacao-er-2026-v1',
+    order: 1,
+    conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
+    answerValueMappings: {
+      'process.vesselAction': {
+        questionId: 'transferTarget',
+        values: {
+          propriedade: 'transf_prop',
+          jurisdicao: 'transf_jur',
+          propriedade_jurisdicao: 'transf_prop_jur',
+        },
+      },
+    },
+  },
+  {
+    serviceId: 'transferencia-propriedade-embarcacao',
+    formVersionId: 'bsade-er-2026-v1',
+    order: 2,
+    conditions: [
+      { questionId: 'vesselType', equals: 'embarcacao' },
+      { questionId: 'vesselBand', equals: 'ate_6m' },
+    ],
+    answerValueMappings: {
+      'process.transferProperty': {
+        questionId: 'transferTarget',
+        values: { propriedade: 'true', propriedade_jurisdicao: 'true' },
+      },
+      'process.transferJurisdiction': {
+        questionId: 'transferTarget',
+        values: { jurisdicao: 'true', propriedade_jurisdicao: 'true' },
+      },
+    },
+  },
   bade('transferencia-propriedade-embarcacao', 3),
   { serviceId: 'transferencia-propriedade-embarcacao',
     formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4,
-    conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
+    conditions: [
+      { questionId: 'vesselType', equals: 'embarcacao' },
+      { questionId: 'transferTarget', oneOf: ['propriedade', 'propriedade_jurisdicao'] },
+    ] },
   residence('transferencia-propriedade-embarcacao', 5),
   lostTie('transferencia-propriedade-embarcacao', 6),
-
-  request('transferencia-jurisdicao-embarcacao', 1, 'transf_jur'),
-  bsade('transferencia-jurisdicao-embarcacao', 2, 'transf_jur'),
-  bade('transferencia-jurisdicao-embarcacao', 3),
-  residence('transferencia-jurisdicao-embarcacao', 4),
-  lostTie('transferencia-jurisdicao-embarcacao', 5),
-
-  request('transferencia-propriedade-jurisdicao-embarcacao', 1, 'transf_prop_jur'),
-  bsade('transferencia-propriedade-jurisdicao-embarcacao', 2, 'transf_prop_jur'),
-  bade('transferencia-propriedade-jurisdicao-embarcacao', 3),
-  { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
-    formVersionId: 'autorizacao-transferencia-er-2026-v1', order: 4,
-    conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }] },
-  residence('transferencia-propriedade-jurisdicao-embarcacao', 5),
-  lostTie('transferencia-propriedade-jurisdicao-embarcacao', 6),
 
   request('renovacao-tie-embarcacao', 1, 'renovacao'),
   bsade('renovacao-tie-embarcacao', 2, 'alteracao_dados',
@@ -694,26 +725,46 @@ export const motoAquaticaServiceForms: readonly ServiceForm[] = [
   motoBdmoto('inscricao-embarcacao', 22, 'inscricao'),
   motoResidence('inscricao-embarcacao', 23),
 
-  motoRequest('transferencia-propriedade-embarcacao', 21, 'transf_prop'),
-  motoBdmoto('transferencia-propriedade-embarcacao', 22, 'transf_prop'),
+  {
+    serviceId: 'transferencia-propriedade-embarcacao',
+    formVersionId: 'requerimento-ma-v1',
+    order: 21,
+    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+    answerValueMappings: {
+      'process.vesselAction': {
+        questionId: 'transferTarget',
+        values: {
+          propriedade: 'transf_prop',
+          jurisdicao: 'transf_jur',
+          propriedade_jurisdicao: 'transf_prop_jur',
+        },
+      },
+    },
+  },
+  {
+    serviceId: 'transferencia-propriedade-embarcacao',
+    formVersionId: 'bdmoto-v1',
+    order: 22,
+    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
+    answerValueMappings: {
+      'process.transferProperty': {
+        questionId: 'transferTarget',
+        values: { propriedade: 'true', propriedade_jurisdicao: 'true' },
+      },
+      'process.transferJurisdiction': {
+        questionId: 'transferTarget',
+        values: { jurisdicao: 'true', propriedade_jurisdicao: 'true' },
+      },
+    },
+  },
   { serviceId: 'transferencia-propriedade-embarcacao',
     formVersionId: 'autorizacao-transferencia-ma-v1', order: 23,
-    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
+    conditions: [
+      { questionId: 'vesselType', equals: 'moto_aquatica' },
+      { questionId: 'transferTarget', oneOf: ['propriedade', 'propriedade_jurisdicao'] },
+    ] },
   motoResidence('transferencia-propriedade-embarcacao', 24),
   motoLostTie('transferencia-propriedade-embarcacao', 25),
-
-  motoRequest('transferencia-jurisdicao-embarcacao', 21, 'transf_jur'),
-  motoBdmoto('transferencia-jurisdicao-embarcacao', 22, 'transf_jur'),
-  motoResidence('transferencia-jurisdicao-embarcacao', 23),
-  motoLostTie('transferencia-jurisdicao-embarcacao', 24),
-
-  motoRequest('transferencia-propriedade-jurisdicao-embarcacao', 21, 'transf_prop_jur'),
-  motoBdmoto('transferencia-propriedade-jurisdicao-embarcacao', 22, 'transf_prop_jur'),
-  { serviceId: 'transferencia-propriedade-jurisdicao-embarcacao',
-    formVersionId: 'autorizacao-transferencia-ma-v1', order: 23,
-    conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }] },
-  motoResidence('transferencia-propriedade-jurisdicao-embarcacao', 24),
-  motoLostTie('transferencia-propriedade-jurisdicao-embarcacao', 25),
 
   // NORMAM-212 2.2: BDMOTO is required on renewal only when characteristics changed.
   motoRequest('renovacao-tie-embarcacao', 21, 'renovacao', [], {

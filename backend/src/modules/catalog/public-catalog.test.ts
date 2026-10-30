@@ -37,17 +37,46 @@ function fixture(): CatalogDefinition {
 
 describe('projeção pública do catálogo', () => {
   it('publica todos os serviços homologados e aceita moto aquática', () => {
-    expect(publicServices(catalog)).toHaveLength(13);
+    expect(publicServices(catalog)).toHaveLength(11);
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao')).not.toBeNull();
     expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
       vesselType: 'moto_aquatica',
       tieSituation: 'regular',
+      transferTarget: 'propriedade',
     })?.formVersionIds).toEqual([
       'requerimento-ma-v1',
       'bdmoto-v1',
       'autorizacao-transferencia-ma-v1',
       'declaracao-residencia-ma-v1',
     ]);
+  });
+
+  it('condiciona documentos de propriedade no serviço unificado de transferência', () => {
+    const jurisdiction = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      transferTarget: 'jurisdicao',
+    });
+    expect(jurisdiction?.documentRequirements.map((item) => item.id))
+      .not.toContain('seller-identity-transfer');
+    expect(jurisdiction?.documentRequirements.map((item) => item.id))
+      .not.toContain('vessel-origin-document-transfer');
+    expect(jurisdiction?.formVersionIds)
+      .not.toContain('autorizacao-transferencia-er-2026-v1');
+
+    const combined = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao',
+      vesselBand: 'ate_6m',
+      tieSituation: 'regular',
+      transferTarget: 'propriedade_jurisdicao',
+    });
+    expect(combined?.documentRequirements.map((item) => item.id))
+      .toContain('seller-identity-transfer');
+    expect(combined?.documentRequirements.map((item) => item.id))
+      .toContain('vessel-origin-document-transfer');
+    expect(combined?.formVersionIds)
+      .toContain('autorizacao-transferencia-er-2026-v1');
   });
 
   it('publica inscrição para exame com 5-H e uploads opcionais', () => {
@@ -147,19 +176,28 @@ describe('projeção pública do catálogo', () => {
       },
       {
         id: 'transferencia-propriedade-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular' },
+        answers: {
+          vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+          transferTarget: 'propriedade',
+        },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
       },
       {
-        id: 'transferencia-jurisdicao-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular' },
+        id: 'transferencia-propriedade-embarcacao',
+        answers: {
+          vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+          transferTarget: 'jurisdicao',
+        },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'declaracao-residencia-er-2026-v1'],
       },
       {
-        id: 'transferencia-propriedade-jurisdicao-embarcacao',
-        answers: { vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular' },
+        id: 'transferencia-propriedade-embarcacao',
+        answers: {
+          vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+          transferTarget: 'propriedade_jurisdicao',
+        },
         forms: ['requerimento-embarcacao-er-2026-v1', 'bsade-er-2026-v1',
           'autorizacao-transferencia-er-2026-v1', 'declaracao-residencia-er-2026-v1'],
       },
@@ -191,18 +229,18 @@ describe('projeção pública do catálogo', () => {
   });
 
   it('seleciona BSADE até 6 m e BADE acima de 6 m conforme a NORMAM-211', () => {
-    expect(publicService(catalog, 'transferencia-jurisdicao-embarcacao', {
-      vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
+    expect(publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular', transferTarget: 'jurisdicao',
     })?.formVersionIds).toContain('bsade-er-2026-v1');
 
-    const small = publicService(catalog, 'transferencia-jurisdicao-embarcacao', {
-      vesselType: 'embarcacao', vesselBand: 'maior_6_ate_12m', tieSituation: 'regular',
+    const small = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao', vesselBand: 'maior_6_ate_12m', tieSituation: 'regular', transferTarget: 'jurisdicao',
     })?.formVersionIds;
     expect(small).toContain('bade-er-2026-v1');
     expect(small).not.toContain('bsade-er-2026-v1');
 
-    const medium = publicService(catalog, 'transferencia-jurisdicao-embarcacao', {
-      vesselType: 'embarcacao', vesselBand: 'maior_12_menor_24m', tieSituation: 'regular',
+    const medium = publicService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao', vesselBand: 'maior_12_menor_24m', tieSituation: 'regular', transferTarget: 'jurisdicao',
     })?.formVersionIds;
     expect(medium).toContain('bade-er-2026-v1');
   });
@@ -269,18 +307,25 @@ describe('projeção pública do catálogo', () => {
       },
       {
         id: 'transferencia-propriedade-embarcacao',
-        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
+        answers: {
+          vesselType: 'moto_aquatica', tieSituation: 'regular', transferTarget: 'propriedade',
+        },
         forms: ['requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
           'declaracao-residencia-ma-v1'],
       },
       {
-        id: 'transferencia-jurisdicao-embarcacao',
-        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
+        id: 'transferencia-propriedade-embarcacao',
+        answers: {
+          vesselType: 'moto_aquatica', tieSituation: 'regular', transferTarget: 'jurisdicao',
+        },
         forms: ['requerimento-ma-v1', 'bdmoto-v1', 'declaracao-residencia-ma-v1'],
       },
       {
-        id: 'transferencia-propriedade-jurisdicao-embarcacao',
-        answers: { vesselType: 'moto_aquatica', tieSituation: 'regular' },
+        id: 'transferencia-propriedade-embarcacao',
+        answers: {
+          vesselType: 'moto_aquatica', tieSituation: 'regular',
+          transferTarget: 'propriedade_jurisdicao',
+        },
         forms: ['requerimento-ma-v1', 'bdmoto-v1', 'autorizacao-transferencia-ma-v1',
           'declaracao-residencia-ma-v1'],
       },

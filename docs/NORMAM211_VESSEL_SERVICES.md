@@ -30,9 +30,7 @@ pesquisa e composição próprias.
 | ID | Serviço | Estado |
 | --- | --- | --- |
 | `inscricao-embarcacao` | Inscrição inicial de embarcação | AVAILABLE até 12 m; >12 m bloqueado |
-| `transferencia-propriedade-embarcacao` | Transferência de propriedade | AVAILABLE |
-| `transferencia-jurisdicao-embarcacao` | Transferência de jurisdição | AVAILABLE |
-| `transferencia-propriedade-jurisdicao-embarcacao` | Transferência de propriedade e jurisdição | AVAILABLE |
+| `transferencia-propriedade-embarcacao` | Transferência de propriedade e/ou jurisdição | AVAILABLE |
 | `renovacao-tie-embarcacao` | Renovação do TIE/TIEM | AVAILABLE |
 | `segunda-via-tie-embarcacao` | Renovação do TIE/TIEM por perda, roubo ou extravio (ID legado) | AVAILABLE |
 | `alteracao-dados-embarcacao` | Alteração de dados, características ou motor | AVAILABLE |
@@ -65,7 +63,7 @@ semântico do serviço.
 - Mais de 6 m e até 12 m (pequeno porte): selecionar BADE.
 - Mais de 12 m e menor que 24 m (médio porte): selecionar BADE; inscrição permanece bloqueada até completar a regra do 3-C.
 - Requerimento 2-C: usado pelos serviços de regularização correspondentes.
-- 2-K: transferência de propriedade e propriedade + jurisdição.
+- 2-K: incluído somente quando a escolha envolve transferência de propriedade; não é incluído em transferência apenas de jurisdição.
 - 2-H: quando o TIE/TIEM estiver perdido/extraviado; na segunda via é parte
   do fluxo base desta expansão.
 - 2-G: quando o usuário selecionar declaração de residência.
@@ -142,3 +140,8 @@ A composição continua normativa: BADE/BSADE/BDMOTO e requerimentos são reutil
 Anexo 3-C continua condicionado aos casos admitidos, e documentos de origem/motor só aparecem
 quando a opção escolhida os torna aplicáveis. O antigo ID `alteracao-motor-embarcacao` deixou
 de ser publicado para evitar dois processos artificiais para a mesma atualização cadastral.
+
+
+## Consolidação das transferências — 30/10/2026
+
+Os três cards anteriores foram substituídos por um único serviço **Transferência de propriedade e/ou jurisdição**. O usuário escolhe o alvo da transferência no início do fluxo. A escolha controla tanto as marcações dos formulários quanto a presença de documentos específicos de propriedade, como identidade do vendedor, documento de origem/propriedade e autorização 2-K. Para jurisdição isolada, esses itens de propriedade não são exibidos.

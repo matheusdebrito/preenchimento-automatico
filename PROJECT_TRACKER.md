@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 29/10/2026. Matriz serviço -> formulário revalidada contra as NORMAM-211/212 completas fornecidas pelo usuário e evidência operacional atual da Marinha. Os 13 serviços catalogados estão `AVAILABLE`, as 17 versões de formulário estão `VERIFIED` e os 17 mappings estão `APPROVED`. Moto Aquática usa os mesmos cards de embarcação, o Anexo 3-C vigente substituiu o modelo antigo e a inscrição em exame usa o 5-H sem marcar uma opção inexistente no formulário. O próximo portão é a execução dos gates automatizados da branch e o QA manual na aplicação web.
+> Atualização: 29/10/2026. Matriz serviço -> formulário revalidada contra as NORMAM-211/212 completas fornecidas pelo usuário e evidência operacional atual da Marinha. Os 11 serviços catalogados estão `AVAILABLE`, as 17 versões de formulário estão `VERIFIED` e os 17 mappings estão `APPROVED`. Moto Aquática usa os mesmos cards de embarcação, o Anexo 3-C vigente substituiu o modelo antigo e a inscrição em exame usa o 5-H sem marcar uma opção inexistente no formulário. O próximo portão é a execução dos gates automatizados da branch e o QA manual na aplicação web.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de análise documental abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -34,9 +34,9 @@ A autorização atual inclui consolidar a arquitetura reutilizável e auditar os
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — medir tokens, custo por documento, latência, concorrência e limites da OpenAI |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 13/13 serviços catalogados disponíveis e formulários homologados; gates automatizados desta branch e QA manual navegador/celular ainda pendentes antes de tratar a expansão como encerrada |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 13/11 serviços catalogados disponíveis e formulários homologados; gates automatizados desta branch e QA manual navegador/celular ainda pendentes antes de tratar a expansão como encerrada |
 
-**Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 13 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
+**Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 11 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
 
 ## 2. Checklists preservados das outras fases
 
@@ -149,7 +149,7 @@ gates normativos, visuais e de produção.
 - [ ] Executar QA manual em navegador/celular com upload -> OCR -> revisão -> geração -> download para cada serviço.
 - [ ] Revalidar requisitos para casos acima de 24 m / registro no Tribunal Marítimo antes de ampliar o escopo.
 
-**Aceite parcial atual:** o catálogo atual está pronto para QA web: 13 serviços
+**Aceite parcial atual:** o catálogo atual está pronto para QA web: 11 serviços
 `AVAILABLE`, 17 versões `VERIFIED`, 17 mappings `APPROVED`, Moto Aquática ativa e
 Anexo 3-C vigente. A expansão ainda não é marcada como concluída porque o workflow
 automatizado desta branch e o QA manual em navegador/celular continuam pendentes.
@@ -594,11 +594,11 @@ pelo catálogo oficial após seus gates de homologação.
 
 ### Estado do catálogo após a revisão
 
-- [x] 13/13 serviços catalogados em `AVAILABLE`.
+- [x] 13/11 serviços catalogados em `AVAILABLE`.
 - [x] 17/17 versões de formulários em `VERIFIED`.
 - [x] 17/17 mappings em `APPROVED`.
 - [x] Nenhuma opção de serviço permanece bloqueada por `unavailableOptions` no catálogo oficial.
-- [x] Moto Aquática liberada nos mesmos oito cards de serviços de embarcação por meio de `vesselType`.
+- [x] Moto Aquática liberada nos mesmos seis cards de serviços de embarcação por meio de `vesselType`.
 - [x] Inscrição para exame de Arrais/Mestre/Capitão liberada com o Anexo 5-H, sustentada pela NORMAM e por procedimentos operacionais atuais de CP/DL/AG.
 - [x] Alteração de dados/características e alteração de motor consolidadas em um único serviço, preservando as condições normativas do Anexo 3-C.
 - [x] Faixa de embarcação maior que 12 m e menor que 24 m liberada na inscrição inicial.
@@ -617,7 +617,7 @@ pelo catálogo oficial após seus gates de homologação.
 
 ### Cobertura adicionada
 
-- [x] Testes de catálogo exigem 13 serviços disponíveis, 17 mappings aprovados e catálogo sem erros.
+- [x] Testes de catálogo exigem 11 serviços disponíveis, 17 mappings aprovados e catálogo sem erros.
 - [x] Testes de projeção pública cobrem os pacotes de formulários de barco e moto aquática.
 - [x] Teste de geração percorre todos os pacotes liberados de moto aquática, aplica `serviceFormValues` e chama o motor real `fillPdf` para detectar opções de checkbox inválidas.
 - [x] Testes de mapping mantêm coordenadas dentro das páginas oficiais e campos obrigatórios compatíveis com inscrição inicial.
@@ -663,3 +663,12 @@ os mesmos PDFs e mappings já homologados.
 **Correção de papéis:** o serviço `comunicacao-venda-embarcacao` passa a ter dois uploads independentes: `seller-residence-proof` para o requerente/vendedor e `buyer-residence-proof` para o comprador. O comprovante do vendedor só pode alimentar campos `seller.*`; o do comprador só pode alimentar campos `person.*`.
 
 **Objetivo:** impedir mistura de endereço entre as partes e manter a origem de cada dado rastreável para revisão humana e preenchimento dos formulários.
+
+
+## Registro de execução — 30/10/2026, unificação das transferências
+
+**Decisão de produto:** os serviços separados de transferência de propriedade, transferência de jurisdição e transferência conjunta foram consolidados no serviço `transferencia-propriedade-embarcacao`, exibido como **Transferência de propriedade e/ou jurisdição**.
+
+**Comportamento:** a pergunta `transferTarget` permite escolher `propriedade`, `jurisdicao` ou `propriedade_jurisdicao`. O requerimento e o BADE/BSADE/BDMOTO recebem as marcações correspondentes. A autorização de transferência e os documentos do vendedor/origem só aparecem quando a operação inclui propriedade. Transferência apenas de jurisdição não solicita esses itens. O fluxo vale para embarcação/barco e moto aquática.
+
+**Compatibilidade:** os IDs antigos `transferencia-jurisdicao-embarcacao` e `transferencia-propriedade-jurisdicao-embarcacao` deixam de ser publicados. O ID `transferencia-propriedade-embarcacao` foi mantido como canônico para reduzir quebra de links existentes.
