@@ -4,6 +4,20 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 
 > **Status em 30/10/2026:** o catálogo publica 18 serviços (6 de embarcações, 5 de amadores e 7 de Aquaviários). As 21 versões de formulário/modelo estão `VERIFIED` e os 21 mapeamentos estão `APPROVED`; o requerimento auxiliar de Aquaviários é explicitamente não oficial. O MVP ainda não está liberado para produção: homologação de precisão da OpenAI, QA manual navegador/celular, hardening, carga, infraestrutura e privacidade permanecem pendentes. Nenhum cliente real, pagamento real ou aprovação oficial foi processado.
 
+## Acesso e privacidade do cadastro
+
+As telas **Entrar** e **Criar conta** são responsivas, com formulário priorizado no celular.
+O cadastro solicita somente **nome completo, celular, e-mail e senha**; CPF não é solicitado.
+O backend rejeita o envio de CPF no cadastro, não o retorna na sessão nem no painel administrativo,
+e a migração `008_remove_account_cpf.sql` apaga a coluna e os valores anteriormente
+persistidos em `app_users`. Como a inicialização reexecuta as migrações,
+`003_user_profile_fields.sql` foi ajustada para não recriar essa coluna.
+
+**Essa decisão não remove o CPF dos formulários da Marinha**: quando constar do documento
+de entrada e de um campo de saída, ele ainda pode ser extraído e revisado
+temporariamente no processo, sem passar a integrar o cadastro persistente.
+Backups históricos, caso existam, precisam de retenção e descarte próprios.
+
 ## Estado do desenvolvimento
 
 | Componente | Implementado | Restrições |

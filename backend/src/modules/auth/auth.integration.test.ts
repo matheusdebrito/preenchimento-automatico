@@ -48,20 +48,19 @@ describePg('PostgreSQL: autenticação e créditos', () => {
   it('registra conta, autentica com cookie HttpOnly e impede login incorreto', async () => {
     const registered = await app.inject({
       method: 'POST', url: '/api/auth/register',
-      payload: { email, password, fullName, cellphone, cpf, role: 'ADMIN', status: 'BLOCKED' },
+      payload: { email, password, fullName, cellphone },
     });
     expect(registered.statusCode).toBe(201);
     expect(registered.headers['set-cookie']).toContain('HttpOnly');
     const registeredUser = registered.json<{user:{
       id:string; email:string; fullName:string; cellphone:string;
-      cpfMasked:string; role:string; status:string;
+      role:string; status:string;
     }}>().user;
     userId = registeredUser.id;
     expect(registeredUser).toMatchObject({
       email,
       fullName,
       cellphone: '5521999998888',
-      cpfMasked: '***.***.***-25',
       role: 'USER',
       status: 'ACTIVE',
     });
@@ -79,17 +78,17 @@ describePg('PostgreSQL: autenticação e créditos', () => {
     const cookie = String(logged.headers['set-cookie']).split(';')[0]!;
     const me = await app.inject({ method: 'GET', url: '/api/auth/me', headers: { cookie } });
     expect(me.json<{user:{
-      id:string; fullName:string; cellphone:string; cpfMasked:string;
+      id:string; fullName:string; cellphone:string;
       role:string; status:string;
     }}>().user).toMatchObject({
       id: userId,
       fullName,
       cellphone: '5521999998888',
-      cpfMasked: '***.***.***-25',
       role: 'USER',
       status: 'ACTIVE',
     });
-    expect(me.body).not.toContain('52998224725');
+    expect(me.json<{user:Record<string, unknown>}>().user).not.toHaveProperty('cpfMasked');
+    expect(registered.json<{user:Record<string, unknown>}>().user).not.toHaveProperty('cpfMasked');
 
     // The server must not accept an account switch behind the React guard.
     const blockedLogin = await app.inject({
@@ -100,7 +99,7 @@ describePg('PostgreSQL: autenticação e créditos', () => {
     expect(blockedLogin.json()).toEqual({ error: 'already_authenticated' });
     const blockedRegister = await app.inject({
       method: 'POST', url: '/api/auth/register', headers: { cookie },
-      payload: { email: 'other-' + randomUUID() + '@example.invalid', password, fullName, cellphone, cpf },
+      payload: { email: 'other-' + randomUUID() + '@example.invalid', password, fullName, cellphone },
     });
     expect(blockedRegister.statusCode).toBe(409);
     expect(blockedRegister.json()).toEqual({ error: 'already_authenticated' });
@@ -114,24 +113,23 @@ describePg('PostgreSQL: autenticação e créditos', () => {
   });
 
 
-  it('rejeita CPF duplicado sem revelar qual identificador já existe', async () => {
-    const duplicate = await app.inject({
+  it('rejeita CPF no cadastro e não mantém coluna de CPF em app_users', async () => {
+    const unknownEmail = 'cpf-rejected-' + randomUUID() + '@example.invalid';
+    const rejected = await app.inject({
       method: 'POST',
       url: '/api/auth/register',
-      payload: {
-        email: 'cpf-duplicate-' + randomUUID() + '@example.invalid',
-        password,
-        fullName: 'Outra Pessoa',
-        cellphone: '(21) 98888-7777',
-        cpf,
-      },
+      payload: { email: unknownEmail, password, fullName, cellphone, cpf },
     });
-    expect(duplicate.statusCode).toBe(409);
-    expect(duplicate.json()).toEqual({
-      error: 'conflict',
-      message: 'Não foi possível criar a conta.',
-    });
-    expect(duplicate.body).not.toContain(cpf);
+    expect(rejected.statusCode).toBe(400);
+    expect(rejected.body).not.toContain(cpf);
+    const unexpectedAccount = await pool.query(
+      'SELECT id FROM app_users WHERE email=$1', [unknownEmail],
+    );
+    expect(unexpectedAccount.rowCount).toBe(0);
+    const column = await pool.query(
+      "SELECT 1 FROM information_schema.columns WHERE table_name='app_users' AND column_name='cpf'",
+    );
+    expect(column.rowCount).toBe(0);
   });
 
   it('impede autenticação de conta bloqueada mesmo com senha correta', async () => {

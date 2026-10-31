@@ -112,7 +112,7 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     expect(await screen.findByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
     await user.click(screen.getByRole('link', { name: 'Criar Conta' }));
     expect(screen.getByRole('heading', { name: 'Criar conta' })).toBeTruthy();
-    expect(screen.getByLabelText('CPF')).toBeTruthy();
+    expect(screen.queryByLabelText('CPF')).toBeNull();
     expect(screen.getByLabelText('Confirmar senha')).toBeTruthy();
 
     await user.click(screen.getByRole('link', { name: 'Entrar' }));
@@ -173,8 +173,24 @@ describe('sessão compartilhada de navegação e autenticação', () => {
 
     expect(await screen.findByRole('heading', { name: 'Criar conta' })).toBeTruthy();
     expect(screen.getByLabelText('Nome completo')).toBeTruthy();
-    expect(screen.getByLabelText('CPF')).toBeTruthy();
+    expect(screen.queryByLabelText('CPF')).toBeNull();
     expect(screen.getByLabelText('Celular')).toBeTruthy();
+  });
+
+  it('permite mostrar e ocultar senha sem alterar os campos do formulário', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> =>
+      String(url) === '/api/auth/me' ? json({ error: 'unauthorized' }, 401) :
+        json({ error: 'not_found' }, 404)));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/entrar?modo=cadastro']}><App /></MemoryRouter>);
+    const input = await screen.findByLabelText('Senha (mínimo de 12 caracteres)');
+    expect((input as HTMLInputElement).type).toBe('password');
+    await user.click(screen.getByRole('button', { name: 'Mostrar senha' }));
+    expect((input as HTMLInputElement).type).toBe('text');
+    await user.click(screen.getByRole('button', { name: 'Ocultar senha' }));
+    expect((input as HTMLInputElement).type).toBe('password');
+    expect(screen.queryByLabelText('CPF')).toBeNull();
+    expect(screen.getByText(/Seu CPF não é solicitado nem armazenado/)).toBeTruthy();
   });
 
   it('cadastra perfil completo e impede envio com confirmação de senha divergente', async () => {
@@ -190,7 +206,6 @@ describe('sessão compartilhada de navegação e autenticação', () => {
             email: 'maria@example.invalid',
             fullName: 'Maria da Silva',
             cellphone: '5521999998888',
-            cpfMasked: '***.***.***-25',
             status: 'ACTIVE',
             role: 'USER',
           },
@@ -206,7 +221,6 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     await screen.findByRole('heading', { name: 'Entrar na minha conta' });
     await user.click(screen.getByRole('button', { name: /cadastrar/i }));
     await user.type(screen.getByLabelText('Nome completo'), 'Maria da Silva');
-    await user.type(screen.getByLabelText('CPF'), '529.982.247-25');
     await user.type(screen.getByLabelText('Celular'), '(21) 99999-8888');
     await user.type(screen.getByLabelText('E-mail'), 'maria@example.invalid');
     await user.type(screen.getByLabelText('Senha (mínimo de 12 caracteres)'), 'fixture-password-12345');
@@ -223,13 +237,13 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     expect(await screen.findByRole('heading', { name: 'Maria da Silva' })).toBeTruthy();
     expect(registerBody).toMatchObject({
       fullName: 'Maria da Silva',
-      cpf: '529.982.247-25',
       cellphone: '(21) 99999-8888',
       email: 'maria@example.invalid',
     });
     expect(registerBody).not.toHaveProperty('role');
     expect(registerBody).not.toHaveProperty('status');
-    expect(screen.getByText('***.***.***-25')).toBeTruthy();
+    expect(registerBody).not.toHaveProperty('cpf');
+    expect(screen.queryByText('CPF')).toBeNull();
     expect(screen.getByText('(21) 99999-8888')).toBeTruthy();
   }, 25000);
 

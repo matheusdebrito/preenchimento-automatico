@@ -44,7 +44,6 @@ describePg('PostgreSQL: painel administrativo', () => {
         password,
         fullName: 'Administrador Fixture',
         cellphone: '(21) 99999-1111',
-        cpf: '529.982.247-25',
       },
     });
     expect(registered.statusCode).toBe(201);
@@ -143,17 +142,20 @@ describePg('PostgreSQL: painel administrativo', () => {
     expect(usage.statusCode).toBe(403);
   });
 
-  it('lista usuários e nunca devolve CPF completo', async () => {
+  it('lista usuários sem campos de CPF', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/admin/users?q=' + encodeURIComponent(userEmail),
       headers: { cookie: adminCookie },
     });
     expect(response.statusCode).toBe(200);
-    const body = response.json<{users:Array<{id:string;cpfMasked:string|null}>}>();
+    const body = response.json<{users:Array<{id:string}>}>();
     expect(body.users.some((user) => user.id === userId)).toBe(true);
-    expect(response.body).not.toContain('52998224725');
-    expect(response.body).not.toContain('529.982.247-25');
+    expect(body.users.every((user) => !('cpfMasked' in user))).toBe(true);
+    const detail = await app.inject({ method: 'GET', url: '/api/admin/users/' + userId,
+      headers: { cookie: adminCookie } });
+    expect(detail.statusCode).toBe(200);
+    expect(detail.json<{user:Record<string, unknown>}>().user).not.toHaveProperty('cpfMasked');
   });
 
   it('concede créditos uma única vez com a mesma chave idempotente e audita a ação', async () => {

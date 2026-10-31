@@ -7,7 +7,6 @@ export interface AdminUserSummary {
   email: string;
   fullName: string | null;
   cellphone: string | null;
-  cpfMasked: string | null;
   status: UserStatus;
   role: UserRole;
   createdAt: Date;
@@ -162,11 +161,6 @@ export async function adminUsage(
   };
 }
 
-function maskCpf(cpf: string | null): string | null {
-  if (!cpf || !/^\d{11}$/.test(cpf)) return null;
-  return '***.***.***-' + cpf.slice(-2);
-}
-
 function toNumber(value: string | number | null | undefined): number {
   return Number(value ?? 0);
 }
@@ -247,8 +241,7 @@ export async function listAdminUsers(
     const textPattern = add('%' + normalized + '%');
     const digits = normalized.replace(/\D/g, '');
     const digitClause = digits
-      ? ` OR COALESCE(u.cpf,'') LIKE ${add('%' + digits + '%')}
-          OR COALESCE(u.cellphone,'') LIKE ${add('%' + digits + '%')}`
+      ? ` OR COALESCE(u.cellphone,'') LIKE ${add('%' + digits + '%')}`
       : '';
     where.push(`(
       lower(COALESCE(u.full_name,'')) LIKE ${textPattern}
@@ -269,11 +262,11 @@ export async function listAdminUsers(
   const offset = add((input.page - 1) * input.pageSize);
   const result = await pool.query<{
     id: string; email: string; full_name: string | null; cellphone: string | null;
-    cpf: string | null; status: UserStatus; role: UserRole; created_at: Date;
+    status: UserStatus; role: UserRole; created_at: Date;
     balance: string; credits_used: string; last_credit_at: Date | null;
   }>(`
     SELECT
-      u.id,u.email,u.full_name,u.cellphone,u.cpf,u.status,u.role,u.created_at,
+      u.id,u.email,u.full_name,u.cellphone,u.status,u.role,u.created_at,
       COALESCE(c.balance,0)::text AS balance,
       COALESCE(c.credits_used,0)::text AS credits_used,
       c.last_credit_at
@@ -297,7 +290,6 @@ export async function listAdminUsers(
       email: row.email,
       fullName: row.full_name,
       cellphone: row.cellphone,
-      cpfMasked: maskCpf(row.cpf),
       status: row.status,
       role: row.role,
       createdAt: row.created_at,
@@ -313,10 +305,10 @@ export async function listAdminUsers(
 
 export async function getAdminUser(pool: Database, userId: string) {
   const users = await pool.query<{
-    id:string; email:string; full_name:string|null; cellphone:string|null; cpf:string|null;
+    id:string; email:string; full_name:string|null; cellphone:string|null;
     status:UserStatus; role:UserRole; created_at:Date; balance:string; credits_used:string;
   }>(`
-    SELECT u.id,u.email,u.full_name,u.cellphone,u.cpf,u.status,u.role,u.created_at,
+    SELECT u.id,u.email,u.full_name,u.cellphone,u.status,u.role,u.created_at,
       COALESCE(SUM(c.amount),0)::text AS balance,
       COUNT(c.id) FILTER (WHERE c.reason='consume')::text AS credits_used
     FROM app_users u
@@ -343,7 +335,6 @@ export async function getAdminUser(pool: Database, userId: string) {
       email: row.email,
       fullName: row.full_name,
       cellphone: row.cellphone,
-      cpfMasked: maskCpf(row.cpf),
       status: row.status,
       role: row.role,
       createdAt: row.created_at,

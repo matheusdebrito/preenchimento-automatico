@@ -62,7 +62,6 @@ export function AccountPage() {
                 <div><dt>Nome</dt><dd>{user.fullName ?? 'Cadastro antigo — não informado'}</dd></div>
                 <div><dt>E-mail</dt><dd>{user.email}</dd></div>
                 <div><dt>Celular</dt><dd>{formatCellphone(user.cellphone)}</dd></div>
-                <div><dt>CPF</dt><dd>{user.cpfMasked ?? 'Cadastro antigo — não informado'}</dd></div>
                 <div><dt>Status</dt><dd>{user.status === 'ACTIVE' ? 'Ativa' : user.status}</dd></div>
                 <div><dt>Perfil</dt><dd>{user.role === 'ADMIN' ? 'Administrador' : 'Usuário'}</dd></div>
               </dl>
@@ -135,8 +134,8 @@ export function AccountPage() {
             icon={<ShieldCheck aria-hidden="true" />}
             title="Privacidade por padrão"
           >
-            O CPF é exibido de forma mascarada. Dados de documentos processados continuam fora
-            do histórico operacional da conta.
+            Seu cadastro não solicita nem armazena CPF. Dados extraídos de documentos são
+            usados temporariamente para preencher formulários e não integram o perfil da conta.
           </Notice>
         </div>
       </div>

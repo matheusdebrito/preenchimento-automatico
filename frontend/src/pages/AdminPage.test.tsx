@@ -16,7 +16,6 @@ const adminUser = {
   email: 'admin@example.invalid',
   fullName: 'Administrador',
   cellphone: '5521999991111',
-  cpfMasked: '***.***.***-25',
   status: 'ACTIVE',
   role: 'ADMIN',
 };
@@ -68,7 +67,6 @@ describe('painel administrativo', () => {
           email: 'cliente@example.invalid',
           fullName: 'Cliente Teste',
           cellphone: '5521988887777',
-          cpfMasked: '***.***.***-09',
           status: 'ACTIVE',
           role: 'USER',
           createdAt: '2026-10-30T12:00:00.000Z',
@@ -83,7 +81,6 @@ describe('painel administrativo', () => {
           email: 'cliente@example.invalid',
           fullName: 'Cliente Teste',
           cellphone: '5521988887777',
-          cpfMasked: '***.***.***-09',
           status: 'ACTIVE',
           role: 'USER',
           createdAt: '2026-10-30T12:00:00.000Z',
@@ -114,7 +111,7 @@ describe('painel administrativo', () => {
 
     await user.click(screen.getByRole('button', { name: 'Ver' }));
     expect(await screen.findByRole('heading', { name: 'Cliente Teste' })).toBeTruthy();
-    expect(screen.getByText('***.***.***-09')).toBeTruthy();
+    expect(screen.queryByText('CPF')).toBeNull();
     expect(screen.getByRole('button', { name: 'Depositar créditos' })).toBeTruthy();
   });
 

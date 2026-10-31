@@ -7,7 +7,6 @@ export interface SessionUser {
   email: string;
   fullName: string | null;
   cellphone: string | null;
-  cpfMasked: string | null;
   status: 'ACTIVE' | 'BLOCKED' | 'PENDING';
   role: 'USER' | 'ADMIN';
 }

@@ -1,10 +1,9 @@
--- Extend account identity without breaking existing users created before this migration.
+-- Extend account contact details without breaking existing users created before this migration.
 -- New registrations enforce these fields in the application layer. Existing rows may remain null
 -- until a future profile-completion flow is introduced.
 ALTER TABLE app_users
   ADD COLUMN IF NOT EXISTS full_name text,
   ADD COLUMN IF NOT EXISTS cellphone varchar(13),
-  ADD COLUMN IF NOT EXISTS cpf char(11),
   ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'ACTIVE',
   ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'USER';
 
@@ -32,16 +31,6 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conname = 'app_users_cpf_digits_check'
-      AND conrelid = 'app_users'::regclass
-  ) THEN
-    ALTER TABLE app_users
-      ADD CONSTRAINT app_users_cpf_digits_check
-      CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$');
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
     WHERE conname = 'app_users_cellphone_digits_check'
       AND conrelid = 'app_users'::regclass
   ) THEN
@@ -51,6 +40,3 @@ BEGIN
   END IF;
 END $$;
 
-CREATE UNIQUE INDEX IF NOT EXISTS app_users_cpf_unique_idx
-  ON app_users(cpf)
-  WHERE cpf IS NOT NULL;
