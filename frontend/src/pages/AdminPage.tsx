@@ -42,7 +42,6 @@ interface AdminUser {
   email:string;
   fullName:string|null;
   cellphone:string|null;
-  cpfMasked:string|null;
   status:UserStatus;
   role:UserRole;
   createdAt:string;
@@ -546,7 +545,7 @@ export function AdminPage() {
                 </button>
               </div>
               <dl className="account-profile-grid">
-                <div><dt>CPF</dt><dd>{selected.user.cpfMasked ?? '—'}</dd></div>
+                <div><dt>CPF</dt><dd></dd></div>
                 <div><dt>Celular</dt><dd>{formatCellphone(selected.user.cellphone)}</dd></div>
                 <div><dt>Saldo</dt><dd>{selected.user.balance}</dd></div>
                 <div><dt>Créditos usados</dt><dd>{selected.user.creditsUsed}</dd></div>
