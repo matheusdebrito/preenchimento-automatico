@@ -101,6 +101,29 @@ describe('sessão compartilhada de navegação e autenticação', () => {
   }, 25000);
 
 
+  it('mantém o conteúdo do painel informativo idêntico ao alternar login e cadastro', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> =>
+      String(url) === '/api/auth/me' ? json({ error: 'unauthorized' }, 401) :
+        json({ error: 'not_found' }, 404)));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/entrar']}><App /></MemoryRouter>);
+
+    await screen.findByRole('heading', { name: 'Entrar na minha conta' });
+    const story = () => screen.getByRole('complementary', { name: 'Conheça o preenchimento automático' });
+    const initialText = story().textContent;
+    expect(initialText).toContain('Menos tempo preenchendo. Mais tempo para você.');
+    expect(initialText).toContain('Uma ferramenta independente, não vinculada à Marinha do Brasil.');
+
+    await user.click(screen.getByRole('link', { name: 'Criar Conta' }));
+    expect(screen.getByRole('heading', { name: 'Criar conta' })).toBeTruthy();
+    expect(story().textContent).toBe(initialText);
+    expect(screen.queryByText('Seu CPF não é solicitado nem armazenado no cadastro.')).toBeNull();
+
+    await user.click(screen.getByRole('link', { name: 'Entrar' }));
+    expect(screen.getByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    expect(story().textContent).toBe(initialText);
+  });
+
   it('alterna entre Entrar e Criar Conta pelo cabeçalho sem recarregar', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
       if (String(url) === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
@@ -190,7 +213,8 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     await user.click(screen.getByRole('button', { name: 'Ocultar senha' }));
     expect((input as HTMLInputElement).type).toBe('password');
     expect(screen.queryByLabelText('CPF')).toBeNull();
-    expect(screen.getByText(/Seu CPF não é solicitado nem armazenado/)).toBeTruthy();
+    expect(screen.queryByText(/Seu CPF não é solicitado nem armazenado/)).toBeNull();
+    expect(screen.getByText('Crie sua conta em poucos passos para preencher seus formulários.')).toBeTruthy();
   });
 
   it('cadastra perfil completo e impede envio com confirmação de senha divergente', async () => {
