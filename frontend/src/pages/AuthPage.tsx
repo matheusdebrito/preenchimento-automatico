@@ -123,6 +123,7 @@ function AuthPageForm() {
             <nav className="auth-switch" aria-label="Escolher entre login e cadastro">
               <Link
                 to={{ pathname: '/entrar', search: next ? '?' + new URLSearchParams({ next }) : '' }}
+                aria-label="Alternar para login"
                 className={!register ? 'auth-switch__item auth-switch__item--active' : 'auth-switch__item'}
                 aria-current={!register ? 'page' : undefined}
               >Entrar</Link>
@@ -131,6 +132,7 @@ function AuthPageForm() {
                   ...(next ? { next } : {}),
                   modo: 'cadastro',
                 }) }}
+                aria-label="Alternar para cadastro"
                 className={register ? 'auth-switch__item auth-switch__item--active' : 'auth-switch__item'}
                 aria-current={register ? 'page' : undefined}
               >Criar conta</Link>
