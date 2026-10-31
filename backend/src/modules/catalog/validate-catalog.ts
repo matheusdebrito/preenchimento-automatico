@@ -205,7 +205,13 @@ export function validateCatalog(data: CatalogDefinition): string[] {
     buildIndex(service.documentRequirements, 'documento de ' + service.id, issues);
     for (const requirement of service.documentRequirements) {
       validateConditions(requirement.conditions, questions, 'documento ' + requirement.id, issues);
-      if (requirement.extraction) {
+      if (!requirement.extraction) {
+        if (service.status === 'AVAILABLE') {
+          issues.push('documento ' + requirement.id + ': serviço disponível sem perfil de entrada da IA');
+        }
+        continue;
+      }
+      {
         if (!AI_INPUT_DOCUMENT_TYPES.includes(requirement.extraction.documentType)) {
           issues.push('documento ' + requirement.id + ': tipo fora da lista de entradas aceitas pela IA');
         }
