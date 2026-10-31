@@ -154,12 +154,14 @@ Os antigos cards separados de alteração de dados e de motor foram consolidados
 dados/características, apenas motor ou ambos. Para moto aquática, a seleção também distingue
 dados da embarcação, dados do proprietário e combinações com motor.
 
-A composição continua normativa: BADE/BSADE/BDMOTO e requerimentos são reutilizados; o
-Anexo 3-C continua condicionado aos casos admitidos, e documentos de origem/motor só aparecem
-quando a opção escolhida os torna aplicáveis. O antigo ID `alteracao-motor-embarcacao` deixou
-de ser publicado para evitar dois processos artificiais para a mesma atualização cadastral.
+A composição de saída continua normativa: BADE/BSADE/BDMOTO, requerimentos e Anexo 3-C
+são selecionados conforme as respostas. A extração automática recebe somente identidade
+(RG/CNH/CIN), comprovante de residência e TIE/TIEM. Nota fiscal, documento de origem/propriedade
+e comprovante de motor não são solicitados como upload; seus campos, quando existentes no PDF,
+são preenchidos manualmente. O antigo ID `alteracao-motor-embarcacao` deixou de ser publicado
+para evitar dois processos artificiais para a mesma atualização cadastral.
 
 
 ## Consolidação das transferências — 30/10/2026
 
-Os três cards anteriores foram substituídos por um único serviço **Transferência de propriedade e/ou jurisdição**. O usuário escolhe o alvo da transferência no início do fluxo. A escolha controla tanto as marcações dos formulários quanto a presença de documentos específicos de propriedade, como identidade do vendedor, documento de origem/propriedade e autorização 2-K. Para jurisdição isolada, esses itens de propriedade não são exibidos.
+Os três cards anteriores foram substituídos por um único serviço **Transferência de propriedade e/ou jurisdição**. O usuário escolhe o alvo da transferência no início do fluxo. A escolha controla as marcações dos formulários de saída e quais fontes de identidade/residência são exibidas para extração. A identidade do vendedor é uma entrada permitida quando há transferência de propriedade; TIE/TIEM e comprovantes de residência também podem alimentar campos mapeados. Documento de origem/propriedade não é upload da ferramenta. O Anexo 2-K é um formulário de saída condicional, não um documento de entrada.
