@@ -1094,7 +1094,9 @@ export function LiveFlowPage() {
                     onClick={() => navigate(-1)}>Voltar</Button>
                   <h2>Formulários gerados</h2>
                   <Notice tone="success">
-                    Pacote preparado. O crédito da análise já foi consumido quando os documentos foram enviados à OpenAI; baixar os PDFs não gera novo débito.
+                    {uploadedRequirements.length > 0
+                      ? 'Pacote preparado. O crédito da análise foi consumido quando os documentos foram enviados à OpenAI; baixar os PDFs não gera novo débito.'
+                      : 'Pacote preparado. Você preencheu sem enviar documentos para análise com IA; nenhum crédito de análise foi consumido. Baixar os PDFs não gera débito.'}
                   </Notice>
                   {downloads.map((version) => (
                     <a className="btn btn--secondary" key={version}
