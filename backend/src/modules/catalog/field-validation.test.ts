@@ -25,6 +25,28 @@ describe('validação semântica por versão do formulário', () => {
       'person.issueDate': '31/02/2026',
     })).toThrow('invalid_field_value:person.issueDate:invalid_date');
   });
+  it('rejeita quantidade de motores, passageiros e ano de construção inválidos', () => {
+    const bade = catalog.mappings.find((item) => item.formVersionId === 'bade-er-2026-v1')!;
+    expect(() => validateMappedFieldValues(catalog.fields, bade.placements, {
+      'vessel.motorCount': 'abc',
+    })).toThrow('invalid_field_value:vessel.motorCount:invalid_number');
+    expect(() => validateMappedFieldValues(catalog.fields, bade.placements, {
+      'vessel.passengerCount': '-3',
+    })).toThrow('invalid_field_value:vessel.passengerCount:invalid_number');
+    expect(() => validateMappedFieldValues(catalog.fields, bade.placements, {
+      'vessel.year': '20A6',
+    })).toThrow('invalid_field_value:vessel.year:invalid_number');
+    expect(() => validateMappedFieldValues(catalog.fields, bade.placements, {
+      'vessel.year': '2026',
+      'vessel.motorCount': '2',
+      'vessel.passengerCount': '12',
+    })).not.toThrow();
+    expect(() => validateMappedFieldValues(catalog.fields, bade.placements, {
+      'vessel.motorCount': '',
+      'vessel.year': '',
+    })).not.toThrow();
+  });
+
   it('reutiliza dados do pacote sem tentar validar campos de outras versões', () => {
     const mapping = catalog.mappings.find((m) => m.formVersionId === 'requerimento-ma-v1')!;
     expect(() => validateMappedFieldValues(catalog.fields, mapping.placements, {
