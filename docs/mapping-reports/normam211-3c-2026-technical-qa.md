@@ -11,10 +11,13 @@ Ele não correspondia ao Anexo 3-C vigente.
 O template foi substituído pela página oficial do Anexo 3-C da NORMAM-211/DPC 2026:
 **Termo de Responsabilidade de Construção/Alteração**.
 
-Arquivo versionado:
+Arquivo versionado (correção de legibilidade em 31/10/2026, PR #93):
 - caminho: `backend/templates/termo-responsabilidade-er/v1/original.pdf`;
-- SHA-256: `C147B08055BDED745B03269EF3FB4373F6E2FA90BBE1AA9B6C2939DEEEF7ACD5`;
-- uma página A4 rasterizada a partir da página oficial do Anexo 3-C e preservada como template estático. O PDF foi reserializado em uma estrutura simples e compatível com o `pdf-lib`, sem alterar o conteúdo visual do formulário; a geometria foi conferida contra a página oficial.
+- SHA-256: `AD769898EDDC2327880292423761FC87D789428AEF279FDC1735C7200E750529`;
+- fonte integral: NORMAM-211/DPC, página **210 do PDF** entregue pelo responsável do produto; SHA-256 de origem `71492859082A6786203619C859FCC99BC72C85128DC9FD27D32F93A92B09598C`;
+- uma página A4 rasterizada em tons de cinza (220 DPI), mantendo exatamente o conteúdo visual da página normativa. O PDF é estático e compatível com `pdf-lib`.
+
+**Alerta contra regressão:** o arquivo `documentos/anexos/NORMAM 211 Anx 3-C.pdf` contém **outro termo antigo de inscrição/transferência**, apesar do nome sugerir 3-C; não o usar para reconstruir o formulário. A primeira tentativa do PR #93 o utilizou por engano, descoberta e descartada na inspeção das prévias antes do merge. O template anterior também tinha uma imagem base com grande faixa preta. A inspeção visual das novas amostras do PR #93 confirma que a fonte 3-C agora tem título de **Construção/Alteração** e não apresenta a faixa preta.
 
 ## Campos homologados
 
