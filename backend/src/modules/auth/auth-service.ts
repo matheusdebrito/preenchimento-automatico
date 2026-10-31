@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { isValidCpf } from '../catalog/field-validation.js';
 import type { Database } from './db.js';
 import { hashPassword, verifyPassword, sessionToken, tokenDigest } from './crypto.js';
 
@@ -13,7 +12,6 @@ export interface SessionUser {
   email: string;
   fullName: string | null;
   cellphone: string | null;
-  cpfMasked: string | null;
   status: UserStatus;
   role: UserRole;
 }
@@ -30,10 +28,6 @@ function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
-function normalizeCpf(value: string): string {
-  return value.replace(/\D/g, '');
-}
-
 function normalizeCellphone(value: string): string {
   const digits = value.replace(/\D/g, '');
   if (digits.length === 13 && digits.startsWith('55')) return digits;
@@ -46,13 +40,11 @@ function isValidBrazilianCellphone(value: string): boolean {
   return /^\d{2}9\d{8}$/.test(national) && !/^0/.test(national);
 }
 
-export const registrationSchema = z.object({
+export const registrationSchema = z.strictObject({
   fullName: z.string().max(120).transform(normalizeWhitespace)
     .refine((value) => value.length >= 2, 'Nome inválido.'),
   cellphone: z.string().max(32).transform(normalizeCellphone)
     .refine(isValidBrazilianCellphone, 'Celular inválido.'),
-  cpf: z.string().max(32).transform(normalizeCpf)
-    .refine(isValidCpf, 'CPF inválido.'),
   email: emailSchema,
   password: passwordSchema,
 });
@@ -63,14 +55,8 @@ interface UserRecord {
   password_hash: string;
   full_name: string | null;
   cellphone: string | null;
-  cpf: string | null;
   status: UserStatus;
   role: UserRole;
-}
-
-function maskCpf(cpf: string | null): string | null {
-  if (!cpf || !/^\d{11}$/.test(cpf)) return null;
-  return '***.***.***-' + cpf.slice(-2);
 }
 
 function toSessionUser(record: Omit<UserRecord, 'password_hash'>): SessionUser {
@@ -79,7 +65,6 @@ function toSessionUser(record: Omit<UserRecord, 'password_hash'>): SessionUser {
     email: record.email,
     fullName: record.full_name,
     cellphone: record.cellphone,
-    cpfMasked: maskCpf(record.cpf),
     status: record.status,
     role: record.role,
   };
@@ -99,7 +84,7 @@ export async function getCurrentUser(
   const token = extractToken(request);
   if (!token) return null;
   const result = await pool.query<Omit<UserRecord, 'password_hash'>>(
-    `SELECT u.id, u.email, u.full_name, u.cellphone, u.cpf, u.status, u.role
+    `SELECT u.id, u.email, u.full_name, u.cellphone, u.status, u.role
       FROM app_users u
       JOIN app_sessions s ON s.user_id=u.id
       WHERE s.token_hash=$1 AND s.expires_at>now() AND u.status='ACTIVE'`,
@@ -115,10 +100,10 @@ export async function registerUser(pool: Database, body: unknown): Promise<Sessi
   const id = randomUUID();
   try {
     const result = await pool.query<Omit<UserRecord, 'password_hash'>>(
-      `INSERT INTO app_users(id,email,password_hash,full_name,cellphone,cpf)
-       VALUES($1,$2,$3,$4,$5,$6)
-       RETURNING id,email,full_name,cellphone,cpf,status,role`,
-      [id, input.email, hash, input.fullName, input.cellphone, input.cpf],
+      `INSERT INTO app_users(id,email,password_hash,full_name,cellphone)
+       VALUES($1,$2,$3,$4,$5)
+       RETURNING id,email,full_name,cellphone,status,role`,
+      [id, input.email, hash, input.fullName, input.cellphone],
     );
     return toSessionUser(result.rows[0]!);
   } catch (error) {
@@ -134,7 +119,7 @@ export async function authenticate(pool: Database, body: unknown): Promise<Sessi
   const parse = credentialsSchema.safeParse(body);
   if (!parse.success) return null;
   const result = await pool.query<UserRecord>(
-    `SELECT id,email,password_hash,full_name,cellphone,cpf,status,role
+    `SELECT id,email,password_hash,full_name,cellphone,status,role
      FROM app_users WHERE email=$1`,
     [parse.data.email],
   );
