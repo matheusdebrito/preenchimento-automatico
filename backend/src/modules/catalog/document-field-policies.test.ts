@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   APPLICANT_IDENTITY_FIELDS,
+  AQUAVIARIO_CIR_FIELDS,
   BUYER_IDENTITY_FIELDS,
   CHA_FIELDS,
   RESIDENCE_PROOF_FIELDS,
@@ -104,6 +105,14 @@ describe('document field source policies', () => {
     expect(legacy).toContain('registeredOwner.address');
     expect(legacy).toContain('coOwner.address');
     expect(legacy).toContain('vessel.builderName');
+  });
+
+  it('não extrai campos quando o arquivo não corresponde à categoria de entrada', () => {
+    expect(fieldsAllowedForDetectedSubtype('identity', 'not-applicable', APPLICANT_IDENTITY_FIELDS))
+      .toEqual([]);
+    expect(fieldsAllowedForDetectedSubtype('cha', 'rg', CHA_FIELDS)).toEqual([]);
+    expect(fieldsAllowedForDetectedSubtype('cir', 'cha', AQUAVIARIO_CIR_FIELDS)).toEqual([]);
+    expect(fieldsAllowedForDetectedSubtype('tie', 'not-applicable', TIE_FIELDS)).toEqual([]);
   });
 
   it('preserva política configurada quando o subtipo é desconhecido', () => {
