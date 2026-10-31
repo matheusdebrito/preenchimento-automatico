@@ -195,6 +195,17 @@ try{
       console.error('FAIL '+c.caseId+' '+String(e.message).slice(0,380));
     }finally{
       results.push(row);
+      // A second case for the same service must not reuse a GENERATED job from sessionStorage.
+      // Close through the actual user control, which also deletes temporary documents.
+      const finish=page.getByRole('button',{name:'Encerrar e apagar PDFs (sem novo débito)'});
+      const cancel=page.getByRole('button',{name:'Cancelar e apagar documentos temporários'});
+      if(await finish.count()){
+        await finish.click().catch(()=>{});
+        await page.getByRole('heading',{name:'Dados do serviço'}).waitFor({timeout:8000}).catch(()=>{});
+      } else if(await cancel.count()){
+        await cancel.click().catch(()=>{});
+        await page.getByRole('heading',{name:'Dados do serviço'}).waitFor({timeout:8000}).catch(()=>{});
+      }
       await page.goto(BASE+'/').catch(()=>{});
     }
   }
