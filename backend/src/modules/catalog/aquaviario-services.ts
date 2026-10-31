@@ -9,6 +9,7 @@ import type {
 } from './contracts.js';
 import {
   APPLICANT_IDENTITY_FIELDS,
+  AQUAVIARIO_CIR_FIELDS,
   RESIDENCE_PROOF_FIELDS,
 } from './document-field-policies.js';
 
@@ -16,6 +17,12 @@ const cirSecondCopyReason: ServiceQuestion = {
   id: 'cirSecondCopyReason',
   label: 'Motivo da 2ª via da CIR',
   options: ['dano', 'extravio', 'roubo', 'furto'],
+};
+
+const ascensionAquaviarioGroup: ServiceQuestion = {
+  id: 'ascensionAquaviarioGroup',
+  label: 'Grupo profissional do aquaviário',
+  options: ['mergulhadores', 'outros_grupos'],
 };
 
 const initialAquaviarioGroup: ServiceQuestion = {
@@ -74,6 +81,21 @@ const supporting = (
   ...(conditions ? { conditions } : {}),
 });
 
+const cirDataSource = (
+  id: string,
+  label: string,
+  description: string,
+  conditions?: readonly ServiceCondition[],
+): DocumentRequirement => ({
+  id, label, description, required: false,
+  extraction: {
+    documentType: 'cir',
+    subjectRole: 'person',
+    allowedFieldIds: AQUAVIARIO_CIR_FIELDS,
+  },
+  ...(conditions ? { conditions } : {}),
+});
+
 const commonDocuments: readonly DocumentRequirement[] = [
   {
     id: 'applicant-identity',
@@ -86,17 +108,8 @@ const commonDocuments: readonly DocumentRequirement[] = [
       allowedFieldIds: APPLICANT_IDENTITY_FIELDS,
     },
   },
-  {
-    id: 'current-cir',
-    label: 'Caderneta de Inscrição e Registro (CIR)',
-    description: 'Envie a folha de rosto e, quando o processo exigir, as folhas de registros de embarque. Documento de apoio para conferência.',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: [],
-    },
-  },
+  cirDataSource('current-cir', 'Caderneta de Inscrição e Registro (CIR)',
+    'A folha de rosto pode sugerir número da CIR e categoria quando estes campos constarem do formulário. Outras folhas podem ser exigidas apenas no protocolo.'),
   {
     id: 'current-certificate',
     label: 'Certificado atual',
@@ -257,8 +270,8 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('professional-qualification', 'Comprovantes de habilitação', 'Podem ser solicitados pela CP/DL/AG quando houver divergência entre a CIR e o SISAQUA.'),
     ]),
   base('ascensao-categoria-aquaviario', 'Ascensão de categoria',
-    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. Comprovantes de curso, tempo de embarque e habilitação continuam sendo documentos de apoio ao protocolo. A validade do atestado de saúde é de seis meses para mergulhadores e um ano para os demais aquaviários.',
-    [], [
+    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. No campo Finalidade do requerimento informe a categoria atual e a categoria pretendida. Comprovantes de curso, tempo de embarque e habilitação continuam sendo documentos de apoio ao protocolo. A validade do atestado de saúde é de seis meses para mergulhadores e um ano para os demais aquaviários.',
+    [ascensionAquaviarioGroup], [
       ...docs('applicant-identity', 'current-cir', 'residence-proof'),
       supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
       supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de seis meses para mergulhadores ou um ano para os demais aquaviários.'),
@@ -267,15 +280,19 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('course-certificates', 'Certificados de cursos e estágios', 'Comprovantes de conclusão dos cursos e estágios que atendem aos requisitos da categoria pretendida.'),
       supporting('competency-certificates', 'Certificado de Competência', 'Quando houver alteração de Regras ou retirada de limitações.'),
       supporting('education-proof', 'Comprovante de escolaridade', 'Quando exigido pelo Quadro Geral de Certificações (Anexo 2-A).'),
-      supporting('diving-experience', 'Comprovação de experiência como MGE', 'Somente para o 4º Grupo: dois anos de exercício como MGE e pelo menos 150 horas de mergulho, comprovados pelo LRM e documentos complementares.'),
-      supporting('diving-course', 'Certificado do C-Exp-MGSAT ou equivalente', 'Somente para o 4º Grupo - Mergulhadores. Curso realizado no CIAMA ou em entidade credenciada pela DPC.'),
+      supporting('diving-experience', 'Comprovação de experiência como MGE', 'Somente para o 4º Grupo: dois anos de exercício como MGE e pelo menos 150 horas de mergulho, comprovados pelo LRM e documentos complementares.', [
+        { questionId: 'ascensionAquaviarioGroup', equals: 'mergulhadores' },
+      ]),
+      supporting('diving-course', 'Certificado do C-Exp-MGSAT ou equivalente', 'Somente para o 4º Grupo - Mergulhadores. Curso realizado no CIAMA ou em entidade credenciada pela DPC.', [
+        { questionId: 'ascensionAquaviarioGroup', equals: 'mergulhadores' },
+      ]),
       supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento aplicável à ascensão.'),
     ]),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
     'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. Os documentos de apoio variam conforme o modelo de certificado. A fotografia prevista na norma é capturada no atendimento.',
     [certificateModel, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
-      supporting('current-cir-certification', 'CIR', 'Folha de rosto e, quando aplicável, folhas de registros de embarque. Exigida para DPC-1031 e DPC-1034.', [
+      cirDataSource('current-cir-certification', 'CIR', 'Folha de rosto para sugerir número e categoria. Folhas de embarque são documentos de apoio ao protocolo. Exigida para DPC-1031 e DPC-1034.', [
         { questionId: 'certificateModel', oneOf: ['dpc1031', 'dpc1034'] },
       ]),
       supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.', [
@@ -322,7 +339,7 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
     'Gera o Requerimento de Certificação oficial do Anexo 1-E, a Declaração de Residência do Anexo 1-L e, para extravio, roubo ou furto, a Declaração do Anexo 1-K. A fotografia prevista na norma é capturada no atendimento.',
     [certificateSecondCopyModel, certificateSecondCopyReason, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
-      supporting('current-cir-certification', 'CIR', 'Folha de rosto da CIR, conforme o modelo de certificado solicitado.'),
+      cirDataSource('current-cir-certification', 'CIR', 'Folha de rosto da CIR para sugerir número e categoria, quando aplicável ao modelo do certificado.'),
       supporting('current-certificate-damage', 'Certificado original danificado', 'Apresente o original quando a segunda via for solicitada por dano.', [
         { questionId: 'certificateSecondCopyReason', equals: 'dano' },
       ]),
@@ -346,7 +363,7 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
     'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. A NORMAM-101 não prevê revalidação do DPC-1033 pela Autoridade Marítima Brasileira.',
     [revalidatableCertificateModel, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
-      supporting('current-cir-certification', 'CIR e folhas de registro de embarque', 'Apresente a folha de rosto e as folhas de registros de embarque.'),
+      cirDataSource('current-cir-certification', 'CIR e folhas de registro de embarque', 'A folha de rosto pode sugerir número e categoria; apresente também os registros de embarque quando exigidos.'),
       supporting('current-certificate', 'Certificado a revalidar', 'Cópia do certificado atual.'),
       supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
       supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de um ano, conforme os padrões de saúde previstos na norma.'),
@@ -380,7 +397,7 @@ const auxiliaryRequest = (
   order,
   fixedValues: {
     'process.requestSubject': subject,
-    'process.requestPurpose': purpose,
+    ...(purpose ? { 'process.requestPurpose': purpose } : {}),
   },
   ...(conditions ? { conditions } : {}),
 });
@@ -420,7 +437,7 @@ export const aquaviarioServiceForms: readonly ServiceForm[] = [
     'ascensao-categoria-aquaviario',
     2,
     'Ascensão de categoria',
-    'o registro da minha ascensão à categoria pretendida, conforme a NORMAM-101/DPC.',
+    '', // Finalidade editável: o usuário informa explicitamente categoria atual e pretendida.
   ),
   {
     serviceId: 'emissao-certificado-aquaviario',
