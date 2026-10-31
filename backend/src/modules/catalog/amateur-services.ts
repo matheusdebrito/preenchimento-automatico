@@ -204,6 +204,16 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-cha-amador-2026-v1',
     order: 1,
     fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
+    answerValueMappings: {
+      'process.notes': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Renovação de CHA de Arrais-Amador',
+          mestre: 'Renovação de CHA de Mestre-Amador',
+          capitao: 'Renovação de CHA de Capitão-Amador',
+        },
+      },
+    },
   },
   {
     serviceId: 'renovacao-cha-amador',
@@ -252,6 +262,16 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-cha-amador-2026-v1',
     order: 1,
     fixedValues: { 'process.amateurRequest': 'renovacao_agregacao_mta' },
+    answerValueMappings: {
+      'process.notes': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Renovação de CHA de Arrais-Amador com agregação Motonauta',
+          mestre: 'Renovação de CHA de Mestre-Amador com agregação Motonauta',
+          capitao: 'Renovação de CHA de Capitão-Amador com agregação Motonauta',
+        },
+      },
+    },
   },
   {
     serviceId: 'renovacao-cha-agregacao-mta',
@@ -261,7 +281,15 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     answerValueMappings: {
       'process.motonautaDeclaration': {
         questionId: 'motonautaDeclaration',
-        values: { sim: 'true', nao: 'false' },
+        values: { sim: 'true' },
+      },
+      'process.notes': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Renovação da CHA Arrais-Amador com agregação Motonauta',
+          mestre: 'Renovação da CHA Mestre-Amador com agregação Motonauta',
+          capitao: 'Renovação da CHA Capitão-Amador com agregação Motonauta',
+        },
       },
     },
   },
