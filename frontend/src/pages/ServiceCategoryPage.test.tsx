@@ -95,36 +95,84 @@ describe('ServiceCategoryPage', () => {
     expect(screen.queryByText('Formulário em validação')).toBeNull();
     unmount();
 
-    renderCategory('/servicos/aquaviarios', [{
-      id: 'inscricao-inicial-cir-aquaviario',
-      title: 'Inscrição inicial / emissão da CIR',
-      description: 'Fluxo homologado',
-      creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
-      formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
-    }, {
-      id: 'segunda-via-cir-aquaviario',
-      title: '2ª via da CIR',
-      description: 'Fluxo homologado',
-      creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
-      formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
-    }, {
-      id: 'emissao-certificado-aquaviario',
-      title: 'Emissão de certificado',
-      description: 'Fluxo homologado',
-      creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
-      formVersionIds: [
-        'requerimento-certificacao-aquaviario-2026-v1',
-        'declaracao-residencia-aquaviario-2026-v1',
-      ],
-    }]);
+    renderCategory('/servicos/aquaviarios', [
+      {
+        id: 'inscricao-inicial-cir-aquaviario',
+        title: 'Inscrição inicial / emissão da CIR',
+        description: 'Fluxo homologado',
+        creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+        formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
+      },
+      {
+        id: 'segunda-via-cir-aquaviario',
+        title: '2ª via da CIR',
+        description: 'Fluxo homologado',
+        creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+        formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
+      },
+      {
+        id: 'revalidacao-cir-aquaviario',
+        title: 'Revalidação da CIR',
+        description: 'Fluxo homologado',
+        creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+        formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
+      },
+      {
+        id: 'ascensao-categoria-aquaviario',
+        title: 'Ascensão de categoria',
+        description: 'Fluxo homologado',
+        creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+        formVersionIds: ['declaracao-residencia-aquaviario-2026-v1'],
+      },
+      {
+        id: 'emissao-certificado-aquaviario',
+        title: 'Emissão de certificado',
+        description: 'Fluxo homologado',
+        creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+        formVersionIds: [
+          'requerimento-certificacao-aquaviario-2026-v1',
+          'declaracao-residencia-aquaviario-2026-v1',
+        ],
+      },
+      {
+        id: 'segunda-via-certificado-aquaviario',
+        title: '2ª via de certificado',
+        description: 'Fluxo homologado',
+        creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+        formVersionIds: [
+          'requerimento-certificacao-aquaviario-2026-v1',
+          'declaracao-residencia-aquaviario-2026-v1',
+        ],
+      },
+      {
+        id: 'revalidacao-certificado-aquaviario',
+        title: 'Revalidação de certificado',
+        description: 'Fluxo homologado',
+        creditCost: 1, questions: [], reviewFields: [], documentRequirements: [],
+        formVersionIds: [
+          'requerimento-certificacao-aquaviario-2026-v1',
+          'declaracao-residencia-aquaviario-2026-v1',
+        ],
+      },
+    ]);
     expect(screen.getByRole('heading', { level: 1, name: 'Aquaviários' })).toBeTruthy();
-    expect((await screen.findByRole('link', { name: /Inscrição inicial \/ emissão da CIR/ }))
-      .getAttribute('href')).toBe('/preencher-real/inscricao-inicial-cir-aquaviario');
-    expect((await screen.findByRole('link', { name: /2ª via da CIR/ }))
-      .getAttribute('href')).toBe('/preencher-real/segunda-via-cir-aquaviario');
-    expect((await screen.findByRole('link', { name: /Emissão de certificado/ }))
-      .getAttribute('href')).toBe('/preencher-real/emissao-certificado-aquaviario');
-    expect(screen.getAllByText('Formulário em validação')).toHaveLength(7);
+    const expectedAquaviarioLinks = [
+      ['Inscrição inicial / emissão da CIR', '/preencher-real/inscricao-inicial-cir-aquaviario'],
+      ['2ª via da CIR', '/preencher-real/segunda-via-cir-aquaviario'],
+      ['Revalidação da CIR', '/preencher-real/revalidacao-cir-aquaviario'],
+      ['Ascensão de categoria', '/preencher-real/ascensao-categoria-aquaviario'],
+      ['Emissão de certificado', '/preencher-real/emissao-certificado-aquaviario'],
+      ['2ª via de certificado', '/preencher-real/segunda-via-certificado-aquaviario'],
+      ['Revalidação de certificado', '/preencher-real/revalidacao-certificado-aquaviario'],
+    ] as const;
+    for (const [name, href] of expectedAquaviarioLinks) {
+      expect((await screen.findByRole('link', { name: new RegExp(name) }))
+        .getAttribute('href')).toBe(href);
+    }
+    expect(screen.queryByText('Transferência de jurisdição')).toBeNull();
+    expect(screen.queryByText('Transferência de categoria ou grupo')).toBeNull();
+    expect(screen.queryByText('Homologação do LRM')).toBeNull();
+    expect(screen.queryByText('Formulário em validação')).toBeNull();
   });
 
   it('não confunde falha da API com formulário em validação', async () => {
