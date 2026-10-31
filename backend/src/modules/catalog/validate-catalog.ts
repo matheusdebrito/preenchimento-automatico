@@ -211,26 +211,24 @@ export function validateCatalog(data: CatalogDefinition): string[] {
         }
         continue;
       }
-      {
-        if (!AI_INPUT_DOCUMENT_TYPES.includes(requirement.extraction.documentType)) {
-          issues.push('documento ' + requirement.id + ': tipo fora da lista de entradas aceitas pela IA');
-        }
-        if (!SAFE_ID.test(requirement.extraction.documentType) ||
-          !SAFE_ID.test(requirement.extraction.subjectRole)) {
-          issues.push('documento ' + requirement.id + ': perfil de extração inválido');
-        }
-        const allowed = requirement.extraction.allowedFieldIds;
-        if (allowed.length === 0) {
-          issues.push('documento ' + requirement.id + ': fonte de IA sem campos permitidos');
-        }
-        if (new Set(allowed).size !== allowed.length) {
-          issues.push('documento ' + requirement.id + ': campo permitido duplicado');
-        }
-        for (const fieldId of allowed) {
-          if (!fields.has(fieldId) || fieldId.startsWith('process.')) {
-            issues.push('documento ' + requirement.id +
-              ': campo de extração inválido ' + fieldId);
-          }
+      if (!AI_INPUT_DOCUMENT_TYPES.includes(requirement.extraction.documentType)) {
+        issues.push('documento ' + requirement.id + ': tipo fora da lista de entradas aceitas pela IA');
+      }
+      if (!SAFE_ID.test(requirement.extraction.documentType) ||
+        !SAFE_ID.test(requirement.extraction.subjectRole)) {
+        issues.push('documento ' + requirement.id + ': perfil de extração inválido');
+      }
+      const allowed = requirement.extraction.allowedFieldIds;
+      if (allowed.length === 0) {
+        issues.push('documento ' + requirement.id + ': fonte de IA sem campos permitidos');
+      }
+      if (new Set(allowed).size !== allowed.length) {
+        issues.push('documento ' + requirement.id + ': campo permitido duplicado');
+      }
+      for (const fieldId of allowed) {
+        if (!fields.has(fieldId) || fieldId.startsWith('process.')) {
+          issues.push('documento ' + requirement.id +
+            ': campo de extração inválido ' + fieldId);
         }
       }
     }
