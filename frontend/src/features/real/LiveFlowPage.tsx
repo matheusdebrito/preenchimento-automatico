@@ -583,6 +583,8 @@ export function LiveFlowPage() {
                 ? 'selecione uma opção válida.'
                 : issue.fieldReason === 'invalid_choice'
                   ? 'selecione uma das opções permitidas.'
+                  : issue.fieldReason === 'invalid_number'
+                    ? 'informe um número inteiro não negativo ou um ano com quatro dígitos.'
                   : issue.fieldReason === 'unsupported_character'
                     ? 'contém um caractere não suportado pelo formulário.'
                     : issue.fieldReason === 'text_too_long'
