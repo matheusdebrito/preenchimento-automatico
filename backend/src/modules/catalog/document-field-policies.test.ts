@@ -113,6 +113,8 @@ describe('document field source policies', () => {
     expect(fieldsAllowedForDetectedSubtype('cha', 'rg', CHA_FIELDS)).toEqual([]);
     expect(fieldsAllowedForDetectedSubtype('cir', 'cha', AQUAVIARIO_CIR_FIELDS)).toEqual([]);
     expect(fieldsAllowedForDetectedSubtype('tie', 'not-applicable', TIE_FIELDS)).toEqual([]);
+    expect(fieldsAllowedForDetectedSubtype('residence-proof', 'not-applicable', RESIDENCE_PROOF_FIELDS))
+      .toEqual(RESIDENCE_PROOF_FIELDS);
   });
 
   it('preserva política configurada quando o subtipo é desconhecido', () => {
