@@ -131,7 +131,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.services.some((item) => item.id === 'alteracao-motor-embarcacao')).toBe(false);
     expect(service?.questions.some((question) => question.id === 'boatAlterationTarget')).toBe(true);
     expect(service?.questions.some((question) => question.id === 'motoAlterationTarget')).toBe(true);
-    expect(service?.questions.some((question) => question.id === 'rowToMotorConversion')).toBe(true);
+    expect(service?.questions.some((question) => question.id === 'rowToMotorConversion')).toBe(false);
 
     const term = catalog.serviceForms.find((relation) =>
       relation.serviceId === 'alteracao-dados-embarcacao' &&
