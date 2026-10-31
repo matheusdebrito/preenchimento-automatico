@@ -786,3 +786,20 @@ os mesmos PDFs e mappings já homologados.
 - [ ] QA manual da alternância de telas em navegador e mobile no ambiente de desenvolvimento.
 
 **Escopo:** frontend, sem migration, alteração de autenticação backend ou de PDFs.
+
+
+## Redesign de autenticação mobile-first e remoção de CPF de contas — 31/10/2026
+
+- [x] Login/cadastro com layout mobile-first, controles de 44px+, navegação por abas,
+  feedback próximo dos campos e opção acessível de mostrar/ocultar senha.
+- [x] Cadastro reduzido a nome, celular, e-mail e senha; contrato da API rejeita CPF e campos extras.
+- [x] Consulta de sessão/login/admin não seleciona, expõe ou pesquisa CPF.
+- [x] Conta e painel de administração sem campo CPF.
+- [x] Ajustada migração histórica reexecutável 003 e criada migração 008 para excluir
+  coluna e valores CPF de `app_users`. Remoção não afeta dados temporários dos formulários.
+- [x] Testes de frontend e integração PostgreSQL atualizados para cadastro sem CPF,
+  rejeição de payload que contenha CPF, ausência da coluna e privacidade das respostas.
+- [ ] CI final do PR e QA visual em viewport 320/375/768 e em celular real.
+
+**Nota:** dados antigos em backups externos não são afetados pelo DROP COLUMN no banco principal
+e exigem política própria de retenção.
