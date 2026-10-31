@@ -799,7 +799,8 @@ os mesmos PDFs e mappings já homologados.
   coluna e valores CPF de `app_users`. Remoção não afeta dados temporários dos formulários.
 - [x] Testes de frontend e integração PostgreSQL atualizados para cadastro sem CPF,
   rejeição de payload que contenha CPF, ausência da coluna e privacidade das respostas.
-- [ ] CI final do PR e QA visual em viewport 320/375/768 e em celular real.
+- [x] CI #750 aprovado para frontend, backend, PostgreSQL, Docker Compose, inspeção normativa e PDFs (commit `35e486b`).
+- [ ] QA visual manual em viewport 320/375/768 e em celular real.
 
 **Nota:** dados antigos em backups externos não são afetados pelo DROP COLUMN no banco principal
 e exigem política própria de retenção.
