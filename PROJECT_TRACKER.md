@@ -782,6 +782,7 @@ os mesmos PDFs e mappings já homologados.
 - [x] Botão interno de alternância atualiza `modo` na URL e preserva o parâmetro `next`.
 - [x] Título da página acompanha o modo atual e erros/confirmação anteriores são limpos quando muda o modo.
 - [x] Testes de regressão para links do cabeçalho em ambos os sentidos, acesso direto ao cadastro e botão interno com `next` preservado.
-- [ ] Validar CI do PR e testar a troca de telas em navegador e mobile no ambiente de desenvolvimento.
+- [x] CI #744 aprovado (frontend typecheck, lint, testes, build e smoke de Docker Compose). Falha de lint na primeira tentativa foi corrigida na causa raiz sem desabilitar regras.
+- [ ] QA manual da alternância de telas em navegador e mobile no ambiente de desenvolvimento.
 
 **Escopo:** frontend, sem migration, alteração de autenticação backend ou de PDFs.
