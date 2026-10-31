@@ -12,8 +12,11 @@ afirmações antigas de `DRAFT` ou bloqueio de opções abaixo.
 - Segunda via solicita o formato do título: TIE digital é reimprimível e não segue o processo de segunda via.
 - Pergunta de conversão de remo para motor removida porque não controlava nenhum campo ou documento.
   Exigências técnicas continuam sujeitas à conferência na NORMAM/CP/DL/AG.
-- Documentos que não alimentam campos dos PDFs deixam de ser uploads de IA; são apresentados
-  como checklist do protocolo, sem envio à OpenAI.
+- As únicas entradas da OpenAI são identidade (RG/CNH/CIN), comprovante de residência,
+  CHA, CIR e TIE/TIEM. Para embarcações, os uploads relevantes são identidade, residência
+  e TIE/TIEM; nota fiscal e documento de motor não são solicitados.
+- O catálogo associa o serviço aos formulários/anexos oficiais de saída; não publica
+  checklists de documentos comprobatórios para protocolo.
 
 ## Estado histórico (28–29/10/2026)
 
