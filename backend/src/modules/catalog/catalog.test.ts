@@ -3,6 +3,7 @@ import { catalog } from './catalog.js';
 import { motoAquaticaServiceForms } from './vessel-services.js';
 import { BADE_ALLOWED_FIELD_NUMBERS } from './normam211-mappings.js';
 import { validateCatalog } from './validate-catalog.js';
+import { AI_INPUT_DOCUMENT_TYPES } from './contracts.js';
 import type { CatalogDefinition } from './contracts.js';
 
 /** Isolated synthetic fixture; NO real form or official approval is implied. */
@@ -143,7 +144,7 @@ describe('catálogo reutilizável de formulários', () => {
 
     const motorDocuments = service?.documentRequirements.filter((requirement) =>
       requirement.id.startsWith('motor-document')) ?? [];
-    expect(motorDocuments).toHaveLength(2);
+    expect(motorDocuments).toHaveLength(0);
     expect(service?.documentRequirements.some((requirement) =>
       requirement.id === 'row-to-motor-technical-declaration' ||
       requirement.id === 'technical-responsibility-document' ||
@@ -312,9 +313,11 @@ describe('catálogo reutilizável de formulários', () => {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
       expect(service.documentRequirements.every((requirement) => requirement.extraction)).toBe(true);
     }
-    const generic = vesselServices.flatMap((service) => service.documentRequirements)
-      .filter((requirement) => requirement.extraction?.documentType === 'supporting-document');
-    expect(generic.length).toBeGreaterThan(0);
+    const documentTypes = vesselServices.flatMap((service) => service.documentRequirements)
+      .map((requirement) => requirement.extraction?.documentType);
+    expect(documentTypes.length).toBeGreaterThan(0);
+    expect(documentTypes.every((documentType) =>
+      documentType !== undefined && AI_INPUT_DOCUMENT_TYPES.includes(documentType))).toBe(true);
     const requirementIds = vesselServices.flatMap((service) =>
       service.documentRequirements.map((requirement) => requirement.id));
     expect(requirementIds).not.toContain('power-of-attorney');
