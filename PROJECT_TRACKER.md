@@ -772,3 +772,16 @@ os mesmos PDFs e mappings já homologados.
 - [x] CI #741 aprovado no head final da branch; typecheck, lint, testes, build, PostgreSQL, Docker Compose, QA visual de PDFs e inspeção NORMAM-211 passaram. Como o produto está em desenvolvimento sem usuários reais, a próxima validação é o teste manual do próprio responsável pelo produto no ambiente de desenvolvimento.
 
 **Importante:** campos do formulário que não aparecem nos cinco tipos de entrada continuam editáveis manualmente. A aplicação preenche os anexos oficiais selecionados; não tenta verificar a documentação completa necessária ao protocolo na CP/DL/AG.
+
+
+## Correção de navegação entre entrar e criar conta — 31/10/2026
+
+**Sintoma:** na rota `/entrar`, os links do cabeçalho entre **Entrar** e **Criar Conta** atualizavam `?modo=cadastro`, mas o componente React mantinha o formulário anterior até recarregar. A causa era `useState` inicializado pela query apenas na montagem.
+
+- [x] Modo login/cadastro agora derivado diretamente do parâmetro da URL, sem estado duplicado.
+- [x] Botão interno de alternância atualiza `modo` na URL e preserva o parâmetro `next`.
+- [x] Título da página acompanha o modo atual e erros/confirmação anteriores são limpos quando muda o modo.
+- [x] Testes de regressão para links do cabeçalho em ambos os sentidos, acesso direto ao cadastro e botão interno com `next` preservado.
+- [ ] Validar CI do PR e testar a troca de telas em navegador e mobile no ambiente de desenvolvimento.
+
+**Escopo:** frontend, sem migration, alteração de autenticação backend ou de PDFs.
