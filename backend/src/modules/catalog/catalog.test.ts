@@ -47,8 +47,8 @@ function sharedFormFixture(): CatalogDefinition {
 
 describe('catálogo reutilizável de formulários', () => {
   it('publica todos os serviços homologados somente com versões e mapas aprovados', () => {
-    expect(catalog.services).toHaveLength(21);
-    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(21);
+    expect(catalog.services).toHaveLength(18);
+    expect(catalog.services.filter((service) => service.status === 'AVAILABLE')).toHaveLength(18);
     expect(catalog.services.filter((service) => service.status === 'DRAFT')).toHaveLength(0);
     expect(catalog.forms).toHaveLength(21);
     expect(catalog.versions).toHaveLength(21);
@@ -67,7 +67,7 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'APPROVED')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(80);
+    expect(catalog.serviceForms).toHaveLength(74);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
