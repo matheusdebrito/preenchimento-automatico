@@ -129,7 +129,7 @@ try{
   await page.getByRole('button',{name:'Criar conta',exact:true}).click();
   await page.waitForURL('**/minha-conta');
   let index=0;
-  for(const service of matrix)for(const c of service.selected){
+  scenarioLoop: for(const service of matrix)for(const c of service.selected){
     index++;
     const row={caseId:c.caseId,service:service.id,answers:c.answers,expected:c.formVersionIds,downloaded:[],fields:0,status:'PENDING'};
     try{
@@ -207,6 +207,10 @@ try{
         await page.getByRole('heading',{name:'Dados do serviço'}).waitFor({timeout:8000}).catch(()=>{});
       }
       await page.goto(BASE+'/').catch(()=>{});
+      if(results.filter(r=>r.status==='FAIL').length>=5){
+        console.error('FAIL-FAST: stopping after five failed browser scenarios; preserve evidence for targeted fix');
+        break scenarioLoop;
+      }
     }
   }
 }catch(e){errors.push({stage:'runner',detail:String(e?.stack??e)});console.error('FATAL '+e);}
