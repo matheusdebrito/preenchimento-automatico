@@ -1,4 +1,4 @@
-import type { FormMapping, FieldPlacement } from './contracts.js';
+import type { FormMapping, CoordinatePlacement } from './contracts.js';
 
 /**
  * Placements transcribed from 850x1200 render previews (A4 at 110 dpi).
@@ -12,7 +12,7 @@ function coordinate(
   fieldId: string, x: number, baselineY: number, maxWidthPx: number,
   fontSize: number, pageIndex = 0, required = false, markWhen?: string,
   markAliases?: readonly string[],
-): FieldPlacement {
+): CoordinatePlacement {
   return {
     kind: 'COORDINATES', fieldId, required, pageIndex,
     x: px(x), y: py(baselineY), maxWidth: px(maxWidthPx), fontSize,
