@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 30/10/2026. O catálogo global contém 18 serviços publicados: 6 de embarcações, 5 de amadores e 7 de Aquaviários. As 21 versões de formulário/modelo estão `VERIFIED` e os 21 mappings estão `APPROVED`; o requerimento auxiliar de Aquaviários é explicitamente não oficial. A categoria Aquaviários foi limitada a inscrição inicial da CIR, 2ª via da CIR, revalidação da CIR, ascensão de categoria, emissão de certificado, 2ª via de certificado e revalidação de certificado. O CI #727 da alteração de escopo passou; permanece pendente o QA manual na aplicação web/celular.
+> Atualização: 31/10/2026. O catálogo global contém 18 serviços publicados: 6 de embarcações, 5 de amadores e 7 de Aquaviários. As 21 versões de formulário/modelo estão `VERIFIED` e os 21 mappings estão `APPROVED`; o requerimento auxiliar de Aquaviários é explicitamente não oficial. A categoria Aquaviários foi limitada a inscrição inicial da CIR, 2ª via da CIR, revalidação da CIR, ascensão de categoria, emissão de certificado, 2ª via de certificado e revalidação de certificado. O CI #727 da alteração de escopo passou; permanece pendente o QA manual na aplicação web/celular.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de análise documental abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -20,7 +20,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável e auditar os
 | 01 | Catalogar serviço e modelos exigidos | 00 | [x] Concluída; evidências anteriores preservadas |
 | 02 | PDFs oficiais e versões, sem aprovar mapeamento | 01 | [x] Concluída; portão humano anterior preservado |
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
-| 04 | Motor reutilizável de preenchimento PDF | 02 | [x] Concluída para o catálogo atual — 17/17 versões VERIFIED e 17/17 mappings APPROVED; novo serviço exige novo gate documental/visual |
+| 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e 21 mapeamentos existentes; 3 templates reconstruídos da fonte oficial aguardam QA visual final, inclusive preenchimento real no navegador |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
 | 06 | Análise documental estruturada | 05 | [ ] Parcial — OpenAI Responses API como único provedor; testes simulados; homologação de precisão, custo, latência e privacidade ainda pendentes |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — revisão humana preservada; E2E/browser/mobile real e homologação OpenAI pendentes |
@@ -804,3 +804,40 @@ os mesmos PDFs e mappings já homologados.
 
 **Nota:** dados antigos em backups externos não são afetados pelo DROP COLUMN no banco principal
 e exigem política própria de retenção.
+
+## Revisão de legibilidade e fidelidade dos PDFs — 31/10/2026 (PR #93)
+
+**Causa verificada:** as prévias sintéticas revelaram rasuras de rasterização nos anexos
+1-K e 1-L da NORMAM-101/DPC e uma faixa preta no template 3-C. A primeira
+tentativa de recuperação do 3-C usou inadvertidamente
+`documentos/anexos/NORMAM 211 Anx 3-C.pdf`, que contém termo ANTIGO de
+inscrição/transferência. Esse arquivo **não é fonte válida** para o Anexo 3-C
+de construção/alteração. O erro foi percebido na inspeção da saída, antes do merge.
+
+**Correção na branch:** os arquivos
+`backend/templates/declaracao-extravio-aquaviario/v1/original.pdf`,
+`backend/templates/declaracao-residencia-aquaviario/v1/original.pdf` e
+`backend/templates/termo-responsabilidade-er/v1/original.pdf` foram
+regenerados a partir de PDFs integrais normativos e com SHA-256 de origem
+conferido: NORMAM-101 (páginas PDF 179/181, SHA-256
+`74AF4D83C26A255B7C8EF9A12359F905AEF00488490D0347AD548CE0A24CD049`)
+e NORMAM-211 (página PDF 210, SHA-256
+`71492859082A6786203619C859FCC99BC72C85128DC9FD27D32F93A92B09598C`).
+A segunda recuperação usa imagem em tons de cinza a 220 DPI e atualiza
+os SHA-256 dos templates no catálogo. O workflow privilegiado temporário
+de recuperação foi removido após o uso.
+
+- [x] Diagnosticar corrupção e reproduzir em imagens dos PDFs preenchidos.
+- [x] Identificar o arquivo antigo 3-C e substituí-lo pela página normativa correta.
+- [x] Regenerar os anexos 1-K/1-L em melhor resolução, com fonte normativa verificada.
+- [x] Atualizar os SHA-256 de catálogo sem desativar proteção contra template trocado.
+- [x] Deslocar o município do 1-L para não invadir a linha de assinatura.
+- [x] Ampliar dados sintéticos para preencher marcação e data do 1-K no CI.
+- [ ] Confirmar CI completo **no commit final** do PR #93 (backend, PostgreSQL, Compose e renderização de PDFs).
+- [ ] Examinar todas as páginas das novas prévias e conferir texto por campo, em especial 1-K, 1-L e 3-C.
+- [ ] Executar o fluxo real na interface web e em dispositivo móvel antes de homologação para clientes.
+
+**Não homologar produção com base em CI de PDF:** o CI verifica estrutura,
+motor e geração sintética; não substitui revisão da adequação normativa,
+legibilidade em visualizadores distintos, nem teste de navegação/cobrança na
+aplicação com contas de teste. Nenhum documento pessoal foi usado.
