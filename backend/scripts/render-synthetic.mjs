@@ -175,8 +175,8 @@ for (const map of catalog.mappings) {
 
   // Exercise visually reviewed, physically separate second-line writing areas.
   const stressValues = version.formId === 'bade-er'
-    ? { ...synthetic, 'person.fullName': 'MARIA GONCALVES DE ANDRADE',
-      'coOwner.fullName': 'ANA PAULA DE CARVALHO' }
+    ? { ...synthetic, 'person.fullName': 'MARIA GONCALVES DE ANDRADE E ALBUQUERQUE',
+      'coOwner.fullName': 'ANA PAULA DE CARVALHO E OLIVEIRA' }
     : version.formId === 'declaracao-residencia-ma'
       ? { ...synthetic,
         'person.address': 'AVENIDA DOS NAVEGANTES DO PORTO COMERCIAL E TURISTICO' }
