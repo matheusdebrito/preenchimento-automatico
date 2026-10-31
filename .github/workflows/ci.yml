@@ -260,8 +260,9 @@ jobs:
           if-no-files-found: error
 
   browser-e2e:
-    # Run the isolated end-to-end browser QA only on its dedicated review branch.
-    if: github.event_name == 'pull_request' && github.head_ref == 'test/browser-e2e-20261031'
+    # Opt-in for manual CI runs, plus this dedicated smoke-test PR.
+    # Keeping it opt-in prevents expensive browser setup on every code change.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.head_ref == 'test/browser-e2e-20261031')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
