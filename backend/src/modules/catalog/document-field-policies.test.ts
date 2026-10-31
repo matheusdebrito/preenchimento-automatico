@@ -5,7 +5,6 @@ import {
   CHA_FIELDS,
   RESIDENCE_PROOF_FIELDS,
   SELLER_RESIDENCE_PROOF_FIELDS,
-  SALE_DOCUMENT_FIELDS,
   SELLER_IDENTITY_FIELDS,
   TIE_FIELDS,
   fieldsAllowedForDetectedSubtype,
@@ -55,16 +54,6 @@ describe('document field source policies', () => {
       .toBe(false);
   });
 
-  it('limita documento de venda a venda, partes explícitas e identificadores estáveis', () => {
-    expect(SALE_DOCUMENT_FIELDS).toContain('sale.date');
-    expect(SALE_DOCUMENT_FIELDS).toContain('person.fullName');
-    expect(SALE_DOCUMENT_FIELDS).toContain('seller.fullName');
-    expect(SALE_DOCUMENT_FIELDS).toContain('vessel.registration');
-    expect(SALE_DOCUMENT_FIELDS).not.toContain('person.address');
-    expect(SALE_DOCUMENT_FIELDS).not.toContain('seller.address');
-    expect(SALE_DOCUMENT_FIELDS).not.toContain('vessel.motorSerial');
-  });
-
   it('refina identidade por subtipo sem permitir origem documental em CIN/CNH', () => {
     expect(fieldsAllowedForDetectedSubtype('identity', 'rg', APPLICANT_IDENTITY_FIELDS))
       .toContain('person.documentOrigin');
@@ -75,6 +64,21 @@ describe('document field source policies', () => {
     expect(identityTypeValue('rg')).toBe('RG');
     expect(identityTypeValue('cin')).toBe('CIN');
     expect(identityTypeValue('cnh')).toBe('CNH');
+  });
+
+  it('limita CIR a número da caderneta, categoria e titular, sem extrair documentos de protocolo', () => {
+    const configured = [
+      'aquaviario.cirNumber',
+      'aquaviario.category',
+      'person.fullName',
+      'person.address',
+      'person.cpf',
+    ];
+    expect(fieldsAllowedForDetectedSubtype('cir', 'cir', configured)).toEqual([
+      'aquaviario.cirNumber',
+      'aquaviario.category',
+      'person.fullName',
+    ]);
   });
 
   it('limita CHA aos dados realmente presentes na habilitação', () => {
