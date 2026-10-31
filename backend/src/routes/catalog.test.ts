@@ -30,6 +30,27 @@ describe('API catalog', () => {
     expect(result.body).not.toContain('backend/templates');
   });
 
+  it('não publica nem permite cotação dos três serviços Aquaviários fora do escopo', async () => {
+    const removedIds = [
+      'transferencia-jurisdicao-aquaviario',
+      'transferencia-categoria-grupo-aquaviario',
+      'homologacao-lrm-aquaviario',
+    ];
+    const result = await app.inject({ method: 'GET', url: '/api/services' });
+    const body = result.json<{ services: Array<{ id: string }> }>();
+    for (const id of removedIds) {
+      expect(body.services.some((service) => service.id === id), id).toBe(false);
+      const detail = await app.inject({ method: 'GET', url: '/api/services/' + id });
+      expect(detail.statusCode, id).toBe(404);
+      const quote = await app.inject({
+        method: 'POST',
+        url: '/api/services/' + id + '/quote',
+        payload: { answers: {} },
+      });
+      expect(quote.statusCode, id).toBe(404);
+    }
+  });
+
   it('não disponibiliza cotações para serviço não homologado', async () => {
     const result = await app.inject({method:'POST',url:'/api/services/transferencia-moto-aquatica/quote',payload:{answers:{}}});
     expect(result.statusCode).toBe(404);
