@@ -458,7 +458,6 @@ describe('projeção pública do catálogo', () => {
       tieSituation: 'regular',
       responsibilityTermCase: 'construcao_artesanal',
       boatAlterationTarget: 'dados_e_motor',
-      rowToMotorConversion: 'nao',
     });
     expect(alterationArtisanal?.formVersionIds).toContain('termo-responsabilidade-er-2026-v1');
 
@@ -468,7 +467,6 @@ describe('projeção pública do catálogo', () => {
       tieSituation: 'regular',
       responsibilityTermCase: 'nao',
       boatAlterationTarget: 'motor',
-      rowToMotorConversion: 'nao',
     });
     expect(motorOnly).not.toBeNull();
     expect(motorOnly?.documentRequirements.map((item) => item.id))
@@ -668,8 +666,8 @@ describe('projeção pública do catálogo', () => {
 
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();
-    expect(publicService(data, 's')?.documentRequirements).toHaveLength(1);
-    expect(publicService(data, 's', { extra: 'yes' })?.documentRequirements).toHaveLength(2);
+    expect(publicService(data, 's')?.protocolDocuments).toHaveLength(1);
+    expect(publicService(data, 's', { extra: 'yes' })?.protocolDocuments).toHaveLength(2);
     const result = publicService(data, 's');
     expect(result?.formVersionIds).toEqual(['form-v1']);
     expect(result?.reviewFields).toEqual([
