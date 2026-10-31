@@ -43,6 +43,52 @@ describe('jornada real isolada da demonstração', () => {
     expect(moto?.textContent).toContain('em validação');
   });
 
+  it('mostra documentos de protocolo como orientação sem oferecer upload', async () => {
+    const onlyExtractionService = {
+      ...service,
+      protocolDocuments: [
+        { id: 'gru-payment', label: 'GRU e comprovante de pagamento',
+          description: 'Apresentar no protocolo, quando aplicável.' },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' || path.endsWith('/quote')) {
+        return json({ service: onlyExtractionService });
+      }
+      return json({ error: 'not_found' }, 404);
+    }));
+
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Conferir documentos necessários' }));
+    expect(await screen.findByText('GRU e comprovante de pagamento')).toBeTruthy();
+    expect(screen.getByText(/Não envie estes documentos à OpenAI/)).toBeTruthy();
+    expect(screen.queryByLabelText('GRU e comprovante de pagamento')).toBeNull();
+    expect(screen.getByLabelText('Documento de teste')).toBeTruthy();
+  });
+
+  it('explica por que a declaração negativa não é permitida na agregação de Motonauta', async () => {
+    const serviceWithUnavailableOption = {
+      ...service,
+      questions: [{
+        id: 'motonautaDeclaration',
+        label: 'Você declara que conduz ou já conduziu moto aquática?',
+        options: ['sim', 'nao'],
+        unavailableOptions: ['nao'],
+      }],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input) === '/api/services/ci-only-service'
+        ? json({ service: serviceWithUnavailableOption })
+        : json({ error: 'not_found' }, 404)));
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    const select = await screen.findByLabelText('Você declara que conduz ou já conduziu moto aquática?') as HTMLSelectElement;
+    const no = [...select.options].find((item) => item.value === 'nao');
+    expect(no?.disabled).toBe(true);
+    expect(no?.textContent).toContain('incompatível com a declaração exigida');
+  });
+
   it('exibe faixas normativas e respeita condições oneOf no formulário', async () => {
     const conditionalService = {
       ...service,
