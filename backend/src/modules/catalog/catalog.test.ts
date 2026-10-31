@@ -330,6 +330,16 @@ describe('catálogo reutilizável de formulários', () => {
     expect(requirementIds).not.toContain('vessel-photos');
   });
 
+  it('mantém a lista de entradas da OpenAI exatamente no escopo definido pelo produto', () => {
+    expect(AI_INPUT_DOCUMENT_TYPES).toEqual([
+      'identity',
+      'residence-proof',
+      'cha',
+      'cir',
+      'tie',
+    ]);
+  });
+
   it('mantém origem de campos explícita em todo perfil de extração', () => {
     const requirements = catalog.services.flatMap((service) => service.documentRequirements);
     expect(requirements.length).toBeGreaterThan(0);
