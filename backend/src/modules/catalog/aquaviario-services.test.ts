@@ -192,6 +192,56 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     expect(values['process.requestPurpose']).toContain('revalidação da minha Caderneta de Inscrição e Registro');
   });
 
+  it('solicita categoria de ascensão e exibe finalidade editável com categoria atual e pretendida', () => {
+    const service = publicService(catalog, 'ascensao-categoria-aquaviario', {
+      ascensionAquaviarioGroup: 'outros_grupos',
+    });
+    expect(service?.questions.find((item) => item.id === 'ascensionAquaviarioGroup'))
+      .toBeDefined();
+    const request = service?.reviewForms.find((item) => item.formVersionId === auxiliaryRequestId);
+    expect(request?.fields.map((field) => field.id)).toContain('process.requestPurpose');
+    expect(request?.fields.find((field) => field.id === 'process.requestPurpose')?.label)
+      .toContain('categoria atual');
+    expect(service?.protocolDocuments.map((item) => item.id)).not.toContain('diving-course');
+    expect(service?.protocolDocuments.map((item) => item.id)).not.toContain('diving-experience');
+
+    const diver = publicService(catalog, 'ascensao-categoria-aquaviario', {
+      ascensionAquaviarioGroup: 'mergulhadores',
+    });
+    expect(diver?.protocolDocuments.map((item) => item.id)).toContain('diving-course');
+    expect(diver?.protocolDocuments.map((item) => item.id)).toContain('diving-experience');
+
+    const relation = catalog.serviceForms.find((item) =>
+      item.serviceId === 'ascensao-categoria-aquaviario' &&
+      item.formVersionId === auxiliaryRequestId);
+    const values = serviceFormValues(relation, { ascensionAquaviarioGroup: 'mergulhadores' },
+      { 'process.requestPurpose': 'da categoria MGE para MGS' });
+    expect(values['process.requestPurpose']).toBe('da categoria MGE para MGS');
+  });
+
+  it('não oferece upload de GRU e apresenta apenas fontes de dados extraíveis à IA', () => {
+    for (const id of aquaviarioIds) {
+      const service = publicService(catalog, id, {
+        ...(id === 'ascensao-categoria-aquaviario' ?
+          { ascensionAquaviarioGroup: 'outros_grupos' } : {}),
+      });
+      const uploadIds = service?.documentRequirements.map((doc) => doc.id) ?? [];
+      expect(uploadIds, id).not.toContain('gru-payment');
+      expect(uploadIds, id).not.toContain('medical-certificate');
+      expect(uploadIds, id).not.toContain('cpf-document');
+    }
+    const certification = publicService(catalog, 'emissao-certificado-aquaviario', {
+      certificateModel: 'dpc1031', personSex: 'masculino',
+    });
+    expect(certification?.documentRequirements.map((doc) => doc.id))
+      .toContain('current-cir-certification');
+    const cir = certification?.documentRequirements.find((doc) =>
+      doc.id === 'current-cir-certification');
+    expect(cir?.extraction?.documentType).toBe('cir');
+    expect(cir?.extraction?.allowedFieldIds).toContain('aquaviario.cirNumber');
+    expect(cir?.extraction?.allowedFieldIds).toContain('aquaviario.category');
+  });
+
   it('apresenta os documentos de apoio previstos por cada processo sem torná-los uploads obrigatórios', () => {
     const expectations: Record<string, readonly string[]> = {
       'inscricao-inicial-cir-aquaviario': ['cpf-document', 'medical-certificate', 'professional-qualification'],
@@ -202,7 +252,7 @@ describe('serviços de aquaviários - NORMAM-101', () => {
 
     for (const [serviceId, requiredIds] of Object.entries(expectations)) {
       const service = publicService(catalog, serviceId);
-      const ids = service?.documentRequirements.map((item) => item.id) ?? [];
+      const ids = service?.protocolDocuments.map((item) => item.id) ?? [];
       for (const id of requiredIds) expect(ids, serviceId + '/' + id).toContain(id);
       expect(service?.documentRequirements.every((item) => item.required === false), serviceId)
         .toBe(true);
@@ -213,25 +263,25 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     const diver = publicService(catalog, 'inscricao-inicial-cir-aquaviario', {
       initialAquaviarioGroup: 'mergulhadores',
     });
-    expect(diver?.documentRequirements.map((item) => item.id)).toContain('diving-course');
+    expect(diver?.protocolDocuments.map((item) => item.id)).toContain('diving-course');
 
     const otherGroup = publicService(catalog, 'inscricao-inicial-cir-aquaviario', {
       initialAquaviarioGroup: 'demais_grupos',
     });
-    expect(otherGroup?.documentRequirements.map((item) => item.id)).not.toContain('diving-course');
+    expect(otherGroup?.protocolDocuments.map((item) => item.id)).not.toContain('diving-course');
 
     const foreignCertificate = publicService(catalog, 'emissao-certificado-aquaviario', {
       certificateModel: 'dpc1033',
     });
-    expect(foreignCertificate?.documentRequirements.map((item) => item.id)).toContain('source-country-certificate');
-    expect(foreignCertificate?.documentRequirements.map((item) => item.id)).toContain('seaman-record-book');
-    expect(foreignCertificate?.documentRequirements.map((item) => item.id)).toContain('migration-documents');
+    expect(foreignCertificate?.protocolDocuments.map((item) => item.id)).toContain('source-country-certificate');
+    expect(foreignCertificate?.protocolDocuments.map((item) => item.id)).toContain('seaman-record-book');
+    expect(foreignCertificate?.protocolDocuments.map((item) => item.id)).toContain('migration-documents');
 
     const domesticCertificate = publicService(catalog, 'emissao-certificado-aquaviario', {
       certificateModel: 'dpc1031',
     });
-    expect(domesticCertificate?.documentRequirements.map((item) => item.id)).not.toContain('source-country-certificate');
-    expect(domesticCertificate?.documentRequirements.map((item) => item.id)).toContain('competency-certificates');
+    expect(domesticCertificate?.protocolDocuments.map((item) => item.id)).not.toContain('source-country-certificate');
+    expect(domesticCertificate?.protocolDocuments.map((item) => item.id)).toContain('competency-certificates');
 
     const dpc1032Revalidation = publicService(catalog, 'revalidacao-certificado-aquaviario', {
       certificateModel: 'dpc1032',
