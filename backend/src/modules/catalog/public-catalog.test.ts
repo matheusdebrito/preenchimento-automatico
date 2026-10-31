@@ -305,6 +305,52 @@ describe('projeção pública do catálogo', () => {
     }
   });
 
+  it('mantém pergunta de comprimento visível na renovação sem alteração e seleciona BADE/BSADE', () => {
+    const service = catalog.services.find((item) => item.id === 'renovacao-tie-embarcacao');
+    const band = service?.questions.find((item) => item.id === 'vesselBand');
+    expect(band?.conditions).toEqual([{ questionId: 'vesselType', equals: 'embarcacao' }]);
+
+    for (const [vesselBand, formVersionId] of [
+      ['ate_6m', 'bsade-er-2026-v1'],
+      ['maior_6_ate_12m', 'bade-er-2026-v1'],
+    ] as const) {
+      const quote = publicService(catalog, 'renovacao-tie-embarcacao', {
+        vesselType: 'embarcacao', hasCoOwner: 'nao', vesselBand,
+        tieSituation: 'regular', dataChanged: 'nao',
+      });
+      expect(quote?.formVersionIds).toContain(formVersionId);
+    }
+    const secondCopy = catalog.services.find((item) => item.id === 'segunda-via-tie-embarcacao');
+    expect(secondCopy?.questions.find((item) => item.id === 'vesselBand')?.conditions)
+      .toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
+  });
+
+  it('rejeita declaração negativa no fluxo de agregação da Motonauta', () => {
+    const service = catalog.services.find((item) => item.id === 'renovacao-cha-agregacao-mta');
+    expect(service?.questions.find((item) => item.id === 'motonautaDeclaration')
+      ?.unavailableOptions).toContain('nao');
+    const invalid = publicService(catalog, 'renovacao-cha-agregacao-mta', {
+      amateurCategory: 'arrais', motonautaDeclaration: 'nao',
+    });
+    expect(invalid).toBeNull();
+    const valid = publicService(catalog, 'renovacao-cha-agregacao-mta', {
+      amateurCategory: 'arrais', motonautaDeclaration: 'sim',
+    });
+    expect(valid?.formVersionIds).toContain('requerimento-motonauta-2026-v1');
+  });
+
+  it('separa uploads de análise dos documentos apenas de protocolo', () => {
+    const service = publicService(catalog, 'segunda-via-cir-aquaviario', {
+      cirSecondCopyReason: 'extravio',
+    });
+    const uploads = service?.documentRequirements.map((item) => item.id) ?? [];
+    const protocol = service?.protocolDocuments.map((item) => item.id) ?? [];
+    expect(uploads).toContain('applicant-identity');
+    expect(uploads).not.toContain('gru-payment');
+    expect(protocol).toContain('gru-payment');
+    expect(protocol).toContain('occurrence-report');
+  });
+
   it('inclui BSADE ou BADE na renovação mesmo quando dataChanged é nao', () => {
     expect(publicService(catalog, 'renovacao-tie-embarcacao', {
       vesselType: 'embarcacao',
