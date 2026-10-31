@@ -332,6 +332,7 @@ function extractionPrompt(
     '11n. Em CIR, aquaviario.cirNumber é exclusivamente o número da Caderneta de Inscrição e Registro; nunca use CPF, categoria, número do certificado ou número do embarque.',
     '11o. Em CIR, aquaviario.category é a categoria profissional explicitamente impressa na folha de rosto. Não infira promoções/ascensões a partir de cursos ou embarques.',
     '11p. Em CIR, person.fullName deve ser o nome do titular explicitamente identificado. Não use nomes de comandantes, responsáveis ou outras pessoas.',
+    '11q. As únicas categorias de entrada do produto são RG/CNH/CIN, comprovante de residência, CHA, CIR e TIE/TIEM. Se o conteúdo não corresponder ao tipo indicado para a fonte, não retorne candidates para ela.',
     '12. Não produza comentários, explicações ou campos além do schema.',
     'Campos permitidos: ' + JSON.stringify(fieldList),
     'Documentos enviados: ' + JSON.stringify(documentList),
