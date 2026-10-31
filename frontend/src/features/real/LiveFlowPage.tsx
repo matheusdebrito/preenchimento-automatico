@@ -678,7 +678,11 @@ export function LiveFlowPage() {
                                                                             : value === 'praticos' ? '5º Grupo - Práticos'
                                                                               : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
-                            {label}{unavailable ? ' (em validação)' : ''}
+                            {label}{unavailable
+                              ? question.id === 'motonautaDeclaration' && value === 'nao'
+                                ? ' (incompatível com a declaração exigida)'
+                                : ' (em validação)'
+                              : ''}
                           </option>;
                         })}
                       </select>
@@ -762,6 +766,22 @@ export function LiveFlowPage() {
                       );
                     })}
                   </div>
+                  {(service.protocolDocuments?.length ?? 0) > 0 ? (
+                    <section className="live-protocol-documents" aria-label="Documentos para apresentação à Marinha">
+                      <h3>Documentos para apresentação à Marinha</h3>
+                      <p>Lista de orientação para o atendimento na CP/DL/AG. Não envie estes
+                        documentos à OpenAI: eles não alimentam campos dos formulários.
+                        Confira quais são aplicáveis ao seu caso.</p>
+                      <ul>
+                        {service.protocolDocuments?.map((document) => (
+                          <li key={document.id}>
+                            <strong>{document.label}</strong>
+                            {document.description ? ' — ' + document.description : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   {confirmAnalysisCharge &&
                   (Object.keys(files).length > 0 || uploadedRequirements.length > 0) ? (
