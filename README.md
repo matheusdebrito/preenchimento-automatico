@@ -243,26 +243,19 @@ A API utiliza limites de arquivos, autorização por sessão, validação de ori
 - O A OpenAI pode interpretar dados incorretamente; cada campo deve ser conferido pelo usuário.
 - Novos serviços e versões oficiais devem passar novamente pela conferência de fonte, mapeamento e QA.
 
-## Serviços de embarcações NORMAM-211 em preparação
+## Serviços de embarcações NORMAM-211
 
-O catálogo técnico agora inclui nove serviços de embarcações de esporte e
-recreio: inscrição inicial, transferências de propriedade/jurisdição,
-renovação do TIE/TIEM (incluindo perda/extravio do modelo antigo), alteração de dados, alteração de motor e
-comunicação de venda. Os modelos oficiais 2-A, 2-B, 2-C, 2-G, 2-H, 2-I, 2-K e
-3-C foram identificados em fontes oficiais de 2026.
+O catálogo publica seis serviços de embarcações: inscrição inicial, transferência
+de propriedade/jurisdição, renovação do TIE/TIEM, segunda via do TIE/TIEM,
+alteração de dados/características/motor e comunicação de venda. As perguntas
+condicionais selecionam os formulários de saída aplicáveis (por exemplo,
+BADE/BSADE/BDMOTO, requerimentos e declarações).
 
-Uma auditoria posterior contra a NORMAM-211/DPC completa corrigiu a identificação
-do Anexo 3-C: ele é o **Termo de Responsabilidade de Construção/Alteração**.
-Sete mapas NORMAM-211 permanecem homologados; o 3-C foi rebaixado para
-`IDENTIFIED/DRAFT` e precisa ser remapeado. O catálogo também corrige a regra de
-porte: BSADE somente até 6 m; acima de 6 m usa BADE. Os serviços de alteração e
-a inscrição de médio porte continuam fail-closed até completar essa homologação.
-
-Documentos de origem com perfil de extração são enviados diretamente à
-OpenAI quando aplicáveis ao serviço selecionado. O backend restringe cada
-documento aos campos autorizados no catálogo; documentos de apoio sem campos
-permitidos não são enviados. O usuário sempre revisa ou preenche manualmente
-antes da geração.
+A composição dos PDFs é controlada pelas relações serviço -> versão de formulário.
+As entradas para a OpenAI permanecem limitadas a RG/CNH/CIN, comprovante de
+residência, CHA, CIR e TIE/TIEM; para embarcações, os documentos de origem e de
+motor não são uploads da ferramenta. O usuário revisa os dados extraídos ou
+preenche manualmente os campos que não constam das fontes permitidas.
 
 Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 [relatório de QA técnico dos mapas](docs/mapping-reports/normam211-2026-technical-qa.md).
@@ -271,8 +264,6 @@ Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 
 O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a preparação comercial/produção (10–17) e a expansão (18). Apenas o trabalho técnico do MVP foi autorizado para execução contínua; pagamentos reais, infraestrutura externa e lançamento público requerem novas decisões. **Sem assinaturas ou planos empresariais nesta versão.**
 
-
-## Correções da auditoria transversal — 30/10/2026
 
 ## Modelo de documentos de entrada e formulários de saída
 
