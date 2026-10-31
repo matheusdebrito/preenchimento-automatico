@@ -61,6 +61,15 @@ export interface CoordinatePlacement {
   y: number;
   fontSize: number;
   maxWidth: number;
+  /** Smallest legible text size allowed when a value exceeds maxWidth. */
+  minFontSize?: number;
+  /** PDF points to lift text above a printed underline; not applied to checkbox marks. */
+  baselineLift?: number;
+  /**
+   * Extra, individually reviewed writing baselines (PDF coordinates) for wrapping.
+   * Never infer extra rows: official forms may have other labels or fields underneath.
+   */
+  continuationLines?: readonly { x: number; y: number; maxWidth: number }[];
   /** Optional fixed-choice value; selected coordinates receive X, others stay blank. */
   markWhen?: string;
   /** Reviewed textual aliases accepted for this fixed choice after accent/case normalization. */
