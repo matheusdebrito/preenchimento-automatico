@@ -128,6 +128,7 @@ export interface LiveService {
     unavailableOptions?:readonly string[];
     conditions?:readonly {questionId:string;equals?:string;oneOf?:readonly string[]}[];
   }[];
+  /** Only optional AI inputs that can populate fields in the selected output forms. */
   documentRequirements: readonly {id:string;label:string;description?:string;required:boolean}[];
   reviewFields: readonly LiveReviewField[];
   reviewForms?: readonly LiveReviewForm[];
