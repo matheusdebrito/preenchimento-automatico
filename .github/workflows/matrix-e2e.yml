@@ -1,13 +1,10 @@
 name: Matriz E2E completa (manual)
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   service-matrix-e2e:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.head_ref == 'test/e2e-full-service-matrix-20261031')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
