@@ -11,6 +11,7 @@ export type DetectedDocumentSubtype =
   | 'cin'
   | 'cnh'
   | 'cha'
+  | 'cir'
   | 'tie-digital'
   | 'tie-legacy'
   | 'unknown'
@@ -272,6 +273,10 @@ export function fieldsAllowedForDetectedSubtype(
   if (documentType === 'identity' && ['rg', 'cin', 'cnh'].includes(subtype)) {
     const allowed = IDENTITY_FIELDS_BY_SUBTYPE[subtype as 'rg' | 'cin' | 'cnh'];
     return configuredAllowedFieldIds.filter((fieldId) => allowed.has(semanticLeaf(fieldId)));
+  }
+  if (documentType === 'cir' && subtype === 'cir') {
+    const allowed = new Set<string>(AQUAVIARIO_CIR_FIELDS);
+    return configuredAllowedFieldIds.filter((fieldId) => allowed.has(fieldId));
   }
   if (documentType === 'cha' && subtype === 'cha') {
     const allowed = new Set<string>(CHA_FIELDS);
