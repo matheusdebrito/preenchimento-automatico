@@ -10,7 +10,7 @@ import { PDFDocument } from 'pdf-lib';
 const run = promisify(execFile);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const source101Url = 'https://www.marinha.mil.br/sites/default/files/atos-normativos/dpc/normam/normam-101.pdf';
-// PDF supplied by the product owner. Reject a silent change in the official source.
+// Exact SHA-256 from the owner's official PDF: required since the government server's TLS chain can be incomplete.\n// The isolated one-time script permits that certificate failure ONLY with this pinned digest.
 const expected101Hash = '74AF4D83C26A255B7C8EF9A12359F905AEF00488490D0347AD548CE0A24CD049';
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex').toUpperCase();
 const specs = [
@@ -23,7 +23,7 @@ try {
   let src101 = process.env.NORMAM101_SOURCE_PATH;
   if (!src101) {
     src101 = join(tmp, 'normam101.pdf');
-    await run('curl', ['--fail', '--location', '--show-error', '--silent', '--retry', '2', '--output', src101, source101Url], { timeout: 90000 });
+    await run('curl', ['--fail', '--location', '--show-error', '--silent', '--insecure', '--retry', '2', '--output', src101, source101Url], { timeout: 90000 });
   }
   const file101 = await readFile(src101);
   if (digest(file101) !== expected101Hash) {
