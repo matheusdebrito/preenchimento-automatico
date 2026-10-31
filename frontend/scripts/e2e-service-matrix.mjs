@@ -10,7 +10,7 @@ const errors=[], results=[], versions=new Set();
 const clean = value => String(value).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0,85);
 async function request(path, body) {
   const response=await fetch(BASE+path, body === undefined ? {} : {
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+    method:'POST',headers:{'Content-Type':'application/json','Origin':BASE},body:JSON.stringify(body)
   });
   return {status:response.status, body:await response.json().catch(()=>({}))};
 }
