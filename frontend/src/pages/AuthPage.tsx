@@ -116,7 +116,7 @@ function AuthPageForm() {
               <p className="auth-panel__eyebrow">{register ? 'PRIMEIRO ACESSO' : 'ÁREA DO USUÁRIO'}</p>
               <h1 id="auth-title">{register ? 'Criar conta' : 'Entrar na minha conta'}</h1>
               <p className="auth-panel__intro">{register
-                ? 'Comece com seus dados de contato. É rápido e sem pedir CPF.'
+                ? 'Crie sua conta em poucos passos para preencher seus formulários.'
                 : 'Acesse sua conta e continue de onde parou.'}</p>
             </div>
 
@@ -207,10 +207,6 @@ function AuthPageForm() {
                 <span>{busy ? 'Aguarde…' : register ? 'Criar conta' : 'Entrar'}</span>
                 {!busy ? <ArrowRight aria-hidden="true" /> : null}
               </button>
-              {register ? (
-                <p className="auth-privacy"><ShieldCheck aria-hidden="true" />
-                  Seu CPF não é solicitado nem armazenado no cadastro.</p>
-              ) : null}
             </form>
 
             <div className="auth-panel__footer">
