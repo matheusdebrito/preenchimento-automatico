@@ -1,13 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { App } from '../App';
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status, headers: { 'Content-Type': 'application/json' },
   });
+}
+
+function CurrentRoute() {
+  const location = useLocation();
+  return <output data-testid="auth-route">{location.pathname + location.search}</output>;
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -95,6 +100,68 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     expect(await screen.findByRole('link', { name: 'Entrar' })).toBeTruthy();
   }, 25000);
 
+
+  it('alterna entre Entrar e Criar Conta pelo cabeçalho sem recarregar', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
+      if (String(url) === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      return json({ error: 'not_found' }, 404);
+    }));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/entrar']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    await user.click(screen.getByRole('link', { name: 'Criar Conta' }));
+    expect(screen.getByRole('heading', { name: 'Criar conta' })).toBeTruthy();
+    expect(screen.getByLabelText('CPF')).toBeTruthy();
+    expect(screen.getByLabelText('Confirmar senha')).toBeTruthy();
+
+    await user.click(screen.getByRole('link', { name: 'Entrar' }));
+    expect(screen.getByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    expect(screen.queryByLabelText('CPF')).toBeNull();
+    expect(screen.queryByLabelText('Confirmar senha')).toBeNull();
+  });
+
+  it('sincroniza o modo inicial de cadastro com o cabeçalho em ambas as direções', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
+      if (String(url) === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      return json({ error: 'not_found' }, 404);
+    }));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/entrar?modo=cadastro']}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole('heading', { name: 'Criar conta' })).toBeTruthy();
+    await user.click(screen.getByRole('link', { name: 'Entrar' }));
+    expect(screen.getByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    await user.click(screen.getByRole('link', { name: 'Criar Conta' }));
+    expect(screen.getByRole('heading', { name: 'Criar conta' })).toBeTruthy();
+  });
+
+  it('atualiza a URL pelo botão interno e preserva next ao alternar os modos', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
+      if (String(url) === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      return json({ error: 'not_found' }, 404);
+    }));
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/entrar?next=%2Fpreencher-real%2Fexemplo']}>
+        <App />
+        <CurrentRoute />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /Ainda não tenho conta/ }));
+    expect(screen.getByRole('heading', { name: 'Criar conta' })).toBeTruthy();
+    let query = new URLSearchParams(screen.getByTestId('auth-route').textContent?.split('?')[1]);
+    expect(query.get('modo')).toBe('cadastro');
+    expect(query.get('next')).toBe('/preencher-real/exemplo');
+
+    await user.click(screen.getByRole('button', { name: 'Já tenho uma conta' }));
+    expect(screen.getByRole('heading', { name: 'Entrar na minha conta' })).toBeTruthy();
+    query = new URLSearchParams(screen.getByTestId('auth-route').textContent?.split('?')[1]);
+    expect(query.has('modo')).toBe(false);
+    expect(query.get('next')).toBe('/preencher-real/exemplo');
+  });
 
   it('abre diretamente no modo cadastro pelo link do cabeçalho', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL): Promise<Response> => {
