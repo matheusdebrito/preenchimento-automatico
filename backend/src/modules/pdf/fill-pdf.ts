@@ -1,4 +1,5 @@
-import { PDFCheckBox, PDFDocument, PDFFont, PDFTextField, StandardFonts, rgb } from 'pdf-lib';
+import { PDFCheckBox, PDFDocument, PDFTextField, StandardFonts, rgb } from 'pdf-lib';
+import type { PDFFont } from 'pdf-lib';
 import type { FieldPlacement } from '../catalog/contracts.js';
 import { FormFieldError } from '../catalog/field-validation.js';
 import { TemplateGenerationError } from './template-error.js';
