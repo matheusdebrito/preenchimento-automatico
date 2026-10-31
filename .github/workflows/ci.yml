@@ -249,6 +249,8 @@ jobs:
             pdftotext "$file" - | grep -q "AMOSTRA - DADOS FICTICIOS - NAO UTILIZAR"
             pdftoppm -r 140 -png "$file" "$directory/$basename-layout"
           done
+      - name: Reject broad black-band rendering artifacts
+        run: python3 backend/scripts/assert-pdf-visual-sanity.py
       - name: Attach PDFs and PNGs for manual page-by-page QA
         uses: actions/upload-artifact@v4
         with:
