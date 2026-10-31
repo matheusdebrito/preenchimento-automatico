@@ -833,6 +833,7 @@ de recuperação foi removido após o uso.
 - [x] Atualizar os SHA-256 de catálogo sem desativar proteção contra template trocado.
 - [x] Deslocar o município do 1-L para não invadir a linha de assinatura.
 - [x] Ampliar dados sintéticos para preencher marcação e data do 1-K no CI.
+- [x] Criar verificação visual automatizada de faixas pretas extensas nas prévias e acoplá-la ao CI.
 - [ ] Confirmar CI completo **no commit final** do PR #93 (backend, PostgreSQL, Compose e renderização de PDFs).
 - [ ] Examinar todas as páginas das novas prévias e conferir texto por campo, em especial 1-K, 1-L e 3-C.
 - [ ] Executar o fluxo real na interface web e em dispositivo móvel antes de homologação para clientes.
