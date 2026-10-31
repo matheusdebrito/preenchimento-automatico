@@ -181,7 +181,7 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'process.date', label: 'Data do requerimento', valueKind: 'date' },
   { id: 'process.requestAuthority', label: 'CP/DL/AG destinatária', valueKind: 'text' },
   { id: 'process.requestSubject', label: 'Assunto do requerimento', valueKind: 'text' },
-  { id: 'process.requestPurpose', label: 'Finalidade do requerimento', valueKind: 'text' },
+  { id: 'process.requestPurpose', label: 'Finalidade do requerimento (na ascensão, informe categoria atual e pretendida)', valueKind: 'text' },
   { id: 'process.lostTie', label: 'Declaração referente ao TIE perdido/extraviado', valueKind: 'boolean' },
   { id: 'amateur.chaNumber', label: 'Número da CHA', valueKind: 'text' },
   { id: 'amateur.category', label: 'Categoria da CHA', valueKind: 'text' },
