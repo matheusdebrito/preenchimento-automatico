@@ -55,6 +55,10 @@ Foi criado o formulário **Requerimento do interessado (modelo auxiliar não ofi
 - Todos os campos permanecem opcionais.
 - SHA-256: C0D7EFD0B476519380D16C284C4F5FFC63E7622AF0ACDB268667B4AFE6A6A32B.
 
+### Escopo atual de serviços publicado
+
+A decisão de produto de 30/10/2026 limita a categoria Aquaviários a sete serviços: inscrição inicial da CIR, 2ª via da CIR, revalidação da CIR, ascensão de categoria, emissão de certificado, 2ª via de certificado e revalidação de certificado. Transferência de jurisdição, transferência de categoria/grupo e homologação do LRM não fazem parte da oferta atual; seus vínculos de serviço foram removidos do catálogo. Formulários e campos compartilhados só permanecem quando ainda atendem aos sete serviços selecionados.
+
 ### Matriz de formulários gerados
 
 | Serviço | Pacote gerado |
@@ -62,10 +66,7 @@ Foi criado o formulário **Requerimento do interessado (modelo auxiliar não ofi
 | Inscrição inicial / emissão da CIR | Anexo 1-L; modelo auxiliar somente para 4º Grupo (Mergulhadores) e 5º Grupo (Práticos) |
 | 2ª via da CIR | Modelo auxiliar + Anexo 1-L; Anexo 1-K somente para extravio, roubo ou furto |
 | Revalidação da CIR | Modelo auxiliar + Anexo 1-L |
-| Transferência de jurisdição | Modelo auxiliar + Anexo 1-L |
 | Ascensão de categoria | Modelo auxiliar + Anexo 1-L |
-| Transferência de categoria ou grupo | Modelo auxiliar + Anexo 1-L |
-| Homologação do LRM | Modelo auxiliar + Anexo 1-L |
 | Emissão de certificado | Anexo 1-E oficial + Anexo 1-L |
 | 2ª via de certificado | Anexo 1-E oficial + Anexo 1-L; Anexo 1-K somente para extravio, roubo ou furto |
 | Revalidação de certificado | Anexo 1-E oficial + Anexo 1-L |
