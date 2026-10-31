@@ -729,3 +729,25 @@ os mesmos PDFs e mappings já homologados.
 **Frontend:** `PLANNED_AQUAVIARIO_SERVICES` passa a conter exatamente os sete cards. Os testes de categoria validam os sete links e a ausência dos três cards retirados.
 
 **Validação:** CI #727 aprovado no head `fabdd675359c23dcf537fb099c5b3514fcb7a70d` (backend, frontend, PostgreSQL, Compose, inspeção NORMAM-211 e QA visual de PDFs). Typecheck, lint, testes e build foram executados pelo CI. Não foi possível executar os mesmos comandos localmente nesta sessão porque o repositório não pôde ser clonado por indisponibilidade de rede no ambiente de execução. O PR #85 permanece em rascunho até revisão/validação local e QA manual na aplicação web/celular. Não houve merge nem deploy.
+
+
+## Auditoria transversal dos 18 serviços — correções de 30/10/2026 (PR #86)
+
+**Em desenvolvimento/testes, sem usuários reais.** Escopo: seis serviços de embarcações, cinco de amadores e sete de aquaviários. Não altera tabela de pagamentos, banco de dados nem formulários oficiais.
+
+- [x] Corrigida pergunta sobre comprimento no TIE/TIEM de embarcação sem alteração (BADE/BSADE); segunda via mantém condição vinculada à alteração.
+- [x] Removida pergunta sem efeito operacional de conversão remo→motor; procedimentos técnicos permanecem na orientação normativa, sem alegação de preenchimento inexistente.
+- [x] Segunda via diferencia TIE digital reimprimível do modelo físico; ramo digital não pode ser cotado.
+- [x] Renovação com agregação Motonauta bloqueia resposta negativa à declaração exigida.
+- [x] Categoria Arrais/Mestre/Capitão selecionada é vinculada à descrição do pedido na renovação CHA (5-H e 3-A quando aplicável).
+- [x] Projeção pública separa documentos para análise OpenAI dos documentos apenas de protocolo. Backend impede upload de itens sem campos extraíveis; frontend apresenta checklist sem upload.
+- [x] CIR com extração conservadora de número, categoria e nome na folha de rosto, apenas onde o mapeamento correspondente exige campos.
+- [x] Ascensão pergunta o grupo, apresenta documentos exclusivos de mergulhadores somente quando aplicável e deixa a finalidade editável para indicar categoria atual/pretendida.
+- [x] Ano de construção e quantidades inteiras (passageiros e motores) rejeitam valores não numéricos, mantendo vazio permitido. Não se assumiu um formato de unidades de medida sem evidência.
+- [x] Testes de regressão acrescentados para as regras acima; execução final do CI ainda deve ser confirmada.
+- [ ] Confirmar modelo DPC-1032 para segunda via com norma/CP-DL-AG antes de liberar ramo não homologado.
+- [ ] Mapear a Parte III do Anexo 1-E somente após inspeção do PDF oficial; informar conferência manual até então.
+- [ ] Validar extração com amostras de CIR reais autorizadas ou sintéticas visualmente representativas. Não afirmar precisão sem testes.
+- [ ] QA manual em navegador/mobile após merge ao ambiente de desenvolvimento.
+
+**Critério de merge:** CI verde do commit final do PR #86 e sem alteração de modelos oficiais sem revisão visual.
