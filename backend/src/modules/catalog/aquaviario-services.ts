@@ -289,7 +289,7 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento aplicável à ascensão.'),
     ]),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. Os documentos de apoio variam conforme o modelo de certificado. A fotografia prevista na norma é capturada no atendimento.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. Os documentos de apoio variam conforme o modelo de certificado. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
     [certificateModel, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
       cirDataSource('current-cir-certification', 'CIR', 'Folha de rosto para sugerir número e categoria. Folhas de embarque são documentos de apoio ao protocolo. Exigida para DPC-1031 e DPC-1034.', [
@@ -336,7 +336,7 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       ]),
     ]),
   base('segunda-via-certificado-aquaviario', '2ª via de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E, a Declaração de Residência do Anexo 1-L e, para extravio, roubo ou furto, a Declaração do Anexo 1-K. A fotografia prevista na norma é capturada no atendimento.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E, a Declaração de Residência do Anexo 1-L e, para extravio, roubo ou furto, a Declaração do Anexo 1-K. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
     [certificateSecondCopyModel, certificateSecondCopyReason, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
       cirDataSource('current-cir-certification', 'CIR', 'Folha de rosto da CIR para sugerir número e categoria, quando aplicável ao modelo do certificado.'),
@@ -360,7 +360,7 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
       supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento da segunda via.'),
     ]),
   base('revalidacao-certificado-aquaviario', 'Revalidação de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. A NORMAM-101 não prevê revalidação do DPC-1033 pela Autoridade Marítima Brasileira.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download. A NORMAM-101 não prevê revalidação do DPC-1033 pela Autoridade Marítima Brasileira.',
     [revalidatableCertificateModel, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
       cirDataSource('current-cir-certification', 'CIR e folhas de registro de embarque', 'A folha de rosto pode sugerir número e categoria; apresente também os registros de embarque quando exigidos.'),
