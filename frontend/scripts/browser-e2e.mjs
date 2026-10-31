@@ -60,6 +60,7 @@ try {
     await page.getByRole('button', { name: 'Continuar mesmo assim' }).waitFor();
     await page.getByRole('button', { name: 'Continuar mesmo assim' }).click();
     await page.getByRole('heading', { name: 'Formulários gerados' }).waitFor();
+    await page.getByText(/nenhum crédito de análise foi consumido/i).waitFor();
     for (const versionId of expectedIds) {
       const link = page.locator('a[download][href*="' + versionId + '"]');
       assert.equal(await link.count(), 1, 'Download not shown for ' + versionId);
