@@ -246,7 +246,7 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     const expectations: Record<string, readonly string[]> = {
       'inscricao-inicial-cir-aquaviario': ['cpf-document', 'medical-certificate', 'professional-qualification'],
       'segunda-via-cir-aquaviario': ['cpf-document', 'medical-certificate', 'gru-payment'],
-      'revalidacao-cir-aquaviario': ['current-cir', 'cpf-document', 'medical-certificate', 'gru-payment'],
+      'revalidacao-cir-aquaviario': ['cpf-document', 'medical-certificate', 'gru-payment'],
       'ascensao-categoria-aquaviario': ['sea-service-proof', 'course-certificates', 'medical-certificate', 'gru-payment'],
     };
 
@@ -286,13 +286,13 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     const dpc1032Revalidation = publicService(catalog, 'revalidacao-certificado-aquaviario', {
       certificateModel: 'dpc1032',
     });
-    expect(dpc1032Revalidation?.documentRequirements.map((item) => item.id))
+    expect(dpc1032Revalidation?.protocolDocuments.map((item) => item.id))
       .toContain('dpc1032-revalidation-additional-documents');
 
     const dpc1034Revalidation = publicService(catalog, 'revalidacao-certificado-aquaviario', {
       certificateModel: 'dpc1034',
     });
-    expect(dpc1034Revalidation?.documentRequirements.map((item) => item.id))
+    expect(dpc1034Revalidation?.protocolDocuments.map((item) => item.id))
       .not.toContain('dpc1032-revalidation-additional-documents');
   });
 
