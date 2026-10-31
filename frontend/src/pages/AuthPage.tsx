@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
@@ -10,8 +10,14 @@ import { useAuth } from '../features/auth/AuthProvider';
 import type { SessionUser } from '../features/auth/AuthProvider';
 
 export function AuthPage() {
+  const [params] = useSearchParams();
+  // Reset only the form when its URL-driven mode changes; session state stays intact.
+  const mode = params.get('modo') === 'cadastro' ? 'cadastro' : 'entrar';
+  return <AuthPageForm key={mode} />;
+}
+
+function AuthPageForm() {
   const [params, setParams] = useSearchParams();
-  // The URL is the single source of truth: header navigation reuses this component.
   const register = params.get('modo') === 'cadastro';
   useDocumentTitle(register ? 'Criar conta' : 'Entrar');
   const [fullName, setFullName] = useState('');
@@ -27,12 +33,6 @@ export function AuthPage() {
   const next = params.get('next');
   const safeNext = next?.startsWith('/preencher-real/') && !next.startsWith('//')
     ? next : '/minha-conta';
-
-  useEffect(() => {
-    // Also clear mode-specific feedback when switching through the header links.
-    setError('');
-    setPasswordConfirmation('');
-  }, [register]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
