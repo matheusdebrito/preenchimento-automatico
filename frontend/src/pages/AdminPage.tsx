@@ -465,7 +465,7 @@ export function AdminPage() {
                   <Search aria-hidden="true" />
                   <input className="field__input" value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Nome, e-mail, CPF ou celular" />
+                    placeholder="Nome, e-mail ou celular" />
                 </span>
               </label>
               <label className="field">
@@ -545,7 +545,6 @@ export function AdminPage() {
                 </button>
               </div>
               <dl className="account-profile-grid">
-                <div><dt>CPF</dt><dd></dd></div>
                 <div><dt>Celular</dt><dd>{formatCellphone(selected.user.cellphone)}</dd></div>
                 <div><dt>Saldo</dt><dd>{selected.user.balance}</dd></div>
                 <div><dt>Créditos usados</dt><dd>{selected.user.creditsUsed}</dd></div>
