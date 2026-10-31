@@ -63,24 +63,6 @@ const certificateSecondCopyReason: ServiceQuestion = {
   options: ['dano', 'extravio', 'roubo', 'furto'],
 };
 
-const supporting = (
-  id: string,
-  label: string,
-  description: string,
-  conditions?: readonly ServiceCondition[],
-): DocumentRequirement => ({
-  id,
-  label,
-  description,
-  required: false,
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'person',
-    allowedFieldIds: [],
-  },
-  ...(conditions ? { conditions } : {}),
-});
-
 const cirDataSource = (
   id: string,
   label: string,
@@ -99,8 +81,8 @@ const cirDataSource = (
 const commonDocuments: readonly DocumentRequirement[] = [
   {
     id: 'applicant-identity',
-    label: 'Documento oficial de identificação',
-    description: 'RG, CIN, CNH ou documento migratório aplicável. O arquivo é opcional e pode sugerir dados para revisão.',
+    label: 'Documento de identificação',
+    description: 'RG, CNH ou CIN. Opcional; usado para extrair dados pessoais e preencher os formulários.',
     required: false,
     extraction: {
       documentType: 'identity',
@@ -109,22 +91,11 @@ const commonDocuments: readonly DocumentRequirement[] = [
     },
   },
   cirDataSource('current-cir', 'Caderneta de Inscrição e Registro (CIR)',
-    'A folha de rosto pode sugerir número da CIR e categoria quando estes campos constarem do formulário. Outras folhas podem ser exigidas apenas no protocolo.'),
-  {
-    id: 'current-certificate',
-    label: 'Certificado atual',
-    description: 'Envie o certificado atual quando o processo exigir sua apresentação ou substituição. Documento de apoio para conferência.',
-    required: false,
-    extraction: {
-      documentType: 'supporting-document',
-      subjectRole: 'person',
-      allowedFieldIds: [],
-    },
-  },
+    'Opcional; usada para extrair número da CIR e categoria profissional quando esses campos forem utilizados no formulário.'),
   {
     id: 'residence-proof',
     label: 'Comprovante de residência',
-    description: 'Com CEP, emitido nos últimos 90 dias e em nome do interessado. A Declaração de Residência do Anexo 1-L é gerada pela aplicação.',
+    description: 'Opcional; usado para extrair endereço e preencher a declaração/formulários aplicáveis.',
     required: false,
     extraction: {
       documentType: 'residence-proof',
@@ -236,146 +207,37 @@ const base = (
 export const aquaviarioServices: readonly ServiceDefinition[] = [
   base('inscricao-inicial-cir-aquaviario', 'Inscrição inicial / emissão da CIR',
     'Gera a Declaração de Residência do Anexo 1-L. Para o 4º Grupo (Mergulhadores) e o 5º Grupo (Práticos), também gera um requerimento auxiliar não oficial. A fotografia prevista na norma é capturada no atendimento da CP/DL/AG.',
-    [initialAquaviarioGroup], [
-      ...docs('applicant-identity', 'residence-proof'),
-      supporting('cpf-document', 'CPF', 'Envie o CPF separadamente se o número não constar do documento de identificação.'),
-      supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de um ano, conforme os padrões de saúde física, mental, visual e auditiva previstos na norma.'),
-      supporting('professional-qualification', 'Certificado de habilitação profissional ou conclusão do curso', 'Comprovação de habilitação profissional ou conclusão de curso reconhecido pela DPC.'),
-      supporting('guardian-authorization', 'Autorização do pai, tutor ou juiz competente', 'Somente para Aprendiz de Pesca ou Aprendiz de Motorista menor de idade, conforme o artigo 1.6.2.'),
-      supporting('diving-course', 'Certificado do curso de mergulho profissional raso', 'Exigido especificamente para o 4º Grupo - Mergulhadores.', [
-        { questionId: 'initialAquaviarioGroup', equals: 'mergulhadores' },
-      ]),
-    ]),
+    [initialAquaviarioGroup], docs('applicant-identity', 'residence-proof')),
   base('segunda-via-cir-aquaviario', '2ª via da CIR',
     'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. Para extravio, roubo ou furto, também gera a Declaração do Anexo 1-K. A fotografia é capturada no atendimento.',
     [cirSecondCopyReason], [
       ...docs('applicant-identity', 'residence-proof'),
-      supporting('current-cir-damage', 'CIR danificada', 'Apresente a CIR original para conferência quando o motivo for dano.', [
-        { questionId: 'cirSecondCopyReason', equals: 'dano' },
-      ]),
-      supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
-      supporting('medical-certificate', 'Atestado de Saúde', 'A NORMAM-101 exige atestado de saúde quando a CIR tiver sido emitida há mais de dois anos.'),
-      supporting('occurrence-report', 'Registro de Ocorrência (RO)', 'Alternativa à declaração do Anexo 1-K nos casos de extravio, roubo ou furto.', [
-        { questionId: 'cirSecondCopyReason', oneOf: ['extravio', 'roubo', 'furto'] },
-      ]),
-      supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante de pagamento do emolumento da segunda via.'),
+      cirDataSource('current-cir-damage', 'CIR atual',
+        'Opcional; usada para sugerir número e categoria da CIR quando o motivo for dano.',
+        [{ questionId: 'cirSecondCopyReason', equals: 'dano' }]),
     ]),
   base('revalidacao-cir-aquaviario', 'Revalidação da CIR',
     'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. A fotografia só é necessária quando a revalidação ocorrer por término do espaço de anotações.',
-    [], [
-      ...docs('applicant-identity', 'current-cir', 'residence-proof'),
-      supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
-      supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de um ano, conforme os padrões de saúde física, mental, visual e auditiva.'),
-      supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento de revalidação.'),
-      supporting('professional-qualification', 'Comprovantes de habilitação', 'Podem ser solicitados pela CP/DL/AG quando houver divergência entre a CIR e o SISAQUA.'),
-    ]),
+    [], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('ascensao-categoria-aquaviario', 'Ascensão de categoria',
-    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. No campo Finalidade do requerimento informe a categoria atual e a categoria pretendida. Comprovantes de curso, tempo de embarque e habilitação continuam sendo documentos de apoio ao protocolo. A validade do atestado de saúde é de seis meses para mergulhadores e um ano para os demais aquaviários.',
-    [ascensionAquaviarioGroup], [
-      ...docs('applicant-identity', 'current-cir', 'residence-proof'),
-      supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
-      supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de seis meses para mergulhadores ou um ano para os demais aquaviários.'),
-      supporting('sea-service-proof', 'Comprovação do tempo de embarque', 'Registros de embarque na CIR e documentos do Anexo 1-S, conforme o caso.'),
-      supporting('foreign-sea-service', 'Comprovação de embarque no exterior (Anexo 1-G)', 'Quando aplicável a embarques em navios de bandeira estrangeira.'),
-      supporting('course-certificates', 'Certificados de cursos e estágios', 'Comprovantes de conclusão dos cursos e estágios que atendem aos requisitos da categoria pretendida.'),
-      supporting('competency-certificates', 'Certificado de Competência', 'Quando houver alteração de Regras ou retirada de limitações.'),
-      supporting('education-proof', 'Comprovante de escolaridade', 'Quando exigido pelo Quadro Geral de Certificações (Anexo 2-A).'),
-      supporting('diving-experience', 'Comprovação de experiência como MGE', 'Somente para o 4º Grupo: dois anos de exercício como MGE e pelo menos 150 horas de mergulho, comprovados pelo LRM e documentos complementares.', [
-        { questionId: 'ascensionAquaviarioGroup', equals: 'mergulhadores' },
-      ]),
-      supporting('diving-course', 'Certificado do C-Exp-MGSAT ou equivalente', 'Somente para o 4º Grupo - Mergulhadores. Curso realizado no CIAMA ou em entidade credenciada pela DPC.', [
-        { questionId: 'ascensionAquaviarioGroup', equals: 'mergulhadores' },
-      ]),
-      supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento aplicável à ascensão.'),
-    ]),
+    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. Informe a categoria atual e a categoria pretendida na finalidade do requerimento.',
+    [ascensionAquaviarioGroup], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. Os documentos de apoio variam conforme o modelo de certificado. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
     [certificateModel, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
-      cirDataSource('current-cir-certification', 'CIR', 'Folha de rosto para sugerir número e categoria. Folhas de embarque são documentos de apoio ao protocolo. Exigida para DPC-1031 e DPC-1034.', [
-        { questionId: 'certificateModel', oneOf: ['dpc1031', 'dpc1034'] },
-      ]),
-      supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.', [
-        { questionId: 'certificateModel', oneOf: ['dpc1031', 'dpc1033', 'dpc1034'] },
-      ]),
-      supporting('medical-certificate', 'Atestado de Saúde', 'Atestado emitido há menos de um ano, conforme os padrões de saúde previstos na norma.', [
-        { questionId: 'certificateModel', oneOf: ['dpc1031', 'dpc1033', 'dpc1034'] },
-      ]),
-      supporting('competency-certificates', 'Certificados de competência', 'Comprovam habilitações específicas a serem registradas no DPC-1031.', [
-        { questionId: 'certificateModel', equals: 'dpc1031' },
-      ]),
-      supporting('course-certificates', 'Certificados de cursos e habilitações', 'Comprovantes das qualificações necessárias para o certificado DPC-1034.', [
-        { questionId: 'certificateModel', equals: 'dpc1034' },
-      ]),
-      supporting('training-evidence', 'Comprovante de estágio de familiarização em navio-tanque', 'Documento emitido pelo comandante, quando o processo DPC-1034 envolver familiarização em navio-tanque.', [
-        { questionId: 'certificateModel', equals: 'dpc1034' },
-      ]),
-      supporting('source-country-certificate', 'Certificado de competência do país de origem', 'Exigido para reconhecimento e inscrição inicial no modelo DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('seaman-record-book', 'Seaman’s Record Book', 'Caderneta de inscrição e registro emitida pelo país de origem, para DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('migration-documents', 'CRNM e DPRNM', 'Documentos migratórios dentro da validade, exigidos no processo DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('work-record', 'Carteira de Trabalho e Previdência Social (CTPS)', 'Exigida para estrangeiro no processo DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('education-proof', 'Comprovante de escolaridade', 'Exigido no processo de reconhecimento DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('school-history', 'Histórico escolar', 'Disciplinas cursadas e respectivas cargas horárias, para DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('embarked-training', 'Comprovante de estágio embarcado', 'Comprovação do estágio previsto na Convenção STCW-78 para DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento aplicável ao reconhecimento DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
+      cirDataSource('current-cir-certification', 'CIR',
+        'Opcional; usada para sugerir número e categoria quando o modelo de certificado utiliza esses campos.',
+        [{ questionId: 'certificateModel', oneOf: ['dpc1031', 'dpc1034'] }]),
     ]),
   base('segunda-via-certificado-aquaviario', '2ª via de certificado',
     'Gera o Requerimento de Certificação oficial do Anexo 1-E, a Declaração de Residência do Anexo 1-L e, para extravio, roubo ou furto, a Declaração do Anexo 1-K. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
-    [certificateSecondCopyModel, certificateSecondCopyReason, personSexQuestion], [
-      ...docs('applicant-identity', 'residence-proof'),
-      cirDataSource('current-cir-certification', 'CIR', 'Folha de rosto da CIR para sugerir número e categoria, quando aplicável ao modelo do certificado.'),
-      supporting('current-certificate-damage', 'Certificado original danificado', 'Apresente o original quando a segunda via for solicitada por dano.', [
-        { questionId: 'certificateSecondCopyReason', equals: 'dano' },
-      ]),
-      supporting('occurrence-report', 'Registro de Ocorrência (RO)', 'Alternativa à declaração do Anexo 1-K nos casos de extravio, roubo ou furto.', [
-        { questionId: 'certificateSecondCopyReason', oneOf: ['extravio', 'roubo', 'furto'] },
-      ]),
-      supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
-      supporting('medical-certificate', 'Atestado de Saúde', 'Atestado emitido há menos de um ano, conforme os padrões previstos na norma.'),
-      supporting('competency-certificates', 'Certificados de competência', 'Habilitações específicas a serem registradas, conforme o caso.', [
-        { questionId: 'certificateModel', equals: 'dpc1031' },
-      ]),
-      supporting('source-country-certificate', 'Certificado de competência do país de origem', 'Exigido para segunda via do DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('migration-documents', 'CRNM e DPRNM', 'Documentos migratórios dentro da validade, exigidos para DPC-1033.', [
-        { questionId: 'certificateModel', equals: 'dpc1033' },
-      ]),
-      supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento da segunda via.'),
-    ]),
+    [certificateSecondCopyModel, certificateSecondCopyReason, personSexQuestion],
+    docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('revalidacao-certificado-aquaviario', 'Revalidação de certificado',
     'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download. A NORMAM-101 não prevê revalidação do DPC-1033 pela Autoridade Marítima Brasileira.',
-    [revalidatableCertificateModel, personSexQuestion], [
-      ...docs('applicant-identity', 'residence-proof'),
-      cirDataSource('current-cir-certification', 'CIR e folhas de registro de embarque', 'A folha de rosto pode sugerir número e categoria; apresente também os registros de embarque quando exigidos.'),
-      supporting('current-certificate', 'Certificado a revalidar', 'Cópia do certificado atual.'),
-      supporting('cpf-document', 'CPF', 'Envie separadamente se o CPF não constar do documento de identificação.'),
-      supporting('medical-certificate', 'Atestado de Saúde', 'Emitido há menos de um ano, conforme os padrões de saúde previstos na norma.'),
-      supporting('sea-service-proof', 'Comprovação do tempo de embarque', 'Registros de embarque e documentos do Anexo 1-S, conforme os requisitos da Seção A-I/11 da Convenção STCW-78.'),
-      supporting('foreign-sea-service', 'Comprovação de embarque no exterior (Anexo 1-G)', 'Quando aplicável a embarques em navios de bandeira estrangeira.'),
-      supporting('competency-certificates', 'Certificados de competência e habilitações', 'Documentos que comprovem as habilitações específicas a serem registradas no novo certificado.'),
-      supporting('training-evidence', 'Comprovantes de treinamentos de segurança e proficiência', 'Quando aplicável, conforme o artigo 1.22.4 e as Regras VI/1, VI/2 e VI/3 da Convenção STCW-78.'),
-      supporting('gru-payment', 'GRU e comprovante de pagamento', 'Comprovante do emolumento de revalidação.'),
-      supporting('dpc1032-revalidation-additional-documents', 'Documentos complementares para DPC-1032', 'A regra geral da NORMAM-101 inclui o DPC-1032 na revalidação, mas não apresenta um subitem próprio de documentação equivalente aos itens 1.22.2 e 1.22.3. Confirme exigências específicas com a CP/DL/AG.', [
-        { questionId: 'certificateModel', equals: 'dpc1032' },
-      ]),
-    ]),
+    [revalidatableCertificateModel, personSexQuestion],
+    docs('applicant-identity', 'current-cir', 'residence-proof')),
 ];
 
 const residence = (serviceId: string, order: number): ServiceForm => ({
