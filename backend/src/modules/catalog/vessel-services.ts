@@ -69,6 +69,13 @@ const motoCharacteristicsChangedQuestion: ServiceQuestion = {
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 };
 
+const tieDocumentFormatQuestion: ServiceQuestion = {
+  id: 'tieDocumentFormat',
+  label: 'Qual é o formato do TIE/TIEM perdido ou danificado? O TIE digital pode ser reimpresso sem solicitar uma segunda via.',
+  options: ['fisico_antigo', 'digital', 'desconhecido'],
+  unavailableOptions: ['digital'],
+};
+
 const motoTieSecondCopyReasonQuestion: ServiceQuestion = {
   id: 'motoTieSecondCopyReason',
   label: 'Motivo da renovação do TIE da moto aquática',
@@ -307,6 +314,7 @@ function questions(options: {
   constructionCase?: boolean;
   responsibilityTermCase?: boolean;
   motoTieSecondCopyReason?: boolean;
+  tieDocumentFormat?: boolean;
   alterationTarget?: boolean;
   transferTarget?: boolean;
 } = {}): readonly ServiceQuestion[] {
@@ -326,6 +334,7 @@ function questions(options: {
     ...(options.constructionCase ? [initialResponsibilityTermQuestion] : []),
     ...(options.responsibilityTermCase ? [responsibilityTermCaseQuestion] : []),
     ...(options.motoTieSecondCopyReason ? [motoTieSecondCopyReasonQuestion] : []),
+    ...(options.tieDocumentFormat ? [tieDocumentFormatQuestion] : []),
     ...(options.alterationTarget
       ? [boatAlterationTargetQuestion, motoAlterationTargetQuestion]
       : []),
@@ -397,7 +406,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Renovação do TIE/TIEM por perda, roubo ou extravio',
     description: scopeNote + ' O TIE digital não possui segunda via; perda ou extravio do modelo antigo segue o fluxo de renovação.',
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ dataChanged: true, bandWhenDataChanged: true, motoTieSecondCopyReason: true }),
+    questions: questions({ dataChanged: true, bandWhenDataChanged: true, motoTieSecondCopyReason: true, tieDocumentFormat: true }),
     documentRequirements: requirements(),
   },
   {
