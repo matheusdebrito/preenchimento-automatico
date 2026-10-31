@@ -835,8 +835,8 @@ de recuperação foi removido após o uso.
 - [x] Ajustar CPF, cidade/UF, telefone e ano do evento no 1-K para evitar sobreposição com rótulos impressos.
 - [x] Ampliar dados sintéticos para preencher marcação e data do 1-K no CI.
 - [x] Criar verificação visual automatizada de faixas pretas extensas nas prévias e acoplá-la ao CI.
-- [ ] Confirmar CI completo **no commit final** do PR #93 (backend, PostgreSQL, Compose e renderização de PDFs).
-- [ ] Examinar todas as páginas das novas prévias e conferir texto por campo, em especial 1-K, 1-L e 3-C.
+- [x] CI final confirmado no commit de código/documentação `f9b42e8870` — execução https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/41233776794 aprovada nos sete jobs: backend, frontend, PostgreSQL, Compose, NORMAM e PDF visual.
+- [x] Conferência visual do contato de 41 páginas dos 21 modelos e inspeção ampliada dos anexos 1-K, 1-L e 3-C; nenhum bloco preto extenso ou imagem-base embaralhada nas novas prévias. Os textos do 1-K foram realinhados ao campo de telefone/cidade/UF; não é teste de impressão ou de visualizador em ambiente real.
 - [ ] Executar o fluxo real na interface web e em dispositivo móvel antes de homologação para clientes.
 
 **Não homologar produção com base em CI de PDF:** o CI verifica estrutura,
