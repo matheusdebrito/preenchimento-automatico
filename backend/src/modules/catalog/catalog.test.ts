@@ -35,6 +35,10 @@ function sharedFormFixture(): CatalogDefinition {
         status: 'AVAILABLE', questions: [{ id: 'mode', label: 'Modalidade', options: ['yes', 'no'] }],
         documentRequirements: [{
           id: 'document-b', label: 'Documento de teste', required: true,
+          extraction: {
+            documentType: 'identity', subjectRole: 'person',
+            allowedFieldIds: ['person.fullName'],
+          },
           conditions: [{ questionId: 'mode', equals: 'yes' }],
         }] },
     ],
@@ -327,11 +331,14 @@ describe('catálogo reutilizável de formulários', () => {
   });
 
   it('mantém origem de campos explícita em todo perfil de extração', () => {
-    const requirements = catalog.services.flatMap((service) => service.documentRequirements)
-      .filter((requirement) => requirement.extraction);
+    const requirements = catalog.services.flatMap((service) => service.documentRequirements);
     expect(requirements.length).toBeGreaterThan(0);
+    expect(requirements.every((requirement) => requirement.extraction)).toBe(true);
     for (const requirement of requirements) {
-      const allowed = requirement.extraction!.allowedFieldIds;
+      const extraction = requirement.extraction!;
+      expect(AI_INPUT_DOCUMENT_TYPES).toContain(extraction.documentType);
+      const allowed = extraction.allowedFieldIds;
+      expect(allowed.length).toBeGreaterThan(0);
       expect(new Set(allowed).size).toBe(allowed.length);
       expect(allowed.every((fieldId) =>
         catalog.fields.some((field) => field.id === fieldId))).toBe(true);
