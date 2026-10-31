@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
 import { publicService, publicServices } from './public-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
+import { serviceFormValues } from './service-form-values.js';
 
 function fixture(): CatalogDefinition {
   return {
@@ -349,6 +350,43 @@ describe('projeção pública do catálogo', () => {
     expect(uploads).not.toContain('gru-payment');
     expect(protocol).toContain('gru-payment');
     expect(protocol).toContain('occurrence-report');
+  });
+
+  it('distingue reimpressão de TIE digital da renovação do modelo físico', () => {
+    const questions = catalog.services.find((item) => item.id === 'segunda-via-tie-embarcacao')?.questions;
+    expect(questions?.find((item) => item.id === 'tieDocumentFormat')?.unavailableOptions)
+      .toContain('digital');
+    const quote = (tieDocumentFormat: string) =>
+      publicService(catalog, 'segunda-via-tie-embarcacao', {
+        vesselType: 'moto_aquatica',
+        hasCoOwner: 'nao', dataChanged: 'nao',
+        motoCharacteristicsChanged: 'nao',
+        motoTieSecondCopyReason: 'extravio',
+        tieDocumentFormat,
+      });
+    expect(quote('digital')).toBeNull();
+    expect(quote('fisico_antigo')?.formVersionIds)
+      .toContain('declaracao-perda-tie-ma-v1');
+  });
+
+  it('preenche a finalidade da renovação da CHA a partir da categoria selecionada', () => {
+    for (const [serviceId, desiredPart] of [
+      ['renovacao-cha-amador', 'Mestre-Amador'],
+      ['renovacao-cha-agregacao-mta', 'Mestre-Amador com agregação Motonauta'],
+    ] as const) {
+      const relation = catalog.serviceForms.find((item) =>
+        item.serviceId === serviceId && item.formVersionId === 'requerimento-cha-amador-2026-v1');
+      const values = serviceFormValues(relation, { amateurCategory: 'mestre' }, {});
+      expect(values['process.notes']).toContain(desiredPart);
+    }
+    const motoRelation = catalog.serviceForms.find((item) =>
+      item.serviceId === 'renovacao-cha-agregacao-mta' &&
+      item.formVersionId === 'requerimento-motonauta-2026-v1');
+    const values = serviceFormValues(motoRelation, {
+      amateurCategory: 'arrais', motonautaDeclaration: 'sim',
+    }, {});
+    expect(values['process.notes']).toContain('Arrais-Amador');
+    expect(values['process.motonautaDeclaration']).toBe('true');
   });
 
   it('inclui BSADE ou BADE na renovação mesmo quando dataChanged é nao', () => {
