@@ -247,7 +247,7 @@ export function fieldsAllowedForDetectedSubtype(
   subtype: DetectedDocumentSubtype,
   configuredAllowedFieldIds: readonly string[],
 ): readonly string[] {
-  if (subtype === 'not-applicable') return [];
+  if (subtype === 'not-applicable' && documentType !== 'residence-proof') return [];
 
   if (documentType === 'identity') {
     if (['rg', 'cin', 'cnh'].includes(subtype)) {
