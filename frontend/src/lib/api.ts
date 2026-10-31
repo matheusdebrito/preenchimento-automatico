@@ -129,7 +129,6 @@ export interface LiveService {
     conditions?:readonly {questionId:string;equals?:string;oneOf?:readonly string[]}[];
   }[];
   documentRequirements: readonly {id:string;label:string;description?:string;required:boolean}[];
-  protocolDocuments?: readonly {id:string;label:string;description?:string}[];
   reviewFields: readonly LiveReviewField[];
   reviewForms?: readonly LiveReviewForm[];
   formVersionIds: readonly string[];
