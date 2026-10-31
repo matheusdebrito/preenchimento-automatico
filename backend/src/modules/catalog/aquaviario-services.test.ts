@@ -19,7 +19,13 @@ const certificationRequestId = 'requerimento-certificacao-aquaviario-2026-v1';
 const lossDeclarationId = 'declaracao-extravio-aquaviario-2026-v1';
 
 describe('serviços de aquaviários - NORMAM-101', () => {
-  it('publica somente os sete serviços selecionados', () => {
+  it('publica exatamente os sete serviços selecionados', () => {
+    const publishedIds = catalog.services
+      .filter((service) => service.id.endsWith('-aquaviario'))
+      .map((service) => service.id)
+      .sort();
+    expect(publishedIds).toEqual([...aquaviarioIds].sort());
+
     for (const id of aquaviarioIds) {
       expect(publicService(catalog, id), id).not.toBeNull();
     }
