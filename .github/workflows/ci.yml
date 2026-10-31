@@ -243,10 +243,11 @@ jobs:
         run: node scripts/render-synthetic.mjs
       - name: Render every page and assert the sample watermark
         run: |
-          find docs/_pdf_test_previews -type f -name synthetic.pdf | sort | while read -r file; do
+          find docs/_pdf_test_previews -type f -name 'synthetic*.pdf' | sort | while read -r file; do
             directory=$(dirname "$file")
+            basename=$(basename "$file" .pdf)
             pdftotext "$file" - | grep -q "AMOSTRA - DADOS FICTICIOS - NAO UTILIZAR"
-            pdftoppm -r 140 -png "$file" "$directory/layout"
+            pdftoppm -r 140 -png "$file" "$directory/$basename-layout"
           done
       - name: Attach PDFs and PNGs for manual page-by-page QA
         uses: actions/upload-artifact@v4
