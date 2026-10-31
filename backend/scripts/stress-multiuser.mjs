@@ -91,6 +91,28 @@ for(const count of counts) {
   console.log('READ '+JSON.stringify(metrics));
 }
 
+// Hold 100 distinct active users for 20 seconds with a paced realistic read/quote mix.
+// This is not 100 continuously outstanding HTTP requests; it measures sustained activity.
+const sustainedStart=performance.now(), sustainedRecords=[];
+await Promise.all(users.slice(0,100).map(async (actor,idx)=>{
+  let i=0;
+  while(performance.now()-sustainedStart<20_000){
+    const quote=(i++ % 2)===1;
+    const response=await request(quote?'/api/services/revalidacao-cir-aquaviario/quote':'/api/services',{
+      method:quote?'POST':'GET',
+      ...(quote?{body:quoteBody}:{}),user:actor,timeout:15000});
+    sustainedRecords.push({ms:response.ms,status:response.status,error:response.error});
+    await new Promise(resolve=>setTimeout(resolve,750+(idx%5)*50));
+  }
+}));
+const sustained={kind:'catalog_soak',users:100,
+  duration_seconds:round((performance.now()-sustainedStart)/1000),
+  ...aggregate(sustainedRecords)};
+sustained.req_per_sec=round(sustained.requests/sustained.duration_seconds);
+measurements.push(sustained);
+if(sustained.statuses[200]!==sustained.requests)fail.push('Sustained catalog traffic unexpected status: '+JSON.stringify(sustained.statuses));
+console.log('SOAK '+JSON.stringify(sustained));
+
 // Requests start together; keep accepted jobs alive until all create attempts settle.
 // This deliberately measures the global active-job ceiling under a simultaneous burst.
 const fixture={
@@ -190,6 +212,11 @@ const lines=[
  '| Usuários concorrentes | Requisições | Req/s | p50 (ms) | p95 (ms) | p99 (ms) | HTTP 200 |',
  '|---:|---:|---:|---:|---:|---:|---:|',
  ...measurements.filter(m=>m.kind==='catalog_quotes').map(m=>'| '+m.users+' | '+m.requests+' | '+m.req_per_sec+' | '+m.p50_ms+' | '+m.p95_ms+' | '+m.p99_ms+' | '+(m.statuses[200]||0)+' |'),
+ '',
+ '## Carga sustentada (100 usuários, aproximadamente 20 s)',
+ '| Usuários ativos | Duração (s) | Requisições | Req/s | p50 (ms) | p95 (ms) | p99 (ms) | HTTP 200 |',
+ '|---:|---:|---:|---:|---:|---:|---:|---:|',
+ ...measurements.filter(m=>m.kind==='catalog_soak').map(m=>'| '+m.users+' | '+m.duration_seconds+' | '+m.requests+' | '+m.req_per_sec+' | '+m.p50_ms+' | '+m.p95_ms+' | '+m.p99_ms+' | '+(m.statuses[200]||0)+' |'),
  '',
  '## Criação de processos e PDFs',
  '| Usuários simultâneos | Criados | Recusados por capacidade | Outras falhas | Fluxos PDF completos | p95 criação (ms) | p95 geração (ms) |',
