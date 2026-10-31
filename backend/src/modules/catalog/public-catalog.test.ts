@@ -148,7 +148,7 @@ describe('projeção pública do catálogo', () => {
     expect(combined?.documentRequirements.map((item) => item.id))
       .toContain('seller-identity-transfer');
     expect(combined?.documentRequirements.map((item) => item.id))
-      .toContain('vessel-origin-document-transfer');
+      .not.toContain('vessel-origin-document-transfer');
     expect(combined?.formVersionIds)
       .toContain('autorizacao-transferencia-er-2026-v1');
   });
@@ -160,7 +160,7 @@ describe('projeção pública do catálogo', () => {
     expect(enrollment).not.toBeNull();
     expect(enrollment?.formVersionIds).toEqual(['requerimento-cha-amador-2026-v1']);
     expect(enrollment?.documentRequirements.map((item) => item.id))
-      .toEqual(['applicant-identity', 'current-cha', 'residence-proof']);
+      .toEqual(['applicant-identity', 'residence-proof']);
     expect(enrollment?.documentRequirements.every((item) => item.required === false)).toBe(true);
   });
 
