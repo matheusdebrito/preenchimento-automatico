@@ -1,11 +1,14 @@
-import { PDFCheckBox, PDFDocument, PDFTextField, StandardFonts, rgb } from 'pdf-lib';
+import { PDFCheckBox, PDFDocument, PDFFont, PDFTextField, StandardFonts, rgb } from 'pdf-lib';
 import type { FieldPlacement } from '../catalog/contracts.js';
 import { FormFieldError } from '../catalog/field-validation.js';
 import { TemplateGenerationError } from './template-error.js';
 
 const MAX_TEMPLATE_BYTES = 12 * 1024 * 1024;
 const MAX_FIELD_CHARS = 500;
-const STATIC_TEXT_LIFT = 1.5;
+const STATIC_TEXT_LIFT = 2.5;
+const MIN_READABLE_FONT_SIZE = 5.5;
+type StaticPlacement = Extract<FieldPlacement, { kind: 'COORDINATES' }>;
+type WritingLine = { x: number; y: number; maxWidth: number };
 
 /**
  * Sanitize one-line fields without silently truncating or transliterating
@@ -70,21 +73,84 @@ function transformStaticValue(
   }
 }
 
+function writingLines(placement: StaticPlacement): WritingLine[] {
+  return [{ x: placement.x, y: placement.y, maxWidth: placement.maxWidth },
+    ...(placement.continuationLines ?? [])];
+}
+
 function assertStaticPlacement(
-  page: ReturnType<PDFDocument['getPages']>[number], placement: Extract<FieldPlacement, { kind: 'COORDINATES' }>,
+  page: ReturnType<PDFDocument['getPages']>[number], placement: StaticPlacement,
 ): void {
   if (((page.getRotation().angle % 360) + 360) % 360 !== 0) {
     throw new TemplateGenerationError('template_rotation_unsupported');
   }
   const crop = page.getCropBox();
-  const { x, y, fontSize, maxWidth } = placement;
-  if (![x, y, fontSize, maxWidth, crop.x, crop.y, crop.width, crop.height].every(Number.isFinite) ||
-      x < 0 || y < 0 || fontSize < 4.5 || maxWidth <= 0 ||
-      x < crop.x || y < crop.y ||
-      x + maxWidth > crop.x + crop.width + 0.5 ||
-      y + fontSize > crop.y + crop.height + 0.5) {
+  const lift = placement.markWhen === undefined ? (placement.baselineLift ?? STATIC_TEXT_LIFT) : 0;
+  const minSize = placement.minFontSize ?? Math.min(placement.fontSize,
+    Math.max(MIN_READABLE_FONT_SIZE, placement.fontSize * 0.8));
+  if (![crop.x, crop.y, crop.width, crop.height, placement.fontSize, minSize, lift]
+    .every(Number.isFinite) ||
+    placement.fontSize < 4.5 || minSize < 4.5 || minSize > placement.fontSize ||
+    lift < 0 || lift > 6 || (placement.markWhen !== undefined &&
+      (placement.continuationLines !== undefined || placement.minFontSize !== undefined))) {
     throw new TemplateGenerationError('template_layout_invalid');
   }
+
+  const lines = writingLines(placement);
+  for (const [index, line] of lines.entries()) {
+    if (![line.x, line.y, line.maxWidth].every(Number.isFinite) ||
+      line.maxWidth <= 0 || line.x < crop.x || line.y < crop.y ||
+      line.x + line.maxWidth > crop.x + crop.width + 0.5 ||
+      line.y + placement.fontSize + lift > crop.y + crop.height + 0.5 ||
+      (index > 0 && lines[index - 1]!.y - line.y < placement.fontSize + 1)) {
+      throw new TemplateGenerationError('template_layout_invalid');
+    }
+  }
+}
+
+/**
+ * Never clip or truncate values. Additional lines must have approved PDF
+ * coordinates: no wrapping into nearby printed labels or another field.
+ */
+function layoutStaticText(
+  printed: string, placement: StaticPlacement, font: PDFFont,
+): { size: number; lines: readonly string[] } {
+  const slots = writingLines(placement);
+  const minFontSize = placement.minFontSize ?? Math.min(placement.fontSize,
+    Math.max(MIN_READABLE_FONT_SIZE, placement.fontSize * 0.8));
+
+  try {
+    font.encodeText(printed);
+  } catch {
+    throw new FormFieldError('invalid_field_value', placement.fieldId, 'unsupported_character');
+  }
+
+  const words = printed.split(/ +/);
+  const tryLayout = (size: number): string[] | null => {
+    const result: string[] = [];
+    let cursor = 0;
+    for (const slot of slots) {
+      let line = '';
+      while (cursor < words.length) {
+        const candidate = line ? line + ' ' + words[cursor]! : words[cursor]!;
+        if (font.widthOfTextAtSize(candidate, size) > slot.maxWidth + 0.01) break;
+        line = candidate;
+        cursor++;
+      }
+      if (!line) return null;
+      result.push(line);
+      if (cursor === words.length) return result;
+    }
+    return null;
+  };
+
+  for (let size = placement.fontSize; size >= minFontSize - 0.001; size -= 0.25) {
+    const fitted = tryLayout(size);
+    if (fitted) return { size, lines: fitted };
+  }
+  const fitted = tryLayout(minFontSize);
+  if (fitted) return { size: minFontSize, lines: fitted };
+  throw new FormFieldError('invalid_field_value', placement.fieldId, 'text_overflow');
 }
 
 /**
@@ -165,24 +231,20 @@ export async function fillPdf(
       !placementChoices(placement).includes(normalizeChoice(value))) continue;
     const transformed = transformStaticValue(value, placement);
     const printed = placement.markWhen === undefined ? transformed : 'X';
-    let width: number;
-    try {
-      width = font.widthOfTextAtSize(printed, placement.fontSize);
-    } catch {
-      throw new FormFieldError('invalid_field_value', placement.fieldId, 'unsupported_character');
-    }
-    if (width > placement.maxWidth + 0.01) {
-      throw new FormFieldError('invalid_field_value', placement.fieldId, 'text_overflow');
-    }
-    page.drawText(printed, {
-      x: placement.x,
-      // Static templates frequently use an underline as the writing baseline.
-      // Lift normal text slightly so the printed rule stays below the glyphs.
-      // Checkbox marks remain centered in their reviewed boxes.
-      y: placement.y + (placement.markWhen === undefined ? STATIC_TEXT_LIFT : 0),
-      size: placement.fontSize,
-      font,
-      color: rgb(0, 0, 0),
+    const fitted = layoutStaticText(printed, placement, font);
+    const lift = placement.markWhen === undefined
+      ? placement.baselineLift ?? STATIC_TEXT_LIFT : 0;
+    const slots = writingLines(placement);
+    fitted.lines.forEach((line, index) => {
+      const position = slots[index]!;
+      page.drawText(line, {
+        x: position.x,
+        // Normal text is lifted above the printed line; X stays in its checkbox.
+        y: position.y + lift,
+        size: fitted.size,
+        font,
+        color: rgb(0, 0, 0),
+      });
     });
   }
 
