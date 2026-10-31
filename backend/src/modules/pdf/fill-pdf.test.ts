@@ -26,6 +26,60 @@ describe('motor determinístico de PDF', () => {
     expect(rendered.getPages()).toHaveLength(1);
   });
 
+  it('ajusta a fonte dentro de limite legível sem cortar caracteres', async () => {
+    const original = await syntheticPdf();
+    const field = {
+      kind: 'COORDINATES' as const, fieldId: 'street', required: false,
+      pageIndex: 0, x: 50, y: 640, fontSize: 12, minFontSize: 8, maxWidth: 118,
+    };
+    const adjusted = await fillPdf(original, [field], {
+      street: 'AVENIDA DOS NAVEGANTES',
+    });
+    expect((await PDFDocument.load(adjusted)).getPages()).toHaveLength(1);
+    await expect(fillPdf(original, [field], {
+      street: 'X'.repeat(100),
+    })).rejects.toThrow('invalid_field_value:street:text_overflow');
+  });
+
+  it('quebra em linhas mapeadas, sem cair no texto ou na linha errada', async () => {
+    const original = await syntheticPdf();
+    const field = {
+      kind: 'COORDINATES' as const, fieldId: 'address', required: false,
+      pageIndex: 0, x: 50, y: 640, fontSize: 10, minFontSize: 9, maxWidth: 75,
+      baselineLift: 3, continuationLines: [{ x: 50, y: 620, maxWidth: 135 }],
+    };
+    const text = 'Rua dos Navegantes de Cabo Frio';
+    const wrapped = await fillPdf(original, [field], { address: text });
+    expect((await PDFDocument.load(wrapped)).getPages()).toHaveLength(1);
+
+    const noSecondLine = { ...field, continuationLines: undefined };
+    await expect(fillPdf(original, [noSecondLine], { address: text }))
+      .rejects.toThrow('invalid_field_value:address:text_overflow');
+    await expect(fillPdf(original, [field], { address: 'X'.repeat(500) }))
+      .rejects.toThrow('invalid_field_value:address:text_overflow');
+  });
+
+  it('recusa continuacoes sem espaço vertical ou fora da pagina', async () => {
+    const input = await syntheticPdf();
+    const field = {
+      kind: 'COORDINATES' as const, fieldId: 'address', required: false,
+      pageIndex: 0, x: 50, y: 640, fontSize: 10, maxWidth: 75,
+      continuationLines: [{ x: 50, y: 636, maxWidth: 100 }],
+    };
+    await expect(fillPdf(input, [field], { address: 'Rua de Teste' }))
+      .rejects.toThrow('template_layout_invalid');
+    await expect(fillPdf(input, [{
+      ...field, continuationLines: [{ x: 550, y: 620, maxWidth: 100 }],
+    }], { address: 'Rua de Teste' })).rejects.toThrow('template_layout_invalid');
+  });
+
+  it('preenche o endereço longo na segunda linha real do Anexo 1-C de MA', async () => {
+    const output = await fillApprovedTemplate(catalog, 'declaracao-residencia-ma-v1', {
+      'person.address': 'Avenida dos Navegantes e das Embarcações de Esporte e Recreio',
+    });
+    expect((await PDFDocument.load(output)).getPages()).toHaveLength(1);
+  });
+
   it('aceita campos ausentes e rejeita somente valores inválidos', async () => {
     const input = await syntheticPdf();
     const field = { kind: 'COORDINATES' as const, fieldId: 'name', required: true,

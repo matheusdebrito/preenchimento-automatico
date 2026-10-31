@@ -1,4 +1,4 @@
-import type { FormMapping, FieldPlacement } from './contracts.js';
+import type { FormMapping, CoordinatePlacement } from './contracts.js';
 
 /**
  * Placements transcribed from 850x1200 render previews (A4 at 110 dpi).
@@ -12,7 +12,7 @@ function coordinate(
   fieldId: string, x: number, baselineY: number, maxWidthPx: number,
   fontSize: number, pageIndex = 0, required = false, markWhen?: string,
   markAliases?: readonly string[],
-): FieldPlacement {
+): CoordinatePlacement {
   return {
     kind: 'COORDINATES', fieldId, required, pageIndex,
     x: px(x), y: py(baselineY), maxWidth: px(maxWidthPx), fontSize,
@@ -205,7 +205,13 @@ export const draftMappings: readonly FormMapping[] = [
       coordinate("person.phone", 266, 388, 176, 6.5, 0),
       coordinate("person.mobile", 551, 388, 206, 6.5, 0),
       coordinate("person.email", 190, 420, 554, 7.1, 0),
-      coordinate("person.address", 430, 512, 320, 7, 0, true),
+      // O Anexo 1-C traz mais uma linha impressa imediatamente abaixo.
+      // Quebrar somente nela: sem invadir a declaração ou os dados pessoais.
+      {
+        ...coordinate("person.address", 430, 512, 320, 7, 0, true),
+        continuationLines: [{ x: px(125), y: py(547), maxWidth: px(629) }],
+        baselineLift: 2.5,
+      },
     ],
   },
 ];

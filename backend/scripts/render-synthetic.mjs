@@ -150,22 +150,40 @@ const synthetic = {
   'vessel.dpemNumber': 'DPEM-12345',
   'vessel.dpemExpiry': '31/12/2027',
 };
-for (const map of catalog.mappings) {
-  const v = catalog.versions.find((version) => version.id === map.formVersionId);
-  if (!v?.templatePath) throw new Error('Template missing: '+map.formVersionId);
-  const input = await readFile(resolve(root,v.templatePath));
-  validateMappedFieldValues(catalog.fields, map.placements, synthetic);
-  const output = await fillPdf(input,map.placements,synthetic);
+// Only fictitious data is ever used in published CI samples.
+async function writePreview(input, placements, values, path) {
+  validateMappedFieldValues(catalog.fields, placements, values);
+  const output = await fillPdf(input, placements, values);
   const pdf = await PDFDocument.load(output);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   for (const page of pdf.getPages()) {
     page.drawText('AMOSTRA - DADOS FICTICIOS - NAO UTILIZAR', {
-      x: 72, y: page.getHeight()-30, size: 7.5, font, color: rgb(0.75,0.1,0.1),
+      x: 72, y: page.getHeight() - 30, size: 7.5,
+      font, color: rgb(0.75, 0.1, 0.1),
     });
   }
-  const dir = join(root,'docs/_pdf_test_previews',v.formId);
-  await mkdir(dir,{recursive:true});
-  const path = join(dir,'synthetic.pdf');
-  await writeFile(path, await pdf.save({useObjectStreams:false}));
-  console.log('Synthetic sample created: '+v.formId+' / '+map.placements.length+' placements');
+  await writeFile(path, await pdf.save({ useObjectStreams: false }));
+}
+
+for (const map of catalog.mappings) {
+  const version = catalog.versions.find((item) => item.id === map.formVersionId);
+  if (!version?.templatePath) throw new Error('Template missing: ' + map.formVersionId);
+  const input = await readFile(resolve(root, version.templatePath));
+  const dir = join(root, 'docs/_pdf_test_previews', version.formId);
+  await mkdir(dir, { recursive: true });
+  await writePreview(input, map.placements, synthetic, join(dir, 'synthetic.pdf'));
+
+  // Exercise visually reviewed, physically separate second-line writing areas.
+  const stressValues = version.formId === 'bade-er'
+    ? { ...synthetic, 'person.fullName': 'MARIA GONCALVES DE ANDRADE E ALBUQUERQUE',
+      'coOwner.fullName': 'ANA PAULA DE CARVALHO E OLIVEIRA' }
+    : version.formId === 'declaracao-residencia-ma'
+      ? { ...synthetic,
+        'person.address': 'AVENIDA DOS NAVEGANTES DO PORTO COMERCIAL E TURISTICO' }
+      : null;
+  if (stressValues) {
+    await writePreview(input, map.placements, stressValues, join(dir, 'synthetic-long.pdf'));
+  }
+  console.log('Synthetic samples created: ' + version.formId + ' / ' +
+    map.placements.length + ' placements' + (stressValues ? ' + long values' : ''));
 }

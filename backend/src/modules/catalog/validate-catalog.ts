@@ -166,6 +166,35 @@ export function validateCatalog(data: CatalogDefinition): string[] {
             issues.push('mapeamento ' + mapping.id + ': transformação incompatível: ' + placement.fieldId);
           }
         }
+        if (placement.minFontSize !== undefined &&
+          (!Number.isFinite(placement.minFontSize) || placement.minFontSize < 4.5 ||
+            placement.minFontSize > placement.fontSize)) {
+          issues.push('mapeamento ' + mapping.id + ': fonte mínima inválida: ' + placement.fieldId);
+        }
+        if (placement.baselineLift !== undefined &&
+          (!Number.isFinite(placement.baselineLift) || placement.baselineLift < 0 ||
+            placement.baselineLift > 6)) {
+          issues.push('mapeamento ' + mapping.id + ': elevação de linha inválida: ' + placement.fieldId);
+        }
+        if (placement.continuationLines !== undefined) {
+          if (placement.markWhen !== undefined || placement.continuationLines.length === 0 ||
+            placement.continuationLines.length > 4) {
+            issues.push('mapeamento ' + mapping.id + ': continuação inválida: ' + placement.fieldId);
+          }
+          let previousY = placement.y;
+          for (const line of placement.continuationLines) {
+            if (![line.x, line.y, line.maxWidth].every(Number.isFinite) ||
+              line.x < 0 || line.y < 0 || line.maxWidth <= 0 ||
+              previousY - line.y < placement.fontSize + 1) {
+              issues.push('mapeamento ' + mapping.id + ': linha de continuação inválida: ' +
+                placement.fieldId);
+            }
+            previousY = line.y;
+          }
+        }
+        if (placement.markWhen !== undefined && placement.minFontSize !== undefined) {
+          issues.push('mapeamento ' + mapping.id + ': fonte variável em checkbox: ' + placement.fieldId);
+        }
         const values = [placement.pageIndex, placement.x, placement.y, placement.fontSize, placement.maxWidth];
         if (values.some((value) => !Number.isFinite(value)) ||
           !Number.isInteger(placement.pageIndex) || placement.pageIndex < 0 ||
