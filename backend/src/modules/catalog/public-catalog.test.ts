@@ -229,7 +229,6 @@ describe('projeção pública do catálogo', () => {
       'seller-residence-proof',
       'buyer-residence-proof',
       'tie',
-      'vessel-origin-document',
     ]);
 
     const seller = requirements.find((item) => item.id === 'seller-applicant-identity');
