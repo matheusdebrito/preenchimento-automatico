@@ -678,12 +678,18 @@ export function LiveFlowPage() {
                                                                         : value === 'demais_grupos' ? 'Demais grupos (1º, 2º ou 3º)'
                                                                           : value === 'mergulhadores' ? '4º Grupo - Mergulhadores'
                                                                             : value === 'praticos' ? '5º Grupo - Práticos'
-                                                                              : value.replaceAll('_',' ');
+                                                                              : value === 'fisico_antigo' ? 'TIE/TIEM físico antigo'
+                                                                                : value === 'digital' ? 'TIE/TIEM digital (reimpressão)'
+                                                                                  : value === 'desconhecido' ? 'Não sei informar'
+                                                                                    : value === 'outros_grupos' ? 'Outros grupos (1º, 2º, 3º ou 5º)'
+                                                                                      : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
                             {label}{unavailable
                               ? question.id === 'motonautaDeclaration' && value === 'nao'
                                 ? ' (incompatível com a declaração exigida)'
-                                : ' (em validação)'
+                                : question.id === 'tieDocumentFormat' && value === 'digital'
+                                  ? ' (reimprima o TIE digital, sem segunda via)'
+                                  : ' (em validação)'
                               : ''}
                           </option>;
                         })}
