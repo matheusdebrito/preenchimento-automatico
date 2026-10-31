@@ -72,7 +72,11 @@ const badePlacements: readonly CoordinatePlacement[] = [
 
   // Página 2 - proprietário: campos 39 a 51. Campo 52 (telefax) não é preenchido.
   // 39 Nome. Limite revisado para terminar antes da célula 40 (CPF/CNPJ).
-  top('person.fullName', 110, 247, 108, 5.8, 1, true),
+  {
+    ...top('person.fullName', 110, 247, 108, 6.2, 1, true),
+    minFontSize: 5.5,
+    continuationLines: [{ x: 110, y: PAGE_HEIGHT - 259, maxWidth: 108 }],
+  },
   // 40 CPF/CNPJ.
   top('person.cpf', 225, 247, 56, 5.5, 1, true),
   // 41 Identidade.
@@ -102,7 +106,11 @@ const badePlacements: readonly CoordinatePlacement[] = [
 
   // Página 2 - coproprietário: campos 53 a 65. Campo 66 (telefax) não é preenchido.
   // 53 Nome.
-  top('coOwner.fullName', 110, 389, 78, 5.5, 1),
+  {
+    ...top('coOwner.fullName', 110, 389, 78, 6.0, 1),
+    minFontSize: 5.5,
+    continuationLines: [{ x: 110, y: PAGE_HEIGHT - 400, maxWidth: 78 }],
+  },
   // 54 CPF/CNPJ.
   top('coOwner.cpf', 217, 389, 62, 5.5, 1),
   // 55 Identidade.
