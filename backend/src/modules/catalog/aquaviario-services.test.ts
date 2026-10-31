@@ -7,10 +7,7 @@ const aquaviarioIds = [
   'inscricao-inicial-cir-aquaviario',
   'segunda-via-cir-aquaviario',
   'revalidacao-cir-aquaviario',
-  'transferencia-jurisdicao-aquaviario',
   'ascensao-categoria-aquaviario',
-  'transferencia-categoria-grupo-aquaviario',
-  'homologacao-lrm-aquaviario',
   'emissao-certificado-aquaviario',
   'segunda-via-certificado-aquaviario',
   'revalidacao-certificado-aquaviario',
@@ -22,9 +19,22 @@ const certificationRequestId = 'requerimento-certificacao-aquaviario-2026-v1';
 const lossDeclarationId = 'declaracao-extravio-aquaviario-2026-v1';
 
 describe('serviços de aquaviários - NORMAM-101', () => {
-  it('publica os dez serviços homologados', () => {
+  it('publica somente os sete serviços selecionados', () => {
     for (const id of aquaviarioIds) {
       expect(publicService(catalog, id), id).not.toBeNull();
+    }
+  });
+
+  it('não publica os três serviços retirados do escopo de Aquaviários', () => {
+    const removedIds = [
+      'transferencia-jurisdicao-aquaviario',
+      'transferencia-categoria-grupo-aquaviario',
+      'homologacao-lrm-aquaviario',
+    ];
+    for (const id of removedIds) {
+      expect(catalog.services.some((service) => service.id === id), id).toBe(false);
+      expect(catalog.serviceForms.some((relation) => relation.serviceId === id), id).toBe(false);
+      expect(publicService(catalog, id), id).toBeNull();
     }
   });
 
@@ -47,10 +57,7 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     const cases = [
       ['segunda-via-cir-aquaviario', { cirSecondCopyReason: 'dano' }],
       ['revalidacao-cir-aquaviario', {}],
-      ['transferencia-jurisdicao-aquaviario', {}],
       ['ascensao-categoria-aquaviario', {}],
-      ['transferencia-categoria-grupo-aquaviario', {}],
-      ['homologacao-lrm-aquaviario', {}],
     ] as const;
 
     for (const [serviceId, answers] of cases) {
@@ -154,7 +161,7 @@ describe('serviços de aquaviários - NORMAM-101', () => {
   });
 
   it('expõe os campos editáveis do requerimento auxiliar e mantém assunto/finalidade controlados pelo catálogo', () => {
-    const service = publicService(catalog, 'transferencia-jurisdicao-aquaviario');
+    const service = publicService(catalog, 'revalidacao-cir-aquaviario');
     const request = service?.reviewForms.find((form) =>
       form.formVersionId === auxiliaryRequestId);
     const ids = request?.fields.map((field) => field.id) ?? [];
@@ -169,14 +176,14 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     expect(ids).not.toContain('process.requestPurpose');
 
     const relation = catalog.serviceForms.find((item) =>
-      item.serviceId === 'transferencia-jurisdicao-aquaviario' &&
+      item.serviceId === 'revalidacao-cir-aquaviario' &&
       item.formVersionId === auxiliaryRequestId);
     const values = serviceFormValues(relation, {}, {
       'person.fullName': 'MARIA TESTE',
       'person.cpf': '123.456.789-09',
     });
-    expect(values['process.requestSubject']).toBe('Transferência de jurisdição');
-    expect(values['process.requestPurpose']).toContain('transferência da minha jurisdição');
+    expect(values['process.requestSubject']).toBe('Revalidação da CIR');
+    expect(values['process.requestPurpose']).toContain('revalidação da minha Caderneta de Inscrição e Registro');
   });
 
   it('apresenta os documentos de apoio previstos por cada processo sem torná-los uploads obrigatórios', () => {
@@ -184,10 +191,7 @@ describe('serviços de aquaviários - NORMAM-101', () => {
       'inscricao-inicial-cir-aquaviario': ['cpf-document', 'medical-certificate', 'professional-qualification'],
       'segunda-via-cir-aquaviario': ['cpf-document', 'medical-certificate', 'gru-payment'],
       'revalidacao-cir-aquaviario': ['current-cir', 'cpf-document', 'medical-certificate', 'gru-payment'],
-      'transferencia-jurisdicao-aquaviario': ['current-cir', 'cpf-document'],
       'ascensao-categoria-aquaviario': ['sea-service-proof', 'course-certificates', 'medical-certificate', 'gru-payment'],
-      'transferencia-categoria-grupo-aquaviario': ['current-cir', 'education-proof', 'course-certificates'],
-      'homologacao-lrm-aquaviario': ['current-cir', 'lrm-book', 'cpf-document'],
     };
 
     for (const [serviceId, requiredIds] of Object.entries(expectations)) {
