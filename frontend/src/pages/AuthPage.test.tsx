@@ -243,7 +243,7 @@ describe('sessão compartilhada de navegação e autenticação', () => {
     expect(registerBody).not.toHaveProperty('role');
     expect(registerBody).not.toHaveProperty('status');
     expect(registerBody).not.toHaveProperty('cpf');
-    expect(screen.getByText('***.***.***-25')).toBeTruthy();
+    expect(screen.queryByText('CPF')).toBeNull();
     expect(screen.getByText('(21) 99999-8888')).toBeTruthy();
   }, 25000);
 
