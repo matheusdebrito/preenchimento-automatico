@@ -149,6 +149,11 @@ const synthetic = {
   'vessel.inmarsatC': 'C-TESTE',
   'vessel.dpemNumber': 'DPEM-12345',
   'vessel.dpemExpiry': '31/12/2027',
+  'process.aquaviarioLostDocumentType': 'cir',
+  'aquaviario.documentNumber': 'CIR-TESTE-123',
+  'aquaviario.lossEventDate': '15/10/2026',
+  'aquaviario.lossDescription': 'PERDA DO DOCUMENTO DURANTE VIAGEM',
+  'aquaviario.authorityName': 'CAPITANIA DE TESTE',
 };
 // Only fictitious data is ever used in published CI samples.
 async function writePreview(input, placements, values, path) {
