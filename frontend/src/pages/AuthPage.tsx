@@ -10,9 +10,16 @@ import { useAuth } from '../features/auth/AuthProvider';
 import type { SessionUser } from '../features/auth/AuthProvider';
 
 export function AuthPage() {
-  useDocumentTitle('Entrar');
   const [params] = useSearchParams();
-  const [register, setRegister] = useState(() => params.get('modo') === 'cadastro');
+  // Reset only the form when its URL-driven mode changes; session state stays intact.
+  const mode = params.get('modo') === 'cadastro' ? 'cadastro' : 'entrar';
+  return <AuthPageForm key={mode} />;
+}
+
+function AuthPageForm() {
+  const [params, setParams] = useSearchParams();
+  const register = params.get('modo') === 'cadastro';
+  useDocumentTitle(register ? 'Criar conta' : 'Entrar');
   const [fullName, setFullName] = useState('');
   const [cpf, setCpf] = useState('');
   const [cellphone, setCellphone] = useState('');
@@ -183,9 +190,12 @@ export function AuthPage() {
               type="button"
               className="live-text-button"
               onClick={() => {
-                setRegister(!register);
-                setError('');
-                setPasswordConfirmation('');
+                setParams((current) => {
+                  const updated = new URLSearchParams(current);
+                  if (register) updated.delete('modo');
+                  else updated.set('modo', 'cadastro');
+                  return updated;
+                });
               }}
             >
               {register ? 'Já tenho uma conta' : 'Ainda não tenho conta — cadastrar'}
