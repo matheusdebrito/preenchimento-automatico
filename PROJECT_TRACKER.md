@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 30/10/2026. O catálogo global contém 18 serviços publicados: 6 de embarcações, 5 de amadores e 7 de Aquaviários. As 21 versões de formulário/modelo estão `VERIFIED` e os 21 mappings estão `APPROVED`; o requerimento auxiliar de Aquaviários é explicitamente não oficial. A categoria Aquaviários foi limitada a inscrição inicial da CIR, 2ª via da CIR, revalidação da CIR, ascensão de categoria, emissão de certificado, 2ª via de certificado e revalidação de certificado. Os próximos portões são CI da alteração de escopo e QA manual na aplicação web/celular.
+> Atualização: 30/10/2026. O catálogo global contém 18 serviços publicados: 6 de embarcações, 5 de amadores e 7 de Aquaviários. As 21 versões de formulário/modelo estão `VERIFIED` e os 21 mappings estão `APPROVED`; o requerimento auxiliar de Aquaviários é explicitamente não oficial. A categoria Aquaviários foi limitada a inscrição inicial da CIR, 2ª via da CIR, revalidação da CIR, ascensão de categoria, emissão de certificado, 2ª via de certificado e revalidação de certificado. O CI #727 da alteração de escopo passou; permanece pendente o QA manual na aplicação web/celular.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de análise documental abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável e auditar os
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — medir tokens, custo por documento, latência, concorrência e limites da OpenAI |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 18 serviços globais publicados, incluindo exatamente 7 serviços de Aquaviários; CI da redução de escopo e QA manual navegador/celular ainda pendentes |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 18 serviços globais publicados, incluindo exatamente 7 serviços de Aquaviários; CI #727 aprovado, QA manual navegador/celular pendente |
 
 **Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 18 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
 
@@ -728,4 +728,4 @@ os mesmos PDFs e mappings já homologados.
 
 **Frontend:** `PLANNED_AQUAVIARIO_SERVICES` passa a conter exatamente os sete cards. Os testes de categoria validam os sete links e a ausência dos três cards retirados.
 
-**Validação:** alterações de catálogo, API, frontend e documentação registradas; CI específico desta revisão ainda pendente. Não fazer merge/deploy até todos os jobs do head definitivo passarem e a revisão manual da aplicação ser concluída.
+**Validação:** CI #727 aprovado no head `fabdd675359c23dcf537fb099c5b3514fcb7a70d` (backend, frontend, PostgreSQL, Compose, inspeção NORMAM-211 e QA visual de PDFs). Typecheck, lint, testes e build foram executados pelo CI. Não foi possível executar os mesmos comandos localmente nesta sessão porque o repositório não pôde ser clonado por indisponibilidade de rede no ambiente de execução. O PR #85 permanece em rascunho até revisão/validação local e QA manual na aplicação web/celular. Não houve merge nem deploy.
