@@ -48,8 +48,8 @@ export function fieldValidationReason(field: FieldDefinition | undefined, value:
   if (!trimmed || !field) return null;
   if (field.validationRuleId === 'cpf' && !isValidCpf(trimmed)) return 'invalid_cpf';
   if (field.validationRuleId === 'simNao' && !['sim', 'nao'].includes(trimmed)) return 'invalid_choice';
-  if (field.validationRuleId === 'nonNegativeInteger' && !/^\\d+$/.test(trimmed)) return 'invalid_number';
-  if (field.validationRuleId === 'fourDigitYear' && !/^\\d{4}$/.test(trimmed)) return 'invalid_number';
+  if (field.validationRuleId === 'nonNegativeInteger' && !/^\d+$/.test(trimmed)) return 'invalid_number';
+  if (field.validationRuleId === 'fourDigitYear' && !/^\d{4}$/.test(trimmed)) return 'invalid_number';
   if (field.valueKind === 'date' && !isValidBrazilianDate(trimmed)) return 'invalid_date';
   if (field.valueKind === 'boolean' && !['true', 'false'].includes(trimmed)) return 'invalid_boolean';
   return null;
