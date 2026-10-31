@@ -247,23 +247,37 @@ export function fieldsAllowedForDetectedSubtype(
   subtype: DetectedDocumentSubtype,
   configuredAllowedFieldIds: readonly string[],
 ): readonly string[] {
-  if (documentType === 'identity' && ['rg', 'cin', 'cnh'].includes(subtype)) {
-    const allowed = IDENTITY_FIELDS_BY_SUBTYPE[subtype as 'rg' | 'cin' | 'cnh'];
-    return configuredAllowedFieldIds.filter((fieldId) => allowed.has(semanticLeaf(fieldId)));
+  if (subtype === 'not-applicable') return [];
+
+  if (documentType === 'identity') {
+    if (['rg', 'cin', 'cnh'].includes(subtype)) {
+      const allowed = IDENTITY_FIELDS_BY_SUBTYPE[subtype as 'rg' | 'cin' | 'cnh'];
+      return configuredAllowedFieldIds.filter((fieldId) => allowed.has(semanticLeaf(fieldId)));
+    }
+    return configuredAllowedFieldIds;
   }
-  if (documentType === 'cir' && subtype === 'cir') {
-    const allowed = new Set<string>(AQUAVIARIO_CIR_FIELDS);
-    return configuredAllowedFieldIds.filter((fieldId) => allowed.has(fieldId));
+  if (documentType === 'cir') {
+    if (subtype === 'cir') {
+      const allowed = new Set<string>(AQUAVIARIO_CIR_FIELDS);
+      return configuredAllowedFieldIds.filter((fieldId) => allowed.has(fieldId));
+    }
+    return subtype === 'unknown' ? configuredAllowedFieldIds : [];
   }
-  if (documentType === 'cha' && subtype === 'cha') {
-    const allowed = new Set<string>(CHA_FIELDS);
-    return configuredAllowedFieldIds.filter((fieldId) => allowed.has(fieldId));
+  if (documentType === 'cha') {
+    if (subtype === 'cha') {
+      const allowed = new Set<string>(CHA_FIELDS);
+      return configuredAllowedFieldIds.filter((fieldId) => allowed.has(fieldId));
+    }
+    return subtype === 'unknown' ? configuredAllowedFieldIds : [];
   }
-  if (documentType === 'tie' && subtype === 'tie-digital') {
-    return configuredAllowedFieldIds.filter((fieldId) => TIE_DIGITAL_FIELDS.has(fieldId));
-  }
-  if (documentType === 'tie' && subtype === 'tie-legacy') {
-    return configuredAllowedFieldIds.filter((fieldId) => TIE_LEGACY_FIELDS.has(fieldId));
+  if (documentType === 'tie') {
+    if (subtype === 'tie-digital') {
+      return configuredAllowedFieldIds.filter((fieldId) => TIE_DIGITAL_FIELDS.has(fieldId));
+    }
+    if (subtype === 'tie-legacy') {
+      return configuredAllowedFieldIds.filter((fieldId) => TIE_LEGACY_FIELDS.has(fieldId));
+    }
+    return subtype === 'unknown' ? configuredAllowedFieldIds : [];
   }
   return configuredAllowedFieldIds;
 }
