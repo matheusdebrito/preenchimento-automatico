@@ -92,7 +92,8 @@ const residence: readonly CoordinatePlacement[] = [
   top('person.city', 168, 378, 80, 5.8),
   top('person.state', 253, 378, 20, 5.8),
   top('person.postalCode', 280, 378, 80, 5.8),
-  top('process.place', 360, 637, 95, 6.2),
+  // A linha sob a data e o local e reservada para assinatura; cidade fica acima do rotulo (Cidade).
+  top('process.place', 345, 598, 85, 6.2),
   top('process.date', 408, 619, 22, 6.2, 0, false, undefined, 'DATE_DAY'),
   top('process.date', 464, 619, 22, 6.2, 0, false, undefined, 'DATE_MONTH_NUMBER'),
   top('process.date', 502, 619, 35, 6.2, 0, false, undefined, 'DATE_YEAR'),
