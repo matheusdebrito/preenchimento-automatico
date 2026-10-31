@@ -832,6 +832,7 @@ de recuperação foi removido após o uso.
 - [x] Regenerar os anexos 1-K/1-L em melhor resolução, com fonte normativa verificada.
 - [x] Atualizar os SHA-256 de catálogo sem desativar proteção contra template trocado.
 - [x] Deslocar o município do 1-L para não invadir a linha de assinatura.
+- [x] Ajustar CPF, cidade/UF, telefone e ano do evento no 1-K para evitar sobreposição com rótulos impressos.
 - [x] Ampliar dados sintéticos para preencher marcação e data do 1-K no CI.
 - [x] Criar verificação visual automatizada de faixas pretas extensas nas prévias e acoplá-la ao CI.
 - [ ] Confirmar CI completo **no commit final** do PR #93 (backend, PostgreSQL, Compose e renderização de PDFs).
