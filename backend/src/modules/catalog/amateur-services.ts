@@ -130,7 +130,7 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'inscricao-exame-amador',
     title: 'Inscrição para exame de amador',
-    description: 'Preenchimento do Anexo 5-H para inscrição nos exames de Arrais-Amador, Mestre-Amador ou Capitão-Amador. A aplicação prepara o requerimento; documentos de treinamento, habilitação anterior, GRU e requisitos médicos continuam sendo conferidos no protocolo pela CP/DL/AG.',
+    description: 'Preenchimento do Anexo 5-H para inscrição nos exames de Arrais-Amador, Mestre-Amador ou Capitão-Amador. Os campos são preenchidos com dados extraídos dos documentos de entrada permitidos e respostas revisadas pelo usuário.',
     creditCost: 1,
     status: 'AVAILABLE',
     questions: [amateurCategoryQuestion],
@@ -140,7 +140,7 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'renovacao-cha-amador',
     title: 'Renovação da CHA',
-    description: 'Preenchimento dos formulários de renovação da CHA para Arrais-Amador, Mestre-Amador ou Capitão-Amador. Perda, roubo, furto ou dano da cédula também usa este fluxo. Os uploads são apenas fontes opcionais de dados; a aplicação não valida os documentos exigidos para protocolo na Marinha.',
+    description: 'Preenchimento dos formulários de renovação da CHA para Arrais-Amador, Mestre-Amador ou Capitão-Amador. Perda, roubo, furto ou dano da cédula também usa este fluxo.',
     creditCost: 1,
     status: 'AVAILABLE',
     questions: [amateurCategoryQuestion, chaSituationQuestion],
