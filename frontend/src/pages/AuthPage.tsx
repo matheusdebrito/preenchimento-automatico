@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
@@ -10,9 +10,10 @@ import { useAuth } from '../features/auth/AuthProvider';
 import type { SessionUser } from '../features/auth/AuthProvider';
 
 export function AuthPage() {
-  useDocumentTitle('Entrar');
-  const [params] = useSearchParams();
-  const [register, setRegister] = useState(() => params.get('modo') === 'cadastro');
+  const [params, setParams] = useSearchParams();
+  // The URL is the single source of truth: header navigation reuses this component.
+  const register = params.get('modo') === 'cadastro';
+  useDocumentTitle(register ? 'Criar conta' : 'Entrar');
   const [fullName, setFullName] = useState('');
   const [cpf, setCpf] = useState('');
   const [cellphone, setCellphone] = useState('');
@@ -26,6 +27,12 @@ export function AuthPage() {
   const next = params.get('next');
   const safeNext = next?.startsWith('/preencher-real/') && !next.startsWith('//')
     ? next : '/minha-conta';
+
+  useEffect(() => {
+    // Also clear mode-specific feedback when switching through the header links.
+    setError('');
+    setPasswordConfirmation('');
+  }, [register]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -183,9 +190,12 @@ export function AuthPage() {
               type="button"
               className="live-text-button"
               onClick={() => {
-                setRegister(!register);
-                setError('');
-                setPasswordConfirmation('');
+                setParams((current) => {
+                  const updated = new URLSearchParams(current);
+                  if (register) updated.delete('modo');
+                  else updated.set('modo', 'cadastro');
+                  return updated;
+                });
               }}
             >
               {register ? 'Já tenho uma conta' : 'Ainda não tenho conta — cadastrar'}
