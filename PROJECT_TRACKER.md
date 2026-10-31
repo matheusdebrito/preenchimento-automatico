@@ -769,6 +769,6 @@ os mesmos PDFs e mappings já homologados.
 - [x] Prompt e allowlist do extrator reconhecem CIR como subtipo próprio e limitam a número da CIR, categoria e nome do titular.
 - [x] Validação do catálogo rejeita tipo de entrada não permitido ou fonte sem campos autorizados.
 - [x] Testes de regressão adicionados/atualizados para catálogo, extração, integração e interface.
-- [ ] CI da branch desta alteração e validação manual no navegador/celular.
+- [x] CI #741 aprovado no head final da branch; typecheck, lint, testes, build, PostgreSQL, Docker Compose, QA visual de PDFs e inspeção NORMAM-211 passaram. Como o produto está em desenvolvimento sem usuários reais, a próxima validação é o teste manual do próprio responsável pelo produto no ambiente de desenvolvimento.
 
 **Importante:** campos do formulário que não aparecem nos cinco tipos de entrada continuam editáveis manualmente. A aplicação preenche os anexos oficiais selecionados; não tenta verificar a documentação completa necessária ao protocolo na CP/DL/AG.
