@@ -22,8 +22,6 @@ export interface PublicService {
   creditCost: number;
   questions: ServiceDefinition['questions'];
   documentRequirements: readonly DocumentRequirement[];
-  /** Items to bring to CP/DL/AG, not uploaded or processed by AI. */
-  protocolDocuments: readonly { id: string; label: string; description?: string }[];
   /** Only IDs, never paths or internal approval metadata. */
   formVersionIds: readonly string[];
   reviewFields: readonly PublicReviewField[];
@@ -33,6 +31,14 @@ export interface PublicService {
    */
   reviewForms: readonly PublicReviewForm[];
 }
+
+const AI_INPUT_DOCUMENT_TYPES = new Set([
+  'identity',
+  'residence-proof',
+  'cha',
+  'cir',
+  'tie',
+]);
 
 function matches(
   rules: readonly ServiceCondition[] | undefined,
@@ -153,12 +159,12 @@ export function publicService(
     }];
   });
 
-  const applicableDocuments = service.documentRequirements.filter((requirement) =>
-    matches(requirement.conditions, answers));
-  const extractableDocuments = applicableDocuments.filter((requirement) =>
-    requirement.extraction?.allowedFieldIds.some((fieldId) =>
-      mappedFields.has(fieldId) && isUserReviewField(fieldId)) === true);
-  const uploadableIds = new Set(extractableDocuments.map((item) => item.id));
+  const extractableDocuments = service.documentRequirements
+    .filter((requirement) => matches(requirement.conditions, answers))
+    .filter((requirement) => requirement.extraction !== undefined &&
+      AI_INPUT_DOCUMENT_TYPES.has(requirement.extraction.documentType))
+    .filter((requirement) => requirement.extraction!.allowedFieldIds.some((fieldId) =>
+      mappedFields.has(fieldId) && isUserReviewField(fieldId)));
 
   return {
     id: service.id,
@@ -167,11 +173,6 @@ export function publicService(
     creditCost: service.creditCost,
     questions: service.questions,
     documentRequirements: extractableDocuments,
-    protocolDocuments: applicableDocuments
-      .filter((requirement) => !uploadableIds.has(requirement.id))
-      .map(({ id, label, description }) => ({
-        id, label, ...(description ? { description } : {}),
-      })),
     formVersionIds: versionIds,
     reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
       .filter((field) => isUserReviewField(field.id))
