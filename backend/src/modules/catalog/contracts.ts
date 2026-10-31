@@ -96,7 +96,7 @@ export interface ServiceCondition {
 
 export interface DocumentExtractionProfile {
   /** Reusable document-understanding strategy; never a service ID. */
-  documentType: 'identity' | 'cha' | 'tie' | 'residence-proof' | 'sale-document' | 'supporting-document';
+  documentType: 'identity' | 'cha' | 'cir' | 'tie' | 'residence-proof' | 'sale-document' | 'supporting-document';
   /** Semantic owner of the extracted values. */
   subjectRole: 'person' | 'seller' | 'vessel' | 'representative' | 'declarant' | 'coOwner';
   /**
