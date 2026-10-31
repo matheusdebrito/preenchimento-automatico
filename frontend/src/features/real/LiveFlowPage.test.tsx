@@ -254,7 +254,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(screen.getByText(/0 MB/)).toBeTruthy();
     expect(uploader.disabled).toBe(false);
     await user.click(screen.getByRole('button',{name:'Analisar documentos e revisar campos'}));
-    expect(await screen.findByText(/1 crédito será consumido/i)).toBeTruthy();
+    expect(await screen.findByText('Ao continuar, você fará a análise dos documentos com inteligência artificial e 1 crédito será consumido.')).toBeTruthy();
     await user.click(screen.getByRole('button',{name:'Confirmar e consumir 1 crédito'}));
     expect(await screen.findByRole('heading',{name:'Preencha e confira os formulários'})).toBeTruthy();
     expect((screen.getByLabelText(/Nome completo/) as HTMLInputElement).value).toBe('MARIA EXEMPLO');
