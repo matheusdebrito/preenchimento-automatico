@@ -121,9 +121,8 @@ export interface DocumentRequirement {
   description?: string;
   required: boolean;
   /**
-   * Optional OCR/understanding profile. Known document types may produce
-   * semantic fields; supporting-document may still run OCR while deliberately
-   * producing no field until a reviewed extractor exists.
+   * Optional extraction profile for one of the five supported input categories.
+   * Documents without a mapped output field are not exposed as uploads.
    */
   extraction?: DocumentExtractionProfile;
   /** All conditions must match; absent means unconditional. */
