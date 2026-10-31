@@ -789,9 +789,8 @@ export function LiveFlowPage() {
                   {confirmAnalysisCharge &&
                   (Object.keys(files).length > 0 || uploadedRequirements.length > 0) ? (
                     <Notice tone="info" title="Confirmar análise com IA">
-                      Ao continuar, os documentos serão enviados para a OpenAI e 1 crédito será
-                      consumido quando a requisição externa for iniciada. Esse crédito não é
-                      estornado apenas por você não gerar ou baixar os PDFs depois.
+                      Ao continuar, você fará a análise dos documentos com inteligência artificial e 1 crédito será
+                      consumido.
                       <div className="state__actions">
                         <Button variant="ghost" disabled={busy}
                           onClick={() => setConfirmAnalysisCharge(false)}>
