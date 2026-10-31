@@ -1,3 +1,4 @@
+import { AI_INPUT_DOCUMENT_TYPES } from './contracts.js';
 import type { CatalogDefinition, DocumentRequirement, ServiceCondition, ServiceDefinition } from './contracts.js';
 
 export interface PublicReviewField {
@@ -32,13 +33,8 @@ export interface PublicService {
   reviewForms: readonly PublicReviewForm[];
 }
 
-const AI_INPUT_DOCUMENT_TYPES = new Set([
-  'identity',
-  'residence-proof',
-  'cha',
-  'cir',
-  'tie',
-]);
+const AI_INPUT_DOCUMENT_TYPE_SET = new Set<string>(AI_INPUT_DOCUMENT_TYPES);
+
 
 function matches(
   rules: readonly ServiceCondition[] | undefined,
@@ -162,7 +158,7 @@ export function publicService(
   const extractableDocuments = service.documentRequirements
     .filter((requirement) => matches(requirement.conditions, answers))
     .filter((requirement) => requirement.extraction !== undefined &&
-      AI_INPUT_DOCUMENT_TYPES.has(requirement.extraction.documentType))
+      AI_INPUT_DOCUMENT_TYPE_SET.has(requirement.extraction.documentType))
     .filter((requirement) => requirement.extraction!.allowedFieldIds.some((fieldId) =>
       mappedFields.has(fieldId) && isUserReviewField(fieldId)));
 
