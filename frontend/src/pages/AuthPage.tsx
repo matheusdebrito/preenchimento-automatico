@@ -3,7 +3,6 @@ import { ArrowRight, Eye, EyeOff, FileCheck2, LockKeyhole, ShieldCheck, Waves } 
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
-import { Button } from '../components/ui/Button';
 import { Notice } from '../components/ui/Notice';
 import { api, ApiError } from '../lib/api';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
