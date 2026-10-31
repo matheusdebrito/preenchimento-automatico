@@ -7,8 +7,7 @@ import { catalog } from '../modules/catalog/catalog.js';
 import { publicService } from '../modules/catalog/public-catalog.js';
 import {
   FormFieldError,
-  isValidBrazilianDate,
-  isValidCpf,
+  fieldValidationReason,
 } from '../modules/catalog/field-validation.js';
 import type { CatalogDefinition } from '../modules/catalog/contracts.js';
 import { serviceFormValues } from '../modules/catalog/service-form-values.js';
@@ -363,15 +362,7 @@ export function registerJobRoutes(
     for (const [fieldId, raw] of Object.entries(parsed.data.values)) {
       if (!raw.trim()) continue;
       const field = fieldsById.get(fieldId);
-      const reason = field?.validationRuleId === 'cpf' && !isValidCpf(raw)
-        ? 'invalid_cpf'
-        : field?.validationRuleId === 'simNao' && !['sim', 'nao'].includes(raw)
-          ? 'invalid_choice'
-          : field?.valueKind === 'date' && !isValidBrazilianDate(raw)
-            ? 'invalid_date'
-            : field?.valueKind === 'boolean' && !['true', 'false'].includes(raw)
-              ? 'invalid_boolean'
-              : null;
+      const reason = fieldValidationReason(field, raw);
       if (reason) {
         // Field ID and reason are catalog metadata; never return the private value.
         return reply.status(422).send({ error: 'invalid_field_value', fieldId, reason });

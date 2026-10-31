@@ -22,6 +22,8 @@ export interface PublicService {
   creditCost: number;
   questions: ServiceDefinition['questions'];
   documentRequirements: readonly DocumentRequirement[];
+  /** Items to bring to CP/DL/AG, not uploaded or processed by AI. */
+  protocolDocuments: readonly { id: string; label: string; description?: string }[];
   /** Only IDs, never paths or internal approval metadata. */
   formVersionIds: readonly string[];
   reviewFields: readonly PublicReviewField[];
@@ -45,7 +47,8 @@ function isUserReviewField(fieldId: string): boolean {
   return !fieldId.startsWith('process.') ||
     fieldId === 'process.place' ||
     fieldId === 'process.date' ||
-    fieldId === 'process.requestAuthority';
+    fieldId === 'process.requestAuthority' ||
+    fieldId === 'process.requestPurpose';
 }
 
 function fieldApplies(
@@ -150,14 +153,25 @@ export function publicService(
     }];
   });
 
+  const applicableDocuments = service.documentRequirements.filter((requirement) =>
+    matches(requirement.conditions, answers));
+  const extractableDocuments = applicableDocuments.filter((requirement) =>
+    requirement.extraction?.allowedFieldIds.some((fieldId) =>
+      mappedFields.has(fieldId) && isUserReviewField(fieldId)) === true);
+  const uploadableIds = new Set(extractableDocuments.map((item) => item.id));
+
   return {
     id: service.id,
     title: service.title,
     description: service.description,
     creditCost: service.creditCost,
     questions: service.questions,
-    documentRequirements: service.documentRequirements.filter((requirement) =>
-      matches(requirement.conditions, answers)),
+    documentRequirements: extractableDocuments,
+    protocolDocuments: applicableDocuments
+      .filter((requirement) => !uploadableIds.has(requirement.id))
+      .map(({ id, label, description }) => ({
+        id, label, ...(description ? { description } : {}),
+      })),
     formVersionIds: versionIds,
     reviewFields: catalog.fields.filter((field) => mappedFields.has(field.id))
       .filter((field) => isUserReviewField(field.id))

@@ -26,8 +26,9 @@ const chaSituationQuestion: ServiceQuestion = {
 
 const motonautaDeclarationQuestion: ServiceQuestion = {
   id: 'motonautaDeclaration',
-  label: 'Você declara que conduz ou já conduziu moto aquática?',
+  label: 'Você declara que conduz ou já conduziu moto aquática? (A declaração é exigida para este serviço.)',
   options: ['sim', 'nao'],
+  unavailableOptions: ['nao'],
 };
 
 const commonDocuments: readonly DocumentRequirement[] = [
@@ -169,7 +170,7 @@ export const amateurServices: readonly ServiceDefinition[] = [
   {
     id: 'renovacao-cha-agregacao-mta',
     title: 'Renovação da CHA com agregação de Motonauta',
-    description: 'Preenchimento do requerimento 5-H e do Anexo 3-A da NORMAM-212 para renovação da CHA de Arrais, Mestre ou Capitão com agregação da categoria Motonauta.',
+    description: 'Preenchimento do requerimento 5-H e do Anexo 3-A da NORMAM-212 para renovação da CHA de Arrais, Mestre ou Capitão com agregação da categoria Motonauta. Sem a declaração de condução, este serviço não pode preparar um requerimento com essa declaração afirmativa.',
     creditCost: 1,
     status: 'AVAILABLE',
     questions: [amateurCategoryQuestion, motonautaDeclarationQuestion],
@@ -203,6 +204,16 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-cha-amador-2026-v1',
     order: 1,
     fixedValues: { 'process.amateurRequest': 'emissao_renovacao' },
+    answerValueMappings: {
+      'process.notes': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Renovação de CHA de Arrais-Amador',
+          mestre: 'Renovação de CHA de Mestre-Amador',
+          capitao: 'Renovação de CHA de Capitão-Amador',
+        },
+      },
+    },
   },
   {
     serviceId: 'renovacao-cha-amador',
@@ -251,6 +262,16 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     formVersionId: 'requerimento-cha-amador-2026-v1',
     order: 1,
     fixedValues: { 'process.amateurRequest': 'renovacao_agregacao_mta' },
+    answerValueMappings: {
+      'process.notes': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Renovação de CHA de Arrais-Amador com agregação Motonauta',
+          mestre: 'Renovação de CHA de Mestre-Amador com agregação Motonauta',
+          capitao: 'Renovação de CHA de Capitão-Amador com agregação Motonauta',
+        },
+      },
+    },
   },
   {
     serviceId: 'renovacao-cha-agregacao-mta',
@@ -260,7 +281,15 @@ export const amateurServiceForms: readonly ServiceForm[] = [
     answerValueMappings: {
       'process.motonautaDeclaration': {
         questionId: 'motonautaDeclaration',
-        values: { sim: 'true', nao: 'false' },
+        values: { sim: 'true' },
+      },
+      'process.notes': {
+        questionId: 'amateurCategory',
+        values: {
+          arrais: 'Renovação da CHA Arrais-Amador com agregação Motonauta',
+          mestre: 'Renovação da CHA Mestre-Amador com agregação Motonauta',
+          capitao: 'Renovação da CHA Capitão-Amador com agregação Motonauta',
+        },
       },
     },
   },

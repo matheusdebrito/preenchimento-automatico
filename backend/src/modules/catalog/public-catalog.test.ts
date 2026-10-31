@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
 import { publicService, publicServices } from './public-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
+import { serviceFormValues } from './service-form-values.js';
 
 function fixture(): CatalogDefinition {
   return {
@@ -305,6 +306,89 @@ describe('projeção pública do catálogo', () => {
     }
   });
 
+  it('mantém pergunta de comprimento visível na renovação sem alteração e seleciona BADE/BSADE', () => {
+    const service = catalog.services.find((item) => item.id === 'renovacao-tie-embarcacao');
+    const band = service?.questions.find((item) => item.id === 'vesselBand');
+    expect(band?.conditions).toEqual([{ questionId: 'vesselType', equals: 'embarcacao' }]);
+
+    for (const [vesselBand, formVersionId] of [
+      ['ate_6m', 'bsade-er-2026-v1'],
+      ['maior_6_ate_12m', 'bade-er-2026-v1'],
+    ] as const) {
+      const quote = publicService(catalog, 'renovacao-tie-embarcacao', {
+        vesselType: 'embarcacao', hasCoOwner: 'nao', vesselBand,
+        tieSituation: 'regular', dataChanged: 'nao',
+      });
+      expect(quote?.formVersionIds).toContain(formVersionId);
+    }
+    const secondCopy = catalog.services.find((item) => item.id === 'segunda-via-tie-embarcacao');
+    expect(secondCopy?.questions.find((item) => item.id === 'vesselBand')?.conditions)
+      .toContainEqual({ questionId: 'dataChanged', equals: 'sim' });
+  });
+
+  it('rejeita declaração negativa no fluxo de agregação da Motonauta', () => {
+    const service = catalog.services.find((item) => item.id === 'renovacao-cha-agregacao-mta');
+    expect(service?.questions.find((item) => item.id === 'motonautaDeclaration')
+      ?.unavailableOptions).toContain('nao');
+    const invalid = publicService(catalog, 'renovacao-cha-agregacao-mta', {
+      amateurCategory: 'arrais', motonautaDeclaration: 'nao',
+    });
+    expect(invalid).toBeNull();
+    const valid = publicService(catalog, 'renovacao-cha-agregacao-mta', {
+      amateurCategory: 'arrais', motonautaDeclaration: 'sim',
+    });
+    expect(valid?.formVersionIds).toContain('requerimento-motonauta-2026-v1');
+  });
+
+  it('separa uploads de análise dos documentos apenas de protocolo', () => {
+    const service = publicService(catalog, 'segunda-via-cir-aquaviario', {
+      cirSecondCopyReason: 'extravio',
+    });
+    const uploads = service?.documentRequirements.map((item) => item.id) ?? [];
+    const protocol = service?.protocolDocuments.map((item) => item.id) ?? [];
+    expect(uploads).toContain('applicant-identity');
+    expect(uploads).not.toContain('gru-payment');
+    expect(protocol).toContain('gru-payment');
+    expect(protocol).toContain('occurrence-report');
+  });
+
+  it('distingue reimpressão de TIE digital da renovação do modelo físico', () => {
+    const questions = catalog.services.find((item) => item.id === 'segunda-via-tie-embarcacao')?.questions;
+    expect(questions?.find((item) => item.id === 'tieDocumentFormat')?.unavailableOptions)
+      .toContain('digital');
+    const quote = (tieDocumentFormat: string) =>
+      publicService(catalog, 'segunda-via-tie-embarcacao', {
+        vesselType: 'moto_aquatica',
+        hasCoOwner: 'nao', dataChanged: 'nao',
+        motoCharacteristicsChanged: 'nao',
+        motoTieSecondCopyReason: 'extravio',
+        tieDocumentFormat,
+      });
+    expect(quote('digital')).toBeNull();
+    expect(quote('fisico_antigo')?.formVersionIds)
+      .toContain('declaracao-perda-tie-ma-v1');
+  });
+
+  it('preenche a finalidade da renovação da CHA a partir da categoria selecionada', () => {
+    for (const [serviceId, desiredPart] of [
+      ['renovacao-cha-amador', 'Mestre-Amador'],
+      ['renovacao-cha-agregacao-mta', 'Mestre-Amador com agregação Motonauta'],
+    ] as const) {
+      const relation = catalog.serviceForms.find((item) =>
+        item.serviceId === serviceId && item.formVersionId === 'requerimento-cha-amador-2026-v1');
+      const values = serviceFormValues(relation, { amateurCategory: 'mestre' }, {});
+      expect(values['process.notes']).toContain(desiredPart);
+    }
+    const motoRelation = catalog.serviceForms.find((item) =>
+      item.serviceId === 'renovacao-cha-agregacao-mta' &&
+      item.formVersionId === 'requerimento-motonauta-2026-v1');
+    const values = serviceFormValues(motoRelation, {
+      amateurCategory: 'arrais', motonautaDeclaration: 'sim',
+    }, {});
+    expect(values['process.notes']).toContain('Arrais-Amador');
+    expect(values['process.motonautaDeclaration']).toBe('true');
+  });
+
   it('inclui BSADE ou BADE na renovação mesmo quando dataChanged é nao', () => {
     expect(publicService(catalog, 'renovacao-tie-embarcacao', {
       vesselType: 'embarcacao',
@@ -374,7 +458,6 @@ describe('projeção pública do catálogo', () => {
       tieSituation: 'regular',
       responsibilityTermCase: 'construcao_artesanal',
       boatAlterationTarget: 'dados_e_motor',
-      rowToMotorConversion: 'nao',
     });
     expect(alterationArtisanal?.formVersionIds).toContain('termo-responsabilidade-er-2026-v1');
 
@@ -384,7 +467,6 @@ describe('projeção pública do catálogo', () => {
       tieSituation: 'regular',
       responsibilityTermCase: 'nao',
       boatAlterationTarget: 'motor',
-      rowToMotorConversion: 'nao',
     });
     expect(motorOnly).not.toBeNull();
     expect(motorOnly?.documentRequirements.map((item) => item.id))
@@ -584,8 +666,8 @@ describe('projeção pública do catálogo', () => {
 
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();
-    expect(publicService(data, 's')?.documentRequirements).toHaveLength(1);
-    expect(publicService(data, 's', { extra: 'yes' })?.documentRequirements).toHaveLength(2);
+    expect(publicService(data, 's')?.protocolDocuments).toHaveLength(1);
+    expect(publicService(data, 's', { extra: 'yes' })?.protocolDocuments).toHaveLength(2);
     const result = publicService(data, 's');
     expect(result?.formVersionIds).toEqual(['form-v1']);
     expect(result?.reviewFields).toEqual([

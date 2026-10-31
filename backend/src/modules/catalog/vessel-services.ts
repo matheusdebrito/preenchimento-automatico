@@ -69,6 +69,13 @@ const motoCharacteristicsChangedQuestion: ServiceQuestion = {
   conditions: [{ questionId: 'vesselType', equals: 'moto_aquatica' }],
 };
 
+const tieDocumentFormatQuestion: ServiceQuestion = {
+  id: 'tieDocumentFormat',
+  label: 'Qual é o formato do TIE/TIEM perdido ou danificado? O TIE digital pode ser reimpresso sem solicitar uma segunda via.',
+  options: ['fisico_antigo', 'digital', 'desconhecido'],
+  unavailableOptions: ['digital'],
+};
+
 const motoTieSecondCopyReasonQuestion: ServiceQuestion = {
   id: 'motoTieSecondCopyReason',
   label: 'Motivo da renovação do TIE da moto aquática',
@@ -103,16 +110,6 @@ const responsibilityTermCaseQuestion: ServiceQuestion = {
   label: 'O caso envolve estaleiro comprovadamente extinto ou embarcação de construção artesanal?',
   options: ['nao', 'estaleiro_extinto', 'construcao_artesanal'],
   conditions: [{ questionId: 'vesselType', equals: 'embarcacao' }],
-};
-
-const rowToMotorConversionQuestion: ServiceQuestion = {
-  id: 'rowToMotorConversion',
-  label: 'É uma adaptação de embarcação miúda a remo para propulsão a motor?',
-  options: ['nao', 'sim'],
-  conditions: [
-    { questionId: 'vesselType', equals: 'embarcacao' },
-    { questionId: 'boatAlterationTarget', oneOf: ['motor', 'dados_e_motor'] },
-  ],
 };
 
 const applicantIdentity: DocumentRequirement = {
@@ -313,14 +310,15 @@ function questions(options: {
   band?: boolean;
   tie?: boolean;
   dataChanged?: boolean;
+  bandWhenDataChanged?: boolean;
   constructionCase?: boolean;
   responsibilityTermCase?: boolean;
-  rowToMotorConversion?: boolean;
   motoTieSecondCopyReason?: boolean;
+  tieDocumentFormat?: boolean;
   alterationTarget?: boolean;
   transferTarget?: boolean;
 } = {}): readonly ServiceQuestion[] {
-  const bandQuestion = options.dataChanged
+  const bandQuestion = options.bandWhenDataChanged
     ? { ...vesselBandQuestion, conditions: [
         { questionId: 'vesselType', equals: 'embarcacao' },
         { questionId: 'dataChanged', equals: 'sim' },
@@ -335,8 +333,8 @@ function questions(options: {
     ...(options.band === false ? [] : [bandQuestion]),
     ...(options.constructionCase ? [initialResponsibilityTermQuestion] : []),
     ...(options.responsibilityTermCase ? [responsibilityTermCaseQuestion] : []),
-    ...(options.rowToMotorConversion ? [rowToMotorConversionQuestion] : []),
     ...(options.motoTieSecondCopyReason ? [motoTieSecondCopyReasonQuestion] : []),
+    ...(options.tieDocumentFormat ? [tieDocumentFormatQuestion] : []),
     ...(options.alterationTarget
       ? [boatAlterationTargetQuestion, motoAlterationTargetQuestion]
       : []),
@@ -408,7 +406,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     title: 'Renovação do TIE/TIEM por perda, roubo ou extravio',
     description: scopeNote + ' O TIE digital não possui segunda via; perda ou extravio do modelo antigo segue o fluxo de renovação.',
     creditCost: 1, status: 'AVAILABLE',
-    questions: questions({ dataChanged: true, motoTieSecondCopyReason: true }),
+    questions: questions({ dataChanged: true, bandWhenDataChanged: true, motoTieSecondCopyReason: true, tieDocumentFormat: true }),
     documentRequirements: requirements(),
   },
   {
@@ -419,7 +417,6 @@ export const vesselServices: readonly ServiceDefinition[] = [
     questions: questions({
       tie: true,
       responsibilityTermCase: true,
-      rowToMotorConversion: true,
       alterationTarget: true,
     }),
     documentRequirements: [

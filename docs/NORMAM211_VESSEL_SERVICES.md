@@ -1,6 +1,21 @@
 # Serviços de embarcações - NORMAM-211/DPC 2026
 
-## Estado
+## Estado atual após auditoria — 30/10/2026
+
+Este documento conserva registros históricos de homologação anteriores. **O estado operacional
+atual é definido pelo catálogo `backend/src/modules/catalog/vessel-services.ts`**, não por
+afirmações antigas de `DRAFT` ou bloqueio de opções abaixo.
+
+- Seis serviços de embarcação publicados, com seleção barco/moto aquática.
+- BSADE (até 6 m), BADE (maior que 6 m até 24 m) e BDMOTO conforme tipo/serviço.
+- Renovação do TIE/TIEM de barco pergunta comprimento mesmo sem alteração para não omitir BADE/BSADE.
+- Segunda via solicita o formato do título: TIE digital é reimprimível e não segue o processo de segunda via.
+- Pergunta de conversão de remo para motor removida porque não controlava nenhum campo ou documento.
+  Exigências técnicas continuam sujeitas à conferência na NORMAM/CP/DL/AG.
+- Documentos que não alimentam campos dos PDFs deixam de ser uploads de IA; são apresentados
+  como checklist do protocolo, sem envio à OpenAI.
+
+## Estado histórico (28–29/10/2026)
 
 Esta expansão foi catalogada em 28/10/2026 com base na NORMAM-211/DPC vigente
 (Portaria DPC/DGN/MB nº 200, de 27/02/2026) e em modelos publicados em páginas

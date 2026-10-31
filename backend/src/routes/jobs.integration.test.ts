@@ -40,7 +40,19 @@ function fixture(): CatalogDefinition {
     services: [{
       id: 'ci-only-service', title: 'Teste end-to-end', description: 'Não é um serviço real',
       status: 'AVAILABLE', creditCost: 1, questions: [],
-      documentRequirements: [{ id: 'source', label: 'Documento fictício', required: true }],
+      documentRequirements: [{
+        id: 'source', label: 'Documento fictício', required: false,
+        extraction: {
+          documentType: 'identity', subjectRole: 'person',
+          allowedFieldIds: ['person.fullName'],
+        },
+      }, {
+        id: 'protocol-only', label: 'GRU fictícia de protocolo', required: false,
+        extraction: {
+          documentType: 'supporting-document', subjectRole: 'person',
+          allowedFieldIds: [],
+        },
+      }],
     }],
     serviceForms: versions.map((version, index) => ({
       serviceId: 'ci-only-service', formVersionId: version.id, order: index+1,
@@ -78,7 +90,7 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     const created = await app.inject({method:'POST',url:'/api/jobs',
       headers:{cookie}, payload:{serviceId:'ci-only-service',answers:{}}});
     expect(created.statusCode,created.body).toBe(201);
-    const jobId = created.json<{id:string}>().id;
+    let jobId = created.json<{id:string}>().id;
 
     const pdf = await PDFDocument.create();
     const page = pdf.addPage([595,842]);
@@ -135,6 +147,14 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
     });
     expect(wrongRequirement.statusCode).toBe(400);
 
+    const blockedProtocolUpload = await app.inject({
+      method: 'POST',
+      url: '/api/jobs/' + jobId + '/documents/protocol-only',
+      headers: { cookie, 'content-type': 'application/pdf' },
+      payload: Buffer.from(data),
+    });
+    expect(blockedProtocolUpload.statusCode).toBe(400);
+
     const upload = await app.inject({method:'POST',
       url:'/api/jobs/'+jobId+'/documents/source',
       headers:{cookie,'content-type':'application/pdf'},payload:Buffer.from(data)});
@@ -158,6 +178,18 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
       headers:{cookie,'content-type':'application/pdf'},payload:Buffer.from(data)});
     expect(duplicate.statusCode).toBe(400);
 
+    // Upload security was tested above. Restart a fresh manual job without files:
+    // the manual route must not call OpenAI or charge an analysis credit.
+    const removedAfterUpload = await app.inject({
+      method: 'DELETE', url: '/api/jobs/' + jobId, headers: { cookie },
+    });
+    expect(removedAfterUpload.statusCode).toBe(200);
+    const manualJob = await app.inject({
+      method: 'POST', url: '/api/jobs', headers: { cookie },
+      payload: { serviceId: 'ci-only-service', answers: {} },
+    });
+    expect(manualJob.statusCode).toBe(201);
+    jobId = manualJob.json<{ id: string }>().id;
     const scanned=await app.inject({method:'POST',url:'/api/jobs/'+jobId+'/extract',
       headers:{cookie},payload:{}});
     expect(scanned.statusCode,scanned.body).toBe(200);

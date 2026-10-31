@@ -75,7 +75,23 @@ A decisão de produto de 30/10/2026 limita a categoria Aquaviários a sete servi
 
 O catálogo agora exibe, por serviço e por modelo de certificado, a lista de documentos de apoio descrita nos artigos 1.8, 1.11, 1.12, 1.13, 1.17, 1.22, 1.30 e 2.4. Entre eles: CIR, CPF, atestado de saúde, certificados de cursos/competência, comprovação de tempo de embarque, Anexo 1-G quando aplicável, documentos migratórios, escolaridade, GRU e LRM.
 
-Os documentos de apoio são apresentados como uploads opcionais, seguindo a regra do produto de permitir continuar sem anexos. A lista orienta a preparação do protocolo; não afirma que o upload pelo sistema substitui a apresentação exigida pela CP/DL/AG. A fotografia prevista em alguns processos é capturada no atendimento e não é solicitada como upload.
+Após a auditoria dos 18 serviços, documentos sem campos efetivamente aproveitados no PDF
+(GRU, comprovantes, laudos, certificados de cursos etc.) passaram a constar como
+**orientação de protocolo**, sem upload ou envio à OpenAI. Uploads são ofertados apenas
+para fontes que podem sugerir ao menos um campo do formulário. A folha de rosto da CIR
+agora possui política de extração conservadora (nome do titular, número da CIR e categoria),
+somente quando campos correspondentes aparecem no PDF aplicável. Não se presume que uma
+extração seja exata sem evidência: os candidatos exigem revisão humana.
+
+A ascensão de categoria pergunta grupo profissional para mostrar os comprovantes de
+mergulhadores apenas no 4º Grupo. A finalidade do requerimento auxiliar é editável e deve
+incluir categoria atual e pretendida; os campos continuam opcionais por decisão de produto.
+A fotografia prevista em alguns processos é capturada no atendimento e não é solicitada como upload.
+
+**Pendente de confirmação:** a Parte III (documentos anexados) do Anexo 1-E não possui
+mapeamento automático homologado; depois do download deve ser conferida e preenchida
+manualmente conforme o caso. A elegibilidade da segunda via do DPC-1032 também exige
+verificação normativa específica. Nenhuma coordenada oficial foi inventada.
 
 A revalidação do DPC-1033 continua indisponível, pois a NORMAM-101 informa que a AMB não revalida esse modelo.
 

@@ -93,6 +93,13 @@ const IDENTITY_FIELDS_BY_SUBTYPE: Readonly<Record<
   ]),
 };
 
+/** Somente dados normalmente identificados na folha de rosto da CIR; sem inferir documentos de embarque. */
+export const AQUAVIARIO_CIR_FIELDS = [
+  'aquaviario.cirNumber',
+  'aquaviario.category',
+  'person.fullName',
+] as const;
+
 export const CHA_FIELDS = [
   'person.fullName',
   'person.cpf',

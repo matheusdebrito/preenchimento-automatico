@@ -193,15 +193,15 @@ describe('versioned form map coordinates', () => {
         transferTarget: 'propriedade_jurisdicao',
       }],
       ['renovacao-tie-embarcacao', {
-        vesselType: 'embarcacao', tieSituation: 'regular', dataChanged: 'nao',
+        vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular', dataChanged: 'nao',
       }],
       ['segunda-via-tie-embarcacao', {
-        vesselType: 'embarcacao', dataChanged: 'nao',
+        vesselType: 'embarcacao', dataChanged: 'nao', tieDocumentFormat: 'fisico_antigo',
       }],
       ['alteracao-dados-embarcacao', {
         vesselType: 'embarcacao', vesselBand: 'ate_6m', tieSituation: 'regular',
         responsibilityTermCase: 'construcao_artesanal',
-        boatAlterationTarget: 'dados_e_motor', rowToMotorConversion: 'nao',
+        boatAlterationTarget: 'dados_e_motor',
       }],
       ['comunicacao-venda-embarcacao', { vesselType: 'embarcacao' }],
       ['inscricao-exame-amador', { amateurCategory: 'arrais' }],

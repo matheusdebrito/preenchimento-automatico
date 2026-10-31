@@ -268,6 +268,25 @@ Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a preparação comercial/produção (10–17) e a expansão (18). Apenas o trabalho técnico do MVP foi autorizado para execução contínua; pagamentos reais, infraestrutura externa e lançamento público requerem novas decisões. **Sem assinaturas ou planos empresariais nesta versão.**
 
 
+## Correções da auditoria transversal — 30/10/2026
+
+Na jornada de preenchimento automático, os uploads são destinados **somente** a documentos
+com campos efetivamente mapeados no pacote PDF. Comprovantes de GRU, laudos e demais
+documentos protocolares sem campos extraíveis aparecem em uma seção de orientação e
+não são enviados à OpenAI. CIR pode sugerir número da CIR e categoria quando o
+formulário os utiliza, sempre sujeitos à revisão.
+
+Renovação do TIE/TIEM não omite a pergunta de comprimento em barco sem alteração;
+TIE digital reimprimível não inicia fluxo de segunda via. O serviço de agregação de
+Motonauta requer declaração afirmativa; ascensão de aquaviário distingue grupo e
+permite informar manualmente categoria atual e pretendida na finalidade do pedido.
+Quantidades inteiras e ano de construção possuem validação sem tornar os campos
+obrigatórios.
+
+**Limites de homologação:** a Parte III do Anexo 1-E ainda demanda preenchimento
+e conferência manual e a segunda via do DPC-1032 exige confirmação normativa. Estas
+correções não representam homologação de produção e não substituem o protocolo oficial.
+
 ## Serviços de Aquaviários NORMAM-101
 
 A categoria Aquaviários disponibiliza somente estes sete serviços:

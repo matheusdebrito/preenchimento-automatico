@@ -583,6 +583,8 @@ export function LiveFlowPage() {
                 ? 'selecione uma opção válida.'
                 : issue.fieldReason === 'invalid_choice'
                   ? 'selecione uma das opções permitidas.'
+                  : issue.fieldReason === 'invalid_number'
+                    ? 'informe um número inteiro não negativo ou um ano com quatro dígitos.'
                   : issue.fieldReason === 'unsupported_character'
                     ? 'contém um caractere não suportado pelo formulário.'
                     : issue.fieldReason === 'text_too_long'
@@ -676,9 +678,19 @@ export function LiveFlowPage() {
                                                                         : value === 'demais_grupos' ? 'Demais grupos (1º, 2º ou 3º)'
                                                                           : value === 'mergulhadores' ? '4º Grupo - Mergulhadores'
                                                                             : value === 'praticos' ? '5º Grupo - Práticos'
-                                                                              : value.replaceAll('_',' ');
+                                                                              : value === 'fisico_antigo' ? 'TIE/TIEM físico antigo'
+                                                                                : value === 'digital' ? 'TIE/TIEM digital (reimpressão)'
+                                                                                  : value === 'desconhecido' ? 'Não sei informar'
+                                                                                    : value === 'outros_grupos' ? 'Outros grupos (1º, 2º, 3º ou 5º)'
+                                                                                      : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
-                            {label}{unavailable ? ' (em validação)' : ''}
+                            {label}{unavailable
+                              ? question.id === 'motonautaDeclaration' && value === 'nao'
+                                ? ' (incompatível com a declaração exigida)'
+                                : question.id === 'tieDocumentFormat' && value === 'digital'
+                                  ? ' (reimprima o TIE digital, sem segunda via)'
+                                  : ' (em validação)'
+                              : ''}
                           </option>;
                         })}
                       </select>
@@ -762,6 +774,22 @@ export function LiveFlowPage() {
                       );
                     })}
                   </div>
+                  {(service.protocolDocuments?.length ?? 0) > 0 ? (
+                    <section className="live-protocol-documents" aria-label="Documentos para apresentação à Marinha">
+                      <h3>Documentos para apresentação à Marinha</h3>
+                      <p>Lista de orientação para o atendimento na CP/DL/AG. Não envie estes
+                        documentos à OpenAI: eles não alimentam campos dos formulários.
+                        Confira quais são aplicáveis ao seu caso.</p>
+                      <ul>
+                        {service.protocolDocuments?.map((document) => (
+                          <li key={document.id}>
+                            <strong>{document.label}</strong>
+                            {document.description ? ' — ' + document.description : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   {confirmAnalysisCharge &&
                   (Object.keys(files).length > 0 || uploadedRequirements.length > 0) ? (
