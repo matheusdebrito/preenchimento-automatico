@@ -136,6 +136,7 @@ export interface ServiceDefinition {
   creditCost: number;
   status: 'DRAFT' | 'AVAILABLE' | 'SUSPENDED';
   questions: readonly ServiceQuestion[];
+  /** Optional AI input sources only; never a checklist of authority/protocol documents. */
   documentRequirements: readonly DocumentRequirement[];
 }
 
