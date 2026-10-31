@@ -36,7 +36,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     const formVersionId = safeIdentifier(body.formVersionId);
     const allowedReasons = new Set([
       'required', 'invalid_cpf', 'invalid_date', 'invalid_boolean',
-      'invalid_choice', 'unsupported_character', 'text_too_long', 'text_overflow',
+      'invalid_choice', 'invalid_number', 'unsupported_character', 'text_too_long', 'text_overflow',
     ]);
     const fieldReason = typeof body.reason === 'string' && allowedReasons.has(body.reason)
       ? body.reason : undefined;
