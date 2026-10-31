@@ -137,6 +137,18 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 
 **QA integrado verificado:** o [CI 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) passou nos cinco jobs e inclui leitura de PNG/JPEG fictícios, revisão com CPF/data válidos, conferência dos valores preenchidos nos dois PDFs de amostra e teste de inicialização concorrente do PostgreSQL. Os procedimentos e resultados estão no [PROJECT_TRACKER](PROJECT_TRACKER.md); as [pendências de homologação e QA para 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md) continuam abertas. Os testes sintéticos não asseguram leitura correta de fotos reais nem liberação de formulários oficiais.
 
+### Teste real de navegador (ambiente descartável)
+
+O job `browser-e2e` pode ser acionado manualmente em **GitHub Actions → CI → Run workflow**.
+Ele sobe PostgreSQL, backend e frontend isolados via Docker Compose e abre o Chrome com
+Playwright. Cobre cadastro, seleção de serviços de aquaviário/embarcação, revisão sem uploads,
+geração e download dos anexos 1-K, 1-L e 3-C e viewport mobile de 375 px.
+As capturas de tela e os PDFs fictícios ficam no artefato `chromium-browser-e2e-evidence`
+por sete dias. O banco é descartado ao terminar. **Não requer chave da OpenAI,
+não consulta dados reais e não testa OCR/análise de documentos nem produção.**
+A execução automática permanece restrita à branch de implantação do teste, para não
+aumentar a duração de todos os PRs.
+
 ### Testes sintéticos de análise documental e PDFs
 
 Testes de análise documental, preenchimento e geração de PDF usam respostas OpenAI simuladas, fixtures e dados sintéticos diretamente na suíte automatizada. O servidor em execução utiliza somente o catálogo oficial; não existe flag de ambiente para promover serviços ou mapeamentos `DRAFT` em runtime.
