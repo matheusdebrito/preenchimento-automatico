@@ -225,32 +225,9 @@ const TIE_DIGITAL_FIELDS = new Set<string>([
 
 const TIE_LEGACY_FIELDS = new Set<string>(TIE_FIELDS);
 
-export const SALE_DOCUMENT_FIELDS = [
-  'sale.invoice',
-  'sale.date',
-  'sale.place',
-  'sale.price',
+;
 
-  // Only when the document explicitly identifies the parties.
-  'person.fullName',
-  'person.cpf',
-  'seller.fullName',
-  'seller.cpf',
-
-  // Stable vessel identifiers may also be present on a purchase/sale instrument.
-  'vessel.name',
-  'vessel.registration',
-  'vessel.hullId',
-] as const;
-
-export const MOTOR_DOCUMENT_FIELDS = [
-  'vessel.motorBrand',
-  'vessel.motorManufacturerBrandModel',
-  'vessel.motorPower',
-  'vessel.motorSerial',
-  'vessel.motorCount',
-  'vessel.totalPropulsionPowerKw',
-] as const;
+;
 
 /** Documents that are useful to the official process but not trusted as field sources. */
 export const NO_AUTOMATIC_FIELDS: readonly string[] = [];
