@@ -39,12 +39,16 @@ function downloadName(
   if (!form) {
     if (fallbackId.includes('bade')) return fallbackId.includes('bsade') ? 'BSADE' : 'BADE';
     if (fallbackId.includes('bdmoto')) return 'BDMOTO';
+    if (fallbackId === 'requerimento-interessado-aquaviario') return 'Requerimento auxiliar (não oficial)';
+    if (fallbackId === 'requerimento-certificacao-aquaviario') return 'Requerimento de Certificação (Anexo 1-E)';
     if (fallbackId.startsWith('requerimento')) return 'Requerimento';
     return 'Formulário';
   }
   const id = form.formId;
   if (id.includes('bade')) return id.includes('bsade') ? 'BSADE' : 'BADE';
   if (id.includes('bdmoto')) return 'BDMOTO';
+  if (id === 'requerimento-interessado-aquaviario') return 'Requerimento auxiliar (não oficial)';
+  if (id === 'requerimento-certificacao-aquaviario') return 'Requerimento de Certificação (Anexo 1-E)';
   if (id.startsWith('requerimento')) return 'Requerimento';
   if (id.startsWith('autorizacao-transferencia')) return 'Autorização de Transferência';
   if (id.startsWith('comunicacao-transferencia')) return 'Comunicação de Transferência';
@@ -669,7 +673,10 @@ export function LiveFlowPage() {
                                                                   : value === 'ambos' ? 'Moto aquática e proprietário'
                                                                     : value === 'estaleiro_extinto' ? 'Estaleiro comprovadamente extinto'
                                                                       : value === 'construcao_artesanal' ? 'Construção artesanal'
-                                                                        : value.replaceAll('_',' ');
+                                                                        : value === 'demais_grupos' ? 'Demais grupos (1º, 2º ou 3º)'
+                                                                          : value === 'mergulhadores' ? '4º Grupo - Mergulhadores'
+                                                                            : value === 'praticos' ? '5º Grupo - Práticos'
+                                                                              : value.replaceAll('_',' ');
                           return <option key={value} value={value} disabled={unavailable}>
                             {label}{unavailable ? ' (em validação)' : ''}
                           </option>;

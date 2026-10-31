@@ -44,7 +44,8 @@ function matches(
 function isUserReviewField(fieldId: string): boolean {
   return !fieldId.startsWith('process.') ||
     fieldId === 'process.place' ||
-    fieldId === 'process.date';
+    fieldId === 'process.date' ||
+    fieldId === 'process.requestAuthority';
 }
 
 function fieldApplies(

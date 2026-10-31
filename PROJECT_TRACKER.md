@@ -1,6 +1,6 @@
 # PROJECT_TRACKER.md — Estado operacional do MVP
 
-> Atualização: 29/10/2026. Matriz serviço -> formulário revalidada contra as NORMAM-211/212 completas fornecidas pelo usuário e evidência operacional atual da Marinha. Os 11 serviços catalogados estão `AVAILABLE`, as 17 versões de formulário estão `VERIFIED` e os 17 mappings estão `APPROVED`. Moto Aquática usa os mesmos cards de embarcação, o Anexo 3-C vigente substituiu o modelo antigo e a inscrição em exame usa o 5-H sem marcar uma opção inexistente no formulário. O próximo portão é a execução dos gates automatizados da branch e o QA manual na aplicação web.
+> Atualização: 30/10/2026. O catálogo global contém 18 serviços publicados: 6 de embarcações, 5 de amadores e 7 de Aquaviários. As 21 versões de formulário/modelo estão `VERIFIED` e os 21 mappings estão `APPROVED`; o requerimento auxiliar de Aquaviários é explicitamente não oficial. A categoria Aquaviários foi limitada a inscrição inicial da CIR, 2ª via da CIR, revalidação da CIR, ascensão de categoria, emissão de certificado, 2ª via de certificado e revalidação de certificado. O CI #727 da alteração de escopo passou; permanece pendente o QA manual na aplicação web/celular.
 >
 > O histórico anterior completo, incluindo todas as subtarefas, decisões, comandos e execuções de CI, está preservado **sem alteração de bytes** em [PROJECT_TRACKER_HISTORY_2026-10-27.md](PROJECT_TRACKER_HISTORY_2026-10-27.md). Seus registros são históricos; a tabela e o checklist de análise documental abaixo corrigem o estado atual. Nenhuma tarefa de outra fase foi removida ou considerada concluída por esta consolidação.
 
@@ -34,9 +34,9 @@ A autorização atual inclui consolidar a arquitetura reutilizável e auditar os
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — medir tokens, custo por documento, latência, concorrência e limites da OpenAI |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 13/11 serviços catalogados disponíveis e formulários homologados; gates automatizados desta branch e QA manual navegador/celular ainda pendentes antes de tratar a expansão como encerrada |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 18 serviços globais publicados, incluindo exatamente 7 serviços de Aquaviários; CI #727 aprovado, QA manual navegador/celular pendente |
 
-**Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 11 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
+**Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 18 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
 
 ## 2. Checklists preservados das outras fases
 
@@ -716,3 +716,16 @@ os mesmos PDFs e mappings já homologados.
 **Campos em branco:** nenhum campo de revisão é obrigatório para gerar PDF. Valores vazios são simplesmente deixados em branco no formulário. Validações de formato continuam sendo aplicadas somente quando um valor é informado.
 
 **UX:** ao tentar gerar com campos vazios, a interface lista os campos em branco e oferece duas ações: `Preencher campos` e `Continuar mesmo assim`. O aviso não consome crédito nem envia a confirmação enquanto o usuário não escolher continuar.
+
+
+## Registro de execução — 30/10/2026, redução do escopo de Aquaviários para sete serviços
+
+**Decisão de produto:** manter somente `inscricao-inicial-cir-aquaviario`, `segunda-via-cir-aquaviario`, `revalidacao-cir-aquaviario`, `ascensao-categoria-aquaviario`, `emissao-certificado-aquaviario`, `segunda-via-certificado-aquaviario` e `revalidacao-certificado-aquaviario`.
+
+**Serviços retirados da oferta:** `transferencia-jurisdicao-aquaviario`, `transferencia-categoria-grupo-aquaviario` e `homologacao-lrm-aquaviario`. As definições e relações desses serviços foram removidas do catálogo de runtime. `GET /api/services/:id` e `POST /api/services/:id/quote` devem responder 404 para esses IDs.
+
+**Compatibilidade e reutilização:** sem migration ou alteração de banco. Os formulários oficiais 1-E, 1-K e 1-L e o requerimento auxiliar não oficial foram preservados porque continuam vinculados aos sete serviços. O LRM continua como possível evidência documental dentro da ascensão de categoria, não como serviço independente. Todos os uploads e campos continuam opcionais.
+
+**Frontend:** `PLANNED_AQUAVIARIO_SERVICES` passa a conter exatamente os sete cards. Os testes de categoria validam os sete links e a ausência dos três cards retirados.
+
+**Validação:** CI #727 aprovado no head `fabdd675359c23dcf537fb099c5b3514fcb7a70d` (backend, frontend, PostgreSQL, Compose, inspeção NORMAM-211 e QA visual de PDFs). Typecheck, lint, testes e build foram executados pelo CI. Não foi possível executar os mesmos comandos localmente nesta sessão porque o repositório não pôde ser clonado por indisponibilidade de rede no ambiente de execução. O PR #85 permanece em rascunho até revisão/validação local e QA manual na aplicação web/celular. Não houve merge nem deploy.

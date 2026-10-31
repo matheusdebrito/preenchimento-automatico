@@ -98,6 +98,18 @@ const residence: readonly CoordinatePlacement[] = [
   top('process.date', 502, 619, 35, 6.2, 0, false, undefined, 'DATE_YEAR'),
 ];
 
+const auxiliaryRequest: readonly CoordinatePlacement[] = [
+  top('process.requestAuthority', 45, 143, 505, 7.2),
+  top('process.requestSubject', 106, 175, 445, 7.5),
+  top('person.fullName', 65, 213, 485, 7.5),
+  top('person.cpf', 75, 255, 194, 7),
+  top('person.identity', 354, 255, 196, 7),
+  top('person.fullAddress', 105, 288, 445, 7),
+  top('process.requestPurpose', 45, 359, 505, 7.5),
+  top('process.place', 88, 615, 200, 7),
+  top('process.date', 350, 615, 201, 7),
+];
+
 export const aquaviarioMappings: readonly FormMapping[] = [
   {
     id: 'requerimento-certificacao-aquaviario-map-v1',
@@ -127,6 +139,16 @@ export const aquaviarioMappings: readonly FormMapping[] = [
     placements: residence,
     reviewedAt: '2026-10-30',
     reviewer: 'OpenAI visual QA from NORMAM-101/DPC page 181',
+    reportPath: 'docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md',
+  },
+  {
+    id: 'requerimento-interessado-aquaviario-map-v1',
+    formVersionId: 'requerimento-interessado-aquaviario-2026-v1',
+    revision: 'v1',
+    status: 'APPROVED',
+    placements: auxiliaryRequest,
+    reviewedAt: '2026-10-30',
+    reviewer: 'OpenAI visual QA - modelo auxiliar não oficial',
     reportPath: 'docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md',
   },
 ];

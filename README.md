@@ -2,7 +2,7 @@
 
 Aplicação mobile-first que auxilia usuários a enviar documentos, revisar informações extraídas e gerar **modelos oficiais de formulários náuticos**, preservando o PDF original. Plataforma privada, independente da Marinha do Brasil: **não realiza protocolo oficial nem garante aceitação do documento**.
 
-> **Status em 26/10/2026:** Fases 00–03 concluídas. O núcleo das fases 04–08 foi implementado e testado com dados **sintéticos**, mas **a homologação do MVP está pendente**. Os seis PDFs oficiais estão verificados; seus mapeamentos estão em `DRAFT`, e o serviço de transferência de moto aquática permanece `DRAFT` (não liberado). Nenhum cliente real, pagamento ou aprovação oficial foi processado.
+> **Status em 30/10/2026:** o catálogo publica 18 serviços (6 de embarcações, 5 de amadores e 7 de Aquaviários). As 21 versões de formulário/modelo estão `VERIFIED` e os 21 mapeamentos estão `APPROVED`; o requerimento auxiliar de Aquaviários é explicitamente não oficial. O MVP ainda não está liberado para produção: homologação de precisão da OpenAI, QA manual navegador/celular, hardening, carga, infraestrutura e privacidade permanecem pendentes. Nenhum cliente real, pagamento real ou aprovação oficial foi processado.
 
 ## Estado do desenvolvimento
 
@@ -10,12 +10,12 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 | --- | --- | --- |
 | Catálogo de serviços e condições | API e frontend integrados; fotos de popa/través excluídas dos uploads de preenchimento | Só serviços aprovados ficam disponíveis; não substitui rol documental oficial |
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
-| Mapeamento PDF reutilizável | **118 posições em seis formulários** | `DRAFT`; exemplos sintéticos e regressões testados, conferência humana pendente |
-| Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Exige `APPROVED`, bloqueando o piloto |
+| Mapeamento PDF reutilizável | 21 versões com mapeamentos `APPROVED`, incluindo os anexos 1-E, 1-K e 1-L da NORMAM-101 | Aprovação técnica interna não equivale à aceitação da Marinha; requerimentos auxiliares são identificados como não oficiais |
+| Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Só gera versões `VERIFIED` com mapeamento `APPROVED`; não substitui assinatura, protocolo ou conferência oficial |
 | Upload/limpeza | Autorização pré-upload, diretório privado, quotas, TTL, verificação por página PDF e preflight adicional PNG/JPEG | Exige fuzzing/isolamento de decodificadores e testes de carga |
 | Análise documental | OpenAI Responses API recebe PDFs/imagens originais e retorna sugestões estruturadas limitadas por documento e serviço | Requer `OPENAI_API_KEY`; todas as sugestões exigem revisão humana e a precisão deve ser homologada com amostras autorizadas |
 | Autenticação e créditos | PostgreSQL, sessões HttpOnly, menu conectado à sessão, logout obrigatório para trocar conta, ledger/recibos/estornos | Instância única, créditos de teste; sem pagamentos reais |
-| Fluxo React integrado | Uploads documentais opcionais, análise OpenAI, preenchimento manual ou misto, revisão de dados, geração e download | Produção permanece DRAFT; prévias com AMOSTRA, sem créditos e sem documentos pessoais |
+| Fluxo React integrado | Uploads opcionais, análise OpenAI, preenchimento manual/misto, revisão, geração e download | A disponibilidade técnica não substitui QA manual navegador/celular nem a homologação de precisão da análise |
 | Testes automatizados | CI com npm, Postgres real e Docker Compose | Não substitui homologação documental, carga nem teste manual real |
 
 Consulte o [fluxo de entrega e estorno de créditos](docs/CREDIT_DELIVERY_LIFECYCLE.md), a [arquitetura de análise documental OpenAI](docs/OPENAI_DOCUMENT_ANALYSIS.md), o [status técnico detalhado](docs/MVP_STATUS_2026-10-26.md), o [planejamento](PROJECT_TRACKER.md), o [roteiro de revisão humana dos PDFs](docs/FASE_04_REVISAO_VISUAL.md), o [relatório de segurança incremental](docs/SECURITY_HARDENING_2026-10-26.md) e os [relatórios de mapeamento](docs/mapping-reports/).
@@ -34,7 +34,7 @@ backend/
   migrations/002_job_credit_receipts.sql
 frontend/
   src/features/wizard/        # Demonstração sem upload ao servidor
-  src/features/real/          # Jornada da API (somente QA sintético; serviço real bloqueado)
+  src/features/real/          # Jornada real integrada à API; produção ainda depende dos gates do MVP
   src/pages/
   nginx/default.conf         # Proxy same-origin /api e cabeçalhos de proteção
 docs/
@@ -267,6 +267,22 @@ Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 
 O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a preparação comercial/produção (10–17) e a expansão (18). Apenas o trabalho técnico do MVP foi autorizado para execução contínua; pagamentos reais, infraestrutura externa e lançamento público requerem novas decisões. **Sem assinaturas ou planos empresariais nesta versão.**
 
+
+## Serviços de Aquaviários NORMAM-101
+
+A categoria Aquaviários disponibiliza somente estes sete serviços:
+
+1. Inscrição inicial / emissão da CIR.
+2. 2ª via da CIR.
+3. Revalidação da CIR.
+4. Ascensão de categoria.
+5. Emissão de certificado.
+6. 2ª via de certificado.
+7. Revalidação de certificado.
+
+Transferência de jurisdição, transferência de categoria/grupo e homologação do LRM não fazem parte da oferta atual. O LRM continua podendo aparecer como documento de apoio em processos de ascensão de categoria, quando aplicável.
+
+Os anexos oficiais 1-E, 1-K e 1-L são reutilizados conforme o serviço e as respostas do usuário. O requerimento auxiliar usado em alguns processos da CIR é um modelo próprio do produto, identificado no PDF como **não oficial**. Todos os uploads continuam opcionais; a aplicação não protocola o processo nem substitui a conferência da CP/DL/AG.
 
 ## Serviços de amadores NORMAM-211
 

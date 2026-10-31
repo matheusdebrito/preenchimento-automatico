@@ -7,7 +7,7 @@ import { catalog } from './catalog.js';
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 
-describe('arquivos oficiais registrados no catálogo', () => {
+describe('arquivos PDF versionados registrados no catálogo', () => {
   it('mantém cada PDF presente com assinatura e SHA-256 registrados', () => {
     for (const version of catalog.versions) {
       if (version.status === 'IDENTIFIED') {

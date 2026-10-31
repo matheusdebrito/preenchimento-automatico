@@ -9,14 +9,14 @@ import { serviceFormValues } from './service-form-values.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-describe('official form map coordinates', () => {
+describe('versioned form map coordinates', () => {
   it('mantém todos os mapas homologados e o catálogo publicável', () => {
-    expect(catalog.mappings).toHaveLength(20);
+    expect(catalog.mappings).toHaveLength(21);
     expect(validateCatalog(catalog)).toEqual([]);
     expect(catalog.mappings.every((mapping) => mapping.status === 'APPROVED')).toBe(true);
     expect(catalog.services.every((service) => service.status === 'AVAILABLE')).toBe(true);
   });
-  it('positions stay within the dimensions of the real official PDF pages', async () => {
+  it('positions stay within the dimensions of the versioned PDF templates', async () => {
     for (const mapping of catalog.mappings) {
       const version = catalog.versions.find((v) => v.id === mapping.formVersionId);
       expect(version?.templatePath).toBeTruthy();
