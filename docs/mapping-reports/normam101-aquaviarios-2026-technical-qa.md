@@ -71,22 +71,34 @@ A decisão de produto de 30/10/2026 limita a categoria Aquaviários a sete servi
 | 2ª via de certificado | Anexo 1-E oficial + Anexo 1-L; Anexo 1-K somente para extravio, roubo ou furto |
 | Revalidação de certificado | Anexo 1-E oficial + Anexo 1-L |
 
-### Documentos de apoio e protocolo
+### Documentos de entrada e formulários de saída
 
-O catálogo agora exibe, por serviço e por modelo de certificado, a lista de documentos de apoio descrita nos artigos 1.8, 1.11, 1.12, 1.13, 1.17, 1.22, 1.30 e 2.4. Entre eles: CIR, CPF, atestado de saúde, certificados de cursos/competência, comprovação de tempo de embarque, Anexo 1-G quando aplicável, documentos migratórios, escolaridade, GRU e LRM.
+A aplicação aceita somente cinco categorias de entrada para a OpenAI:
+- identidade: RG, CNH ou CIN;
+- comprovante de residência;
+- CHA;
+- CIR;
+- TIE/TIEM.
 
-Após a auditoria dos 18 serviços, documentos sem campos efetivamente aproveitados no PDF
-(GRU, comprovantes, laudos, certificados de cursos etc.) passaram a constar como
-**orientação de protocolo**, sem upload ou envio à OpenAI. Uploads são ofertados apenas
-para fontes que podem sugerir ao menos um campo do formulário. A folha de rosto da CIR
-agora possui política de extração conservadora (nome do titular, número da CIR e categoria),
-somente quando campos correspondentes aparecem no PDF aplicável. Não se presume que uma
-extração seja exata sem evidência: os candidatos exigem revisão humana.
+Todos os uploads são opcionais e cada fonte só é exibida quando pode preencher
+ao menos um campo mapeado nos formulários selecionados. CPF separado, GRU,
+atestados, certificados de curso/competência, comprovantes de embarque, LRM,
+documentos migratórios, escolaridade, histórico escolar, CTPS, registro de
+ocorrência e certificado de competência não são uploads da aplicação.
 
-A ascensão de categoria pergunta grupo profissional para mostrar os comprovantes de
-mergulhadores apenas no 4º Grupo. A finalidade do requerimento auxiliar é editável e deve
-incluir categoria atual e pretendida; os campos continuam opcionais por decisão de produto.
-A fotografia prevista em alguns processos é capturada no atendimento e não é solicitada como upload.
+O catálogo não publica uma lista de documentos que a Marinha pode exigir para
+protocolar o processo. Ele mantém apenas as associações entre cada serviço e
+os formulários/anexos oficiais a preencher. A interface apresenta os nomes e
+referências normativas desses formulários de saída. O upload da CIR usa política
+conservadora para sugerir nome do titular, número da CIR e categoria somente
+quando esses campos existem no PDF aplicável; os candidatos continuam sujeitos
+à revisão humana.
+
+A ascensão de categoria pergunta grupo profissional, mas não exibe checklists
+de comprovantes de curso ou embarque. A finalidade do requerimento auxiliar
+permanece editável para o usuário informar categoria atual e pretendida. A
+fotografia prevista em alguns processos é capturada no atendimento e não é
+solicitada como upload.
 
 **Pendente de confirmação:** a Parte III (documentos anexados) do Anexo 1-E não possui
 mapeamento automático homologado; depois do download deve ser conferida e preenchida

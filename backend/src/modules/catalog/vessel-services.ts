@@ -9,9 +9,7 @@ import type {
 import {
   APPLICANT_IDENTITY_FIELDS,
   BUYER_IDENTITY_FIELDS,
-  MOTOR_DOCUMENT_FIELDS,
   RESIDENCE_PROOF_FIELDS,
-  SALE_DOCUMENT_FIELDS,
   SELLER_IDENTITY_FIELDS,
   SELLER_RESIDENCE_PROOF_FIELDS,
   TIE_FIELDS,
@@ -186,30 +184,6 @@ const currentTie: DocumentRequirement = {
   },
 };
 
-const vesselProof: DocumentRequirement = {
-  id: 'vessel-origin-document',
-  label: 'Documento de origem/propriedade da embarcação',
-  description: 'Nota fiscal, instrumento de compra e venda ou documento equivalente aplicável ao caso.',
-  required: false,
-  extraction: {
-    documentType: 'sale-document',
-    subjectRole: 'person',
-    allowedFieldIds: SALE_DOCUMENT_FIELDS,
-  },
-};
-
-const motorProof: DocumentRequirement = {
-  id: 'motor-document',
-  label: 'Documento comprobatório do motor',
-  description: 'Nota fiscal, declaração ou documento equivalente aplicável à alteração do motor.',
-  required: false,
-  extraction: {
-    documentType: 'supporting-document',
-    subjectRole: 'vessel',
-    allowedFieldIds: MOTOR_DOCUMENT_FIELDS,
-  },
-};
-
 const sellerIdentity: DocumentRequirement = {
   id: 'seller-identity',
   label: 'Documento de identificação do vendedor',
@@ -344,15 +318,11 @@ function questions(options: {
 function requirements(options: {
   tie?: boolean;
   seller?: boolean;
-  origin?: boolean;
-  motor?: boolean;
 } = {}): readonly DocumentRequirement[] {
   return [
     ...commonApplicantDocuments,
     ...(options.tie ? [currentTie] : []),
     ...(options.seller ? [sellerIdentity] : []),
-    ...(options.origin ? [vesselProof] : []),
-    ...(options.motor ? [motorProof] : []),
   ];
 }
 
@@ -365,7 +335,7 @@ export const vesselServices: readonly ServiceDefinition[] = [
     description: scopeNote,
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({ constructionCase: true }),
-    documentRequirements: requirements({ origin: true }),
+    documentRequirements: requirements(),
   },
   {
     id: 'transferencia-propriedade-embarcacao',
@@ -378,14 +348,6 @@ export const vesselServices: readonly ServiceDefinition[] = [
       {
         ...sellerIdentity,
         id: 'seller-identity-transfer',
-        conditions: [{
-          questionId: 'transferTarget',
-          oneOf: ['propriedade', 'propriedade_jurisdicao'],
-        }],
-      },
-      {
-        ...vesselProof,
-        id: 'vessel-origin-document-transfer',
         conditions: [{
           questionId: 'transferTarget',
           oneOf: ['propriedade', 'propriedade_jurisdicao'],
@@ -412,60 +374,14 @@ export const vesselServices: readonly ServiceDefinition[] = [
   {
     id: 'alteracao-dados-embarcacao',
     title: 'Alteração de dados, características ou motor',
-    description: 'Um único fluxo para atualização de dados/características e troca, instalação ou retirada de motor. A seleção inicial define quais dados e documentos entram no preenchimento. Em embarcação/barco, o Anexo 3-C só é gerado nos casos admitidos pelo item 2.12.1 da NORMAM-211/DPC. Exigências de responsável técnico/ART que não fornecem campos para preenchimento automático continuam fora dos uploads da ferramenta.',
+    description: 'Um único fluxo para atualização de dados/características e troca, instalação ou retirada de motor. A seleção inicial define os campos e anexos oficiais a preencher. Em embarcação/barco, o Anexo 3-C só é gerado nos casos admitidos pelo item 2.12.1 da NORMAM-211/DPC. A extração automática usa apenas RG/CNH/CIN, comprovante de residência e TIE/TIEM.',
     creditCost: 1, status: 'AVAILABLE',
     questions: questions({
       tie: true,
       responsibilityTermCase: true,
       alterationTarget: true,
     }),
-    documentRequirements: [
-      ...requirements({ tie: true }),
-      {
-        ...vesselProof,
-        id: 'vessel-origin-document-boat',
-        conditions: [{
-          questionId: 'boatAlterationTarget',
-          oneOf: ['dados_caracteristicas', 'dados_e_motor'],
-        }],
-      },
-      {
-        ...vesselProof,
-        id: 'vessel-origin-document-moto',
-        conditions: [{
-          questionId: 'motoAlterationTarget',
-          oneOf: [
-            'dados_embarcacao',
-            'dados_proprietario',
-            'ambos',
-            'dados_embarcacao_motor',
-            'dados_proprietario_motor',
-            'ambos_motor',
-          ],
-        }],
-      },
-      {
-        ...motorProof,
-        id: 'motor-document-boat',
-        conditions: [{
-          questionId: 'boatAlterationTarget',
-          oneOf: ['motor', 'dados_e_motor'],
-        }],
-      },
-      {
-        ...motorProof,
-        id: 'motor-document-moto',
-        conditions: [{
-          questionId: 'motoAlterationTarget',
-          oneOf: [
-            'motor',
-            'dados_embarcacao_motor',
-            'dados_proprietario_motor',
-            'ambos_motor',
-          ],
-        }],
-      },
-    ],
+    documentRequirements: requirements({ tie: true }),
   },
   {
     id: 'comunicacao-venda-embarcacao',
@@ -479,7 +395,6 @@ export const vesselServices: readonly ServiceDefinition[] = [
       sellerResidenceProof,
       buyerResidenceProof,
       currentTie,
-      vesselProof,
     ],
   },
 ];

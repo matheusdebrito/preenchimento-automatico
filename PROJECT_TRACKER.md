@@ -751,3 +751,24 @@ os mesmos PDFs e mappings já homologados.
 - [ ] QA manual em navegador/mobile após merge ao ambiente de desenvolvimento.
 
 **Critério de merge:** CI verde do commit final do PR #86 e sem alteração de modelos oficiais sem revisão visual.
+
+## Decisão de produto — entradas OpenAI e anexos de saída (31/10/2026)
+
+**Regra de produto:** a OpenAI recebe somente estes documentos de entrada: (1) RG, CNH ou CIN (categoria `identity`); (2) comprovante de residência; (3) CHA; (4) CIR; (5) TIE/TIEM. Todos são opcionais e só são oferecidos como upload quando possuem pelo menos um campo efetivamente mapeado nos formulários selecionados.
+
+**Fora do upload e fora da interface:** GRU/comprovante de pagamento, atestado de saúde, certificados de curso/competência, comprovantes de embarque, documentos migratórios, escolaridade, histórico escolar, CTPS, notas fiscais/documentos de origem, documentos de motor, registro de ocorrência e outros comprovantes de protocolo. A aplicação não mantém nem exibe uma lista desses documentos para cada serviço.
+
+**Anexos de saída:** a fonte de verdade continua sendo `serviceForms` e suas condições. Após responder às perguntas, a interface apresenta os formulários/anexos oficiais que serão preenchidos (nome e referência normativa). Isso não é uma checklist de documentos de protocolo.
+
+- [x] Restrito o contrato `DocumentExtractionProfile.documentType` a identity, residence-proof, CHA, CIR e TIE.
+- [x] `publicService` só expõe fontes permitidas com campos mapeados; fontes sem campos não podem ser enviadas.
+- [x] Removidos do catálogo de entrada documentos de venda, motor e documentos de apoio sem extração.
+- [x] Aquaviários simplificados para identidade, residência e CIR, conforme campos utilizados.
+- [x] Removido `protocolDocuments` da API pública e da interface.
+- [x] A interface mostra os formulários/anexos que serão preenchidos.
+- [x] Prompt e allowlist do extrator reconhecem CIR como subtipo próprio e limitam a número da CIR, categoria e nome do titular.
+- [x] Validação do catálogo rejeita tipo de entrada não permitido ou fonte sem campos autorizados.
+- [x] Testes de regressão adicionados/atualizados para catálogo, extração, integração e interface.
+- [x] CI #741 aprovado no head final da branch; typecheck, lint, testes, build, PostgreSQL, Docker Compose, QA visual de PDFs e inspeção NORMAM-211 passaram. Como o produto está em desenvolvimento sem usuários reais, a próxima validação é o teste manual do próprio responsável pelo produto no ambiente de desenvolvimento.
+
+**Importante:** campos do formulário que não aparecem nos cinco tipos de entrada continuam editáveis manualmente. A aplicação preenche os anexos oficiais selecionados; não tenta verificar a documentação completa necessária ao protocolo na CP/DL/AG.

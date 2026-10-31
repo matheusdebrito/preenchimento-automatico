@@ -43,28 +43,32 @@ describe('jornada real isolada da demonstração', () => {
     expect(moto?.textContent).toContain('em validação');
   });
 
-  it('mostra documentos de protocolo como orientação sem oferecer upload', async () => {
-    const onlyExtractionService = {
+  it('mostra os formulários e anexos de saída sem listar documentos de protocolo', async () => {
+    const serviceWithOutputForms = {
       ...service,
-      protocolDocuments: [
-        { id: 'gru-payment', label: 'GRU e comprovante de pagamento',
-          description: 'Apresentar no protocolo, quando aplicável.' },
-      ],
+      reviewForms: [{
+        formVersionId: 'requerimento-ma-v1',
+        formId: 'requerimento-ma',
+        name: 'Requerimento de serviços de amadores',
+        description: 'NORMAM-211/DPC 2026 - Anexo 5-H.',
+        fields: [{ id: 'person.fullName', label: 'Nome completo', valueKind: 'text' }],
+      }],
     };
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path === '/api/services/ci-only-service' || path.endsWith('/quote')) {
-        return json({ service: onlyExtractionService });
+        return json({ service: serviceWithOutputForms });
       }
       return json({ error: 'not_found' }, 404);
     }));
 
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
-    await user.click(await screen.findByRole('button', { name: 'Conferir documentos necessários' }));
-    expect(await screen.findByText('GRU e comprovante de pagamento')).toBeTruthy();
-    expect(screen.getByText(/Não envie estes documentos à OpenAI/)).toBeTruthy();
-    expect(screen.queryByLabelText('GRU e comprovante de pagamento')).toBeNull();
+    await user.click(await screen.findByRole('button', { name: 'Ver formulários e continuar' }));
+    expect(await screen.findByRole('heading', { name: 'Formulários que serão preenchidos' })).toBeTruthy();
+    expect(screen.getByText('Requerimento de serviços de amadores')).toBeTruthy();
+    expect(screen.getByText(/Anexo 5-H/)).toBeTruthy();
+    expect(screen.queryByText('Documentos para apresentação à Marinha')).toBeNull();
     expect(screen.getByLabelText('Documento de teste')).toBeTruthy();
   });
 
@@ -160,7 +164,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.selectOptions(band, 'ate_6m');
 
     expect(screen.queryByLabelText('Detalhe para BADE')).toBeNull();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
 
     expect(await screen.findByRole('heading', {
       name: 'Documentos para preenchimento automático (opcionais)',
@@ -189,7 +193,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
 
     expect(await screen.findByRole('heading', { name: 'Dados do serviço' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     expect(await screen.findByRole('heading', {
       name: 'Documentos para preenchimento automático (opcionais)',
     })).toBeTruthy();
@@ -197,7 +201,7 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(await screen.findByRole('heading', { name: 'Dados do serviço' })).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.click(screen.getByRole('button', {
       name: 'Continuar sem anexos — preencher manualmente',
     }));
@@ -232,7 +236,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
 
     expect(await screen.findByRole('heading',{name:'Serviço de teste'})).toBeTruthy();
-    await user.click(screen.getByRole('button',{name:'Conferir documentos necessários'}));
+    await user.click(screen.getByRole('button',{name:'Ver formulários e continuar'}));
     expect(await screen.findByRole('heading',{name:'Documentos para preenchimento automático (opcionais)'})).toBeTruthy();
     const uploader = screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement;
     const camera = screen.getByLabelText(/Fotografar documento de teste/i) as HTMLInputElement;
@@ -319,7 +323,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
 
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.click(screen.getByRole('button', {
       name: 'Continuar sem anexos — preencher manualmente',
     }));
@@ -404,7 +408,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
 
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.click(screen.getByRole('button', {
       name: 'Continuar sem anexos — preencher manualmente',
     }));
@@ -478,7 +482,7 @@ describe('jornada real isolada da demonstração', () => {
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.upload(screen.getByLabelText(/^Identidade do comprador$/) as HTMLInputElement,
       new File(['synthetic'], 'rg-ficticio.jpg', { type: 'image/jpeg' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
@@ -515,7 +519,7 @@ describe('jornada real isolada da demonstração', () => {
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     expect(await screen.findByRole('heading',
       { name: 'Documentos para preenchimento automático (opcionais)' })).toBeTruthy();
     await user.click(screen.getByRole('button',
@@ -571,7 +575,7 @@ describe('jornada real isolada da demonstração', () => {
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
@@ -627,7 +631,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
 
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.click(screen.getByRole('button', {
       name: 'Continuar sem anexos — preencher manualmente',
     }));
@@ -685,7 +689,7 @@ describe('jornada real isolada da demonstração', () => {
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
 
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     // One RG is sufficient; no TIE, residence proof, seller ID or photos
     // should be needed to reach the manual-review step.
     await user.upload(screen.getByLabelText(/^Identidade fictícia$/) as HTMLInputElement,
@@ -757,7 +761,7 @@ describe('jornada real isolada da demonstração', () => {
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['fixture'], 'fake.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
@@ -797,7 +801,7 @@ describe('jornada real isolada da demonstração', () => {
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     expect(await screen.findByRole('heading', { name: 'Serviço de teste' })).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: 'Conferir documentos necessários' }));
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
     await user.upload(screen.getByLabelText(/^Documento de teste$/) as HTMLInputElement,
       new File(['example'], 'image.png', { type: 'image/png' }));
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));

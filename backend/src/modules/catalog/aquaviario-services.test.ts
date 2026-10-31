@@ -202,14 +202,16 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     expect(request?.fields.map((field) => field.id)).toContain('process.requestPurpose');
     expect(request?.fields.find((field) => field.id === 'process.requestPurpose')?.label)
       .toContain('categoria atual');
-    expect(service?.protocolDocuments.map((item) => item.id)).not.toContain('diving-course');
-    expect(service?.protocolDocuments.map((item) => item.id)).not.toContain('diving-experience');
+    expect(service?.documentRequirements.map((item) => item.id)).toEqual([
+      'applicant-identity', 'current-cir', 'residence-proof',
+    ]);
 
     const diver = publicService(catalog, 'ascensao-categoria-aquaviario', {
       ascensionAquaviarioGroup: 'mergulhadores',
     });
-    expect(diver?.protocolDocuments.map((item) => item.id)).toContain('diving-course');
-    expect(diver?.protocolDocuments.map((item) => item.id)).toContain('diving-experience');
+    expect(diver?.documentRequirements.map((item) => item.id)).toEqual([
+      'applicant-identity', 'current-cir', 'residence-proof',
+    ]);
 
     const relation = catalog.serviceForms.find((item) =>
       item.serviceId === 'ascensao-categoria-aquaviario' &&
@@ -219,22 +221,29 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     expect(values['process.requestPurpose']).toBe('da categoria MGE para MGS');
   });
 
-  it('não oferece upload de GRU e apresenta apenas fontes de dados extraíveis à IA', () => {
+  it('oferece somente identidade, comprovante de residência e CIR como fontes de entrada', () => {
     for (const id of aquaviarioIds) {
       const service = publicService(catalog, id, {
         ...(id === 'ascensao-categoria-aquaviario' ?
           { ascensionAquaviarioGroup: 'outros_grupos' } : {}),
+        ...(id === 'segunda-via-cir-aquaviario' ? { cirSecondCopyReason: 'dano' } : {}),
+        ...(id === 'emissao-certificado-aquaviario' ?
+          { certificateModel: 'dpc1031', personSex: 'masculino' } : {}),
+        ...(id === 'segunda-via-certificado-aquaviario' ?
+          { certificateModel: 'dpc1031', certificateSecondCopyReason: 'dano', personSex: 'masculino' } : {}),
+        ...(id === 'revalidacao-certificado-aquaviario' ?
+          { certificateModel: 'dpc1031', personSex: 'masculino' } : {}),
       });
-      const uploadIds = service?.documentRequirements.map((doc) => doc.id) ?? [];
-      expect(uploadIds, id).not.toContain('gru-payment');
-      expect(uploadIds, id).not.toContain('medical-certificate');
-      expect(uploadIds, id).not.toContain('cpf-document');
+      for (const doc of service?.documentRequirements ?? []) {
+        expect(['identity', 'residence-proof', 'cir']).toContain(doc.extraction?.documentType);
+        expect(doc.extraction?.allowedFieldIds.length).toBeGreaterThan(0);
+      }
+      expect(service && 'protocolDocuments' in service, id).toBe(false);
     }
+
     const certification = publicService(catalog, 'emissao-certificado-aquaviario', {
       certificateModel: 'dpc1031', personSex: 'masculino',
     });
-    expect(certification?.documentRequirements.map((doc) => doc.id))
-      .toContain('current-cir-certification');
     const cir = certification?.documentRequirements.find((doc) =>
       doc.id === 'current-cir-certification');
     expect(cir?.extraction?.documentType).toBe('cir');
@@ -242,58 +251,20 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     expect(cir?.extraction?.allowedFieldIds).toContain('aquaviario.category');
   });
 
-  it('apresenta os documentos de apoio previstos por cada processo sem torná-los uploads obrigatórios', () => {
-    const expectations: Record<string, readonly string[]> = {
-      'inscricao-inicial-cir-aquaviario': ['cpf-document', 'medical-certificate', 'professional-qualification'],
-      'segunda-via-cir-aquaviario': ['cpf-document', 'medical-certificate', 'gru-payment'],
-      'revalidacao-cir-aquaviario': ['cpf-document', 'medical-certificate', 'gru-payment'],
-      'ascensao-categoria-aquaviario': ['sea-service-proof', 'course-certificates', 'medical-certificate', 'gru-payment'],
-    };
-
-    for (const [serviceId, requiredIds] of Object.entries(expectations)) {
-      const service = publicService(catalog, serviceId);
-      const ids = service?.protocolDocuments.map((item) => item.id) ?? [];
-      for (const id of requiredIds) expect(ids, serviceId + '/' + id).toContain(id);
-      expect(service?.documentRequirements.every((item) => item.required === false), serviceId)
-        .toBe(true);
+  it('não publica listas de documentos protocolares nem uploads fora das fontes permitidas', () => {
+    for (const id of aquaviarioIds) {
+      const service = publicService(catalog, id, {
+        ...(id === 'inscricao-inicial-cir-aquaviario' ?
+          { initialAquaviarioGroup: 'mergulhadores' } : {}),
+        ...(id === 'segunda-via-cir-aquaviario' ? { cirSecondCopyReason: 'dano' } : {}),
+        ...(id === 'ascensao-categoria-aquaviario' ?
+          { ascensionAquaviarioGroup: 'mergulhadores' } : {}),
+      });
+      expect(service && 'protocolDocuments' in service, id).toBe(false);
+      expect(service?.documentRequirements.every((item) =>
+        ['identity', 'residence-proof', 'cir'].includes(item.extraction?.documentType ?? '') &&
+        item.extraction!.allowedFieldIds.length > 0), id).toBe(true);
     }
-  });
-
-  it('filtra documentos de apoio por grupo e modelo de certificado', () => {
-    const diver = publicService(catalog, 'inscricao-inicial-cir-aquaviario', {
-      initialAquaviarioGroup: 'mergulhadores',
-    });
-    expect(diver?.protocolDocuments.map((item) => item.id)).toContain('diving-course');
-
-    const otherGroup = publicService(catalog, 'inscricao-inicial-cir-aquaviario', {
-      initialAquaviarioGroup: 'demais_grupos',
-    });
-    expect(otherGroup?.protocolDocuments.map((item) => item.id)).not.toContain('diving-course');
-
-    const foreignCertificate = publicService(catalog, 'emissao-certificado-aquaviario', {
-      certificateModel: 'dpc1033',
-    });
-    expect(foreignCertificate?.protocolDocuments.map((item) => item.id)).toContain('source-country-certificate');
-    expect(foreignCertificate?.protocolDocuments.map((item) => item.id)).toContain('seaman-record-book');
-    expect(foreignCertificate?.protocolDocuments.map((item) => item.id)).toContain('migration-documents');
-
-    const domesticCertificate = publicService(catalog, 'emissao-certificado-aquaviario', {
-      certificateModel: 'dpc1031',
-    });
-    expect(domesticCertificate?.protocolDocuments.map((item) => item.id)).not.toContain('source-country-certificate');
-    expect(domesticCertificate?.protocolDocuments.map((item) => item.id)).toContain('competency-certificates');
-
-    const dpc1032Revalidation = publicService(catalog, 'revalidacao-certificado-aquaviario', {
-      certificateModel: 'dpc1032',
-    });
-    expect(dpc1032Revalidation?.protocolDocuments.map((item) => item.id))
-      .toContain('dpc1032-revalidation-additional-documents');
-
-    const dpc1034Revalidation = publicService(catalog, 'revalidacao-certificado-aquaviario', {
-      certificateModel: 'dpc1034',
-    });
-    expect(dpc1034Revalidation?.protocolDocuments.map((item) => item.id))
-      .not.toContain('dpc1032-revalidation-additional-documents');
   });
 
   it('mantém todos os uploads como fontes opcionais', () => {

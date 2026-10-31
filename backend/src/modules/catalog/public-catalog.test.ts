@@ -26,9 +26,17 @@ function fixture(): CatalogDefinition {
       id: 's', title: 'Serviço', description: 'Apenas teste', status: 'AVAILABLE',
       creditCost: 1, questions: [{ id: 'extra', label: 'Extra?', options: ['yes', 'no'] }],
       documentRequirements: [{
-        id: 'id', label: 'Identidade', required: true,
+        id: 'id', label: 'Identidade', required: false,
+        extraction: {
+          documentType: 'identity', subjectRole: 'person',
+          allowedFieldIds: ['person.fullName'],
+        },
       }, {
-        id: 'extra-document', label: 'Documento extra', required: true,
+        id: 'extra-document', label: 'Comprovante de residência', required: false,
+        extraction: {
+          documentType: 'residence-proof', subjectRole: 'person',
+          allowedFieldIds: ['person.fullName'],
+        },
         conditions: [{ questionId: 'extra', equals: 'yes' }],
       }],
     }],
@@ -140,7 +148,7 @@ describe('projeção pública do catálogo', () => {
     expect(combined?.documentRequirements.map((item) => item.id))
       .toContain('seller-identity-transfer');
     expect(combined?.documentRequirements.map((item) => item.id))
-      .toContain('vessel-origin-document-transfer');
+      .not.toContain('vessel-origin-document-transfer');
     expect(combined?.formVersionIds)
       .toContain('autorizacao-transferencia-er-2026-v1');
   });
@@ -152,7 +160,7 @@ describe('projeção pública do catálogo', () => {
     expect(enrollment).not.toBeNull();
     expect(enrollment?.formVersionIds).toEqual(['requerimento-cha-amador-2026-v1']);
     expect(enrollment?.documentRequirements.map((item) => item.id))
-      .toEqual(['applicant-identity', 'current-cha', 'residence-proof']);
+      .toEqual(['applicant-identity', 'residence-proof']);
     expect(enrollment?.documentRequirements.every((item) => item.required === false)).toBe(true);
   });
 
@@ -221,7 +229,6 @@ describe('projeção pública do catálogo', () => {
       'seller-residence-proof',
       'buyer-residence-proof',
       'tie',
-      'vessel-origin-document',
     ]);
 
     const seller = requirements.find((item) => item.id === 'seller-applicant-identity');
@@ -340,16 +347,18 @@ describe('projeção pública do catálogo', () => {
     expect(valid?.formVersionIds).toContain('requerimento-motonauta-2026-v1');
   });
 
-  it('separa uploads de análise dos documentos apenas de protocolo', () => {
+  it('publica somente documentos de entrada permitidos e com campos usados no pacote', () => {
     const service = publicService(catalog, 'segunda-via-cir-aquaviario', {
       cirSecondCopyReason: 'extravio',
     });
-    const uploads = service?.documentRequirements.map((item) => item.id) ?? [];
-    const protocol = service?.protocolDocuments.map((item) => item.id) ?? [];
-    expect(uploads).toContain('applicant-identity');
-    expect(uploads).not.toContain('gru-payment');
-    expect(protocol).toContain('gru-payment');
-    expect(protocol).toContain('occurrence-report');
+    const uploads = service?.documentRequirements ?? [];
+    expect(uploads.map((item) => item.id)).toContain('applicant-identity');
+    expect(uploads.map((item) => item.id)).not.toContain('gru-payment');
+    expect(uploads.map((item) => item.id)).not.toContain('occurrence-report');
+    expect(uploads.every((item) => item.extraction &&
+      ['identity', 'residence-proof', 'cha', 'cir', 'tie'].includes(item.extraction.documentType) &&
+      item.extraction.allowedFieldIds.length > 0)).toBe(true);
+    expect(service && 'protocolDocuments' in service).toBe(false);
   });
 
   it('distingue reimpressão de TIE digital da renovação do modelo físico', () => {
@@ -470,7 +479,7 @@ describe('projeção pública do catálogo', () => {
     });
     expect(motorOnly).not.toBeNull();
     expect(motorOnly?.documentRequirements.map((item) => item.id))
-      .toContain('motor-document-boat');
+      .not.toContain('motor-document-boat');
     expect(motorOnly?.documentRequirements.map((item) => item.id))
       .not.toContain('vessel-origin-document-boat');
   });
@@ -666,8 +675,9 @@ describe('projeção pública do catálogo', () => {
 
   it('filtra requisitos condicionais e não revela caminhos privados', () => {
     const data = fixture();
-    expect(publicService(data, 's')?.protocolDocuments).toHaveLength(1);
-    expect(publicService(data, 's', { extra: 'yes' })?.protocolDocuments).toHaveLength(2);
+    expect(publicService(data, 's')?.documentRequirements).toHaveLength(1);
+    expect(publicService(data, 's', { extra: 'yes' })?.documentRequirements).toHaveLength(2);
+    expect('protocolDocuments' in (publicService(data, 's') ?? {})).toBe(false);
     const result = publicService(data, 's');
     expect(result?.formVersionIds).toEqual(['form-v1']);
     expect(result?.reviewFields).toEqual([

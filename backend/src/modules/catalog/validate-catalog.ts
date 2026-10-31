@@ -1,3 +1,4 @@
+import { AI_INPUT_DOCUMENT_TYPES } from './contracts.js';
 import type {
   CatalogDefinition,
   ServiceCondition,
@@ -204,25 +205,30 @@ export function validateCatalog(data: CatalogDefinition): string[] {
     buildIndex(service.documentRequirements, 'documento de ' + service.id, issues);
     for (const requirement of service.documentRequirements) {
       validateConditions(requirement.conditions, questions, 'documento ' + requirement.id, issues);
-      if (requirement.extraction) {
-        if (!SAFE_ID.test(requirement.extraction.documentType) ||
-          !SAFE_ID.test(requirement.extraction.subjectRole)) {
-          issues.push('documento ' + requirement.id + ': perfil de extração inválido');
+      if (!requirement.extraction) {
+        if (service.status === 'AVAILABLE') {
+          issues.push('documento ' + requirement.id + ': serviço disponível sem perfil de entrada da IA');
         }
-        const allowed = requirement.extraction.allowedFieldIds;
-        if (new Set(allowed).size !== allowed.length) {
-          issues.push('documento ' + requirement.id + ': campo permitido duplicado');
-        }
-        for (const fieldId of allowed) {
-          if (!fields.has(fieldId) || fieldId.startsWith('process.')) {
-            issues.push('documento ' + requirement.id +
-              ': campo de extração inválido ' + fieldId);
-          }
-        }
-        if (requirement.extraction.documentType !== 'supporting-document' &&
-          allowed.length === 0) {
+        continue;
+      }
+      if (!AI_INPUT_DOCUMENT_TYPES.includes(requirement.extraction.documentType)) {
+        issues.push('documento ' + requirement.id + ': tipo fora da lista de entradas aceitas pela IA');
+      }
+      if (!SAFE_ID.test(requirement.extraction.documentType) ||
+        !SAFE_ID.test(requirement.extraction.subjectRole)) {
+        issues.push('documento ' + requirement.id + ': perfil de extração inválido');
+      }
+      const allowed = requirement.extraction.allowedFieldIds;
+      if (allowed.length === 0) {
+        issues.push('documento ' + requirement.id + ': fonte de IA sem campos permitidos');
+      }
+      if (new Set(allowed).size !== allowed.length) {
+        issues.push('documento ' + requirement.id + ': campo permitido duplicado');
+      }
+      for (const fieldId of allowed) {
+        if (!fields.has(fieldId) || fieldId.startsWith('process.')) {
           issues.push('documento ' + requirement.id +
-            ': perfil de extração sem campos permitidos');
+            ': campo de extração inválido ' + fieldId);
         }
       }
     }

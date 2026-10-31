@@ -696,13 +696,24 @@ export function LiveFlowPage() {
                       </select>
                     </label>
                   ))}
-                  <Button disabled={busy} onClick={() => void quote()}>Conferir documentos necessários</Button>
+                  <Button disabled={busy} onClick={() => void quote()}>Ver formulários e continuar</Button>
                 </>
               ) : null}
               {step === 'files' ? (
                 <>
                   <Button variant="ghost" icon={<ArrowLeft aria-hidden="true" />}
                     disabled={busy} onClick={backFromFiles}>Voltar</Button>
+                  <section className="live-output-forms" aria-label="Formulários e anexos que serão preenchidos">
+                    <h3>Formulários que serão preenchidos</h3>
+                    <ul>
+                      {reviewForms.map((form) => (
+                        <li key={form.formVersionId}>
+                          <strong>{form.name}</strong>
+                          {form.description ? ' — ' + form.description : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                   <h2>Documentos para preenchimento automático (opcionais)</h2>
                   <p>Você pode anexar um documento, vários ou nenhum. A leitura automática
                     serve apenas para sugerir dados. Se preferir, continue sem anexos e
@@ -774,22 +785,6 @@ export function LiveFlowPage() {
                       );
                     })}
                   </div>
-                  {(service.protocolDocuments?.length ?? 0) > 0 ? (
-                    <section className="live-protocol-documents" aria-label="Documentos para apresentação à Marinha">
-                      <h3>Documentos para apresentação à Marinha</h3>
-                      <p>Lista de orientação para o atendimento na CP/DL/AG. Não envie estes
-                        documentos à OpenAI: eles não alimentam campos dos formulários.
-                        Confira quais são aplicáveis ao seu caso.</p>
-                      <ul>
-                        {service.protocolDocuments?.map((document) => (
-                          <li key={document.id}>
-                            <strong>{document.label}</strong>
-                            {document.description ? ' — ' + document.description : ''}
-                          </li>
-                        ))}
-                      </ul>
-                    </section>
-                  ) : null}
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
                   {confirmAnalysisCharge &&
                   (Object.keys(files).length > 0 || uploadedRequirements.length > 0) ? (

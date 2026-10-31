@@ -4,6 +4,15 @@ export type MappingStatus = 'DRAFT' | 'TESTED' | 'APPROVED';
 export type PdfTemplateKind = 'ACROFORM' | 'STATIC' | 'UNKNOWN';
 export type FieldValueKind = 'text' | 'date' | 'boolean' | 'number';
 
+export const AI_INPUT_DOCUMENT_TYPES = [
+  'identity',
+  'residence-proof',
+  'cha',
+  'cir',
+  'tie',
+] as const;
+export type AiInputDocumentType = typeof AI_INPUT_DOCUMENT_TYPES[number];
+
 export interface FieldDefinition {
   /** Reusable semantic ID; never a physical PDF coordinate. */
   id: string;
@@ -96,7 +105,7 @@ export interface ServiceCondition {
 
 export interface DocumentExtractionProfile {
   /** Reusable document-understanding strategy; never a service ID. */
-  documentType: 'identity' | 'cha' | 'cir' | 'tie' | 'residence-proof' | 'sale-document' | 'supporting-document';
+  documentType: AiInputDocumentType;
   /** Semantic owner of the extracted values. */
   subjectRole: 'person' | 'seller' | 'vessel' | 'representative' | 'declarant' | 'coOwner';
   /**
@@ -112,9 +121,8 @@ export interface DocumentRequirement {
   description?: string;
   required: boolean;
   /**
-   * Optional OCR/understanding profile. Known document types may produce
-   * semantic fields; supporting-document may still run OCR while deliberately
-   * producing no field until a reviewed extractor exists.
+   * Optional extraction profile for one of the five supported input categories.
+   * Documents without a mapped output field are not exposed as uploads.
    */
   extraction?: DocumentExtractionProfile;
   /** All conditions must match; absent means unconditional. */
@@ -128,6 +136,7 @@ export interface ServiceDefinition {
   creditCost: number;
   status: 'DRAFT' | 'AVAILABLE' | 'SUSPENDED';
   questions: readonly ServiceQuestion[];
+  /** Optional AI input sources only; never a checklist of authority/protocol documents. */
   documentRequirements: readonly DocumentRequirement[];
 }
 

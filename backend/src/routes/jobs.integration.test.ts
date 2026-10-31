@@ -47,10 +47,10 @@ function fixture(): CatalogDefinition {
           allowedFieldIds: ['person.fullName'],
         },
       }, {
-        id: 'protocol-only', label: 'GRU fictícia de protocolo', required: false,
+        id: 'unused-tie-source', label: 'TIE sem campo usado pelo formulário sintético', required: false,
         extraction: {
-          documentType: 'supporting-document', subjectRole: 'person',
-          allowedFieldIds: [],
+          documentType: 'tie', subjectRole: 'vessel',
+          allowedFieldIds: ['vessel.registration'],
         },
       }],
     }],
@@ -149,7 +149,7 @@ describePg('PDF pipeline: test-only service with synthetic documents', () => {
 
     const blockedProtocolUpload = await app.inject({
       method: 'POST',
-      url: '/api/jobs/' + jobId + '/documents/protocol-only',
+      url: '/api/jobs/' + jobId + '/documents/unused-tie-source',
       headers: { cookie, 'content-type': 'application/pdf' },
       payload: Buffer.from(data),
     });

@@ -1328,6 +1328,30 @@
 .live-flow .card { max-width: 55rem; }
 .live-flow a.btn { width: fit-content; max-width: 100%; }
 
+.live-output-forms {
+  display: grid;
+  gap: .5rem;
+  padding: .875rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: .875rem;
+  background: var(--color-page);
+}
+.live-output-forms h3 {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: .975rem;
+}
+.live-output-forms ul {
+  display: grid;
+  gap: .35rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-muted-strong);
+  font-size: .875rem;
+  line-height: 1.45;
+}
+.live-output-forms li strong { color: var(--color-navy); }
+
 /* Accessible upload cards, consistent with the original document selection UI. */
 .live-upload-list { display: grid; gap: .875rem; min-width: 0; }
 .live-upload-field {

@@ -8,7 +8,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 
 | Componente | Implementado | Restrições |
 | --- | --- | --- |
-| Catálogo de serviços e condições | API e frontend integrados; fotos de popa/través excluídas dos uploads de preenchimento | Só serviços aprovados ficam disponíveis; não substitui rol documental oficial |
+| Catálogo de serviços e condições | API e frontend integrados; uploads limitados a RG/CNH/CIN, comprovante de residência, CHA, CIR e TIE/TIEM | O catálogo associa cada serviço somente aos formulários/anexos que serão preenchidos |
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
 | Mapeamento PDF reutilizável | 21 versões com mapeamentos `APPROVED`, incluindo os anexos 1-E, 1-K e 1-L da NORMAM-101 | Aprovação técnica interna não equivale à aceitação da Marinha; requerimentos auxiliares são identificados como não oficiais |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Só gera versões `VERIFIED` com mapeamento `APPROVED`; não substitui assinatura, protocolo ou conferência oficial |
@@ -149,14 +149,18 @@ opcional; dados não reconhecidos podem ser digitados manualmente.
 
 ### Preenchimento sem anexos ou com apenas um RG
 
-Os uploads de identidade, TIE, residência, venda e demais documentos são
-**opcionais para a ferramenta de preenchimento**. Após responder às perguntas,
-o usuário pode seguir **sem anexos**, anexar só um RG para obter sugestões
-sugestões da OpenAI ou enviar múltiplos arquivos. O backend aceita extrair
-um conjunto vazio de documentos e abre a revisão com valores em branco. A
-revisão exige apenas os **campos mapeados como obrigatórios nos PDFs
-selecionados** e verifica CPF, datas e tipos; os documentos de origem não
-são requisito de geração.
+Os únicos documentos de entrada aceitos para análise pela OpenAI são:
+**RG, CNH ou CIN; comprovante de residência; CHA; CIR; e TIE/TIEM**.
+Todos são opcionais. A aplicação não solicita GRU, atestados, certificados
+de cursos, notas fiscais, documentos de motor, procurações ou outros anexos
+de protocolo para a análise automática.
+
+Após responder às perguntas do serviço, a aplicação apresenta os **formulários
+e anexos de saída** que serão preenchidos. Essa lista vem das relações do
+catálogo entre serviço e versão do formulário. O usuário pode seguir sem
+documentos de entrada e preencher os campos manualmente. A revisão exige apenas
+os campos mapeados como obrigatórios nos PDFs selecionados e valida CPF, datas
+e tipos; os documentos de entrada não são requisito de geração.
 
 Os testes automatizados continuam usando dados integralmente fictícios. O comportamento
 de fotos reais do usuário deve ser validado separadamente com corpus autorizado e revisão
@@ -239,26 +243,19 @@ A API utiliza limites de arquivos, autorização por sessão, validação de ori
 - O A OpenAI pode interpretar dados incorretamente; cada campo deve ser conferido pelo usuário.
 - Novos serviços e versões oficiais devem passar novamente pela conferência de fonte, mapeamento e QA.
 
-## Serviços de embarcações NORMAM-211 em preparação
+## Serviços de embarcações NORMAM-211
 
-O catálogo técnico agora inclui nove serviços de embarcações de esporte e
-recreio: inscrição inicial, transferências de propriedade/jurisdição,
-renovação do TIE/TIEM (incluindo perda/extravio do modelo antigo), alteração de dados, alteração de motor e
-comunicação de venda. Os modelos oficiais 2-A, 2-B, 2-C, 2-G, 2-H, 2-I, 2-K e
-3-C foram identificados em fontes oficiais de 2026.
+O catálogo publica seis serviços de embarcações: inscrição inicial, transferência
+de propriedade/jurisdição, renovação do TIE/TIEM, segunda via do TIE/TIEM,
+alteração de dados/características/motor e comunicação de venda. As perguntas
+condicionais selecionam os formulários de saída aplicáveis (por exemplo,
+BADE/BSADE/BDMOTO, requerimentos e declarações).
 
-Uma auditoria posterior contra a NORMAM-211/DPC completa corrigiu a identificação
-do Anexo 3-C: ele é o **Termo de Responsabilidade de Construção/Alteração**.
-Sete mapas NORMAM-211 permanecem homologados; o 3-C foi rebaixado para
-`IDENTIFIED/DRAFT` e precisa ser remapeado. O catálogo também corrige a regra de
-porte: BSADE somente até 6 m; acima de 6 m usa BADE. Os serviços de alteração e
-a inscrição de médio porte continuam fail-closed até completar essa homologação.
-
-Documentos de origem com perfil de extração são enviados diretamente à
-OpenAI quando aplicáveis ao serviço selecionado. O backend restringe cada
-documento aos campos autorizados no catálogo; documentos de apoio sem campos
-permitidos não são enviados. O usuário sempre revisa ou preenche manualmente
-antes da geração.
+A composição dos PDFs é controlada pelas relações serviço -> versão de formulário.
+As entradas para a OpenAI permanecem limitadas a RG/CNH/CIN, comprovante de
+residência, CHA, CIR e TIE/TIEM; para embarcações, os documentos de origem e de
+motor não são uploads da ferramenta. O usuário revisa os dados extraídos ou
+preenche manualmente os campos que não constam das fontes permitidas.
 
 Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 [relatório de QA técnico dos mapas](docs/mapping-reports/normam211-2026-technical-qa.md).
@@ -268,13 +265,21 @@ Detalhes: [serviços NORMAM-211](docs/NORMAM211_VESSEL_SERVICES.md) e
 O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a preparação comercial/produção (10–17) e a expansão (18). Apenas o trabalho técnico do MVP foi autorizado para execução contínua; pagamentos reais, infraestrutura externa e lançamento público requerem novas decisões. **Sem assinaturas ou planos empresariais nesta versão.**
 
 
-## Correções da auditoria transversal — 30/10/2026
+## Modelo de documentos de entrada e formulários de saída
 
-Na jornada de preenchimento automático, os uploads são destinados **somente** a documentos
-com campos efetivamente mapeados no pacote PDF. Comprovantes de GRU, laudos e demais
-documentos protocolares sem campos extraíveis aparecem em uma seção de orientação e
-não são enviados à OpenAI. CIR pode sugerir número da CIR e categoria quando o
-formulário os utiliza, sempre sujeitos à revisão.
+A OpenAI recebe somente cinco categorias de documento: **identidade** (RG, CNH
+ou CIN), **comprovante de residência**, **CHA**, **CIR** e **TIE/TIEM**.
+A API só aceita upload quando o documento pode alimentar ao menos um campo
+mapeado nos formulários selecionados. Notas fiscais, comprovantes de motor,
+GRU, atestados, certificados de cursos, registros de ocorrência e outros
+documentos de protocolo não são solicitados nem enviados à IA.
+
+O catálogo não mantém uma lista de documentos que a autoridade pode exigir
+para protocolar cada serviço. Ele mantém somente as associações
+serviço -> formulários/anexos oficiais a preencher. Após responder às perguntas,
+a interface mostra esses formulários de saída (nome e anexo normativo), não uma
+lista de documentos comprobatórios. CIR só sugere número, categoria e nome do
+titular quando esses campos existem no formulário, sempre sujeitos à revisão.
 
 Renovação do TIE/TIEM não omite a pergunta de comprimento em barco sem alteração;
 TIE digital reimprimível não inicia fluxo de segunda via. O serviço de agregação de
@@ -299,7 +304,7 @@ A categoria Aquaviários disponibiliza somente estes sete serviços:
 6. 2ª via de certificado.
 7. Revalidação de certificado.
 
-Transferência de jurisdição, transferência de categoria/grupo e homologação do LRM não fazem parte da oferta atual. O LRM continua podendo aparecer como documento de apoio em processos de ascensão de categoria, quando aplicável.
+Transferência de jurisdição, transferência de categoria/grupo e homologação do LRM não fazem parte da oferta atual.
 
 Os anexos oficiais 1-E, 1-K e 1-L são reutilizados conforme o serviço e as respostas do usuário. O requerimento auxiliar usado em alguns processos da CIR é um modelo próprio do produto, identificado no PDF como **não oficial**. Todos os uploads continuam opcionais; a aplicação não protocola o processo nem substitui a conferência da CP/DL/AG.
 

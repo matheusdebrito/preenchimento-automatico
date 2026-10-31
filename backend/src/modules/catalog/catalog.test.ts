@@ -3,6 +3,7 @@ import { catalog } from './catalog.js';
 import { motoAquaticaServiceForms } from './vessel-services.js';
 import { BADE_ALLOWED_FIELD_NUMBERS } from './normam211-mappings.js';
 import { validateCatalog } from './validate-catalog.js';
+import { AI_INPUT_DOCUMENT_TYPES } from './contracts.js';
 import type { CatalogDefinition } from './contracts.js';
 
 /** Isolated synthetic fixture; NO real form or official approval is implied. */
@@ -34,6 +35,10 @@ function sharedFormFixture(): CatalogDefinition {
         status: 'AVAILABLE', questions: [{ id: 'mode', label: 'Modalidade', options: ['yes', 'no'] }],
         documentRequirements: [{
           id: 'document-b', label: 'Documento de teste', required: true,
+          extraction: {
+            documentType: 'identity', subjectRole: 'person',
+            allowedFieldIds: ['person.fullName'],
+          },
           conditions: [{ questionId: 'mode', equals: 'yes' }],
         }] },
     ],
@@ -143,7 +148,7 @@ describe('catálogo reutilizável de formulários', () => {
 
     const motorDocuments = service?.documentRequirements.filter((requirement) =>
       requirement.id.startsWith('motor-document')) ?? [];
-    expect(motorDocuments).toHaveLength(2);
+    expect(motorDocuments).toHaveLength(0);
     expect(service?.documentRequirements.some((requirement) =>
       requirement.id === 'row-to-motor-technical-declaration' ||
       requirement.id === 'technical-responsibility-document' ||
@@ -312,9 +317,11 @@ describe('catálogo reutilizável de formulários', () => {
       expect(service.documentRequirements.length).toBeGreaterThan(0);
       expect(service.documentRequirements.every((requirement) => requirement.extraction)).toBe(true);
     }
-    const generic = vesselServices.flatMap((service) => service.documentRequirements)
-      .filter((requirement) => requirement.extraction?.documentType === 'supporting-document');
-    expect(generic.length).toBeGreaterThan(0);
+    const documentTypes = vesselServices.flatMap((service) => service.documentRequirements)
+      .map((requirement) => requirement.extraction?.documentType);
+    expect(documentTypes.length).toBeGreaterThan(0);
+    expect(documentTypes.every((documentType) =>
+      documentType !== undefined && AI_INPUT_DOCUMENT_TYPES.includes(documentType))).toBe(true);
     const requirementIds = vesselServices.flatMap((service) =>
       service.documentRequirements.map((requirement) => requirement.id));
     expect(requirementIds).not.toContain('power-of-attorney');
@@ -323,12 +330,25 @@ describe('catálogo reutilizável de formulários', () => {
     expect(requirementIds).not.toContain('vessel-photos');
   });
 
+  it('mantém a lista de entradas da OpenAI exatamente no escopo definido pelo produto', () => {
+    expect(AI_INPUT_DOCUMENT_TYPES).toEqual([
+      'identity',
+      'residence-proof',
+      'cha',
+      'cir',
+      'tie',
+    ]);
+  });
+
   it('mantém origem de campos explícita em todo perfil de extração', () => {
-    const requirements = catalog.services.flatMap((service) => service.documentRequirements)
-      .filter((requirement) => requirement.extraction);
+    const requirements = catalog.services.flatMap((service) => service.documentRequirements);
     expect(requirements.length).toBeGreaterThan(0);
+    expect(requirements.every((requirement) => requirement.extraction)).toBe(true);
     for (const requirement of requirements) {
-      const allowed = requirement.extraction!.allowedFieldIds;
+      const extraction = requirement.extraction!;
+      expect(AI_INPUT_DOCUMENT_TYPES).toContain(extraction.documentType);
+      const allowed = extraction.allowedFieldIds;
+      expect(allowed.length).toBeGreaterThan(0);
       expect(new Set(allowed).size).toBe(allowed.length);
       expect(allowed.every((fieldId) =>
         catalog.fields.some((field) => field.id === fieldId))).toBe(true);
