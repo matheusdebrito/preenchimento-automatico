@@ -22,6 +22,7 @@ export interface PublicService {
   description: string;
   creditCost: number;
   questions: ServiceDefinition['questions'];
+  /** Only supported AI inputs that can populate a field in the selected output forms. */
   documentRequirements: readonly DocumentRequirement[];
   /** Only IDs, never paths or internal approval metadata. */
   formVersionIds: readonly string[];
