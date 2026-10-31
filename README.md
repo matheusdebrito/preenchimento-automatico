@@ -8,7 +8,7 @@ Aplicação mobile-first que auxilia usuários a enviar documentos, revisar info
 
 | Componente | Implementado | Restrições |
 | --- | --- | --- |
-| Catálogo de serviços e condições | API e frontend integrados; fotos de popa/través excluídas dos uploads de preenchimento | Só serviços aprovados ficam disponíveis; não substitui rol documental oficial |
+| Catálogo de serviços e condições | API e frontend integrados; uploads limitados a RG/CNH/CIN, comprovante de residência, CHA, CIR e TIE/TIEM | O catálogo associa cada serviço somente aos formulários/anexos que serão preenchidos |
 | Seis anexos oficiais da NORMAM-212/DPC (2026) | Identidade e SHA-256 verificados | Não são automaticamente homologados para preenchimento |
 | Mapeamento PDF reutilizável | 21 versões com mapeamentos `APPROVED`, incluindo os anexos 1-E, 1-K e 1-L da NORMAM-101 | Aprovação técnica interna não equivale à aceitação da Marinha; requerimentos auxiliares são identificados como não oficiais |
 | Preenchimento pdf-lib | Motor determinístico, verificação de hash e testes | Só gera versões `VERIFIED` com mapeamento `APPROVED`; não substitui assinatura, protocolo ou conferência oficial |
@@ -149,14 +149,18 @@ opcional; dados não reconhecidos podem ser digitados manualmente.
 
 ### Preenchimento sem anexos ou com apenas um RG
 
-Os uploads de identidade, TIE, residência, venda e demais documentos são
-**opcionais para a ferramenta de preenchimento**. Após responder às perguntas,
-o usuário pode seguir **sem anexos**, anexar só um RG para obter sugestões
-sugestões da OpenAI ou enviar múltiplos arquivos. O backend aceita extrair
-um conjunto vazio de documentos e abre a revisão com valores em branco. A
-revisão exige apenas os **campos mapeados como obrigatórios nos PDFs
-selecionados** e verifica CPF, datas e tipos; os documentos de origem não
-são requisito de geração.
+Os únicos documentos de entrada aceitos para análise pela OpenAI são:
+**RG, CNH ou CIN; comprovante de residência; CHA; CIR; e TIE/TIEM**.
+Todos são opcionais. A aplicação não solicita GRU, atestados, certificados
+de cursos, notas fiscais, documentos de motor, procurações ou outros anexos
+de protocolo para a análise automática.
+
+Após responder às perguntas do serviço, a aplicação apresenta os **formulários
+e anexos de saída** que serão preenchidos. Essa lista vem das relações do
+catálogo entre serviço e versão do formulário. O usuário pode seguir sem
+documentos de entrada e preencher os campos manualmente. A revisão exige apenas
+os campos mapeados como obrigatórios nos PDFs selecionados e valida CPF, datas
+e tipos; os documentos de entrada não são requisito de geração.
 
 Os testes automatizados continuam usando dados integralmente fictícios. O comportamento
 de fotos reais do usuário deve ser validado separadamente com corpus autorizado e revisão
@@ -270,11 +274,21 @@ O [`PROJECT_TRACKER.md`](PROJECT_TRACKER.md) documenta o MVP (00–09), a prepar
 
 ## Correções da auditoria transversal — 30/10/2026
 
-Na jornada de preenchimento automático, os uploads são destinados **somente** a documentos
-com campos efetivamente mapeados no pacote PDF. Comprovantes de GRU, laudos e demais
-documentos protocolares sem campos extraíveis aparecem em uma seção de orientação e
-não são enviados à OpenAI. CIR pode sugerir número da CIR e categoria quando o
-formulário os utiliza, sempre sujeitos à revisão.
+## Modelo de documentos de entrada e formulários de saída
+
+A OpenAI recebe somente cinco categorias de documento: **identidade** (RG, CNH
+ou CIN), **comprovante de residência**, **CHA**, **CIR** e **TIE/TIEM**.
+A API só aceita upload quando o documento pode alimentar ao menos um campo
+mapeado nos formulários selecionados. Notas fiscais, comprovantes de motor,
+GRU, atestados, certificados de cursos, registros de ocorrência e outros
+documentos de protocolo não são solicitados nem enviados à IA.
+
+O catálogo não mantém uma lista de documentos que a autoridade pode exigir
+para protocolar cada serviço. Ele mantém somente as associações
+serviço -> formulários/anexos oficiais a preencher. Após responder às perguntas,
+a interface mostra esses formulários de saída (nome e anexo normativo), não uma
+lista de documentos comprobatórios. CIR só sugere número, categoria e nome do
+titular quando esses campos existem no formulário, sempre sujeitos à revisão.
 
 Renovação do TIE/TIEM não omite a pergunta de comprimento em barco sem alteração;
 TIE digital reimprimível não inicia fluxo de segunda via. O serviço de agregação de
@@ -299,7 +313,7 @@ A categoria Aquaviários disponibiliza somente estes sete serviços:
 6. 2ª via de certificado.
 7. Revalidação de certificado.
 
-Transferência de jurisdição, transferência de categoria/grupo e homologação do LRM não fazem parte da oferta atual. O LRM continua podendo aparecer como documento de apoio em processos de ascensão de categoria, quando aplicável.
+Transferência de jurisdição, transferência de categoria/grupo e homologação do LRM não fazem parte da oferta atual.
 
 Os anexos oficiais 1-E, 1-K e 1-L são reutilizados conforme o serviço e as respostas do usuário. O requerimento auxiliar usado em alguns processos da CIR é um modelo próprio do produto, identificado no PDF como **não oficial**. Todos os uploads continuam opcionais; a aplicação não protocola o processo nem substitui a conferência da CP/DL/AG.
 
