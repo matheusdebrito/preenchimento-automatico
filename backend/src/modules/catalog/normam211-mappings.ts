@@ -71,11 +71,16 @@ const badePlacements: readonly CoordinatePlacement[] = [
   top('vessel.motorSerial', 326, 536, 80, 5.5),
 
   // Página 2 - proprietário: campos 39 a 51. Campo 52 (telefax) não é preenchido.
-  // 39 Nome. Limite revisado para terminar antes da célula 40 (CPF/CNPJ).
+  // 39 Nome: a célula acaba em x=201,1 e y=255,6 (coords a partir do topo).
+  // A primeira linha fica após o rótulo "Nome"; as duas seguintes são internas
+  // à célula. Nunca atravessar para o campo 40 nem para o endereço (44).
   {
-    ...top('person.fullName', 110, 247, 108, 6.2, 1, true),
+    ...top('person.fullName', 138, 224, 60, 6.2, 1, true),
     minFontSize: 5.5,
-    continuationLines: [{ x: 110, y: PAGE_HEIGHT - 259, maxWidth: 108 }],
+    continuationLines: [
+      { x: 110, y: PAGE_HEIGHT - 239, maxWidth: 88 },
+      { x: 110, y: PAGE_HEIGHT - 251, maxWidth: 88 },
+    ],
   },
   // 40 CPF/CNPJ.
   top('person.cpf', 225, 247, 56, 5.5, 1, true),
@@ -105,11 +110,12 @@ const badePlacements: readonly CoordinatePlacement[] = [
   top('person.phone', 320, 332, 82, 5.5, 1),
 
   // Página 2 - coproprietário: campos 53 a 65. Campo 66 (telefax) não é preenchido.
-  // 53 Nome.
+  // 53 Nome: célula até x=192,8 e y=394,8. A primeira linha
+  // ocupa o espaço à direita do rótulo; a segunda cabe acima da borda inferior.
   {
-    ...top('coOwner.fullName', 110, 389, 78, 6.0, 1),
+    ...top('coOwner.fullName', 138, 378, 50, 6.0, 1),
     minFontSize: 5.5,
-    continuationLines: [{ x: 110, y: PAGE_HEIGHT - 400, maxWidth: 78 }],
+    continuationLines: [{ x: 110, y: PAGE_HEIGHT - 389, maxWidth: 78 }],
   },
   // 54 CPF/CNPJ.
   top('coOwner.cpf', 217, 389, 62, 5.5, 1),
