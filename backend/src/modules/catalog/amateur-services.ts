@@ -135,7 +135,7 @@ export const amateurServices: readonly ServiceDefinition[] = [
     status: 'AVAILABLE',
     questions: [amateurCategoryQuestion],
     documentRequirements: commonDocuments.filter((item) =>
-      ['applicant-identity', 'current-cha', 'residence-proof'].includes(item.id)),
+      ['applicant-identity', 'residence-proof'].includes(item.id)),
   },
   {
     id: 'renovacao-cha-amador',
