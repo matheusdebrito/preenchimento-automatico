@@ -54,6 +54,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         ? 'O processamento está ocupado no momento. Seus documentos e dados foram mantidos; tente novamente em alguns segundos.'
       : code === 'capacity_exceeded'
         ? 'Há muitos processos abertos neste servidor. Encerre um processo anterior ou tente novamente mais tarde.'
+      : code === 'temporary_storage_full'
+        ? 'O espaço temporário para documentos está ocupado. Seus dados foram mantidos; tente novamente mais tarde.'
       : code === 'invalid_state'
         ? 'Esta etapa não pode ser executada no estado atual do processo.'
       : code === 'openai_not_configured'
