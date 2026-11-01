@@ -74,6 +74,7 @@ assert.equal(listing.body.services.length,18);
 const matrix=[];
 for(const service of listing.body.services){
   const combinations=enumerate(service), quoteCases=[];
+  let noOutputCases=0;
   assert(combinations.length>0&&combinations.length<20000,'Cardinality unusual: '+service.id);
   for(let i=0;i<combinations.length;i+=12){
     const batch=await Promise.all(combinations.slice(i,i+12).map(async answers=>{
