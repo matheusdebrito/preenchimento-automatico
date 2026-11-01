@@ -1,10 +1,13 @@
 name: Estresse multiusuario (isolado)
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
 permissions:
   contents: read
 jobs:
   stress-multiuser:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'perf/split-job-admission-and-heavy-work-20261031'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
