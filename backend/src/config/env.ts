@@ -24,9 +24,9 @@ export interface AppEnv {
   API_PORT: number;
   CORS_ORIGINS: readonly string[];
   LOG_LEVEL: LogLevel;
-  JOB_MAX_OPEN: number;
-  JOB_MAX_HEAVY: number;
-  JOB_MAX_UPLOAD_MB: number;
+  JOB_MAX_OPEN?: number;
+  JOB_MAX_HEAVY?: number;
+  JOB_MAX_UPLOAD_MB?: number;
   DATABASE_URL?: string;
   DEV_GRANT_SECRET?: string;
 }
