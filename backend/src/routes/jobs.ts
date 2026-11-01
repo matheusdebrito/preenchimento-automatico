@@ -15,7 +15,7 @@ import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
-import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
+import type { ExtractionDiagnostic, JobStoreLimits } from '../modules/jobs/job-store.js';
 import { recordOpenAiUsage } from '../modules/jobs/openai-usage.js';
 import {
   extractDocumentsWithOneContingency,
@@ -43,6 +43,7 @@ export function registerJobRoutes(
   pool?: Database,
   definitions: CatalogDefinition = catalog,
   testRoot?: string,
+  limits?: Partial<JobStoreLimits>,
 ): void {
   const store = new JobStore(testRoot ?? process.env.TEMP_DOCUMENT_ROOT, async (jobId) => {
     if (!pool) return;
@@ -52,7 +53,7 @@ export function registerJobRoutes(
       // The persistent expiry/restart reconciler retries when the DB returns.
       app.log.error({ err: error }, 'expired_job_refund_pending');
     }
-  });
+  }, limits);
   app.addHook('onClose', async () => {
     await store.close();
     if (testRoot) await rm(testRoot, { recursive: true, force: true });
