@@ -26,6 +26,8 @@ COPY --chown=node:node migrations ./migrations
 # Fail the image build if compiled catalog metadata and bundled official PDFs diverge.
 RUN node dist/scripts/verify-runtime-templates.js
 
+# Dedicated private directory, copied with node ownership into the named Docker volume.
+RUN mkdir -p /app/private-jobs && chown node:node /app/private-jobs
 USER node
 EXPOSE 3000
 
