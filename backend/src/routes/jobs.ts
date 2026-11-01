@@ -480,7 +480,7 @@ export function registerJobRoutes(
     reply.raw.once('close', () => {
       if (!finished) release();
     });
-    stream.once('error', () => release());
+    stream.once('error', () => { if (!finished) release(); });
     const version = definitions.versions.find((item) => item.id === req.params.versionId);
     const form = version ? definitions.forms.find((item) => item.id === version.formId) : undefined;
     const filenameBase = (form?.name ?? 'Formulario')
