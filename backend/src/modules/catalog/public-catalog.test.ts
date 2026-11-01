@@ -11,8 +11,14 @@ function publicService(
   id: string,
   answers: Readonly<Record<string, string>> = {},
 ) {
+  // Preserve each pre-change packet expectation: declarations were automatic
+  // for aquaviarios and vessel services other than communication of sale.
+  // Amateur services and communication of sale previously had no declaration.
+  const oldPacketIncludedResidence =
+    id.endsWith('-aquaviario') ||
+    (id.includes('embarcacao') && id !== 'comunicacao-venda-embarcacao');
   return quoteService(definitions, id, definitions === catalog
-    ? { includeResidenceDeclaration: 'sim', ...answers }
+    ? { includeResidenceDeclaration: oldPacketIncludedResidence ? 'sim' : 'nao', ...answers }
     : answers);
 }
 
