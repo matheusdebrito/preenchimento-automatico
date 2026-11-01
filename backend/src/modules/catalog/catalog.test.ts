@@ -93,7 +93,7 @@ describe('catálogo reutilizável de formulários', () => {
       const vessel = service.id.includes('embarcacao');
       const modes = vessel ? ['embarcacao', 'moto_aquatica'] : [''];
       for (const mode of modes) {
-        const questions = mode ? { vesselType: mode } : {};
+        const questions: Record<string, string> = mode ? { vesselType: mode } : {};
         const no = publicService(catalog, service.id,
           { ...questions, includeResidenceDeclaration: 'nao' });
         const yes = publicService(catalog, service.id,
