@@ -82,6 +82,11 @@ for(const service of listing.body.services){
       return {answers,response};
     }));
     for(const {answers,response} of batch){
+      // Some selections legitimately have no PDFs (e.g. initial CIR with no residence declaration).
+      if(response.status===422 && response.body?.error==='no_forms_selected'){
+        noOutputCases++;
+        continue;
+      }
       if(response.status!==200 || !response.body.service?.formVersionIds?.length){
         errors.push({stage:'quote',service:service.id,answers,status:response.status});continue;
       }
