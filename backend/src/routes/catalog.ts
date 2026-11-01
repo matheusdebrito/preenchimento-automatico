@@ -26,13 +26,16 @@ export function registerCatalogRoutes(app: FastifyInstance, definitions: Catalog
   app.post<{ Params: { id: string } }>('/api/services/:id/quote', async (request, reply) => {
     const parsed = z.object({ answers: z.record(z.string().max(100), z.string().max(100)) }).safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
-    const service = publicService(definitions, request.params.id, parsed.data.answers);
+    // Older clients may not send the newly optional question.
+    // Omission means "no declaration"; explicit invalid answers remain rejected.
+    const answers = { includeResidenceDeclaration: 'nao', ...parsed.data.answers };
+    const service = publicService(definitions, request.params.id, answers);
     const relevantQuestions = service?.questions.filter((question) =>
       (question.conditions ?? []).every((condition) =>
         condition.equals !== undefined
-          ? parsed.data.answers[condition.questionId] === condition.equals
-          : condition.oneOf?.includes(parsed.data.answers[condition.questionId] ?? '') === true)) ?? [];
-    if (!service || relevantQuestions.some((question) => !parsed.data.answers[question.id])) {
+          ? answers[condition.questionId] === condition.equals
+          : condition.oneOf?.includes(answers[condition.questionId] ?? '') === true)) ?? [];
+    if (!service || relevantQuestions.some((question) => !answers[question.id])) {
       return reply.status(404).send({ error: 'not_available' });
     }
     if (service.formVersionIds.length === 0) {
