@@ -122,6 +122,22 @@ describe('catálogo reutilizável de formulários', () => {
     }
   });
 
+  it('não oculta o endereço do requerimento de certificado quando a declaração é omitida', () => {
+    const service = 'emissao-certificado-aquaviario';
+    const common = { certificateModel: 'dpc1031', personSex: 'masculino' };
+    const without = publicService(catalog, service,
+      { ...common, includeResidenceDeclaration: 'nao' });
+    const withDeclaration = publicService(catalog, service,
+      { ...common, includeResidenceDeclaration: 'sim' });
+    const certificate = 'requerimento-certificacao-aquaviario-2026-v1';
+    expect(without?.reviewForms.find((form) =>
+      form.formVersionId === certificate)?.fields.map((field) => field.id))
+      .toContain('person.fullAddress');
+    expect(withDeclaration?.reviewForms.find((form) =>
+      form.formVersionId === certificate)?.fields.map((field) => field.id))
+      .not.toContain('person.fullAddress');
+  });
+
   it('publica os seis serviços de embarcação com as condições normativas validadas', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
