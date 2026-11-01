@@ -79,6 +79,49 @@ describe('catálogo reutilizável de formulários', () => {
     expect(validateCatalog(catalog)).toEqual([]);
   });
 
+  it('permite incluir ou omitir a declaração de residência nos 18 serviços sem duplicação', () => {
+    expect(catalog.services).toHaveLength(18);
+    const residenceVersions = new Set([
+      'declaracao-residencia-er-2026-v1',
+      'declaracao-residencia-ma-v1',
+      'declaracao-residencia-aquaviario-2026-v1',
+    ]);
+    for (const service of catalog.services) {
+      expect(service.questions[0]?.id, service.id).toBe('includeResidenceDeclaration');
+      expect(service.questions[0]?.options).toEqual(['sim', 'nao']);
+
+      const vessel = service.id.includes('embarcacao');
+      const modes = vessel ? ['embarcacao', 'moto_aquatica'] : [''];
+      for (const mode of modes) {
+        const questions = mode ? { vesselType: mode } : {};
+        const no = publicService(catalog, service.id,
+          { ...questions, includeResidenceDeclaration: 'nao' });
+        const yes = publicService(catalog, service.id,
+          { ...questions, includeResidenceDeclaration: 'sim' });
+        if (mode && !yes) {
+          // The catalog explicitly marks some vessel variants unavailable.
+          expect(service.questions.find((q) => q.id === 'vesselType')
+            ?.unavailableOptions).toContain(mode);
+          continue;
+        }
+        expect(yes, service.id + ':' + mode).not.toBeNull();
+        expect(no, service.id + ':' + mode).not.toBeNull();
+        const withResidence = yes!.formVersionIds.filter((id) => residenceVersions.has(id));
+        expect(withResidence, service.id + ':' + mode).toHaveLength(1);
+        expect(no!.formVersionIds.filter((id) => residenceVersions.has(id))).toEqual([]);
+        expect(yes!.formVersionIds.filter((id) => !residenceVersions.has(id)))
+          .toEqual(no!.formVersionIds);
+        expect(yes!.formVersionIds.length)
+          .toBe(new Set(yes!.formVersionIds).size);
+        const expected = service.id.includes('aquaviario') ?
+          'declaracao-residencia-aquaviario-2026-v1'
+          : service.id.includes('embarcacao') && mode === 'moto_aquatica' ?
+            'declaracao-residencia-ma-v1' : 'declaracao-residencia-er-2026-v1';
+        expect(withResidence).toEqual([expected]);
+      }
+    }
+  });
+
   it('publica os seis serviços de embarcação com as condições normativas validadas', () => {
     const ids = new Set(catalog.services.map((service) => service.id));
     for (const id of [
