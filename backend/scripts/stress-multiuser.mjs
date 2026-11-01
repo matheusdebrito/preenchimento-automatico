@@ -60,7 +60,7 @@ async function request(path,{method='GET',user=null,body,timeout=15000,asBytes=f
   } catch(e){err=e.name+': '+e.message;}
   return {status:code,body:parsed,bytes,ms:round(performance.now()-start),error:err};
 }
-const quoteBody={answers:{}};
+const quoteBody={answers:{includeResidenceDeclaration:'sim'}};
 const counts=[1,10,25,50,100];
 async function concurrent(N, countPerWorker, task) {
   const results=[];
