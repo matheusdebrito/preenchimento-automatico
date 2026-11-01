@@ -31,7 +31,7 @@ export function registerCatalogRoutes(app: FastifyInstance, definitions: Catalog
     const supportsResidenceChoice = definitions.services.some((definition) =>
       definition.id === request.params.id &&
       definition.questions.some((question) => question.id === 'includeResidenceDeclaration'));
-    const answers = {
+    const answers: Record<string, string> = {
       ...(supportsResidenceChoice ? { includeResidenceDeclaration: 'nao' } : {}),
       ...parsed.data.answers,
     };
