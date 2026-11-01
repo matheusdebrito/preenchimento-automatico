@@ -106,7 +106,8 @@ const stats={services:matrix.length,
   combinations:matrix.reduce((x,s)=>x+s.totalCombinations,0),
   validQuotes:matrix.reduce((x,s)=>x+s.quoteValid,0),
   browserCases:matrix.reduce((x,s)=>x+s.selected.length,0),
-  quoteErrors:errors.length};
+  quoteErrors:errors.length,
+  noOutputCases:matrix.reduce((total,s)=>total+s.noOutputCases,0)};
 const md=['# Matriz de testes E2E','',
  'Dados fictícios plausíveis, sem uso da OpenAI, cadastro real ou documentos de terceiros.','','## Resumo',
  '| Serviço | Combinações permitidas | Quotes válidos | Casos Chrome |',
