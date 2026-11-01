@@ -40,21 +40,46 @@ export interface DocumentJob {
 const TTL = 20 * 60_000;
 const MAX_LIFETIME = 60 * 60_000;
 const DOCUMENT_LIMIT = 12;
-const MAX_ROOT_FILES = 3;
 const MAX_USER_JOBS = 2;
 const MAX_JOB_BYTES = 30 * 1024 * 1024;
+
+// Limits apply to a single Node.js instance. They do not form a distributed queue.
+export interface JobStoreLimits {
+  maxOpenJobs: number;
+  maxHeavyOperations: number;
+  maxTotalUploadBytes: number;
+}
+const DEFAULT_LIMITS: JobStoreLimits = {
+  maxOpenJobs: 100,
+  maxHeavyOperations: 2,
+  maxTotalUploadBytes: 1024 * 1024 * 1024,
+};
+export type HeavyOperationAdmission = 'acquired' | 'job_busy' | 'at_capacity';
 
 export class JobStore {
   private readonly jobs = new Map<string, DocumentJob>();
   private readonly activeUploads = new Set<string>();
   private readonly activeJobs = new Set<string>();
+  private readonly heavyOperations = new Set<string>();
   private readonly pendingCreates = new Map<string, string>();
   private readonly timer: NodeJS.Timeout;
+  private readonly limits: JobStoreLimits;
+  private reservedUploadBytes = 0;
+  private lastCleanup = 0;
+  private cleanupForCreatePromise: Promise<void> | undefined;
 
   constructor(
     private readonly root = resolve(tmpdir(), 'preenchimento-automatico-jobs'),
     private readonly onExpired?: (jobId: string) => Promise<void>,
+    limits: Partial<JobStoreLimits> = {},
   ) {
+    this.limits = { ...DEFAULT_LIMITS, ...limits };
+    if (!Number.isSafeInteger(this.limits.maxOpenJobs) || this.limits.maxOpenJobs < 1 ||
+      !Number.isSafeInteger(this.limits.maxHeavyOperations) || this.limits.maxHeavyOperations < 1 ||
+      this.limits.maxHeavyOperations > this.limits.maxOpenJobs ||
+      !Number.isSafeInteger(this.limits.maxTotalUploadBytes) || this.limits.maxTotalUploadBytes < MAX_JOB_BYTES) {
+      throw new Error('Limites de processos inválidos.');
+    }
     const normalized = resolve(root);
     const prohibited = new Set([
       parse(normalized).root, resolve(tmpdir()), resolve(process.cwd()), resolve(process.cwd(), '..'),
@@ -66,11 +91,21 @@ export class JobStore {
     this.timer.unref();
   }
 
+  private async cleanupForCreate(): Promise<void> {
+    if (this.lastCleanup !== 0 && Date.now() - this.lastCleanup < 60_000) return;
+    if (!this.cleanupForCreatePromise) {
+      this.cleanupForCreatePromise = this.cleanup().then(() => {
+        this.lastCleanup = Date.now();
+      }).finally(() => { this.cleanupForCreatePromise = undefined; });
+    }
+    await this.cleanupForCreatePromise;
+  }
+
   async create(userId: string, serviceId: string, answers: Readonly<Record<string, string>> = {}): Promise<DocumentJob> {
-    await this.cleanup();
+    await this.cleanupForCreate();
     const activeForUser = [...this.jobs.values()].filter((job) => job.userId === userId).length;
     const pendingForUser = [...this.pendingCreates.values()].filter((owner) => owner === userId).length;
-    if (this.jobs.size + this.pendingCreates.size >= MAX_ROOT_FILES ||
+    if (this.jobs.size + this.pendingCreates.size >= this.limits.maxOpenJobs ||
       activeForUser + pendingForUser >= MAX_USER_JOBS) {
       throw new Error('Capacidade temporária de processamento atingida.');
     }
@@ -119,7 +154,19 @@ export class JobStore {
     return true;
   }
 
+  /** Heavy work is admitted only when a slot is free, before charging any AI credits.
+   * This is a bounded single-instance guard, not a durable processing queue. */
+  beginHeavyOperation(job: DocumentJob): HeavyOperationAdmission {
+    if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now() ||
+      this.activeJobs.has(job.id) || this.activeUploads.has(job.id)) return 'job_busy';
+    if (this.heavyOperations.size >= this.limits.maxHeavyOperations) return 'at_capacity';
+    this.activeJobs.add(job.id);
+    this.heavyOperations.add(job.id);
+    return 'acquired';
+  }
+
   endOperation(job: DocumentJob): void {
+    this.heavyOperations.delete(job.id);
     if (this.activeJobs.delete(job.id) && this.jobs.get(job.id) === job) {
       // The user can review/download the result after a potentially long OCR operation.
       this.refreshDeadline(job);
@@ -146,6 +193,14 @@ export class JobStore {
       if (job.files.reduce((sum, doc) => sum + doc.size, 0) + bytes.length > MAX_JOB_BYTES) {
         throw new Error('Limite total de uploads de 30 MB excedido.');
       }
+      const storedBytes = [...this.jobs.values()].reduce((sum, item) =>
+        sum + item.files.reduce((total, doc) => total + doc.size, 0), 0);
+      if (storedBytes + this.reservedUploadBytes + bytes.length > this.limits.maxTotalUploadBytes) {
+        throw new Error('Capacidade global de armazenamento temporário atingida.');
+      }
+      // Reserve before awaiting disk I/O, so concurrent jobs cannot bypass this limit.
+      this.reservedUploadBytes += bytes.length;
+      try {
       const kind = classifyDocument(bytes, contentType);
       const id = randomUUID();
       const path = join(this.root, job.id, id + '.' + kind);
@@ -161,6 +216,9 @@ export class JobStore {
       job.stage = 'UPLOADED';
       this.refreshDeadline(job);
       return doc;
+      } finally {
+        this.reservedUploadBytes -= bytes.length;
+      }
     } finally {
       this.activeUploads.delete(job.id);
     }
@@ -224,5 +282,7 @@ export class JobStore {
     clearInterval(this.timer);
     for (const id of this.jobs.keys()) await rm(join(this.root, id), { recursive: true, force: true });
     this.jobs.clear();
+    this.activeJobs.clear();
+    this.heavyOperations.clear();
   }
 }
