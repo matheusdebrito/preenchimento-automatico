@@ -182,7 +182,14 @@ export function registerJobRoutes(
     const service = publicService(definitions, job.serviceId, job.answers);
     if (!service) return reply.status(409).send({ error: 'service_unavailable' });
 
-    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
+    const admission = store.beginHeavyOperation(job);
+    if (admission === 'job_busy') return reply.status(409).send({ error: 'job_busy' });
+    if (admission === 'at_capacity') {
+      return reply.header('Retry-After', '5').status(503).send({
+        error: 'processing_capacity_exceeded',
+        message: 'O processamento está ocupado. Seus dados foram preservados; tente novamente.',
+      });
+    }
     job.stage = 'PROCESSING';
 
     const diagnostics: ExtractionDiagnostic[] = [];
@@ -388,7 +395,14 @@ export function registerJobRoutes(
     if (service.creditCost !== 1) {
       return reply.status(422).send({ error: 'unsupported_credit_cost' });
     }
-    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
+    const admission = store.beginHeavyOperation(job);
+    if (admission === 'job_busy') return reply.status(409).send({ error: 'job_busy' });
+    if (admission === 'at_capacity') {
+      return reply.header('Retry-After', '5').status(503).send({
+        error: 'processing_capacity_exceeded',
+        message: 'O processamento está ocupado. Seus dados foram preservados; tente novamente.',
+      });
+    }
     job.stage = 'GENERATING';
     const generated = new Map<string, string>();
     let currentFormVersionId: string | undefined;
