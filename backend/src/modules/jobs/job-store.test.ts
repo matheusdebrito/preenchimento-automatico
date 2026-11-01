@@ -79,6 +79,24 @@ describe('JobStore', () => {
     expect(outcomes.filter((outcome) => outcome.status === 'rejected')).toHaveLength(1);
   });
 
+  it('permite downloads concorrentes e impede exclusão até o último stream terminar', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-download-refs-'));
+    directories.push(root);
+    const store = new JobStore(root);
+    stores.push(store);
+    const job = await store.create('alice', 's');
+    job.stage = 'GENERATED';
+    expect(store.beginDownload(job)).toBe(true);
+    expect(store.beginDownload(job)).toBe(true);
+    expect(store.beginHeavyOperation(job)).toBe('job_busy');
+    await expect(store.remove(job)).rejects.toThrow('ocupado');
+    store.endDownload(job);
+    await expect(store.remove(job)).rejects.toThrow('ocupado');
+    store.endDownload(job);
+    store.endDownload(job);
+    await expect(store.remove(job)).resolves.toBeUndefined();
+  });
+
   it('não permite uploads simultâneos ultrapassarem o controle do mesmo job', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pa-jobs-race-'));
     directories.push(root);
