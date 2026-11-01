@@ -61,6 +61,7 @@ export class JobStore {
   private readonly activeUploads = new Set<string>();
   private readonly activeJobs = new Set<string>();
   private readonly heavyOperations = new Set<string>();
+  private readonly activeDownloads = new Map<string, number>();
   private readonly pendingCreates = new Map<string, string>();
   private readonly timer: NodeJS.Timeout;
   private readonly limits: JobStoreLimits;
@@ -149,7 +150,8 @@ export class JobStore {
   /** Prevent expiration/cancellation while a request reads or generates private files. */
   beginOperation(job: DocumentJob): boolean {
     if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now() ||
-      this.activeJobs.has(job.id) || this.activeUploads.has(job.id)) return false;
+      this.activeJobs.has(job.id) || this.activeUploads.has(job.id) ||
+      this.activeDownloads.has(job.id)) return false;
     this.activeJobs.add(job.id);
     return true;
   }
@@ -158,7 +160,8 @@ export class JobStore {
    * This is a bounded single-instance guard, not a durable processing queue. */
   beginHeavyOperation(job: DocumentJob): HeavyOperationAdmission {
     if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now() ||
-      this.activeJobs.has(job.id) || this.activeUploads.has(job.id)) return 'job_busy';
+      this.activeJobs.has(job.id) || this.activeUploads.has(job.id) ||
+      this.activeDownloads.has(job.id)) return 'job_busy';
     if (this.heavyOperations.size >= this.limits.maxHeavyOperations) return 'at_capacity';
     this.activeJobs.add(job.id);
     this.heavyOperations.add(job.id);
@@ -173,12 +176,30 @@ export class JobStore {
     }
   }
 
+  /** Permit independent downloads from the same generated package while ensuring
+   * cancellation/expiry waits for every stream and its delivery receipt. */
+  beginDownload(job: DocumentJob): boolean {
+    if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now() ||
+      job.stage !== 'GENERATED' || this.activeJobs.has(job.id) ||
+      this.activeUploads.has(job.id)) return false;
+    this.activeDownloads.set(job.id, (this.activeDownloads.get(job.id) ?? 0) + 1);
+    return true;
+  }
+
+  endDownload(job: DocumentJob): void {
+    const active = this.activeDownloads.get(job.id) ?? 0;
+    if (active <= 1) this.activeDownloads.delete(job.id);
+    else this.activeDownloads.set(job.id, active - 1);
+    if (active > 0 && this.jobs.get(job.id) === job) this.refreshDeadline(job);
+  }
+
   async upload(job: DocumentJob, requirementId: string, bytes: Buffer, contentType: string): Promise<StoredDocument> {
     if (this.jobs.get(job.id) !== job || job.expiresAt <= Date.now()) {
       throw new Error('Processo expirado ou removido.');
     }
     // Serialise mutations per job: parallel requests must not bypass the byte/file quotas.
-    if (this.activeUploads.has(job.id) || this.activeJobs.has(job.id)) {
+    if (this.activeUploads.has(job.id) || this.activeJobs.has(job.id) ||
+      this.activeDownloads.has(job.id)) {
       throw new Error('Processo ocupado.');
     }
     this.activeUploads.add(job.id);
@@ -238,7 +259,8 @@ export class JobStore {
     await chmod(this.root, 0o700);
     const now = Date.now();
     for (const [id, job] of this.jobs.entries()) {
-      if (job.expiresAt > now || this.activeJobs.has(id) || this.activeUploads.has(id)) continue;
+      if (job.expiresAt > now || this.activeJobs.has(id) ||
+        this.activeUploads.has(id) || this.activeDownloads.has(id)) continue;
       this.jobs.delete(id);
       await rm(join(this.root, id), { recursive: true, force: true });
       // Refund only after private files have been removed. The callback handles
@@ -267,6 +289,7 @@ export class JobStore {
       throw new Error('Processo ocupado.');
     }
     const active = this.activeJobs.has(job.id);
+    if (this.activeDownloads.has(job.id)) throw new Error('Processo ocupado.');
     // OCR is read-only with respect to billing and generated outputs. It is safe to
     // detach the job and delete its private directory while the remote OCR request
     // finishes. Generation/download remain protected because they may affect credit
@@ -284,5 +307,6 @@ export class JobStore {
     this.jobs.clear();
     this.activeJobs.clear();
     this.heavyOperations.clear();
+    this.activeDownloads.clear();
   }
 }
