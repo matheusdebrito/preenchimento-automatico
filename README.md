@@ -74,6 +74,24 @@ Campos `motor2`, `motor3`, `motor4` e marcações sim/não por motor não fazem 
 
 Enquanto a sessão temporária estiver válida, atualizar a mesma aba permite recuperar o job e continuar a conferência ou o download. A aba mantém **somente o UUID aleatório do job em `sessionStorage`**; os PDFs, dados pessoais, arquivos enviados e conteúdo digitado permanecem privados no servidor e não são copiados para o armazenamento do navegador. Ao encerrar e apagar o job, o identificador também é descartado. A recuperação não é garantida depois de fechar a aba/navegador, expirar a sessão, reiniciar a instância ou trocar de conta.
 
+**Capacidade em uma instância:** o Docker Compose admite até `JOB_MAX_OPEN=100`
+processos temporários abertos por servidor, preservando o limite de **2 processos por conta**.
+Apenas `JOB_MAX_HEAVY=2` operações pesadas (análise documental ou geração de PDFs)
+podem ser executadas simultaneamente. Quando os slots estão ocupados, a API responde
+`503 processing_capacity_exceeded` com `Retry-After: 5`, sem modificar o
+processo nem debitar crédito; o usuário pode tentar novamente. **Ainda não há
+fila persistente**: as operações aguardam nova tentativa pelo cliente.
+
+**Armazenamento Docker:** documentos privados ficam no volume local
+`private_jobs` (montado em `/app/private-jobs`), não no `tmpfs` de 192 MB.
+O limite `JOB_MAX_UPLOAD_MB=1024` aplica-se ao total dos uploads ativos na
+instância; cada processo continua limitado a 30 MB de uploads e cada arquivo a
+10 MB. O volume é exclusivo e não deve ser incluído em backups; arquivos
+órfãos são removidos pelo mecanismo de limpeza. `docker compose down -v`
+**apaga tanto o banco PostgreSQL quanto esse volume temporário**.
+Esses controles são apenas locais à instância; **não** execute múltiplas
+réplicas da API até existir estado/armazenamento compartilhado seguro.
+
 **Armazenamento temporário:** quando configurar `TEMP_DOCUMENT_ROOT` manualmente, use uma pasta absoluta, exclusiva e privada, nunca uma raiz genérica (`/tmp`, `/`, a raiz do repositório) nem um link simbólico. A aplicação deve falhar em caso de configuração insegura.
 
 ## Administração
@@ -99,7 +117,7 @@ docker compose ps
 - Conta: http://127.0.0.1:8080/entrar
 - Jornada real: `/preencher-real/:serviceId` — somente para catálogo homologado
 
-O Compose usa PostgreSQL privado na rede Docker, API e frontend vinculados a `127.0.0.1` e Nginx como proxy de `/api`. Não exponha a stack local publicamente, pois não há TLS nem os controles completos de produção. Para desligar: `docker compose down`. **`docker compose down -v` apaga os dados locais persistentes do PostgreSQL.**
+O Compose usa PostgreSQL privado na rede Docker, API e frontend vinculados a `127.0.0.1` e Nginx como proxy de `/api`. Não exponha a stack local publicamente, pois não há TLS nem os controles completos de produção. Para desligar: `docker compose down`. **`docker compose down -v` apaga os dados locais persistentes do PostgreSQL e o volume de documentos temporários.**
 
 O segredo `DEV_GRANT_SECRET` é opcional, restrito a ambiente de desenvolvimento e necessário para acionar o endpoint interno de concessão de três créditos **de teste**; não há cobrança real.
 

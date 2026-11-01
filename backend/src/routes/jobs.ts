@@ -15,7 +15,7 @@ import type { Database } from '../modules/auth/db.js';
 import { getCurrentUser } from '../modules/auth/auth-service.js';
 import { chargeJobCredit, markJobDelivered, refundUndeliveredJobCredit } from '../modules/auth/job-credit.js';
 import { JobStore } from '../modules/jobs/job-store.js';
-import type { ExtractionDiagnostic } from '../modules/jobs/job-store.js';
+import type { ExtractionDiagnostic, JobStoreLimits } from '../modules/jobs/job-store.js';
 import { recordOpenAiUsage } from '../modules/jobs/openai-usage.js';
 import {
   extractDocumentsWithOneContingency,
@@ -43,6 +43,7 @@ export function registerJobRoutes(
   pool?: Database,
   definitions: CatalogDefinition = catalog,
   testRoot?: string,
+  limits?: Partial<JobStoreLimits>,
 ): void {
   const store = new JobStore(testRoot ?? process.env.TEMP_DOCUMENT_ROOT, async (jobId) => {
     if (!pool) return;
@@ -52,7 +53,7 @@ export function registerJobRoutes(
       // The persistent expiry/restart reconciler retries when the DB returns.
       app.log.error({ err: error }, 'expired_job_refund_pending');
     }
-  });
+  }, limits);
   app.addHook('onClose', async () => {
     await store.close();
     if (testRoot) await rm(testRoot, { recursive: true, force: true });
@@ -161,7 +162,10 @@ export function registerJobRoutes(
       const stored = await store.upload(job, req.params.requirementId, req.body,
         req.headers['content-type'] ?? '');
       return reply.status(201).send({ id: stored.id, requirementId: stored.requirementId });
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Capacidade global de armazenamento temporário atingida.') {
+        return reply.header('Retry-After', '15').status(503).send({ error: 'temporary_storage_full' });
+      }
       return reply.status(400).send({ error: 'invalid_document', message: 'Documento inválido ou excede os limites.' });
     }
   });
@@ -182,7 +186,14 @@ export function registerJobRoutes(
     const service = publicService(definitions, job.serviceId, job.answers);
     if (!service) return reply.status(409).send({ error: 'service_unavailable' });
 
-    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
+    const admission = store.beginHeavyOperation(job);
+    if (admission === 'job_busy') return reply.status(409).send({ error: 'job_busy' });
+    if (admission === 'at_capacity') {
+      return reply.header('Retry-After', '5').status(503).send({
+        error: 'processing_capacity_exceeded',
+        message: 'O processamento está ocupado. Seus dados foram preservados; tente novamente.',
+      });
+    }
     job.stage = 'PROCESSING';
 
     const diagnostics: ExtractionDiagnostic[] = [];
@@ -388,7 +399,14 @@ export function registerJobRoutes(
     if (service.creditCost !== 1) {
       return reply.status(422).send({ error: 'unsupported_credit_cost' });
     }
-    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
+    const admission = store.beginHeavyOperation(job);
+    if (admission === 'job_busy') return reply.status(409).send({ error: 'job_busy' });
+    if (admission === 'at_capacity') {
+      return reply.header('Retry-After', '5').status(503).send({
+        error: 'processing_capacity_exceeded',
+        message: 'O processamento está ocupado. Seus dados foram preservados; tente novamente.',
+      });
+    }
     job.stage = 'GENERATING';
     const generated = new Map<string, string>();
     let currentFormVersionId: string | undefined;
@@ -441,21 +459,28 @@ export function registerJobRoutes(
     const job = store.get(req.params.id, userId);
     const path = job?.stage === 'GENERATED' ? job.outputs.get(req.params.versionId) : undefined;
     if (!path || !job) return reply.status(404).send({ error: 'not_found' });
-    if (!store.beginOperation(job)) return reply.status(409).send({ error: 'job_busy' });
+    if (!store.beginDownload(job)) return reply.status(409).send({ error: 'job_busy' });
     const stream = createReadStream(path);
     let finished = false;
+    let released = false;
+    // 'error' and 'close' can both fire for one stream. Release its slot only once.
+    const release = () => {
+      if (released) return;
+      released = true;
+      store.endDownload(job);
+    };
     reply.raw.once('finish', () => {
       finished = true;
       // A receipt is not delivered until the HTTP response is fully written.
       // On DB failure leave it pending, to be refunded on expiry or restart.
       void markJobDelivered(pool!, userId, job.id)
         .catch((error: unknown) => req.log.error({ err: error }, 'delivery_record_failed'))
-        .finally(() => store.endOperation(job));
+        .finally(() => release());
     });
     reply.raw.once('close', () => {
-      if (!finished) store.endOperation(job);
+      if (!finished) release();
     });
-    stream.once('error', () => store.endOperation(job));
+    stream.once('error', () => { if (!finished) release(); });
     const version = definitions.versions.find((item) => item.id === req.params.versionId);
     const form = version ? definitions.forms.find((item) => item.id === version.formId) : undefined;
     const filenameBase = (form?.name ?? 'Formulario')

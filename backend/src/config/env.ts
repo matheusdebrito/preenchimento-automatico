@@ -8,6 +8,9 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:8080'),
   LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
+  JOB_MAX_OPEN: z.coerce.number().int().min(3).max(500).default(100),
+  JOB_MAX_HEAVY: z.coerce.number().int().min(1).max(8).default(2),
+  JOB_MAX_UPLOAD_MB: z.coerce.number().int().min(30).max(8192).default(1024),
   DATABASE_URL: z.string().trim().min(1).optional(),
   DEV_GRANT_SECRET: z.preprocess((value) => value === '' ? undefined : value, z.string().min(24).optional()),
 });
@@ -21,6 +24,9 @@ export interface AppEnv {
   API_PORT: number;
   CORS_ORIGINS: readonly string[];
   LOG_LEVEL: LogLevel;
+  JOB_MAX_OPEN?: number;
+  JOB_MAX_HEAVY?: number;
+  JOB_MAX_UPLOAD_MB?: number;
   DATABASE_URL?: string;
   DEV_GRANT_SECRET?: string;
 }
@@ -79,6 +85,9 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     API_PORT: result.data.API_PORT,
     CORS_ORIGINS: Object.freeze(origins),
     LOG_LEVEL: result.data.LOG_LEVEL,
+    JOB_MAX_OPEN: result.data.JOB_MAX_OPEN,
+    JOB_MAX_HEAVY: result.data.JOB_MAX_HEAVY,
+    JOB_MAX_UPLOAD_MB: result.data.JOB_MAX_UPLOAD_MB,
   };
 
   if (result.data.DATABASE_URL) {

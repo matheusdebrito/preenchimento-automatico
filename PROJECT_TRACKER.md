@@ -21,17 +21,17 @@ A autorização atual inclui consolidar a arquitetura reutilizável e auditar os
 | 02 | PDFs oficiais e versões, sem aprovar mapeamento | 01 | [x] Concluída; portão humano anterior preservado |
 | 03 | API de catálogo e seleção | 02; liberação real depende de 04 | [x] Concluída; contrato não alterado |
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e 21 mapeamentos existentes; 3 templates reconstruídos da fonte oficial aguardam QA visual final, inclusive preenchimento real no navegador |
-| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — uploads opcionais e limites; fuzzing e isolamento pendentes |
+| 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — volume privado e limites globais de upload na branch de capacidade; CI e homologação pendentes |
 | 06 | Análise documental estruturada | 05 | [ ] Parcial — OpenAI Responses API como único provedor; testes simulados; homologação de precisão, custo, latência e privacidade ainda pendentes |
 | 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — revisão humana preservada; E2E/browser/mobile real e homologação OpenAI pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
-| 09 | Hardening e homologação ponta a ponta | 08 | [ ] Pendente — segurança, desempenho, UX e homologação integral |
+| 09 | Hardening e homologação ponta a ponta | 08 | [ ] Parcial — proteção por limite de operações pesadas em implementação; homologação integral pendente |
 | 10 | Pagamentos reais | 09 e autorização | [ ] Pendente |
 | 11 | Infraestrutura de produção | 09 e autorização | [ ] Pendente |
 | 12 | Segurança de produção e segredos | 11 | [ ] Pendente |
 | 13 | LGPD, políticas e retenção | 09, 11 e revisão responsável | [ ] Pendente |
 | 14 | Observabilidade, backup e recuperação | 11, 12 | [ ] Pendente |
-| 15 | Carga, capacidade e custos | 11, 14 | [ ] Pendente — medir tokens, custo por documento, latência, concorrência e limites da OpenAI |
+| 15 | Carga, capacidade e custos | 11, 14 | [ ] Parcial — baseline de carga com 100 usuários e gargalo de 3 jobs observado; reteste da nova capacidade pendente |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
 | 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 18 serviços globais publicados, incluindo exatamente 7 serviços de Aquaviários; CI #727 aprovado, QA manual navegador/celular pendente |
@@ -843,3 +843,30 @@ de recuperação foi removido após o uso.
 motor e geração sintética; não substitui revisão da adequação normativa,
 legibilidade em visualizadores distintos, nem teste de navegação/cobrança na
 aplicação com contas de teste. Nenhum documento pessoal foi usado.
+
+## Ampliação segura de admissão e controle de operações pesadas — 31/10/2026
+
+**Objetivo:** eliminar o gargalo global de três sessões abertas sem permitir
+100 chamadas simultâneas à OpenAI nem carregar documentos em RAM do tmpfs.
+
+- [x] Identificar `MAX_ROOT_FILES=3`, `MAX_USER_JOBS=2`, estado `Map` e `/tmp` de 192 MB como limites existentes (inspeção de código).
+- [x] Implementar limites independentes por instância (100 jobs abertos, 2 operações pesadas, 1.024 MiB de uploads no total), com cotas por conta preservadas.
+- [x] Resposta de capacidade controlada antes de extrair/cobrar, com `Retry-After`, sem remover o job da sessão.
+- [x] Mover arquivos temporários para volume Docker privado no disco da VPS, preservando limpeza por TTL.
+- [x] Atualizar testes determinísticos de limite global e de contenção por operações pesadas e o script de estresse.
+- [x] CI do código aprovado em https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/41256073242 (backend/frontend, PostgreSQL, Docker Compose, PDFs e inspeção NORMAM); revisão final documental aguarda novo CI.
+- [x] Estresse isolado com 100 processos abertos e duas gerações de PDFs por lote, sem falhas inesperadas: 100/100 processos concluídos, 200 PDFs baixados, 0 recusas, HTTP 200 no health, 2.394 consultas sustentadas com 100 identidades de teste; execução https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/41256347780.
+- [ ] Medir e homologar recursos (CPU/RAM/disco) especificamente na VPS 2 vCPU e 8 GB com documentos e latência OpenAI simulada.
+- [ ] Propor, revisar e autorizar migration da fila PostgreSQL; **não executar migration sem aprovação específica**.
+- [ ] Testar a OpenAI simulada, cancelamento, expiração e custos sob concorrência em ambiente isolado; depois homologar na VPS.
+
+**Limitações:** o trabalho pesado recebe rejeição temporária e precisa de retentativa.
+Não existe ainda fila persistente, nem recuperação dos trabalhos após reiniciar
+a API, nem suporte a vários containers de API. A mudança não significa que
+100 extrações OpenAI serão executadas simultaneamente.
+
+**Arquivos:** `backend/src/modules/jobs/job-store.ts`,
+`backend/src/routes/jobs.ts`, `backend/src/config/env.ts`,
+`backend/src/app.ts`, testes, `frontend/src/lib/api.ts`,
+`backend/Dockerfile`, `compose.yaml`, `.env.example`, README.
+**Estado:** implementação e regressão sintética testadas na branch; CI final e merge pendentes. Primeira rodada de carga revelou um 409 em downloads simultâneos do mesmo processo; corrigido com leases de leitura independentes, liberados uma única vez por stream. Regressão unitária adicionada. A última rodada de carga aprovou todos os 100 fluxos. Sem migration ou deploy.

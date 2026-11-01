@@ -148,8 +148,11 @@ for(const count of [1,2,3,5,10,25,50,100]) {
     create_elapsed_ms:round(performance.now()-start),
   };
   if(unexpected.length)fail.push('Unexpected create response at '+count+' users: '+unexpected.slice(0,4).map(x=>({status:x.status,error:x.error,code:x.body?.error})).map(JSON.stringify).join(' '));
-  if(accepted.length>3)fail.push('Global job limit bypassed at users='+count+' accepted='+accepted.length);
-  const full=await Promise.all(accepted.map(async item=>{
+  if(accepted.length>100)fail.push('Global job limit bypassed at users='+count+' accepted='+accepted.length);
+  const full=[];
+  // Separate admission from processing: preserve 100 open jobs, execute two at a time.
+  for(let batch=0;batch<accepted.length;batch+=2){
+  const completed=await Promise.all(accepted.slice(batch,batch+2).map(async item=>{
     const actor=users[item.idx],id=item.body.id;
     const trace=[];
     const call=async(name,path,opts={})=>{
@@ -182,6 +185,8 @@ for(const count of [1,2,3,5,10,25,50,100]) {
     }
     return trace;
   }));
+  full.push(...completed);
+  }
   result.fullFlows=full.length;
   result.completedFlows=full.filter(trace=>!trace.some(t=>t.name==='flow_failure'||t.name==='cleanup_failure')).length;
   const generation=full.flatMap(traces=>traces.filter(x=>x.name==='generate'));
@@ -198,7 +203,7 @@ const health=await request('/api/services');
 if(health.status!==200)fail.push('Service unavailable after test');
 const response={date:new Date().toISOString(),environment:'GitHub-hosted runner, Docker Compose single instance, PostgreSQL 17',
   scope:'catalog, quotes, authenticated job creation, manual review, 2 PDF generation/downloads; no AI/no upload/no billing',
-  distinctUsers:USER_COUNT,expectedGlobalJobLimit:3,fixtureFieldCount:Object.keys(values).length,
+  distinctUsers:USER_COUNT,expectedGlobalJobLimit:100,maxHeavyOperations:2,fixtureFieldCount:Object.keys(values).length,
   measurements,failures:fail,healthAfter:health.status};
 await writeFile(join(OUT,'RESULTADOS_ESTRESSE.json'),JSON.stringify(response,null,2));
 const lines=[

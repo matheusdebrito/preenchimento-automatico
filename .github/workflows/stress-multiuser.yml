@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: stress-multiuser-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   stress-multiuser:
     runs-on: ubuntu-latest

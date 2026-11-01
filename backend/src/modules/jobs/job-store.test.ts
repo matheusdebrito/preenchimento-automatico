@@ -31,13 +31,70 @@ describe('JobStore', () => {
   it('restringe a quantidade de jobs simultâneos e processos por usuário', async () => {
     const root = await mkdtemp(join(tmpdir(), 'pa-jobs-quotas-'));
     directories.push(root);
-    const store = new JobStore(root);
+    const store = new JobStore(root, undefined, {maxOpenJobs: 3});
     stores.push(store);
     await store.create('alice', 's');
     await store.create('alice', 's');
     await expect(store.create('alice', 's')).rejects.toThrow('Capacidade');
     await store.create('bob', 's');
     await expect(store.create('charlie', 's')).rejects.toThrow('Capacidade');
+  });
+
+  it('limita operações pesadas sem bloquear a criação e a edição de novos processos', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-heavy-slots-'));
+    directories.push(root);
+    const store = new JobStore(root, undefined, {maxOpenJobs: 10, maxHeavyOperations: 2});
+    stores.push(store);
+    const [first, second, third] = await Promise.all([
+      store.create('alice', 's'),
+      store.create('bob', 's'),
+      store.create('carol', 's'),
+    ]);
+    expect(store.beginHeavyOperation(first)).toBe('acquired');
+    expect(store.beginHeavyOperation(first)).toBe('job_busy');
+    expect(store.beginHeavyOperation(second)).toBe('acquired');
+    expect(store.beginHeavyOperation(third)).toBe('at_capacity');
+    expect(store.get(third.id, 'carol')).not.toBeNull();
+    store.endOperation(first);
+    expect(store.beginHeavyOperation(third)).toBe('acquired');
+    // Releasing the same lease twice must not free another process's slot.
+    store.endOperation(first);
+    const fourth = await store.create('diana', 's');
+    expect(store.beginHeavyOperation(fourth)).toBe('at_capacity');
+    store.endOperation(second);
+    store.endOperation(third);
+    expect(store.beginHeavyOperation(fourth)).toBe('acquired');
+    store.endOperation(fourth);
+  });
+
+  it('preserva cotas por usuário quando a capacidade global aumenta', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-job-user-quota-'));
+    directories.push(root);
+    const store = new JobStore(root, undefined, {maxOpenJobs: 100});
+    stores.push(store);
+    const outcomes = await Promise.allSettled([
+      store.create('alice', 's'), store.create('alice', 's'), store.create('alice', 's'),
+    ]);
+    expect(outcomes.filter((outcome) => outcome.status === 'fulfilled')).toHaveLength(2);
+    expect(outcomes.filter((outcome) => outcome.status === 'rejected')).toHaveLength(1);
+  });
+
+  it('permite downloads concorrentes e impede exclusão até o último stream terminar', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'pa-download-refs-'));
+    directories.push(root);
+    const store = new JobStore(root);
+    stores.push(store);
+    const job = await store.create('alice', 's');
+    job.stage = 'GENERATED';
+    expect(store.beginDownload(job)).toBe(true);
+    expect(store.beginDownload(job)).toBe(true);
+    expect(store.beginHeavyOperation(job)).toBe('job_busy');
+    await expect(store.remove(job)).rejects.toThrow('ocupado');
+    store.endDownload(job);
+    await expect(store.remove(job)).rejects.toThrow('ocupado');
+    store.endDownload(job);
+    store.endDownload(job);
+    await expect(store.remove(job)).resolves.toBeUndefined();
   });
 
   it('não permite uploads simultâneos ultrapassarem o controle do mesmo job', async () => {
@@ -91,10 +148,10 @@ describe('JobStore', () => {
     const store = new JobStore(root);
     stores.push(store);
     const results = await Promise.allSettled(
-      Array.from({ length: 7 }, (_, i) => store.create('owner-' + i, 'service')),
+      Array.from({ length: 101 }, (_, i) => store.create('owner-' + i, 'service')),
     );
-    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(3);
-    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(4);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(100);
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
   });
 
 
