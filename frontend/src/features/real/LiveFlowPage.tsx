@@ -648,9 +648,12 @@ export function LiveFlowPage() {
                   <h2>Dados do serviço</h2>
                   {service.questions.filter((question) =>
                     questionConditionsMatch(question, pruneHiddenAnswers(service, answers))).map((question) => (
-                    <label key={question.id} className="field">
+                    <div key={question.id}>
+                    <label className="field">
                       <span className="field__label">{question.label}</span>
                       <select className="field__input" required value={answers[question.id] ?? ''}
+                        aria-describedby={question.id === 'includeResidenceDeclaration'
+                          ? 'residence-declaration-hint' : undefined}
                         onChange={(event) => setAnswers((prev) =>
                           pruneHiddenAnswers(service, {
                             ...prev,
@@ -702,13 +705,14 @@ export function LiveFlowPage() {
                           </option>;
                         })}
                       </select>
-                      {question.id === 'includeResidenceDeclaration' && (
-                        <span className="field__hint">
-                          A declaração será adicionada apenas se você escolher Sim.
-                          A aceitação depende das exigências da Capitania, Delegacia ou Agência da Marinha responsável.
-                        </span>
-                      )}
                     </label>
+                    {question.id === 'includeResidenceDeclaration' && (
+                      <p id="residence-declaration-hint" className="field__hint">
+                        A declaração será adicionada apenas se você escolher Sim.
+                        A aceitação depende das exigências da Capitania, Delegacia ou Agência da Marinha responsável.
+                      </p>
+                    )}
+                    </div>
                   ))}
                   <Button disabled={busy} onClick={() => void quote()}>Ver formulários e continuar</Button>
                 </>
