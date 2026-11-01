@@ -1,8 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
-import { publicService, publicServices } from './public-catalog.js';
+import { publicService as quoteService, publicServices } from './public-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
 import { serviceFormValues } from './service-form-values.js';
+
+// Existing package-composition assertions intentionally select the optional 1-L/2-G/1-C.
+ // Separate catalog/API regressions assert the new default (no declaration) and both choices.
+function publicService(
+  definitions: CatalogDefinition,
+  id: string,
+  answers: Readonly<Record<string, string>> = {},
+) {
+  return quoteService(definitions, id, definitions === catalog
+    ? { includeResidenceDeclaration: 'sim', ...answers }
+    : answers);
+}
 
 function fixture(): CatalogDefinition {
   return {
