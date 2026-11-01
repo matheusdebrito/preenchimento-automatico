@@ -51,10 +51,24 @@ function residenceRelations(): readonly ServiceForm[] {
   const existing: readonly ServiceForm[] = [
     ...vesselServiceForms, ...amateurServiceForms, ...aquaviarioServiceForms,
   ];
-  const conditional: ServiceForm[] = existing.map((relation) =>
-    residenceVersions.has(relation.formVersionId)
-      ? { ...relation, conditions: [...(relation.conditions ?? []), residenceCondition] }
-      : relation);
+  const conditional: ServiceForm[] = existing.map((relation) => {
+    if (residenceVersions.has(relation.formVersionId)) {
+      return { ...relation, conditions: [...(relation.conditions ?? []), residenceCondition] };
+    }
+    if (relation.formVersionId === 'requerimento-certificacao-aquaviario-2026-v1') {
+      // Without Annex 1-L, the certificate still has an address line to fill.
+      return {
+        ...relation,
+        excludedReviewFieldIds: (relation.excludedReviewFieldIds ?? [])
+          .filter((id) => id !== 'person.fullAddress'),
+        reviewFieldConditions: {
+          ...relation.reviewFieldConditions,
+          'person.fullAddress': [{ questionId: residenceQuestion.id, equals: 'nao' }],
+        },
+      };
+    }
+    return relation;
+  });
   for (const service of releasedServices) {
     const forService = conditional.filter((relation) => relation.serviceId === service.id);
     let nextOrder = Math.max(0, ...forService.map((relation) => relation.order)) + 1;
