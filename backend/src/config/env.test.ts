@@ -15,6 +15,22 @@ describe('loadEnv', () => {
     ]);
   });
 
+  it('configura limites de admissão e processamento com valores seguros', () => {
+    const defaults = loadEnv({});
+    expect(defaults.JOB_MAX_OPEN).toBe(100);
+    expect(defaults.JOB_MAX_HEAVY).toBe(2);
+    expect(defaults.JOB_MAX_UPLOAD_MB).toBe(1024);
+    const selected = loadEnv({
+      JOB_MAX_OPEN: '40', JOB_MAX_HEAVY: '2', JOB_MAX_UPLOAD_MB: '512',
+    });
+    expect(selected.JOB_MAX_OPEN).toBe(40);
+    expect(selected.JOB_MAX_HEAVY).toBe(2);
+    expect(selected.JOB_MAX_UPLOAD_MB).toBe(512);
+    expect(() => loadEnv({JOB_MAX_OPEN: '0'})).toThrow('JOB_MAX_OPEN');
+    expect(() => loadEnv({JOB_MAX_HEAVY: '100'})).toThrow('JOB_MAX_HEAVY');
+    expect(() => loadEnv({JOB_MAX_UPLOAD_MB: '3'})).toThrow('JOB_MAX_UPLOAD_MB');
+  });
+
   it('normaliza e deduplica origens CORS', () => {
     const env = loadEnv({
       NODE_ENV: 'production',
