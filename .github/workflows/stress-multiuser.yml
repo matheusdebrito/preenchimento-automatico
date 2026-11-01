@@ -5,6 +5,9 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: stress-multiuser-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   stress-multiuser:
     if: github.event_name == 'workflow_dispatch' || github.head_ref == 'perf/split-job-admission-and-heavy-work-20261031'
