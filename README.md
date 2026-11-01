@@ -155,6 +155,24 @@ O [GitHub Actions](.github/workflows/ci.yml) também executa auditoria de depend
 
 **QA integrado verificado:** o [CI 40441312938](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/40441312938) passou nos cinco jobs e inclui leitura de PNG/JPEG fictícios, revisão com CPF/data válidos, conferência dos valores preenchidos nos dois PDFs de amostra e teste de inicialização concorrente do PostgreSQL. Os procedimentos e resultados estão no [PROJECT_TRACKER](PROJECT_TRACKER.md); as [pendências de homologação e QA para 27/10/2026](docs/PENDENCIAS_PARA_2026-10-27.md) continuam abertas. Os testes sintéticos não asseguram leitura correta de fotos reais nem liberação de formulários oficiais.
 
+### Declaração de residência opcional
+
+Em todos os 18 serviços, a primeira pergunta é **"Deseja preencher também uma declaração de residência?"**,
+com resposta inicial **Não**. Se o usuário escolher **Sim**, a aplicação inclui
+uma única declaração na lista de formulários do serviço, usando o modelo
+já verificado: NORMAM-211 Anexo 2-G para embarcações e oferta opcional para
+amadores; NORMAM-212 Anexo 1-C para moto aquática; NORMAM-101 Anexo 1-L
+para aquaviários. A utilização do modelo 2-G no processo de amadores
+deve ser confirmada com a unidade competente (CP/DL/AG).
+
+A declaração é um **PDF de saída**, não um comprovante de residência enviado.
+O comprovante continua sendo um upload opcional para sugerir os dados do endereço.
+Ao optar por **Não**, a declaração é omitida, sem mudar os demais anexos.
+Se o serviço não tiver nenhum outro formulário aplicável, a interface
+informa que não há PDF para gerar, evitando um processo vazio.
+O usuário deve confirmar a aceitação da declaração pela unidade responsável;
+a aplicação não protocola ou garante aceitação documental.
+
 ### Teste real de navegador (ambiente descartável)
 
 O job `browser-e2e` pode ser acionado manualmente em **GitHub Actions → CI → Run workflow**.
