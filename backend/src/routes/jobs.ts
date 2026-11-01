@@ -162,7 +162,10 @@ export function registerJobRoutes(
       const stored = await store.upload(job, req.params.requirementId, req.body,
         req.headers['content-type'] ?? '');
       return reply.status(201).send({ id: stored.id, requirementId: stored.requirementId });
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Capacidade global de armazenamento temporário atingida.') {
+        return reply.header('Retry-After', '15').status(503).send({ error: 'temporary_storage_full' });
+      }
       return reply.status(400).send({ error: 'invalid_document', message: 'Documento inválido ou excede os limites.' });
     }
   });
