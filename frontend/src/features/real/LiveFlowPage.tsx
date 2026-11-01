@@ -171,7 +171,10 @@ function pruneHiddenAnswers(
   service: LiveService,
   answers: Readonly<Record<string, string>>,
 ): Record<string, string> {
-  const next = { ...answers };
+  // Never send stale answers for questions absent from the quoted service.
+  const activeIds = new Set(service.questions.map((question) => question.id));
+  const next = Object.fromEntries(
+    Object.entries(answers).filter(([id]) => activeIds.has(id)));
   let changed = true;
   while (changed) {
     changed = false;
