@@ -74,9 +74,9 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // private root so orphan cleanup cannot erase another suite's live job.
   const testRoot = isTest ? resolve(tmpdir(), 'pa-test-app-' + randomUUID()) : undefined;
   registerJobRoutes(app, options.pool, options.catalogOverride, testRoot, {
-    maxOpenJobs: env.JOB_MAX_OPEN,
-    maxHeavyOperations: env.JOB_MAX_HEAVY,
-    maxTotalUploadBytes: env.JOB_MAX_UPLOAD_MB * 1024 * 1024,
+    maxOpenJobs: env.JOB_MAX_OPEN ?? 100,
+    maxHeavyOperations: env.JOB_MAX_HEAVY ?? 2,
+    maxTotalUploadBytes: (env.JOB_MAX_UPLOAD_MB ?? 1024) * 1024 * 1024,
   });
 
   app.setNotFoundHandler(async (_request, reply) =>
