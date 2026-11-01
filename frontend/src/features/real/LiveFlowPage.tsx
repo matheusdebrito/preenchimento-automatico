@@ -191,7 +191,9 @@ export function LiveFlowPage() {
   const navigate = useNavigate();
   const [service, setService] = useState<LiveService | null>(null);
   const [step, setStep] = useState<Step>('questions');
-  const [answers, setAnswers] = useState<Record<string,string>>({});
+  const [answers, setAnswers] = useState<Record<string,string>>({
+    includeResidenceDeclaration: 'nao',
+  });
   const [files, setFiles] = useState<Record<string,File>>({});
   const [values, setValues] = useState<Record<string,string>>({});
   const [sources, setSources] = useState<Record<string,string>>({});
@@ -258,7 +260,7 @@ export function LiveFlowPage() {
           );
           if (cancelled) return;
           setService(quoted.service);
-          setAnswers(status.answers);
+          setAnswers({ includeResidenceDeclaration: 'nao', ...status.answers });
           setJobId(savedId);
           setExpiresAt(status.expiresAt);
           setUploadedRequirements(status.uploadedRequirementIds);
@@ -315,7 +317,10 @@ export function LiveFlowPage() {
       setAnswers(relevantAnswers);
       setService(result.service);
       setStep('files');
-    } catch { setError('Não foi possível validar os requisitos do serviço.'); }
+    } catch (issue) {
+      setError(issue instanceof ApiError ? issue.message
+        : 'Não foi possível validar os requisitos do serviço.');
+    }
     finally { setBusy(false); }
   };
 
@@ -694,6 +699,12 @@ export function LiveFlowPage() {
                           </option>;
                         })}
                       </select>
+                      {question.id === 'includeResidenceDeclaration' && (
+                        <span className="field__hint">
+                          A declaração será adicionada apenas se você escolher Sim.
+                          A aceitação depende das exigências da Capitania, Delegacia ou Agência da Marinha responsável.
+                        </span>
+                      )}
                     </label>
                   ))}
                   <Button disabled={busy} onClick={() => void quote()}>Ver formulários e continuar</Button>
