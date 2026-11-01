@@ -1,4 +1,4 @@
-import type { CatalogDefinition } from './contracts.js';
+import type { CatalogDefinition, ServiceDefinition, ServiceForm, ServiceQuestion } from './contracts.js';
 import { additionalFields } from './fields.js';
 import { draftMappings } from './draft-mappings.js';
 import { normam211Mappings } from './normam211-mappings.js';
@@ -22,6 +22,68 @@ import {
   aquaviarioServiceForms,
 } from './aquaviario-services.js';
 import { aquaviarioMappings } from './aquaviario-mappings.js';
+
+const residenceQuestion: ServiceQuestion = {
+  id: 'includeResidenceDeclaration',
+  label: 'Deseja preencher também uma declaração de residência?',
+  options: ['sim', 'nao'],
+};
+
+const residenceCondition = { questionId: residenceQuestion.id, equals: 'sim' } as const;
+const residenceVersions = new Set([
+  'declaracao-residencia-er-2026-v1',
+  'declaracao-residencia-ma-v1',
+  'declaracao-residencia-aquaviario-2026-v1',
+]);
+
+const releasedServices: readonly ServiceDefinition[] = [
+  ...vesselServices,
+  ...amateurServices,
+  ...aquaviarioServices,
+];
+
+/**
+ * Shared optional output, not an additional upload requirement.
+ * Keep the three already verified PDF versions and their existing mappings.
+ * Never append a declaration twice for a given service and vessel category.
+ */
+function residenceRelations(): readonly ServiceForm[] {
+  const existing: readonly ServiceForm[] = [
+    ...vesselServiceForms, ...amateurServiceForms, ...aquaviarioServiceForms,
+  ];
+  const conditional: ServiceForm[] = existing.map((relation) =>
+    residenceVersions.has(relation.formVersionId)
+      ? { ...relation, conditions: [...(relation.conditions ?? []), residenceCondition] }
+      : relation);
+  for (const service of releasedServices) {
+    const forService = conditional.filter((relation) => relation.serviceId === service.id);
+    let nextOrder = Math.max(0, ...forService.map((relation) => relation.order)) + 1;
+    const append = (
+      version: string, conditions: ServiceForm['conditions'], excludedReviewFieldIds?: readonly string[],
+    ) => {
+      if (forService.some((relation) => relation.formVersionId === version)) return;
+      conditional.push({
+        serviceId: service.id, formVersionId: version, order: nextOrder++,
+        conditions: [...(conditions ?? []), residenceCondition],
+        ...(excludedReviewFieldIds ? { excludedReviewFieldIds } : {}),
+      });
+    };
+    if (vesselServices.some((item) => item.id === service.id)) {
+      append('declaracao-residencia-er-2026-v1',
+        [{ questionId: 'vesselType', equals: 'embarcacao' }]);
+      append('declaracao-residencia-ma-v1',
+        [{ questionId: 'vesselType', equals: 'moto_aquatica' }]);
+    } else if (amateurServices.some((item) => item.id === service.id)) {
+      // Optional preparation with the already approved NORMAM-211 2-G model.
+      // Its acceptance for an amateur's protocol must be confirmed with CP/DL/AG.
+      append('declaracao-residencia-er-2026-v1', []);
+    } else {
+      append('declaracao-residencia-aquaviario-2026-v1', [],
+        ['person.fullAddress']);
+    }
+  }
+  return conditional;
+}
 
 /**
  * Authoritative catalog of the forms currently released by the application.
@@ -159,10 +221,8 @@ export const catalog: CatalogDefinition = {
     },
   ],
   mappings: [...draftMappings, ...normam211Mappings, ...amateurMappings, ...aquaviarioMappings],
-  services: [
-    ...vesselServices,
-    ...amateurServices,
-    ...aquaviarioServices,
-  ],
-  serviceForms: [...vesselServiceForms, ...amateurServiceForms, ...aquaviarioServiceForms],
+  services: releasedServices.map((service) => ({
+    ...service, questions: [residenceQuestion, ...service.questions],
+  })),
+  serviceForms: residenceRelations(),
 };
