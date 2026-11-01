@@ -462,18 +462,25 @@ export function registerJobRoutes(
     if (!store.beginDownload(job)) return reply.status(409).send({ error: 'job_busy' });
     const stream = createReadStream(path);
     let finished = false;
+    let released = false;
+    // 'error' and 'close' can both fire for one stream. Release its slot only once.
+    const release = () => {
+      if (released) return;
+      released = true;
+      store.endDownload(job);
+    };
     reply.raw.once('finish', () => {
       finished = true;
       // A receipt is not delivered until the HTTP response is fully written.
       // On DB failure leave it pending, to be refunded on expiry or restart.
       void markJobDelivered(pool!, userId, job.id)
         .catch((error: unknown) => req.log.error({ err: error }, 'delivery_record_failed'))
-        .finally(() => store.endDownload(job));
+        .finally(() => release());
     });
     reply.raw.once('close', () => {
-      if (!finished) store.endDownload(job);
+      if (!finished) release();
     });
-    stream.once('error', () => store.endDownload(job));
+    stream.once('error', () => release());
     const version = definitions.versions.find((item) => item.id === req.params.versionId);
     const form = version ? definitions.forms.find((item) => item.id === version.formId) : undefined;
     const filenameBase = (form?.name ?? 'Formulario')
