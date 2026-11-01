@@ -60,7 +60,7 @@ async function request(path,{method='GET',user=null,body,timeout=15000,asBytes=f
   } catch(e){err=e.name+': '+e.message;}
   return {status:code,body:parsed,bytes,ms:round(performance.now()-start),error:err};
 }
-const quoteBody={answers:{}};
+const quoteBody={answers:{includeResidenceDeclaration:'sim'}};
 const counts=[1,10,25,50,100];
 async function concurrent(N, countPerWorker, task) {
   const results=[];
@@ -134,7 +134,7 @@ const values=Object.fromEntries(Object.entries(fixture).filter(([field])=>allowe
 for(const count of [1,2,3,5,10,25,50,100]) {
   const start=performance.now();
   const attempts=await Promise.all(Array.from({length:count},(_,idx)=>
-    request('/api/jobs',{method:'POST',user:users[idx],body:{serviceId:svc.id,answers:{}}})
+    request('/api/jobs',{method:'POST',user:users[idx],body:{serviceId:svc.id,answers:{includeResidenceDeclaration:'sim'}}})
       .then(res=>({...res,idx}))));
   const accepted=attempts.filter(r=>r.status===201&&r.body?.id);
   const rejected=attempts.filter(r=>r.status===503&&r.body?.error==='capacity_exceeded');

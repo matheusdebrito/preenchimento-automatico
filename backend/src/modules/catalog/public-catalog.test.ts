@@ -1,8 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
-import { publicService, publicServices } from './public-catalog.js';
+import { publicService as quoteService, publicServices } from './public-catalog.js';
 import type { CatalogDefinition } from './contracts.js';
 import { serviceFormValues } from './service-form-values.js';
+
+// Existing package-composition assertions intentionally select the optional 1-L/2-G/1-C.
+ // Separate catalog/API regressions assert the new default (no declaration) and both choices.
+function publicService(
+  definitions: CatalogDefinition,
+  id: string,
+  answers: Readonly<Record<string, string>> = {},
+) {
+  // Preserve each pre-change packet expectation: declarations were automatic
+  // for aquaviarios and vessel services other than communication of sale.
+  // Amateur services and communication of sale previously had no declaration.
+  const oldPacketIncludedResidence =
+    id.endsWith('-aquaviario') ||
+    (id.includes('embarcacao') && id !== 'comunicacao-venda-embarcacao');
+  return quoteService(definitions, id, definitions === catalog
+    ? { includeResidenceDeclaration: oldPacketIncludedResidence ? 'sim' : 'nao', ...answers }
+    : answers);
+}
 
 function fixture(): CatalogDefinition {
   return {

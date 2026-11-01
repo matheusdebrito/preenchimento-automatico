@@ -44,6 +44,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       : code === 'missing_required_fields' ? 'Há um campo obrigatório sem preencher.'
       : code === 'invalid_field_value' ? 'Um campo contém um valor inválido.'
       : code === 'missing_document' ? 'Ainda falta um documento obrigatório.'
+      : code === 'no_forms_selected'
+        ? 'Com essas respostas, não há formulários para gerar. Se desejar preparar uma declaração de residência, selecione Sim na primeira pergunta.'
       : code === 'review_required'
         ? 'Revise e confirme os campos antes de gerar os formulários.'
       : code === 'service_unavailable'

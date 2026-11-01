@@ -30,6 +30,53 @@ describe('API catalog', () => {
     expect(result.body).not.toContain('backend/templates');
   });
 
+  it('só inclui a declaração de residência quando solicitada, inclusive em amadores', async () => {
+    const cases = [
+      {
+        id: 'inscricao-exame-amador',
+        answers: { amateurCategory: 'arrais' },
+        version: 'declaracao-residencia-er-2026-v1',
+      },
+      {
+        id: 'segunda-via-cir-aquaviario',
+        answers: { cirSecondCopyReason: 'extravio' },
+        version: 'declaracao-residencia-aquaviario-2026-v1',
+      },
+      {
+        id: 'comunicacao-venda-embarcacao',
+        answers: { vesselType: 'moto_aquatica', hasCoOwner: 'nao' },
+        version: 'declaracao-residencia-ma-v1',
+      },
+    ];
+    for (const entry of cases) {
+      const request = async (choice: 'sim' | 'nao') => app.inject({
+        method: 'POST', url: '/api/services/' + entry.id + '/quote',
+        payload: { answers: { ...entry.answers, includeResidenceDeclaration: choice } },
+      });
+      const yes = await request('sim');
+      const no = await request('nao');
+      expect(yes.statusCode, entry.id).toBe(200);
+      expect(no.statusCode, entry.id).toBe(200);
+      const yesIds = yes.json<{service:{formVersionIds:string[]}}>().service.formVersionIds;
+      const noIds = no.json<{service:{formVersionIds:string[]}}>().service.formVersionIds;
+      expect(yesIds).toContain(entry.version);
+      expect(noIds).not.toContain(entry.version);
+      expect(yesIds.filter((id) => id !== entry.version)).toEqual(noIds);
+    }
+  });
+
+  it('explica a ausência de anexos quando a declaração seria o único formulário', async () => {
+    const result = await app.inject({
+      method: 'POST', url: '/api/services/inscricao-inicial-cir-aquaviario/quote',
+      payload: { answers: {
+        includeResidenceDeclaration: 'nao',
+        initialAquaviarioGroup: 'demais_grupos',
+      } },
+    });
+    expect(result.statusCode).toBe(422);
+    expect(result.json()).toEqual({ error: 'no_forms_selected' });
+  });
+
   it('não publica nem permite cotação dos três serviços Aquaviários fora do escopo', async () => {
     const removedIds = [
       'transferencia-jurisdicao-aquaviario',

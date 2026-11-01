@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
+import { publicService } from './public-catalog.js';
 import { motoAquaticaServiceForms } from './vessel-services.js';
 import { BADE_ALLOWED_FIELD_NUMBERS } from './normam211-mappings.js';
 import { validateCatalog } from './validate-catalog.js';
@@ -72,10 +73,69 @@ describe('catálogo reutilizável de formulários', () => {
     expect(catalog.mappings.filter((mapping) =>
       mapping.formVersionId.endsWith('-ma-v1') || mapping.formVersionId === 'bdmoto-v1')
       .every((mapping) => mapping.status === 'APPROVED')).toBe(true);
-    expect(catalog.serviceForms).toHaveLength(74);
+    expect(catalog.serviceForms).toHaveLength(81);
     expect(catalog.services.filter((service) => service.id.includes('embarcacao')).every((service) =>
       service.questions.some((question) => question.id === 'vesselType'))).toBe(true);
     expect(validateCatalog(catalog)).toEqual([]);
+  });
+
+  it('permite incluir ou omitir a declaração de residência nos 18 serviços sem duplicação', () => {
+    expect(catalog.services).toHaveLength(18);
+    const residenceVersions = new Set([
+      'declaracao-residencia-er-2026-v1',
+      'declaracao-residencia-ma-v1',
+      'declaracao-residencia-aquaviario-2026-v1',
+    ]);
+    for (const service of catalog.services) {
+      expect(service.questions[0]?.id, service.id).toBe('includeResidenceDeclaration');
+      expect(service.questions[0]?.options).toEqual(['sim', 'nao']);
+
+      const vessel = service.id.includes('embarcacao');
+      const modes = vessel ? ['embarcacao', 'moto_aquatica'] : [''];
+      for (const mode of modes) {
+        const questions: Record<string, string> = mode ? { vesselType: mode } : {};
+        const no = publicService(catalog, service.id,
+          { ...questions, includeResidenceDeclaration: 'nao' });
+        const yes = publicService(catalog, service.id,
+          { ...questions, includeResidenceDeclaration: 'sim' });
+        if (mode && !yes) {
+          // The catalog explicitly marks some vessel variants unavailable.
+          expect(service.questions.find((q) => q.id === 'vesselType')
+            ?.unavailableOptions).toContain(mode);
+          continue;
+        }
+        expect(yes, service.id + ':' + mode).not.toBeNull();
+        expect(no, service.id + ':' + mode).not.toBeNull();
+        const withResidence = yes!.formVersionIds.filter((id) => residenceVersions.has(id));
+        expect(withResidence, service.id + ':' + mode).toHaveLength(1);
+        expect(no!.formVersionIds.filter((id) => residenceVersions.has(id))).toEqual([]);
+        expect(yes!.formVersionIds.filter((id) => !residenceVersions.has(id)))
+          .toEqual(no!.formVersionIds);
+        expect(yes!.formVersionIds.length)
+          .toBe(new Set(yes!.formVersionIds).size);
+        const expected = service.id.includes('aquaviario') ?
+          'declaracao-residencia-aquaviario-2026-v1'
+          : service.id.includes('embarcacao') && mode === 'moto_aquatica' ?
+            'declaracao-residencia-ma-v1' : 'declaracao-residencia-er-2026-v1';
+        expect(withResidence).toEqual([expected]);
+      }
+    }
+  });
+
+  it('não oculta o endereço do requerimento de certificado quando a declaração é omitida', () => {
+    const service = 'emissao-certificado-aquaviario';
+    const common = { certificateModel: 'dpc1031', personSex: 'masculino' };
+    const without = publicService(catalog, service,
+      { ...common, includeResidenceDeclaration: 'nao' });
+    const withDeclaration = publicService(catalog, service,
+      { ...common, includeResidenceDeclaration: 'sim' });
+    const certificate = 'requerimento-certificacao-aquaviario-2026-v1';
+    expect(without?.reviewForms.find((form) =>
+      form.formVersionId === certificate)?.fields.map((field) => field.id))
+      .toContain('person.fullAddress');
+    expect(withDeclaration?.reviewForms.find((form) =>
+      form.formVersionId === certificate)?.fields.map((field) => field.id))
+      .not.toContain('person.fullAddress');
   });
 
   it('publica os seis serviços de embarcação com as condições normativas validadas', () => {

@@ -23,7 +23,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável e auditar os
 | 04 | Motor reutilizável de preenchimento PDF | 02 | [ ] Parcial — motor e 21 mapeamentos existentes; 3 templates reconstruídos da fonte oficial aguardam QA visual final, inclusive preenchimento real no navegador |
 | 05 | Upload seguro e retenção temporária | 00 | [ ] Parcial — volume privado e limites globais de upload na branch de capacidade; CI e homologação pendentes |
 | 06 | Análise documental estruturada | 05 | [ ] Parcial — OpenAI Responses API como único provedor; testes simulados; homologação de precisão, custo, latência e privacidade ainda pendentes |
-| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — revisão humana preservada; E2E/browser/mobile real e homologação OpenAI pendentes |
+| 07 | Revisão humana e jornada integrada | 03, 04, 06 | [ ] Parcial — declaração de residência opcional com CI aprovado; QA Chromium e homologação OpenAI pendentes |
 | 08 | Autenticação e créditos de teste | 07 | [ ] Parcial — sessão e ledger existentes; crash real/multi-instância pendentes |
 | 09 | Hardening e homologação ponta a ponta | 08 | [ ] Parcial — proteção por limite de operações pesadas em implementação; homologação integral pendente |
 | 10 | Pagamentos reais | 09 e autorização | [ ] Pendente |
@@ -34,7 +34,7 @@ A autorização atual inclui consolidar a arquitetura reutilizável e auditar os
 | 15 | Carga, capacidade e custos | 11, 14 | [ ] Parcial — baseline de carga com 100 usuários e gargalo de 3 jobs observado; reteste da nova capacidade pendente |
 | 16 | Homologação pré-lançamento | 10–15 | [ ] Pendente |
 | 17 | Lançamento controlado | 16 e autorização | [ ] Pendente |
-| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 18 serviços globais publicados, incluindo exatamente 7 serviços de Aquaviários; CI #727 aprovado, QA manual navegador/celular pendente |
+| 18 | Expansão de serviços | 17 e decisão | [ ] Parcial — 18 serviços com opção de declaração de residência e CI aprovado; QA manual pendente |
 
 **Correção de estado:** a Fase 06 permanece **Parcial**. A disponibilidade dos 18 serviços e a homologação dos PDFs não comprovam precisão da análise OpenAI nem liberam produção. Permanecem gates de revisão humana, segurança, privacidade, E2E, carga, custos e infraestrutura.
 
@@ -751,6 +751,30 @@ os mesmos PDFs e mappings já homologados.
 - [ ] QA manual em navegador/mobile após merge ao ambiente de desenvolvimento.
 
 **Critério de merge:** CI verde do commit final do PR #86 e sem alteração de modelos oficiais sem revisão visual.
+
+## Declaração de residência opcional nos 18 serviços — 31/10/2026
+
+**Escopo:** opção inicial Sim/Não (padrão Não) em embarcações, amadores e aquaviários.
+Declarações de residência existentes passam de saída automática para opcional;
+o catálogo reutiliza as versões verificadas para cada categoria, sem mudar os
+PDFs originais, hashes ou mappings. Para amadores, usa o modelo 2-G da NORMAM-211
+como preparação opcional, com aviso de que a unidade da Marinha deve confirmar
+a aceitação do modelo. Comprovante de residência permanece fonte de entrada
+independente e opcional.
+
+- [x] Pergunta no início dos 18 serviços e regra de inclusão condicional no servidor.
+- [x] Evitar documentos duplicados e contemplar comunicação de venda e amadores.
+- [x] Resposta explícita quando não há PDF após optar por não preparar a declaração.
+- [x] Testes para as condições no catálogo, cotação HTTP e seleção no navegador React.
+- [x] CI de código aprovado na execução [41266492538](https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/41266492538): backend/frontend, PostgreSQL, Compose, PDFs e inspeção normativa. Job E2E Chromium não foi executado (manual).
+- [ ] Homologar visualmente a saída em um caso de amador, embarcação, moto aquática
+  e aquaviário; confirmar aceitação do modelo 2-G em casos de amador com a CP/DL/AG.
+
+**Arquivos:** `backend/src/modules/catalog/catalog.ts`,
+`backend/src/routes/catalog.ts`, `backend/src/modules/catalog/aquaviario-services.ts`,
+`frontend/src/features/real/LiveFlowPage.tsx`, `frontend/src/lib/api.ts`, testes,
+scripts E2E e README. **Migration:** nenhuma.
+**Estado:** implementado e validado por CI completo; merge pendente. Execução de Chromium E2E e homologação local ainda pendentes.
 
 ## Decisão de produto — entradas OpenAI e anexos de saída (31/10/2026)
 

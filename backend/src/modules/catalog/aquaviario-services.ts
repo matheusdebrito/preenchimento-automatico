@@ -206,10 +206,10 @@ const base = (
 
 export const aquaviarioServices: readonly ServiceDefinition[] = [
   base('inscricao-inicial-cir-aquaviario', 'Inscrição inicial / emissão da CIR',
-    'Gera a Declaração de Residência do Anexo 1-L. Para o 4º Grupo (Mergulhadores) e o 5º Grupo (Práticos), também gera um requerimento auxiliar não oficial. A fotografia prevista na norma é capturada no atendimento da CP/DL/AG.',
+    'Permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Para o 4º Grupo (Mergulhadores) e o 5º Grupo (Práticos), também gera um requerimento auxiliar não oficial. A fotografia prevista na norma é capturada no atendimento da CP/DL/AG.',
     [initialAquaviarioGroup], docs('applicant-identity', 'residence-proof')),
   base('segunda-via-cir-aquaviario', '2ª via da CIR',
-    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. Para extravio, roubo ou furto, também gera a Declaração do Anexo 1-K. A fotografia é capturada no atendimento.',
+    'Gera o requerimento auxiliar não oficial e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Para extravio, roubo ou furto, também gera a Declaração do Anexo 1-K. A fotografia é capturada no atendimento.',
     [cirSecondCopyReason], [
       ...docs('applicant-identity', 'residence-proof'),
       cirDataSource('current-cir-damage', 'CIR atual',
@@ -217,13 +217,13 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
         [{ questionId: 'cirSecondCopyReason', equals: 'dano' }]),
     ]),
   base('revalidacao-cir-aquaviario', 'Revalidação da CIR',
-    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. A fotografia só é necessária quando a revalidação ocorrer por término do espaço de anotações.',
+    'Gera o requerimento auxiliar não oficial e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. A fotografia só é necessária quando a revalidação ocorrer por término do espaço de anotações.',
     [], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('ascensao-categoria-aquaviario', 'Ascensão de categoria',
-    'Gera o requerimento auxiliar não oficial e a Declaração de Residência do Anexo 1-L. Informe a categoria atual e a categoria pretendida na finalidade do requerimento.',
+    'Gera o requerimento auxiliar não oficial e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Informe a categoria atual e a categoria pretendida na finalidade do requerimento.',
     [ascensionAquaviarioGroup], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
     [certificateModel, personSexQuestion], [
       ...docs('applicant-identity', 'residence-proof'),
       cirDataSource('current-cir-certification', 'CIR',
@@ -231,11 +231,11 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
         [{ questionId: 'certificateModel', oneOf: ['dpc1031', 'dpc1034'] }]),
     ]),
   base('segunda-via-certificado-aquaviario', '2ª via de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E, a Declaração de Residência do Anexo 1-L e, para extravio, roubo ou furto, a Declaração do Anexo 1-K. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E e, para extravio, roubo ou furto, a Declaração do Anexo 1-K; a Declaração de Residência do Anexo 1-L pode ser incluída opcionalmente. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
     [certificateSecondCopyModel, certificateSecondCopyReason, personSexQuestion],
     docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('revalidacao-certificado-aquaviario', 'Revalidação de certificado',
-    'Gera o Requerimento de Certificação oficial do Anexo 1-E e a Declaração de Residência do Anexo 1-L. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download. A NORMAM-101 não prevê revalidação do DPC-1033 pela Autoridade Marítima Brasileira.',
+    'Gera o Requerimento de Certificação oficial do Anexo 1-E e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download. A NORMAM-101 não prevê revalidação do DPC-1033 pela Autoridade Marítima Brasileira.',
     [revalidatableCertificateModel, personSexQuestion],
     docs('applicant-identity', 'current-cir', 'residence-proof')),
 ];

@@ -86,6 +86,7 @@ try {
   }
 
   // The first service generates Anexos 1-K and 1-L plus an auxiliary request.
+  await choose('Deseja preencher também uma declaração de residência?', 'sim');
   await choose('Motivo da 2ª via da CIR', 'extravio');
   await completeService('segunda-via-cir-aquaviario',
     ['declaracao-extravio-aquaviario-2026-v1', 'declaracao-residencia-aquaviario-2026-v1'],
@@ -94,6 +95,7 @@ try {
   // The next service covers the restored official NORMAM-211 Anexo 3-C.
   await page.goto(base + '/preencher-real/inscricao-embarcacao');
   await page.getByRole('heading', { name: 'Dados do serviço' }).waitFor();
+  await choose('Deseja preencher também uma declaração de residência?', 'sim');
   await choose('Tipo de embarcação', 'embarcacao');
   await choose('A embarcação possui coproprietário?', 'nao');
   await choose('Comprimento da embarcação', 'ate_6m');

@@ -171,7 +171,10 @@ function pruneHiddenAnswers(
   service: LiveService,
   answers: Readonly<Record<string, string>>,
 ): Record<string, string> {
-  const next = { ...answers };
+  // Never send stale answers for questions absent from the quoted service.
+  const activeIds = new Set(service.questions.map((question) => question.id));
+  const next = Object.fromEntries(
+    Object.entries(answers).filter(([id]) => activeIds.has(id)));
   let changed = true;
   while (changed) {
     changed = false;
@@ -191,7 +194,9 @@ export function LiveFlowPage() {
   const navigate = useNavigate();
   const [service, setService] = useState<LiveService | null>(null);
   const [step, setStep] = useState<Step>('questions');
-  const [answers, setAnswers] = useState<Record<string,string>>({});
+  const [answers, setAnswers] = useState<Record<string,string>>({
+    includeResidenceDeclaration: 'nao',
+  });
   const [files, setFiles] = useState<Record<string,File>>({});
   const [values, setValues] = useState<Record<string,string>>({});
   const [sources, setSources] = useState<Record<string,string>>({});
@@ -258,7 +263,7 @@ export function LiveFlowPage() {
           );
           if (cancelled) return;
           setService(quoted.service);
-          setAnswers(status.answers);
+          setAnswers({ includeResidenceDeclaration: 'nao', ...status.answers });
           setJobId(savedId);
           setExpiresAt(status.expiresAt);
           setUploadedRequirements(status.uploadedRequirementIds);
@@ -315,7 +320,10 @@ export function LiveFlowPage() {
       setAnswers(relevantAnswers);
       setService(result.service);
       setStep('files');
-    } catch { setError('Não foi possível validar os requisitos do serviço.'); }
+    } catch (issue) {
+      setError(issue instanceof ApiError ? issue.message
+        : 'Não foi possível validar os requisitos do serviço.');
+    }
     finally { setBusy(false); }
   };
 
@@ -640,9 +648,12 @@ export function LiveFlowPage() {
                   <h2>Dados do serviço</h2>
                   {service.questions.filter((question) =>
                     questionConditionsMatch(question, pruneHiddenAnswers(service, answers))).map((question) => (
-                    <label key={question.id} className="field">
+                    <div key={question.id}>
+                    <label className="field">
                       <span className="field__label">{question.label}</span>
                       <select className="field__input" required value={answers[question.id] ?? ''}
+                        aria-describedby={question.id === 'includeResidenceDeclaration'
+                          ? 'residence-declaration-hint' : undefined}
                         onChange={(event) => setAnswers((prev) =>
                           pruneHiddenAnswers(service, {
                             ...prev,
@@ -695,6 +706,13 @@ export function LiveFlowPage() {
                         })}
                       </select>
                     </label>
+                    {question.id === 'includeResidenceDeclaration' && (
+                      <p id="residence-declaration-hint" className="field__hint">
+                        A declaração será adicionada apenas se você escolher Sim.
+                        A aceitação depende das exigências da Capitania, Delegacia ou Agência da Marinha responsável.
+                      </p>
+                    )}
+                    </div>
                   ))}
                   <Button disabled={busy} onClick={() => void quote()}>Ver formulários e continuar</Button>
                 </>

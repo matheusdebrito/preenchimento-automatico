@@ -74,6 +74,7 @@ assert.equal(listing.body.services.length,18);
 const matrix=[];
 for(const service of listing.body.services){
   const combinations=enumerate(service), quoteCases=[];
+  let noOutputCases=0;
   assert(combinations.length>0&&combinations.length<20000,'Cardinality unusual: '+service.id);
   for(let i=0;i<combinations.length;i+=12){
     const batch=await Promise.all(combinations.slice(i,i+12).map(async answers=>{
@@ -81,6 +82,11 @@ for(const service of listing.body.services){
       return {answers,response};
     }));
     for(const {answers,response} of batch){
+      // Some selections legitimately have no PDFs (e.g. initial CIR with no residence declaration).
+      if(response.status===422 && response.body?.error==='no_forms_selected'){
+        noOutputCases++;
+        continue;
+      }
       if(response.status!==200 || !response.body.service?.formVersionIds?.length){
         errors.push({stage:'quote',service:service.id,answers,status:response.status});continue;
       }
@@ -92,14 +98,16 @@ for(const service of listing.body.services){
   const chosen=cover(quoteCases);
   matrix.push({id:service.id,title:service.title,questions:service.questions,
     totalCombinations:combinations.length,quoteValid:quoteCases.length,
-    invalidQuotes:combinations.length-quoteCases.length,pairwiseTokens:chosen.tokenCount,
+    invalidQuotes:combinations.length-quoteCases.length-noOutputCases,
+    noOutputCases,pairwiseTokens:chosen.tokenCount,
     selected:chosen.selected.map((c,i)=>({...c,tokens:[...c.tokens],caseId:clean(service.id)+'-'+String(i+1).padStart(2,'0')}))});
 }
 const stats={services:matrix.length,
   combinations:matrix.reduce((x,s)=>x+s.totalCombinations,0),
   validQuotes:matrix.reduce((x,s)=>x+s.quoteValid,0),
   browserCases:matrix.reduce((x,s)=>x+s.selected.length,0),
-  quoteErrors:errors.length};
+  quoteErrors:errors.length,
+  noOutputCases:matrix.reduce((total,s)=>total+s.noOutputCases,0)};
 const md=['# Matriz de testes E2E','',
  'Dados fictícios plausíveis, sem uso da OpenAI, cadastro real ou documentos de terceiros.','','## Resumo',
  '| Serviço | Combinações permitidas | Quotes válidos | Casos Chrome |',
