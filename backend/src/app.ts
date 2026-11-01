@@ -73,7 +73,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // Vitest executes API suites in parallel. Give each test app a unique
   // private root so orphan cleanup cannot erase another suite's live job.
   const testRoot = isTest ? resolve(tmpdir(), 'pa-test-app-' + randomUUID()) : undefined;
-  registerJobRoutes(app, options.pool, options.catalogOverride, testRoot);
+  registerJobRoutes(app, options.pool, options.catalogOverride, testRoot, {
+    maxOpenJobs: env.JOB_MAX_OPEN,
+    maxHeavyOperations: env.JOB_MAX_HEAVY,
+    maxTotalUploadBytes: env.JOB_MAX_UPLOAD_MB * 1024 * 1024,
+  });
 
   app.setNotFoundHandler(async (_request, reply) =>
     reply.status(404).send({
