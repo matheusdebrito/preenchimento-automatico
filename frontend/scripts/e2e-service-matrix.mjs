@@ -98,7 +98,8 @@ for(const service of listing.body.services){
   const chosen=cover(quoteCases);
   matrix.push({id:service.id,title:service.title,questions:service.questions,
     totalCombinations:combinations.length,quoteValid:quoteCases.length,
-    invalidQuotes:combinations.length-quoteCases.length,pairwiseTokens:chosen.tokenCount,
+    invalidQuotes:combinations.length-quoteCases.length-noOutputCases,
+    noOutputCases,pairwiseTokens:chosen.tokenCount,
     selected:chosen.selected.map((c,i)=>({...c,tokens:[...c.tokens],caseId:clean(service.id)+'-'+String(i+1).padStart(2,'0')}))});
 }
 const stats={services:matrix.length,
