@@ -95,6 +95,7 @@ try {
   // The next service covers the restored official NORMAM-211 Anexo 3-C.
   await page.goto(base + '/preencher-real/inscricao-embarcacao');
   await page.getByRole('heading', { name: 'Dados do serviço' }).waitFor();
+  await choose('Deseja preencher também uma declaração de residência?', 'sim');
   await choose('Tipo de embarcação', 'embarcacao');
   await choose('A embarcação possui coproprietário?', 'nao');
   await choose('Comprimento da embarcação', 'ate_6m');
