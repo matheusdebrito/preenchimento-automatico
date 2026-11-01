@@ -21,6 +21,35 @@ const service = {
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); });
 
 describe('jornada real isolada da demonstração', () => {
+  it('exibe a opção de declaração de residência em primeiro lugar, com Não como padrão', async () => {
+    const withResidence = {
+      ...service,
+      questions: [{
+        id: 'includeResidenceDeclaration',
+        label: 'Deseja preencher também uma declaração de residência?',
+        options: ['sim', 'nao'],
+      }],
+    };
+    const quotes: Array<{answers: Record<string,string>}> = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.endsWith('/quote')) {
+        quotes.push(JSON.parse(String(init?.body)) as {answers: Record<string,string>});
+        return json({ service: withResidence });
+      }
+      if (path === '/api/services/ci-only-service') return json({ service: withResidence });
+      return json({ error: 'not_found' }, 404);
+    }));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    const question = await screen.findByLabelText('Deseja preencher também uma declaração de residência?') as HTMLSelectElement;
+    expect(question.value).toBe('nao');
+    expect(screen.getByText(/A aceitação depende das exigências/)).toBeTruthy();
+    await user.selectOptions(question, 'sim');
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
+    expect(quotes).toEqual([{ answers: { includeResidenceDeclaration: 'sim' } }]);
+  });
+
   it('exibe opções ainda não homologadas como desabilitadas', async () => {
     const serviceWithUnavailableOption = {
       ...service,
