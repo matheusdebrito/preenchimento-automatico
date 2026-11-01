@@ -854,8 +854,9 @@ aplicação com contas de teste. Nenhum documento pessoal foi usado.
 - [x] Resposta de capacidade controlada antes de extrair/cobrar, com `Retry-After`, sem remover o job da sessão.
 - [x] Mover arquivos temporários para volume Docker privado no disco da VPS, preservando limpeza por TTL.
 - [x] Atualizar testes determinísticos de limite global e de contenção por operações pesadas e o script de estresse.
-- [ ] Aprovar CI da branch final, incluindo testes backend/frontend, PostgreSQL e Docker Compose.
-- [ ] Executar estresse com **100 processos realmente abertos** e no máximo 2 executando PDFs ao mesmo tempo; medir CPU, RAM, armazenamento, throughput e erros inesperados.
+- [x] CI do código aprovado em https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/41256073242 (backend/frontend, PostgreSQL, Docker Compose, PDFs e inspeção NORMAM); revisão final documental aguarda novo CI.
+- [x] Estresse isolado com 100 processos abertos e duas gerações de PDFs por lote, sem falhas inesperadas: 100/100 processos concluídos, 200 PDFs baixados, 0 recusas, HTTP 200 no health, 2.394 consultas sustentadas com 100 identidades de teste; execução https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/41256347780.
+- [ ] Medir e homologar recursos (CPU/RAM/disco) especificamente na VPS 2 vCPU e 8 GB com documentos e latência OpenAI simulada.
 - [ ] Propor, revisar e autorizar migration da fila PostgreSQL; **não executar migration sem aprovação específica**.
 - [ ] Testar a OpenAI simulada, cancelamento, expiração e custos sob concorrência em ambiente isolado; depois homologar na VPS.
 
@@ -868,4 +869,4 @@ a API, nem suporte a vários containers de API. A mudança não significa que
 `backend/src/routes/jobs.ts`, `backend/src/config/env.ts`,
 `backend/src/app.ts`, testes, `frontend/src/lib/api.ts`,
 `backend/Dockerfile`, `compose.yaml`, `.env.example`, README.
-**Estado:** implementado na branch; testes e merge ainda pendentes.
+**Estado:** implementação e regressão sintética testadas na branch; CI final e merge pendentes. Primeira rodada de carga revelou um 409 em downloads simultâneos do mesmo processo; corrigido com leases de leitura independentes, liberados uma única vez por stream. Regressão unitária adicionada. A última rodada de carga aprovou todos os 100 fluxos. Sem migration ou deploy.
