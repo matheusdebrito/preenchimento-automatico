@@ -28,7 +28,13 @@ export function registerCatalogRoutes(app: FastifyInstance, definitions: Catalog
     if (!parsed.success) return reply.status(400).send({ error: 'invalid' });
     // Older clients may not send the newly optional question.
     // Omission means "no declaration"; explicit invalid answers remain rejected.
-    const answers = { includeResidenceDeclaration: 'nao', ...parsed.data.answers };
+    const supportsResidenceChoice = definitions.services.some((definition) =>
+      definition.id === request.params.id &&
+      definition.questions.some((question) => question.id === 'includeResidenceDeclaration'));
+    const answers = {
+      ...(supportsResidenceChoice ? { includeResidenceDeclaration: 'nao' } : {}),
+      ...parsed.data.answers,
+    };
     const service = publicService(definitions, request.params.id, answers);
     const relevantQuestions = service?.questions.filter((question) =>
       (question.conditions ?? []).every((condition) =>
