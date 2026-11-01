@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { catalog } from './catalog.js';
+import { publicService } from './public-catalog.js';
 import { motoAquaticaServiceForms } from './vessel-services.js';
 import { BADE_ALLOWED_FIELD_NUMBERS } from './normam211-mappings.js';
 import { validateCatalog } from './validate-catalog.js';
