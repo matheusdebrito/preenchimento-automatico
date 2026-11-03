@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { catalog } from '../dist/modules/catalog/catalog.js';
 import { fillPdf } from '../dist/modules/pdf/fill-pdf.js';
+import { fillApprovedTemplate } from '../dist/modules/pdf/verified-template.js';
 import { validateMappedFieldValues } from '../dist/modules/catalog/field-validation.js';
 
 // All test data below is synthetic; only visual previews are committed.
@@ -156,9 +157,13 @@ const synthetic = {
   'aquaviario.authorityName': 'CAPITANIA DE TESTE',
 };
 // Only fictitious data is ever used in published CI samples.
-async function writePreview(input, placements, values, path) {
+async function writePreview(input, placements, values, path, version) {
   validateMappedFieldValues(catalog.fields, placements, values);
-  const output = await fillPdf(input, placements, values);
+  // BADE previews must exercise the same special address layout/page-trimming
+  // path as real downloads, rather than the low-level mapper alone.
+  const output = version.formId === 'bade-er'
+    ? await fillApprovedTemplate(catalog, version.id, values)
+    : await fillPdf(input, placements, values);
   const pdf = await PDFDocument.load(output);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   for (const page of pdf.getPages()) {
@@ -176,7 +181,7 @@ for (const map of catalog.mappings) {
   const input = await readFile(resolve(root, version.templatePath));
   const dir = join(root, 'docs/_pdf_test_previews', version.formId);
   await mkdir(dir, { recursive: true });
-  await writePreview(input, map.placements, synthetic, join(dir, 'synthetic.pdf'));
+  await writePreview(input, map.placements, synthetic, join(dir, 'synthetic.pdf'), version);
 
   // Exercise visually reviewed, physically separate second-line writing areas.
   const stressValues = version.formId === 'bade-er'
@@ -187,7 +192,7 @@ for (const map of catalog.mappings) {
         'person.address': 'AVENIDA DOS NAVEGANTES DO PORTO COMERCIAL E TURISTICO' }
       : null;
   if (stressValues) {
-    await writePreview(input, map.placements, stressValues, join(dir, 'synthetic-long.pdf'));
+    await writePreview(input, map.placements, stressValues, join(dir, 'synthetic-long.pdf'), version);
   }
   console.log('Synthetic samples created: ' + version.formId + ' / ' +
     map.placements.length + ' placements' + (stressValues ? ' + long values' : ''));
