@@ -61,8 +61,8 @@ const loss: readonly CoordinatePlacement[] = [
   top('person.postalCode', 205, 260, 70, 6.5),
   // Cidade/UF termina antes do rotulo "telefones"; telefone ocupa sua
   // propria linha impressa, antes de "Declaro que".
-  top('person.city', 262, 260, 26, 6.0),
-  top('person.state', 290, 260, 12, 6.0),
+  top('person.city', 280, 260, 65, 6.0),
+  top('person.state', 349, 260, 16, 6.0),
   top('person.phone', 375, 260, 100, 6.2),
   top('process.aquaviarioLostDocumentType', 73, 319, 9, 9, 0, false, 'dpc1031'),
   top('process.aquaviarioLostDocumentType', 73, 339, 9, 9, 0, false, 'dpc1033'),
@@ -72,7 +72,10 @@ const loss: readonly CoordinatePlacement[] = [
   top('aquaviario.lossEventDate', 145, 414, 18, 7, 0, false, undefined, 'DATE_DAY'),
   top('aquaviario.lossEventDate', 174, 414, 18, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
   top('aquaviario.lossEventDate', 195, 414, 30, 7, 0, false, undefined, 'DATE_YEAR'),
-  top('aquaviario.lossDescription', 370, 414, 175, 6.2),
+  { ...top('aquaviario.lossDescription', 370, 414, 175, 6.2),
+    minFontSize: 5.5,
+    continuationLines: [{ x: 100, y: PAGE_HEIGHT - 434, maxWidth: 445 }],
+  },
   top('aquaviario.authorityName', 250, 516, 95, 6.2),
   top('process.date', 372, 516, 18, 6.5, 0, false, undefined, 'DATE_DAY'),
   top('process.date', 414, 516, 65, 6.5, 0, false, undefined, 'DATE_MONTH_NAME_PT_BR'),
