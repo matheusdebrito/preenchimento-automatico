@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { PDFDocument } from 'pdf-lib';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import type { CatalogDefinition } from '../catalog/contracts.js';
+import type { CatalogDefinition, FieldPlacement } from '../catalog/contracts.js';
 import { fillPdf } from './fill-pdf.js';
 import { validateMappedFieldValues } from '../catalog/field-validation.js';
 import { TemplateGenerationError } from './template-error.js';
@@ -36,7 +36,31 @@ export async function fillApprovedTemplate(
     throw new TemplateGenerationError('template_hash_mismatch');
   }
   validateMappedFieldValues(catalog.fields, approved[0]!.placements, values);
-  const filled = await fillPdf(pdfBytes, approved[0]!.placements, values);
+  let placements: readonly FieldPlacement[] = approved[0]!.placements;
+  let printableValues: Readonly<Record<string, string>> = values;
+  if (version.formId === 'bade-er') {
+    // BADE field 44 is one continuous printed address, although the review UI
+    // deliberately keeps street, number and complement editable independently.
+    // Never apply this to other PDF versions: their cells can be separated.
+    const parts = ['person.address', 'person.streetNumber', 'person.apartment']
+      .map((fieldId) => values[fieldId]?.trim() ?? '')
+      .filter(Boolean);
+    if (parts.length > 0) {
+      const addressPlacement = placements.find((placement) =>
+        placement.kind === 'COORDINATES' && placement.fieldId === 'person.address');
+      if (!addressPlacement || addressPlacement.kind !== 'COORDINATES') {
+        throw new TemplateGenerationError('template_layout_invalid');
+      }
+      placements = [
+        ...placements.filter((placement) =>
+          !['person.address', 'person.streetNumber', 'person.apartment']
+            .includes(placement.fieldId)),
+        addressPlacement,
+      ];
+      printableValues = { ...values, 'person.address': parts.join(', ') };
+    }
+  }
+  const filled = await fillPdf(pdfBytes, placements, printableValues);
   // The approved BADE mapping writes exclusively to the first two pages.
   // Preserve the SHA-verified official source; trim only the delivered copy.
   if (version.formId !== 'bade-er') return filled;
