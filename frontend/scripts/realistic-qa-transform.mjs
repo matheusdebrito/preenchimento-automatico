@@ -72,6 +72,7 @@ const newGeneration = `      row.adjustments=[];
         if(!fieldId || !['text_overflow','text_too_long'].includes(issue.fieldReason??issue.reason)) {
           throw Error('Unexpected generation error '+JSON.stringify(issue));
         }
+        throw Error('Realistic field overflow without modification: '+fieldId+' '+JSON.stringify(issue));
         const input=page.locator('input[id$="-'+fieldId+'"]:visible').first();
         await input.waitFor();
         const before=await input.inputValue();
