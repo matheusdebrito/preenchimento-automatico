@@ -431,7 +431,8 @@ export function LiveFlowPage() {
         present.add(requirementId);
         setUploadedRequirements([...present]);
       }
-      setAnalysisStage('analyzing');
+      // Show OpenAI progress only when documents were actually submitted.
+      setAnalysisStage(present.size > 0 ? 'analyzing' : 'preparing');
       const read = await api<{
         fields: Record<string,string>; sources: Record<string,string>;
         diagnostics?: ExtractionDiagnostic[];
@@ -839,7 +840,7 @@ export function LiveFlowPage() {
                     <section className="analysis-progress card" role="status" aria-live="polite" aria-busy="true">
                       <div className="analysis-progress__spinner" aria-hidden="true" />
                       <div className="analysis-progress__body">
-                        <strong>{analysisStage === 'preparing' ? 'Preparando análise dos documentos…' :
+                        <strong>{analysisStage === 'preparing' ? 'Preparando revisão dos campos…' :
                           analysisStage === 'uploading' ? 'Enviando documentos com segurança…' :
                           'Analisando documentos com inteligência artificial…'}</strong>
                         <p>{analysisStage === 'analyzing'
