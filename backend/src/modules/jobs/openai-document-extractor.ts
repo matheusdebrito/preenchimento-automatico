@@ -277,7 +277,8 @@ function outputSchema(fieldIds: readonly string[], requirementIds: readonly stri
           type: 'object', additionalProperties: false,
           required: ['fieldId', 'sourceRequirementId', 'status'],
           properties: {
-            fieldId: { type: 'string', enum: fieldIds },
+            fieldId: { type: 'string', enum: fieldIds.filter((id) =>
+              id.endsWith('.issuer') || id.endsWith('.issuerState')) },
             sourceRequirementId: { type: 'string', enum: requirementIds },
             status: { type: 'string', enum: ['not_visible', 'uncertain'] },
           },
@@ -533,6 +534,7 @@ export async function extractDocumentsWithOpenAi(
   // Inconsistent status vs candidate is treated as uncertain, never used to
   // suppress a recovery attempt.
   const missingFields: MissingFieldObservation[] = parsed.missingFields
+    .filter((item) => item.fieldId.endsWith('.issuer') || item.fieldId.endsWith('.issuerState'))
     .filter((item) => allowedBySource.get(item.sourceRequirementId)?.has(item.fieldId))
     .filter((item) => allowedFields.has(item.fieldId))
     .filter((item) => !evidence.some((candidate) =>
