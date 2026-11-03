@@ -27,7 +27,7 @@ const aquaviarioIds = [
 ] as const;
 
 const residenceId = 'declaracao-residencia-aquaviario-2026-v1';
-const auxiliaryRequestId = 'requerimento-interessado-aquaviario-2026-v1';
+const auxiliaryRequestId = 'requerimento-interessado-aquaviario-2026-v2';
 const certificationRequestId = 'requerimento-certificacao-aquaviario-2026-v1';
 const lossDeclarationId = 'declaracao-extravio-aquaviario-2026-v1';
 
