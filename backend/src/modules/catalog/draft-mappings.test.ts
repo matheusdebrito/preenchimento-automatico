@@ -57,8 +57,9 @@ describe('versioned form map coordinates', () => {
       mapping.formVersionId === 'bsade-er-2026-v1')!;
     const minimumX: Record<string, number> = {
       'vessel.name': 155, 'vessel.registration': 298.05,
-      'vessel.type': 130, 'vessel.length': 135,
-      'vessel.breadth': 130, 'vessel.depth': 130,
+      // x=144.72 is the real divider between label and value cells.
+      'vessel.type': 150, 'vessel.length': 150,
+      'vessel.breadth': 150, 'vessel.depth': 150,
       'vessel.hullId': 440.98, 'vessel.motorBrand': 137.22,
       'vessel.motorPower': 256.14, 'vessel.motorSerial': 404.07,
     };
