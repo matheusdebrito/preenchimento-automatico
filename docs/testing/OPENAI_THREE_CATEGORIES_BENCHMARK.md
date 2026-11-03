@@ -8,12 +8,13 @@ utiliza o código do extrator de produção e as regras do catálogo público
 | Cenário | Serviço selecionado no catálogo | Arquivos fictícios |
 | --- | --- | --- |
 | Embarcações | `transferencia-propriedade-embarcacao` | RG em PNG, TIE em PDF (2 páginas), comprovante de residência em PDF |
-| Amadores | `renovacao-cha-amador` | RG em PNG, CHA em PDF, comprovante de residência em PDF |
-| Aquaviários | `revalidacao-cir-aquaviario` | RG em PNG, CIR em PDF, comprovante de residência em PDF |
+| Amadores | `renovacao-cha-amador` (CHA danificada) | RG em PNG, CHA em PDF, comprovante de residência em PDF |
+| Aquaviários | `revalidacao-certificado-aquaviario` (DPC-1031) | RG em PNG, CIR em PDF, comprovante de residência em PDF |
 
 A pergunta `includeResidenceDeclaration` usa `sim` nos três
 serviços, de modo que os campos da declaração sejam considerados nos
 formulários. A opção de coproprietário é `nao` no caso de embarcações.
+Na categoria Amadores, a situação da CHA é 'danificada', incluindo a declaração que mapeia o número da carteira. Na categoria Aquaviários, o modelo de certificado é DPC-1031, cujo requerimento mapeia número e categoria da CIR.
 O teste usa um requerente fictício e dados artificiais coerentes entre
 os documentos; jamais há upload de identidade pessoal real. Os layouts
 sintéticos são simplificados e **não reproduzem formatos oficiais**.
