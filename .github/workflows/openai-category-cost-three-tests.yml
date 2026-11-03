@@ -1,0 +1,66 @@
+name: Custos OpenAI - 3 categorias com 3 documentos
+on:
+  # Single push-path trigger: the first merge that adds this workflow runs the
+  # explicitly requested paid benchmark once, on reviewed main code only.
+  # Later executions must be manual unless this workflow file changes.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/openai-category-cost-three-tests.yml'
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Modelo para tres processos reais simulados
+        type: choice
+        required: true
+        default: gpt-5.4-mini-2026-03-17
+        options:
+          - gpt-5.4-mini-2026-03-17
+          - gpt-5.4-nano-2026-03-17
+permissions:
+  contents: read
+concurrency:
+  group: openai-three-category-benchmark
+  cancel-in-progress: false
+jobs:
+  three-category-batches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install locked deps and compile real extraction and catalog policies
+        run: |
+          npm ci --prefix backend
+          npm run build --prefix backend
+      - name: Install PDF-to-image renderer for synthetic RG
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+      - name: Run exactly 3 category cases with 3 synthetic documents each
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_PROJECT_ID: ${{ vars.OPENAI_PROJECT_ID || secrets.OPENAI_PROJECT_ID }}
+          OPENAI_MODEL: ${{ inputs.model || 'gpt-5.4-mini-2026-03-17' }}
+          OPENAI_DOCUMENT_DETAIL: high
+          OPENAI_COST_BENCH_CATEGORY_MODE: "1"
+          BENCH_REPORT_DIR: openai-category-cost-results
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::error::OPENAI_API_KEY missing in Actions repository secrets."
+            exit 1
+          fi
+          node backend/scripts/openai-cost-benchmark.mjs
+      - name: Publish cost and accuracy metrics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openai-three-categories-cost-report
+          path: openai-category-cost-results/
+          retention-days: 7
+          if-no-files-found: warn
