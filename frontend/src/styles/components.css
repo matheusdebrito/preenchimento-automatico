@@ -891,3 +891,39 @@
     animation: none;
   }
 }
+
+/* Accessible indeterminate loading indicators; never imply fake progress. */
+.skeleton-stack { display: grid; gap: 0.8rem; }
+.skeleton-line, .skeleton-block {
+  display: block;
+  border-radius: 0.65rem;
+  background: linear-gradient(90deg, #e7edf1 20%, #f5f8f9 45%, #e7edf1 70%);
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+.skeleton-line { width: 80%; height: 1.15rem; }
+.skeleton-line--short { width: 42%; }
+.skeleton-line--wide { width: 96%; }
+.skeleton-block { width: 100%; height: 7rem; }
+.analysis-progress {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-color: var(--color-teal);
+}
+.analysis-progress__body { flex: 1; min-width: 0; }
+.analysis-progress__body p { margin: 0.4rem 0 0.85rem; }
+.analysis-progress__spinner {
+  flex: 0 0 1.5rem;
+  width: 1.5rem; height: 1.5rem;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-teal);
+  border-radius: 50%;
+  animation: analysis-spin 0.9s linear infinite;
+}
+@keyframes skeleton-shimmer { to { background-position-x: -220%; } }
+@keyframes analysis-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-line, .skeleton-block, .analysis-progress__spinner { animation: none; }
+}
