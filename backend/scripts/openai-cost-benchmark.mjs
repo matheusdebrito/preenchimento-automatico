@@ -20,10 +20,11 @@ const rates = pricing[model];
 if (!rates) throw new Error('Unsupported test model; choose the approved mini or nano snapshot.');
 const dryRun = process.env.OPENAI_COST_BENCH_DRY_RUN === '1';
 const categoryMode = process.env.OPENAI_COST_BENCH_CATEGORY_MODE === '1';
+const identityMode = process.env.OPENAI_COST_BENCH_IDENTITY_MODE === '1';
 if (!dryRun && !process.env.OPENAI_API_KEY) {
   throw new Error('Missing OPENAI_API_KEY GitHub Actions secret.');
 }
-const maxExternalCalls = categoryMode ? 6 : 10; // One primary + at most one contingency per case.
+const maxExternalCalls = identityMode ? 9 : categoryMode ? 9 : 10;
 const maxEstimatedUsd = 0.15; // Soft guard based on observed token usage, not a billing guarantee.
 const reportsPath = resolve(process.env.BENCH_REPORT_DIR ||
   (categoryMode ? 'openai-category-cost-results' : 'openai-cost-results'));
@@ -91,6 +92,13 @@ const syntheticDocuments = [
       'person.issuer': 'SSP',
       'person.issuerState': 'RJ',
     },
+  },
+  {
+    name: 'rg-no-issuer',
+    heading: 'RG SINTETICO SEM ORGAO EMISSOR IMPRESSO',
+    pages: [[['NOME COMPLETO', 'ANA CLARA SOUZA'],['CPF', '529.982.247-25'],['REGISTRO GERAL', '12.345.678-9']]],
+    type: 'identity', kind: 'png', allowedFields: rgFields,
+    expected: { 'person.fullName':'ANA CLARA SOUZA', 'person.cpf':'529.982.247-25', 'person.identity':'12.345.678-9' },
   },
   {
     name: 'tie',
@@ -337,7 +345,7 @@ try {
     if (!service || service.formVersionIds.length === 0) {
       throw new Error('Unavailable or unselected test service: ' + serviceId);
     }
-    if (attachments.length !== 3) throw new Error('Each category must send exactly 3 documents.');
+    if (attachments.length !== 3 && !identityMode) throw new Error('Each category must send exactly 3 documents.');
     const reviewable = new Set(service.reviewFields.map((entry) => entry.id));
     const documentNames = attachments.map((item) => item.fileName);
     const descriptors = attachments.map(({ fileName, requirementId }) => {
@@ -389,7 +397,12 @@ try {
     return { id, serviceId, documentNames, documents: descriptors, fields, expected };
   }
 
-  const testCases = categoryMode ? [
+  const answersIdentity = { vesselType:'embarcacao', vesselBand:'ate_6m', hasCoOwner:'nao', initialResponsibilityTerm:'nao', responsibilityTermCase:'nao' };
+  const testCases = identityMode ? [
+    categoryCase('rg_isolado','inscricao-embarcacao',answersIdentity,[{fileName:'rg',requirementId:'applicant-identity'}],['person.identity','person.issuer']),
+    categoryCase('rg_mais_comprovante','inscricao-embarcacao',answersIdentity,[{fileName:'rg',requirementId:'applicant-identity'},{fileName:'residence',requirementId:'residence-proof'}],['person.identity','person.issuer','person.address','person.postalCode']),
+    categoryCase('rg_sem_orgao_visivel','inscricao-embarcacao',answersIdentity,[{fileName:'rg-no-issuer',requirementId:'applicant-identity'}],['person.identity']),
+  ] : categoryMode ? [
     categoryCase(
       'embarcacoes_transferencia_3_docs',
       'transferencia-propriedade-embarcacao',
@@ -465,6 +478,7 @@ try {
       const mismatches = Object.entries(expected)
         .filter(([id, expectedValue]) => normalized(found[id] || '') !== normalized(expectedValue))
         .map(([id]) => id);
+      const unexpectedFieldIds = scenario.id === 'rg_sem_orgao_visivel' ? ['person.issuer','person.issuerState'].filter((id)=>Boolean(found[id])) : [];
       const scenarioCalls = calls.slice(startCall);
       const costUsd = scenarioCalls.reduce((acc, item) => acc + (item.estimatedUsd || 0), 0);
       scenarios.push({
@@ -479,6 +493,7 @@ try {
         expectedFields: Object.keys(expected).length,
         correctFields: Object.keys(expected).length - mismatches.length,
         mismatchedFieldIds: mismatches,
+        unexpectedFieldIds,
         contingencyUsed: result.contingency.used,
         contingencyFailed: result.contingency.failed,
         inputTokens: scenarioCalls.reduce((acc, item) => acc + (item.inputTokens || 0), 0),
@@ -505,7 +520,7 @@ try {
   const totalOutputTokens = calls.reduce((sum, call) => sum + (call.outputTokens || 0), 0);
   const summary = {
     time: new Date().toISOString(),
-    suite: categoryMode ? '3_categories_3_documents_each' : '5_baseline_cases',
+    suite: identityMode ? 'identity_isolated_vs_combined' : categoryMode ? '3_categories_3_documents_each' : '5_baseline_cases',
     model,
     mode: dryRun ? 'offline_mock_no_api_calls' : 'real_openai_responses_api',
     syntheticOnly: true,
@@ -522,16 +537,17 @@ try {
         ? Number((totalEstimatedUsd / scenarios.filter((s) => s.status === 'completed').length).toFixed(8)) : null,
     },
     guards: {
-      maxScenarios: categoryMode ? 3 : 5, maxExternalCalls, maxEstimatedUsd,
+      maxScenarios: identityMode ? 3 : categoryMode ? 3 : 5, maxExternalCalls, maxEstimatedUsd,
       caveat: 'Cost guard is post-response/soft; the OpenAI project budget is authoritative.',
     },
   };
   await writeFile(join(reportsPath,
-    categoryMode ? 'resultados-openai-3-categorias.json' : 'resultados-openai-5-testes.json'),
+    identityMode ? 'resultados-openai-identidade.json' : categoryMode ? 'resultados-openai-3-categorias.json' : 'resultados-openai-5-testes.json'),
     JSON.stringify(summary, null, 2) + '\n', { mode: 0o600 });
   const lines = [
     dryRun
       ? '# Smoke offline: cenários sintéticos sem API'
+      : identityMode ? '# Identidade: RG isolado versus combinado em chamadas reais'
       : categoryMode
         ? '# Três categorias de serviço: custo real com 3 documentos por processo'
         : '# Cinco testes reais: custos de extração de documentos sintéticos',
@@ -561,8 +577,8 @@ try {
     'Documentos sintéticos simplificados não representam a qualidade ou complexidade dos documentos reais digitalizados.',
   ];
   await writeFile(join(reportsPath,
-    categoryMode ? 'relatorio-openai-3-categorias.md' : 'relatorio-openai-5-testes.md'),
+    identityMode ? 'relatorio-openai-identidade.md' : categoryMode ? 'relatorio-openai-3-categorias.md' : 'relatorio-openai-5-testes.md'),
     lines.join('\n') + '\n', { mode: 0o600 });
   await rm(working, { recursive: true, force: true });
 }
-if (fatal || scenarios.length !== (categoryMode ? 3 : 5)) process.exitCode = 1;
+if (fatal || scenarios.length !== (identityMode ? 3 : categoryMode ? 3 : 5)) process.exitCode = 1;
