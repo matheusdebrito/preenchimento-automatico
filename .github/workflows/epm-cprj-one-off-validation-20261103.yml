@@ -1,0 +1,53 @@
+name: EPM CPRJ real OpenAI plus PDF (one-off bounded)
+on:
+  push:
+    branches:
+      - test/epm-real-api-pdf-validation-20261103
+permissions:
+  contents: read
+concurrency:
+  group: epm-cprj-single-validation-20261103
+  cancel-in-progress: false
+jobs:
+  actual-extraction-and-form:
+    if: contains(github.event.head_commit.message, '[run-epm-real-api]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install and build the production extractor
+        run: |
+          npm ci --prefix backend
+          npm run build --prefix backend
+      - name: Install synthetic document renderer and PDF text verifier
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+      - name: Run exactly one real OpenAI EPM case (max 2 API requests)
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_PROJECT_ID: ${{ vars.OPENAI_PROJECT_ID || secrets.OPENAI_PROJECT_ID }}
+          OPENAI_MODEL: gpt-5.4-mini-2026-03-17
+          OPENAI_DOCUMENT_DETAIL: high
+          OPENAI_EPM_VALIDATION_MODE: '1'
+          BENCH_REPORT_DIR: openai-epm-validation-results
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::error::OPENAI_API_KEY not configured in repository Actions secrets."
+            exit 1
+          fi
+          node backend/scripts/openai-cost-benchmark.mjs
+      - name: Upload metrics and field IDs only (no documents or model responses)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openai-epm-real-validation-metrics
+          path: openai-epm-validation-results/
+          retention-days: 7
+          if-no-files-found: warn
