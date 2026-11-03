@@ -91,6 +91,8 @@ jobs:
       - name: Build
         working-directory: backend
         run: npm run build
+      - name: Syntax-check manual real-API cost benchmark (no network, no secrets)
+        run: node --check backend/scripts/openai-cost-benchmark.mjs
 
   frontend-checks:
     needs: detect-changes
