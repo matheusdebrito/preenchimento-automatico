@@ -130,8 +130,8 @@ const auxiliaryRequest: readonly CoordinatePlacement[] = [
   // Sexo é marcado somente na opção informada, sem inferir o sexo de alguém.
   top('person.sex', 81, 417, 8, 7, 0, false, 'masculino'),
   top('person.sex', 104, 417, 8, 7, 0, false, 'feminino'),
-  top('person.phone', 148, 418, 101, 6.8),
-  top('person.mobile', 279, 418, 126, 6.8),
+  top('person.phone', 165, 418, 83, 6.8),
+  top('person.mobile', 303, 418, 68, 6.8),
   top('person.email', 428, 418, 124, 6.8),
   top('person.motherName', 64, 455, 487, 7.2),
   top('person.address', 64, 497, 486, 7.2),
