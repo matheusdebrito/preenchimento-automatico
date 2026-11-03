@@ -345,7 +345,7 @@ function extractionPrompt(
     typeRules.push('TIE/TIEM: nao confunda inscricao, casco/HIN e serie de motor; endereco so se estiver impresso. Classifique como tie-digital ou tie-legacy.');
   }
   if (types.has('cha')) {
-    typeRules.push('CHA: amateur.chaNumber e o numero de inscricao; amateur.category e a categoria expressa; amateur.chaIssueDate e somente a data de emissao.');
+    typeRules.push('Classifique Carteira de Habilitação de Amador como cha. CHA: amateur.chaNumber e o numero de inscricao, nunca CPF, QR Code ou protocolo; amateur.category e a categoria expressa; amateur.chaIssueDate e somente a data de emissao.');
   }
   if (types.has('cir')) {
     typeRules.push('CIR: aquaviario.cirNumber e o numero da CIR, aquaviario.category e a categoria expressa na capa. Nao inferir promocao ou outros dados.');
