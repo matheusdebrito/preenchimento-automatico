@@ -265,8 +265,10 @@ const lossPlacements: readonly CoordinatePlacement[] = [
   top('declarant.issueDate', 356, 230, 18, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
   top('declarant.issueDate', 382, 230, 28, 7, 0, false, undefined, 'DATE_YEAR'),
   top('declarant.cpf', 457, 232, 75, 7, 0, true),
-  top('declarant.nationality', 140, 249, 75, 7),
-  top('declarant.birthplace', 292, 249, 80, 7),
+  // Anexo 2-H: posicionar as respostas depois dos rotulos impressos.
+  // Nacionalidade termina em x=153; naturalidade termina em x=331.
+  top('declarant.nationality', 160, 249, 96, 7.5),
+  top('declarant.birthplace', 339, 249, 99, 7.5),
   top('declarant.phone', 195, 266, 100, 7),
   top('declarant.mobile', 382, 266, 120, 7),
   top('declarant.email', 130, 283, 140, 7),
