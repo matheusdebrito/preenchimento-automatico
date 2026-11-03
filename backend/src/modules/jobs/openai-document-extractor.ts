@@ -278,7 +278,10 @@ function outputSchema(fieldIds: readonly string[], requirementIds: readonly stri
           required: ['fieldId', 'sourceRequirementId', 'status'],
           properties: {
             fieldId: { type: 'string', enum: fieldIds.filter((id) =>
-              id.endsWith('.issuer') || id.endsWith('.issuerState')) },
+              id.endsWith('.issuer') || id.endsWith('.issuerState')).length > 0
+                ? fieldIds.filter((id) =>
+                    id.endsWith('.issuer') || id.endsWith('.issuerState'))
+                : fieldIds },
             sourceRequirementId: { type: 'string', enum: requirementIds },
             status: { type: 'string', enum: ['not_visible', 'uncertain'] },
           },
