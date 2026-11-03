@@ -947,3 +947,47 @@ describe('jornada real isolada da demonstração', () => {
   });
 
 });
+
+
+describe('carregamento visível durante consulta documental', () => {
+  it('mantém indicador de análise até a API concluir e então abre a revisão', async () => {
+    let finishExtraction: ((response: Response) => void) | undefined;
+    const pendingExtraction = new Promise<Response>((resolve) => {
+      finishExtraction = resolve;
+    });
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      if (url === '/api/services/ci-only-service' || url.endsWith('/quote')) {
+        return json({ service });
+      }
+      if (url === '/api/jobs' && init?.method === 'POST') {
+        return json({ id: 'job-loading', expiresAt: Date.now() + 300000 }, 201);
+      }
+      if (url.endsWith('/extract')) return pendingExtraction;
+      return json({ error: 'not_found' }, 404);
+    }));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Ver formulários e continuar' }));
+    await user.click(screen.getByRole('button', { name: 'Continuar sem anexos — preencher manualmente' }));
+    expect(await screen.findByText('Analisando documentos com inteligência artificial…')).toBeTruthy();
+    expect(screen.getByText(/A consulta à OpenAI está em andamento/)).toBeTruthy();
+    finishExtraction!(json({ fields: { 'person.fullName': 'JOANA TESTE' }, sources: {} }));
+    expect(await screen.findByText('Preencha e confira os formulários')).toBeTruthy();
+    expect(screen.queryByText('Analisando documentos com inteligência artificial…')).toBeNull();
+  });
+
+  it('exibe skeleton enquanto os metadados do serviço ainda não chegaram', async () => {
+    let respond: ((response: Response) => void) | undefined;
+    const delayed = new Promise<Response>((resolve) => { respond = resolve; });
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      return delayed;
+    }));
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('status', { name: 'Carregando dados do serviço' })).toBeTruthy();
+    respond!(json({ service }));
+    expect(await screen.findByRole('heading', { name: 'Dados do serviço' })).toBeTruthy();
+  });
+});
