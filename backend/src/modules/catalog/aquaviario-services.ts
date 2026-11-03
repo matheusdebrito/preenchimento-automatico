@@ -128,8 +128,8 @@ export const aquaviarioForms: readonly FormDefinition[] = [
   },
   {
     id: 'requerimento-interessado-aquaviario',
-    name: 'Requerimento do interessado (modelo auxiliar não oficial)',
-    description: 'Modelo auxiliar do produto para serviços em que a NORMAM-101 exige requerimento do interessado, mas não fornece formulário padronizado. Não é anexo oficial da Marinha.',
+    name: 'Requerimento para Aquaviários ou Empresas (EPM/CPRJ)',
+    description: 'Modelo regional da Capitania dos Portos do Rio de Janeiro para serviços do Ensino Profissional Marítimo (EPM), conforme PDF fornecido. Não é um anexo nacional da NORMAM-101.',
   },
 ];
 
@@ -174,15 +174,15 @@ export const aquaviarioVersions: readonly FormVersion[] = [
     status: 'VERIFIED',
   },
   {
-    id: 'requerimento-interessado-aquaviario-2026-v1',
+    id: 'requerimento-interessado-aquaviario-2026-v2',
     formId: 'requerimento-interessado-aquaviario',
-    revision: 'v1',
+    revision: 'v2',
     officialRevision: null,
-    regulation: 'Modelo auxiliar não oficial do produto, estruturado a partir dos requisitos procedimentais da NORMAM-101/DPC 2026. Não é anexo da Marinha.',
-    sourceUrl,
-    verifiedAt: '2026-10-30',
-    sha256: 'C0D7EFD0B476519380D16C284C4F5FFC63E7622AF0ACDB268667B4AFE6A6A32B',
-    templatePath: 'backend/templates/requerimento-interessado-aquaviario/v1/original.pdf',
+    regulation: 'Requerimento regional EPM da Capitania dos Portos do Rio de Janeiro (CPRJ), conforme modelo fornecido pelo usuário; não é anexo nacional.',
+    sourceUrl: null,
+    verifiedAt: '2026-11-03',
+    sha256: '138CAA3D151504D77220FAE8F181B138311AD520DA438E7524C34A8125047636',
+    templatePath: 'backend/templates/requerimento-interessado-aquaviario/v2/original.pdf',
     pdfKind: 'STATIC',
     status: 'VERIFIED',
   },
@@ -255,7 +255,7 @@ const auxiliaryRequest = (
   conditions?: readonly ServiceCondition[],
 ): ServiceForm => ({
   serviceId,
-  formVersionId: 'requerimento-interessado-aquaviario-2026-v1',
+  formVersionId: 'requerimento-interessado-aquaviario-2026-v2',
   order,
   fixedValues: {
     'process.requestSubject': subject,
