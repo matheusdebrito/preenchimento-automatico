@@ -52,6 +52,25 @@ describe('versioned form map coordinates', () => {
     }
   });
 
+  it('mantém as respostas do BSADE depois dos rótulos e divisórias oficiais', () => {
+    const bsade = catalog.mappings.find((mapping) =>
+      mapping.formVersionId === 'bsade-er-2026-v1')!;
+    const minimumX: Record<string, number> = {
+      'vessel.name': 144.72, 'vessel.registration': 298.05,
+      'vessel.type': 94, 'vessel.breadth': 105,
+      'vessel.hullId': 440.98, 'vessel.motorBrand': 137.22,
+      'vessel.motorPower': 256.14, 'vessel.motorSerial': 404.07,
+    };
+    for (const [fieldId, boundary] of Object.entries(minimumX)) {
+      const placement = bsade.placements.find((item) =>
+        item.kind === 'COORDINATES' && item.fieldId === fieldId);
+      expect(placement?.kind, fieldId).toBe('COORDINATES');
+      if (placement?.kind === 'COORDINATES') {
+        expect(placement.x, fieldId).toBeGreaterThan(boundary);
+      }
+    }
+  });
+
   it('mantém endereço completo na declaração de residência e casco alinhado no requerimento', () => {
     const residence = catalog.mappings.find((mapping) =>
       mapping.formVersionId === 'declaracao-residencia-er-2026-v1')!;
