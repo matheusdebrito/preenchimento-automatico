@@ -710,45 +710,51 @@ export async function extractDocumentsWithOneContingency(
     };
   }
 
-  try {
-    const retry = await extractDocumentsWithOpenAi(retryDocuments, retryFields, options);
-    // Successful primary fields are immutable. For unresolved/conflicting fields,
-    // discard first-pass evidence and trust only the isolated contingency result.
-    const evidence = [
-      ...primary.evidence.filter((item) => !pending.has(item.fieldId)),
-      ...retry.evidence,
-    ];
-    const recoveredFieldCount = new Set(retry.evidence.map((item) => item.fieldId)).size;
-    return {
-      evidence,
-      diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics, retry.diagnostics),
-      model: primary.model,
-      documentSubtypes: primary.documentSubtypes,
-      usage: sumUsage(primary.usage, retry.usage),
-      contingency: {
-        used: true,
-        failed: false,
-        requestedFieldCount: retryFields.length,
-        documentCount: retryDocuments.length,
-        recoveredFieldCount,
-      },
-    };
-  } catch (error) {
-    if (!(error instanceof OpenAiDocumentError)) throw error;
-    const evidence = primary.evidence.filter((item) => !pending.has(item.fieldId));
-    return {
-      evidence,
-      diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics),
-      model: primary.model,
-      documentSubtypes: primary.documentSubtypes,
-      usage: primary.usage,
-      contingency: {
-        used: true,
-        failed: true,
-        requestedFieldCount: retryFields.length,
-        documentCount: retryDocuments.length,
-        recoveredFieldCount: 0,
-      },
-    };
+  // A joint primary pass is cost-efficient, but a joint retry can repeat the
+  // same omission when an identity and a residence proof compete for attention.
+  // For small multi-document requests, retry each source in isolation, exactly
+  // once per source, with only its own unresolved fields. Never retry a field
+  // that was already resolved, and never send unrelated fields to a document.
+  // Larger batches keep the existing bounded single-request behavior.
+  const retryGroups = retryDocuments.length > 1 && retryDocuments.length <= 3
+    ? retryDocuments.map((document) => ({
+        documents: [document],
+        fields: retryFields.filter((field) => document.allowedFieldIds.includes(field.id)),
+      }))
+    : [{ documents: retryDocuments, fields: retryFields }];
+
+  const results: OpenAiExtractionResult[] = [];
+  let failed = false;
+  for (const group of retryGroups) {
+    if (group.fields.length === 0) continue;
+    try {
+      results.push(await extractDocumentsWithOpenAi(group.documents, group.fields, options));
+    } catch (error) {
+      if (!(error instanceof OpenAiDocumentError)) throw error;
+      failed = true;
+    }
   }
+  // Successfully resolved first-pass fields are immutable. An unresolved
+  // field is still review-required if multiple retry sources disagree.
+  const evidence = [
+    ...primary.evidence.filter((item) => !pending.has(item.fieldId)),
+    ...results.flatMap((item) => item.evidence),
+  ];
+  const retryDiagnostics = results.flatMap((item) => item.diagnostics);
+  const recoveredFieldCount = new Set(results.flatMap((item) =>
+    item.evidence.map((entry) => entry.fieldId))).size;
+  return {
+    evidence,
+    diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics, retryDiagnostics),
+    model: primary.model,
+    documentSubtypes: primary.documentSubtypes,
+    usage: results.reduce((usage, item) => sumUsage(usage, item.usage), primary.usage),
+    contingency: {
+      used: true,
+      failed,
+      requestedFieldCount: retryFields.length,
+      documentCount: retryDocuments.length,
+      recoveredFieldCount,
+    },
+  };
 }
