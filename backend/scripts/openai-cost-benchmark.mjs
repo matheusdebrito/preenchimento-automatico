@@ -553,7 +553,7 @@ try {
     'O sistema permite uma tentativa principal e até uma única contingência por cenário.',
     'O custo é estimado com tokens efetivamente reportados, incluindo desconto para tokens em cache quando informado.',
     'Não corresponde a uma fatura, não inclui tributos nem outros custos externos.',
-    'A execução tem limite de ' + testCases.length + ' cenários e ' + maxExternalCalls +
+    'A execução tem limite de ' + (categoryMode ? 3 : 5) + ' cenários e ' + maxExternalCalls +
       ' chamadas, mas não é um limite rígido de gastos.',
     '',
     'Somente métricas e IDs de campos faltantes aparecem neste relatório; PDFs e respostas brutas não são enviados aos artefatos.',
