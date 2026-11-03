@@ -653,7 +653,7 @@ export function LiveFlowPage() {
                   <span className="skeleton-line skeleton-line--wide" aria-hidden="true" />
                   <span className="skeleton-line" aria-hidden="true" />
                   <span className="skeleton-block" aria-hidden="true" />
-                  <span className="visually-hidden">Carregando dados do serviço…</span>
+                  <span className="sr-only">Carregando dados do serviço…</span>
                 </section>
           ) : (
             <section className="card card--padded live-form">
