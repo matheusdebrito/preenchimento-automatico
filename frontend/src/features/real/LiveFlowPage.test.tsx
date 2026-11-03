@@ -964,13 +964,17 @@ describe('carregamento visível durante consulta documental', () => {
       if (url === '/api/jobs' && init?.method === 'POST') {
         return json({ id: 'job-loading', expiresAt: Date.now() + 300000 }, 201);
       }
+      if (url.includes('/documents/source') && init?.method === 'POST') return json({id:'source'}, 201);
       if (url.endsWith('/extract')) return pendingExtraction;
       return json({ error: 'not_found' }, 404);
     }));
     const user = userEvent.setup();
     render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
     await user.click(await screen.findByRole('button', { name: 'Ver formulários e continuar' }));
-    await user.click(screen.getByRole('button', { name: 'Continuar sem anexos — preencher manualmente' }));
+    await user.upload(screen.getByLabelText('Documento de teste') as HTMLInputElement,
+      new File(['documento sintético'], 'documento.pdf', { type: 'application/pdf' }));
+    await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
+    await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(await screen.findByText('Analisando documentos com inteligência artificial…')).toBeTruthy();
     expect(screen.getByText(/A consulta à OpenAI está em andamento/)).toBeTruthy();
     finishExtraction!(json({ fields: { 'person.fullName': 'JOANA TESTE' }, sources: {} }));
