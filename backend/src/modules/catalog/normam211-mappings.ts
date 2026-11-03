@@ -98,7 +98,7 @@ const badePlacements: readonly CoordinatePlacement[] = [
   // 45 CEP.
   top('person.postalCode', 110, 305, 82, 6, 1),
   // 46 Bairro.
-  top('person.neighborhood', 230, 305, 55, 6, 1),
+  top('person.neighborhood', 230, 305, 82, 6, 1),
   // 47 Cidade.
   top('person.city', 320, 305, 165, 6, 1),
   // 48 UF do endereço.
@@ -238,17 +238,20 @@ const residencePlacements: readonly CoordinatePlacement[] = [
   top('person.cpf', 130, 256, 90, 8.2, 0, true),
   top('person.nationality', 296, 256, 90, 8.2),
   // Naturalidade deslocada pontualmente para a direita; sem alterar outros anexos.
-  top('person.birthplace', 457, 256, 73, 8.2),
+  { ...top('person.birthplace', 457, 256, 73, 8.2), minFontSize: 5.0 },
   top('person.phone', 211, 278, 105, 8.2),
   top('person.mobile', 390, 278, 120, 8.2),
   top('person.email', 132, 300, 140, 8.0),
   // O Anexo 2-G tem duas linhas corridas para o endereço completo.
   // Primeira linha: logradouro, número e complemento.
-  top('person.address', 330, 363, 110, 8.2, 0, true),
+  { ...top('person.address', 330, 363, 110, 8.2, 0, true),
+    minFontSize: 6,
+    continuationLines: [{ x: 110, y: PAGE_HEIGHT - 402, maxWidth: 420 }],
+  },
   top('person.streetNumber', 450, 363, 30, 7.5),
   top('person.apartment', 490, 363, 40, 7.2),
   // Segunda linha: bairro, cidade, UF e CEP.
-  top('person.neighborhood', 110, 385, 100, 8.0),
+  { ...top('person.neighborhood', 110, 385, 100, 8.0), minFontSize: 5.5 },
   top('person.city', 220, 385, 115, 8.0),
   top('person.state', 350, 385, 28, 8.0),
   top('person.postalCode', 395, 385, 105, 8.0),
