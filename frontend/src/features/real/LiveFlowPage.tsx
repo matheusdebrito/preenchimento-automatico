@@ -210,6 +210,7 @@ export function LiveFlowPage() {
   const [downloads, setDownloads] = useState<readonly string[]>([]);
   const [confirmAnalysisCharge, setConfirmAnalysisCharge] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [analysisStage, setAnalysisStage] = useState<'preparing' | 'uploading' | 'analyzing' | null>(null);
   const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [questionErrors, setQuestionErrors] = useState<string[]>([]);
@@ -384,6 +385,7 @@ export function LiveFlowPage() {
   const extract = async () => {
     if (!service) return;
     cancelRequested.current = false;
+    setAnalysisStage('preparing');
     setBusy(true);
     setError('');
     try {
@@ -419,6 +421,7 @@ export function LiveFlowPage() {
         setJobId(job.id);
         setExpiresAt(job.expiresAt);
       }
+      setAnalysisStage('uploading');
       for (const [requirementId, file] of Object.entries(files)) {
         if (present.has(requirementId)) continue;
         await api<{id:string}>(
@@ -428,6 +431,7 @@ export function LiveFlowPage() {
         present.add(requirementId);
         setUploadedRequirements([...present]);
       }
+      setAnalysisStage('analyzing');
       const read = await api<{
         fields: Record<string,string>; sources: Record<string,string>;
         diagnostics?: ExtractionDiagnostic[];
@@ -452,6 +456,7 @@ export function LiveFlowPage() {
       }
     } finally {
       setBusy(false);
+      setAnalysisStage(null);
       setConfirmAnalysisCharge(false);
     }
   };
@@ -642,9 +647,14 @@ export function LiveFlowPage() {
           {error && step !== 'files' && step !== 'review'
             ? <Notice tone="danger" role="alert">{error}</Notice> : null}
           {!service ? (
-            <Notice tone="danger">
-              Este serviço não está disponível com a seleção informada. <Link to="/">Voltar aos serviços</Link>.
-            </Notice>
+            error ? <Notice tone="danger">Este serviço não está disponível. <Link to="/">Voltar aos serviços</Link>.</Notice>
+              : <section className="card card--padded skeleton-stack" role="status" aria-label="Carregando dados do serviço">
+                  <span className="skeleton-line skeleton-line--short" aria-hidden="true" />
+                  <span className="skeleton-line skeleton-line--wide" aria-hidden="true" />
+                  <span className="skeleton-line" aria-hidden="true" />
+                  <span className="skeleton-block" aria-hidden="true" />
+                  <span className="visually-hidden">Carregando dados do serviço…</span>
+                </section>
           ) : (
             <section className="card card--padded live-form">
               <p className="eyebrow">Custo: {service.creditCost} crédito por processo</p>
@@ -825,6 +835,24 @@ export function LiveFlowPage() {
                     })}
                   </div>
                   {error ? <Notice tone="danger" role="alert">{error}</Notice> : null}
+                  {busy && analysisStage && (
+                    <section className="analysis-progress card" role="status" aria-live="polite" aria-busy="true">
+                      <div className="analysis-progress__spinner" aria-hidden="true" />
+                      <div className="analysis-progress__body">
+                        <strong>{analysisStage === 'preparing' ? 'Preparando análise dos documentos…' :
+                          analysisStage === 'uploading' ? 'Enviando documentos com segurança…' :
+                          'Analisando documentos com inteligência artificial…'}</strong>
+                        <p>{analysisStage === 'analyzing'
+                          ? 'A consulta à OpenAI está em andamento. A duração depende dos arquivos enviados. Aguarde a conclusão para conferir os dados.'
+                          : 'Seu processo está em andamento. Não é necessário reenviar os documentos.'}</p>
+                        <div className="skeleton-stack" aria-hidden="true">
+                          <span className="skeleton-line skeleton-line--wide" />
+                          <span className="skeleton-line" />
+                          <span className="skeleton-line skeleton-line--short" />
+                        </div>
+                      </div>
+                    </section>
+                  )}
                   {confirmAnalysisCharge &&
                   (Object.keys(files).length > 0 || uploadedRequirements.length > 0) ? (
                     <Notice tone="info" title="Confirmar análise com IA">
