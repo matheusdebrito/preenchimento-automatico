@@ -330,11 +330,11 @@ function extractionPrompt(
   if (types.has('identity')) {
     typeRules.push(
       'IDENTIDADE: classifique rg, cin ou cnh pela imagem, e nao pelo nome do arquivo.',
-      'RG: identity vem do numero ligado a REGISTRO GERAL / RG. Nunca substituir por CPF.',
+      'RG: o número da identidade/documento (identity) vem do valor ligado a REGISTRO GERAL / RG. Nunca substituir por CPF.',
       'CIN: CPF e o identificador unico; o backend preenche identity a partir do CPF validado.',
       'CNH: nao confunda numero de registro da habilitacao com o numero da identidade. Extraia identity so quando o numero do documento de identidade estiver impresso.',
-      'ORGAO EMISSOR: procure rotulos ORGAO EMISSOR, ORGAO EXPEDIDOR, EXPEDIDOR, EMISSOR e identificacoes impressas como SSP/RJ, IFP, DETRAN. Extrair somente a autoridade emissora do documento de identidade, nao a UF, o estado de nascimento, a autoridade de habilitacao ou o numero de registro.',
-      'issuer e issuerState sao independentes: um valor pode existir sem o outro. Nunca deduza SSP, DETRAN ou UF apenas pelo estado, brasao ou titulo do documento.',
+      'Procure órgão emissor/expedidor sob ORGAO EMISSOR, ORGAO EXPEDIDOR, EXPEDIDOR, EMISSOR e siglas visíveis como SSP/RJ ou IFP. Extrair a autoridade do documento de identidade, nao a UF nem o departamento responsavel pela habilitacao.',
+      'issuer e issuerState sao independentes: um valor pode existir sem o outro. Se o texto impresso for SSP/RJ, separar issuer=SSP e issuerState=RJ. Nunca deduza SSP, DETRAN ou UF apenas pelo estado, brasao ou titulo do documento.',
       'Se o RG nao mostrar orgao emissor, marque issuer como not_visible. Se o trecho existir, mas nao estiver legivel, marque uncertain.',
     );
   }
