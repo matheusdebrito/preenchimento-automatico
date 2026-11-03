@@ -69,7 +69,7 @@ const newGeneration = `      row.adjustments=[];
         }
         const issue=await response.json().catch(()=>({}));
         const fieldId=issue.fieldId;
-        if(!fieldId || !['text_overflow','text_too_long'].includes(issue.fieldReason)) {
+        if(!fieldId || !['text_overflow','text_too_long'].includes(issue.fieldReason??issue.reason)) {
           throw Error('Unexpected generation error '+JSON.stringify(issue));
         }
         const input=page.locator('input[id$="-'+fieldId+'"]:visible').first();
@@ -77,7 +77,7 @@ const newGeneration = `      row.adjustments=[];
         const before=await input.inputValue();
         const after=before.slice(0,Math.max(1,Math.floor(before.length*0.65))).trim();
         if(!after || before===after)throw Error('Cannot shorten '+fieldId);
-        row.adjustments.push({fieldId,beforeLength:before.length,afterLength:after.length,reason:issue.fieldReason});
+        row.adjustments.push({fieldId,beforeLength:before.length,afterLength:after.length,reason:issue.fieldReason??issue.reason});
         await input.fill(after);
       }
       if(!generated)throw Error('Could not generate PDF after field-length adjustments');`;
