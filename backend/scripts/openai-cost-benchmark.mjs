@@ -397,7 +397,7 @@ try {
     return { id, serviceId, documentNames, documents: descriptors, fields, expected };
   }
 
-  const answersIdentity = { vesselType:'embarcacao', vesselBand:'ate_6m', hasCoOwner:'nao', initialResponsibilityTerm:'nao', responsibilityTermCase:'nao' };
+  const answersIdentity = { vesselType:'embarcacao', vesselBand:'ate_6m', hasCoOwner:'nao', initialResponsibilityTerm:'nao' };
   const testCases = identityMode ? [
     categoryCase('rg_isolado','inscricao-embarcacao',answersIdentity,[{fileName:'rg',requirementId:'applicant-identity'}],['person.identity','person.issuer']),
     categoryCase('rg_mais_comprovante','inscricao-embarcacao',answersIdentity,[{fileName:'rg',requirementId:'applicant-identity'},{fileName:'residence',requirementId:'residence-proof'}],['person.identity','person.issuer','person.address','person.postalCode']),
