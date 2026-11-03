@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { LoaderCircle } from 'lucide-react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { AuthProvider } from './features/auth/AuthProvider';
@@ -27,10 +26,15 @@ const NotFoundPage = lazy(() =>
 );
 function RouteLoading() {
   return (
-    <div className="route-loading" role="status" aria-live="polite">
-      <LoaderCircle aria-hidden="true" />
-      <span>Carregando…</span>
-    </div>
+    <main className="container page-stack" role="status" aria-label="Carregando página">
+      <section className="card card--padded skeleton-stack" aria-hidden="true">
+        <span className="skeleton-line skeleton-line--short" />
+        <span className="skeleton-line skeleton-line--wide" />
+        <span className="skeleton-line" />
+        <span className="skeleton-block" />
+      </section>
+      <span className="sr-only">Carregando página…</span>
+    </main>
   );
 }
 
