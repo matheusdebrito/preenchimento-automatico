@@ -7,6 +7,8 @@ import { promisify } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { extractDocumentsWithOneContingency } from '../dist/modules/jobs/openai-document-extractor.js';
+import { catalog } from '../dist/modules/catalog/catalog.js';
+import { publicService } from '../dist/modules/catalog/public-catalog.js';
 
 const execFile = promisify(execFileCallback);
 const model = process.env.OPENAI_MODEL || 'gpt-5.4-mini-2026-03-17';
@@ -17,12 +19,14 @@ const pricing = {
 const rates = pricing[model];
 if (!rates) throw new Error('Unsupported test model; choose the approved mini or nano snapshot.');
 const dryRun = process.env.OPENAI_COST_BENCH_DRY_RUN === '1';
+const categoryMode = process.env.OPENAI_COST_BENCH_CATEGORY_MODE === '1';
 if (!dryRun && !process.env.OPENAI_API_KEY) {
   throw new Error('Missing OPENAI_API_KEY GitHub Actions secret.');
 }
-const maxExternalCalls = 10; // Five test cases; one primary + at most one contingency each.
+const maxExternalCalls = categoryMode ? 6 : 10; // One primary + at most one contingency per case.
 const maxEstimatedUsd = 0.15; // Soft guard based on observed token usage, not a billing guarantee.
-const reportsPath = resolve(process.env.BENCH_REPORT_DIR || 'openai-cost-results');
+const reportsPath = resolve(process.env.BENCH_REPORT_DIR ||
+  (categoryMode ? 'openai-category-cost-results' : 'openai-cost-results'));
 const working = await mkdtemp(join(tmpdir(), 'pa-ai-cost-'));
 await mkdir(reportsPath, { recursive: true });
 
@@ -56,6 +60,15 @@ const cirFields = [
   fName,
   field('aquaviario.cirNumber', 'Numero da CIR'),
   field('aquaviario.category', 'Categoria profissional'),
+];
+const residenceFields = [
+  field('person.address', 'Rua'),
+  field('person.streetNumber', 'Numero'),
+  field('person.apartment', 'Complemento'),
+  field('person.neighborhood', 'Bairro'),
+  field('person.city', 'Cidade'),
+  field('person.state', 'UF'),
+  field('person.postalCode', 'CEP'),
 ];
 
 const syntheticDocuments = [
@@ -125,6 +138,32 @@ const syntheticDocuments = [
     },
   },
   {
+    name: 'residence',
+    heading: 'COMPROVANTE DE RESIDENCIA - FATURA SINTETICA',
+    pages: [[
+      ['TITULAR', 'ANA CLARA SOUZA'],
+      ['LOGRADOURO', 'RUA DAS PALMEIRAS'],
+      ['NUMERO', '145'],
+      ['COMPLEMENTO', 'APT 203'],
+      ['BAIRRO', 'CENTRO'],
+      ['CIDADE', 'RIO DE JANEIRO'],
+      ['ESTADO', 'RJ'],
+      ['CEP', '20040-010'],
+    ]],
+    type: 'residence-proof',
+    kind: 'pdf',
+    allowedFields: residenceFields,
+    expected: {
+      'person.address': 'RUA DAS PALMEIRAS',
+      'person.streetNumber': '145',
+      'person.apartment': 'APT 203',
+      'person.neighborhood': 'CENTRO',
+      'person.city': 'RIO DE JANEIRO',
+      'person.state': 'RJ',
+      'person.postalCode': '20040-010',
+    },
+  },
+  {
     name: 'cir',
     heading: 'CADERNETA DE INSCRICAO E REGISTRO (CIR) - SINTETICA',
     pages: [[
@@ -178,6 +217,7 @@ const scenarios = [];
 let externalCalls = 0;
 let totalEstimatedUsd = 0;
 let simulatedDescriptors = [];
+let simulatedDefinitionsByRequirement = new Map();
 
 function costForUsage(usage) {
   if (!usage) return null;
@@ -209,9 +249,11 @@ async function meteredFetch(url, options) {
     const candidates = [];
     const documents = [];
     for (const descriptor of simulatedDescriptors) {
-      const definition = files.get(descriptor.document.requirementId).definition;
+      const definition = simulatedDefinitionsByRequirement.get(descriptor.document.requirementId);
+      if (!definition) throw new Error('Missing synthetic fixture for document.');
       const subtype = definition.type === 'identity' ? 'rg'
-        : definition.type === 'tie' ? 'tie-digital' : definition.type;
+        : definition.type === 'tie' ? 'tie-digital'
+          : definition.type === 'residence-proof' ? 'not-applicable' : definition.type;
       documents.push({
         requirementId: descriptor.document.requirementId,
         status: 'readable', subtype,
@@ -275,7 +317,7 @@ try {
     });
   }
 
-  const testCases = [
+  const originalTestCases = [
     { id: 'rg_png', documentNames: ['rg'], fields: rgFields },
     { id: 'tie_2page_pdf', documentNames: ['tie'], fields: tieFields },
     { id: 'cha_pdf', documentNames: ['cha'], fields: chaFields },
@@ -287,21 +329,129 @@ try {
     },
   ];
 
-  for (const scenario of testCases) {
-    const documents = scenario.documentNames.map((name) => {
-      const stored = files.get(name);
+  // Validate document requirements and field allow-lists against the production
+  // catalog, exactly as /api/jobs/:id/extract does. This is not a hand-picked
+  // generic prompt: every case matches an available service and its chosen forms.
+  function categoryCase(id, serviceId, answers, attachments, requiredEvidenceIds) {
+    const service = publicService(catalog, serviceId, answers);
+    if (!service || service.formVersionIds.length === 0) {
+      throw new Error('Unavailable or unselected test service: ' + serviceId);
+    }
+    if (attachments.length !== 3) throw new Error('Each category must send exactly 3 documents.');
+    const reviewable = new Set(service.reviewFields.map((entry) => entry.id));
+    const documentNames = attachments.map((item) => item.fileName);
+    const descriptors = attachments.map(({ fileName, requirementId }) => {
+      const stored = files.get(fileName);
+      const requirement = service.documentRequirements.find((item) => item.id === requirementId);
+      if (!stored || !requirement?.extraction ||
+        requirement.extraction.documentType !== stored.definition.type) {
+        throw new Error('Unexpected document requirement for ' + serviceId + ': ' + requirementId);
+      }
+      const allowedFieldIds = requirement.extraction.allowedFieldIds
+        .filter((fieldId) => reviewable.has(fieldId));
+      const availableExpected = Object.keys(stored.definition.expected)
+        .filter((fieldId) => allowedFieldIds.includes(fieldId));
+      if (availableExpected.length === 0) {
+        throw new Error('No expected fields from ' + requirementId + ' in ' + serviceId);
+      }
       return {
-        document: stored.document,
-        label: stored.definition.heading,
-        documentType: stored.definition.type,
-        subjectRole: stored.definition.type === 'tie' ? 'vessel' : 'person',
-        allowedFieldIds: stored.definition.allowedFields.map((entry) => entry.id),
+        fileName, requirementId,
+        documentType: requirement.extraction.documentType,
+        subjectRole: requirement.extraction.subjectRole,
+        label: requirement.label,
+        allowedFieldIds,
       };
     });
-    const expected = Object.assign({},
+    const ids = new Set(descriptors.flatMap((item) => item.allowedFieldIds));
+    const fields = service.reviewFields.filter((entry) => ids.has(entry.id))
+      .map((entry) => ({
+        ...entry,
+        ...(catalog.fields.find((item) => item.id === entry.id)?.validationRuleId
+          ? { validationRuleId: catalog.fields.find((item) => item.id === entry.id).validationRuleId }
+          : {}),
+      }));
+    const expected = {};
+    for (const descriptor of descriptors) {
+      for (const [fieldId, value] of Object.entries(files.get(descriptor.fileName).definition.expected)) {
+        if (descriptor.allowedFieldIds.includes(fieldId)) {
+          if (expected[fieldId] && expected[fieldId] !== value) {
+            throw new Error('Conflicting fixture values for ' + fieldId);
+          }
+          expected[fieldId] = value;
+        }
+      }
+    }
+    for (const requiredFieldId of requiredEvidenceIds) {
+      if (!Object.hasOwn(expected, requiredFieldId)) {
+        throw new Error('Service does not use expected field ' + requiredFieldId + ': ' + serviceId);
+      }
+    }
+    return { id, serviceId, documentNames, documents: descriptors, fields, expected };
+  }
+
+  const testCases = categoryMode ? [
+    categoryCase(
+      'embarcacoes_transferencia_3_docs',
+      'transferencia-propriedade-embarcacao',
+      { includeResidenceDeclaration: 'sim', vesselType: 'embarcacao',
+        hasCoOwner: 'nao', tieSituation: 'regular', transferTarget: 'propriedade' },
+      [
+        { fileName: 'rg', requirementId: 'applicant-identity' },
+        { fileName: 'tie', requirementId: 'tie' },
+        { fileName: 'residence', requirementId: 'residence-proof' },
+      ],
+      ['person.fullName', 'vessel.registration', 'person.address'],
+    ),
+    categoryCase(
+      'amadores_renovacao_cha_3_docs',
+      'renovacao-cha-amador',
+      { includeResidenceDeclaration: 'sim',
+        amateurCategory: 'arrais', chaSituation: 'regular' },
+      [
+        { fileName: 'rg', requirementId: 'applicant-identity' },
+        { fileName: 'cha', requirementId: 'current-cha' },
+        { fileName: 'residence', requirementId: 'residence-proof' },
+      ],
+      ['person.fullName', 'amateur.chaNumber', 'person.address'],
+    ),
+    categoryCase(
+      'aquaviarios_revalidacao_cir_3_docs',
+      'revalidacao-cir-aquaviario',
+      { includeResidenceDeclaration: 'sim' },
+      [
+        { fileName: 'rg', requirementId: 'applicant-identity' },
+        { fileName: 'cir', requirementId: 'current-cir' },
+        { fileName: 'residence', requirementId: 'residence-proof' },
+      ],
+      ['person.fullName', 'aquaviario.cirNumber', 'person.address'],
+    ),
+  ] : originalTestCases;
+
+  for (const scenario of testCases) {
+    const documents = scenario.documents
+      ? scenario.documents.map((entry) => ({
+        document: { ...files.get(entry.fileName).document, requirementId: entry.requirementId },
+        label: entry.label,
+        documentType: entry.documentType,
+        subjectRole: entry.subjectRole,
+        allowedFieldIds: entry.allowedFieldIds,
+      }))
+      : scenario.documentNames.map((name) => {
+        const stored = files.get(name);
+        return {
+          document: stored.document,
+          label: stored.definition.heading,
+          documentType: stored.definition.type,
+          subjectRole: stored.definition.type === 'tie' ? 'vessel' : 'person',
+          allowedFieldIds: stored.definition.allowedFields.map((entry) => entry.id),
+        };
+      });
+    const expected = scenario.expected ?? Object.assign({},
       ...scenario.documentNames.map((name) => files.get(name).definition.expected));
     const startCall = calls.length;
     simulatedDescriptors = documents;
+    simulatedDefinitionsByRequirement = new Map(documents.map((entry, i) =>
+      [entry.document.requirementId, files.get(scenario.documentNames[i]).definition]));
     const started = performance.now();
     try {
       const result = await extractDocumentsWithOneContingency(documents, scenario.fields, {
@@ -319,6 +469,8 @@ try {
       const costUsd = scenarioCalls.reduce((acc, item) => acc + (item.estimatedUsd || 0), 0);
       scenarios.push({
         scenario: scenario.id,
+        ...(scenario.serviceId ? { serviceId: scenario.serviceId } : {}),
+        requestedFieldCount: scenario.fields.length,
         documents: scenario.documentNames.length,
         documentFormats: scenario.documentNames.map((name) => files.get(name).definition.kind),
         documentPages: scenario.documentNames.reduce((acc, name) => acc + files.get(name).definition.pages.length, 0),
@@ -353,6 +505,7 @@ try {
   const totalOutputTokens = calls.reduce((sum, call) => sum + (call.outputTokens || 0), 0);
   const summary = {
     time: new Date().toISOString(),
+    suite: categoryMode ? '3_categories_3_documents_each' : '5_baseline_cases',
     model,
     mode: dryRun ? 'offline_mock_no_api_calls' : 'real_openai_responses_api',
     syntheticOnly: true,
@@ -369,15 +522,19 @@ try {
         ? Number((totalEstimatedUsd / scenarios.filter((s) => s.status === 'completed').length).toFixed(8)) : null,
     },
     guards: {
-      maxScenarios: 5, maxExternalCalls, maxEstimatedUsd,
+      maxScenarios: testCases.length, maxExternalCalls, maxEstimatedUsd,
       caveat: 'Cost guard is post-response/soft; the OpenAI project budget is authoritative.',
     },
   };
-  await writeFile(join(reportsPath, 'resultados-openai-5-testes.json'),
+  await writeFile(join(reportsPath,
+    categoryMode ? 'resultados-openai-3-categorias.json' : 'resultados-openai-5-testes.json'),
     JSON.stringify(summary, null, 2) + '\n', { mode: 0o600 });
   const lines = [
-    dryRun ? '# Smoke offline: cinco cenários sintéticos sem API'
-      : '# Cinco testes reais: custos de extração de documentos sintéticos',
+    dryRun
+      ? '# Smoke offline: cenários sintéticos sem API'
+      : categoryMode
+        ? '# Três categorias de serviço: custo real com 3 documentos por processo'
+        : '# Cinco testes reais: custos de extração de documentos sintéticos',
     '',
     'Modelo: ' + model + '. Arquivos totalmente fictícios; nenhum documento pessoal real.',
     '',
@@ -396,14 +553,16 @@ try {
     'O sistema permite uma tentativa principal e até uma única contingência por cenário.',
     'O custo é estimado com tokens efetivamente reportados, incluindo desconto para tokens em cache quando informado.',
     'Não corresponde a uma fatura, não inclui tributos nem outros custos externos.',
-    'A execução tem limite de 5 cenários e 10 chamadas, mas não é um limite rígido de gastos.',
+    'A execução tem limite de ' + testCases.length + ' cenários e ' + maxExternalCalls +
+      ' chamadas, mas não é um limite rígido de gastos.',
     '',
     'Somente métricas e IDs de campos faltantes aparecem neste relatório; PDFs e respostas brutas não são enviados aos artefatos.',
     '',
     'Documentos sintéticos simplificados não representam a qualidade ou complexidade dos documentos reais digitalizados.',
   ];
-  await writeFile(join(reportsPath, 'relatorio-openai-5-testes.md'),
+  await writeFile(join(reportsPath,
+    categoryMode ? 'relatorio-openai-3-categorias.md' : 'relatorio-openai-5-testes.md'),
     lines.join('\n') + '\n', { mode: 0o600 });
   await rm(working, { recursive: true, force: true });
 }
-if (fatal || scenarios.length !== 5) process.exitCode = 1;
+if (fatal || scenarios.length !== (categoryMode ? 3 : 5)) process.exitCode = 1;
