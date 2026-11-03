@@ -40,7 +40,7 @@ function downloadName(
   if (!form) {
     if (fallbackId.includes('bade')) return fallbackId.includes('bsade') ? 'BSADE' : 'BADE';
     if (fallbackId.includes('bdmoto')) return 'BDMOTO';
-    if (fallbackId === 'requerimento-interessado-aquaviario') return 'Requerimento auxiliar (não oficial)';
+    if (fallbackId === 'requerimento-interessado-aquaviario') return 'Requerimento Aquaviários (EPM/CPRJ)';
     if (fallbackId === 'requerimento-certificacao-aquaviario') return 'Requerimento de Certificação (Anexo 1-E)';
     if (fallbackId.startsWith('requerimento')) return 'Requerimento';
     return 'Formulário';
@@ -48,7 +48,7 @@ function downloadName(
   const id = form.formId;
   if (id.includes('bade')) return id.includes('bsade') ? 'BSADE' : 'BADE';
   if (id.includes('bdmoto')) return 'BDMOTO';
-  if (id === 'requerimento-interessado-aquaviario') return 'Requerimento auxiliar (não oficial)';
+  if (id === 'requerimento-interessado-aquaviario') return 'Requerimento Aquaviários (EPM/CPRJ)';
   if (id === 'requerimento-certificacao-aquaviario') return 'Requerimento de Certificação (Anexo 1-E)';
   if (id.startsWith('requerimento')) return 'Requerimento';
   if (id.startsWith('autorizacao-transferencia')) return 'Autorização de Transferência';
@@ -189,6 +189,29 @@ function pruneHiddenAnswers(
   return next;
 }
 
+const AMATEUR_ADDRESS_FIELDS = new Set([
+  'person.address', 'person.streetNumber', 'person.apartment',
+  'person.neighborhood', 'person.city', 'person.state', 'person.postalCode',
+]);
+
+/** Keep the residence declaration in sync with the shared reviewed address. */
+function fillAmateurResidenceAddress(
+  service: LiveService | null,
+  fields: Record<string, string>,
+): Record<string, string> {
+  if (!service?.formVersionIds.includes('requerimento-cha-amador-2026-v1') ||
+      !service.formVersionIds.includes('declaracao-residencia-er-2026-v1') ||
+      !service.reviewFields.some((field) => field.id === 'person.fullAddress')) {
+    return fields;
+  }
+  const cityState = [fields['person.city'], fields['person.state']].filter(Boolean).join('/');
+  const address = [
+    fields['person.address'], fields['person.streetNumber'], fields['person.apartment'],
+    fields['person.neighborhood'], cityState, fields['person.postalCode'],
+  ].filter((part) => part?.trim()).join(', ');
+  return address ? { ...fields, 'person.fullAddress': address } : fields;
+}
+
 export function LiveFlowPage() {
   useDocumentTitle('Preenchimento de formulário');
   const { serviceId } = useParams();
@@ -273,10 +296,10 @@ export function LiveFlowPage() {
           setUploadedRequirements(status.uploadedRequirementIds);
           if (status.status === 'REVIEW' || status.status === 'GENERATED') {
             const visible = new Set(quoted.service.reviewFields.map((field) => field.id));
-            setValues(Object.fromEntries(
+            setValues(fillAmateurResidenceAddress(quoted.service, Object.fromEntries(
               Object.entries(status.fields ?? {})
                 .filter(([id]) => visible.has(id))
-                .map(([id, value]) => [id, formatContactField(id, value)])));
+                .map(([id, value]) => [id, formatContactField(id, value)]))));
             setSources(Object.fromEntries(
               Object.entries(status.sources ?? {}).filter(([id]) => visible.has(id))));
             setDiagnostics(status.diagnostics ?? []);
@@ -373,7 +396,7 @@ export function LiveFlowPage() {
     if (visible.has('process.date') && !visibleValues['process.date']) {
       visibleValues['process.date'] = currentBrazilianDate();
     }
-    setValues(visibleValues);
+    setValues(fillAmateurResidenceAddress(service, visibleValues));
     setSources(Object.fromEntries(Object.entries(originNotes).filter(([key]) => visible.has(key))));
     setDiagnostics(reports);
     setInvalidFieldIds([]);
@@ -909,38 +932,10 @@ export function LiveFlowPage() {
                   ) : (
                     <Notice tone="danger" role="alert" title="Nenhum campo preenchido automaticamente">
                       O arquivo foi recebido, mas não foi possível aproveitar dados dele para os
-                      formulários selecionados. Confira o resultado da leitura por documento abaixo.
-                      Se necessário, refaça a foto com o documento inteiro, bem iluminado, sem
+                      formulários selecionados. Se necessário, refaça a foto com o documento inteiro, bem iluminado, sem
                       reflexos e com o texto nítido. Você pode continuar preenchendo manualmente.
                     </Notice>
                   )}
-                  {diagnostics.length > 0 ? (
-                    <div className="live-analysis-report">
-                      <strong>Resultado da análise por documento</strong>
-                      <ul>
-                        {diagnostics.map((item) => (
-                          <li key={item.requirementId}>
-                            {service.documentRequirements.find((doc) =>
-                              doc.id === item.requirementId)?.label ?? 'Documento enviado'}:
-                            {' ' + (item.outcome === 'suggested'
-                              ? item.suggestionCount + ' sugestão(ões) encontrada(s), sujeitas à revisão'
-                              : item.outcome === 'no_text' ? 'não foi possível ler o documento'
-                                : item.outcome === 'not_analyzed' ? 'não há extração automática configurada'
-                                  : item.outcome === 'no_applicable_fields'
-                                    ? 'alguns dados reconhecidos, mas não há campos correspondentes no formulário selecionado'
-                                    : 'texto detectado, mas nenhum dado foi associado aos campos com segurança')}
-                            {item.engine ? (
-                              <span className="live-analysis-provider">
-                                {' · Provedor: ' + (
-                                  'OpenAI'
-                                )}
-                              </span>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
 
                   <div className="live-review-toolbar">
                     <span>
@@ -1057,7 +1052,12 @@ export function LiveFlowPage() {
                                             const typed = field.valueKind === 'date'
                                               ? formatBrazilianDateInput(event.target.value)
                                               : formatContactField(field.id, event.target.value);
-                                            setValues((prev) => ({ ...prev, [field.id]:typed }));
+                                            setValues((prev) => {
+                                               const next = { ...prev, [field.id]: typed };
+                                               return AMATEUR_ADDRESS_FIELDS.has(field.id)
+                                                 ? fillAmateurResidenceAddress(service, next)
+                                                 : next;
+                                             });
                                             if (invalidFieldIds.includes(field.id) && typed.trim()) {
                                               const remaining = invalidFieldIds.filter((id) => id !== field.id);
                                               setInvalidFieldIds(remaining);

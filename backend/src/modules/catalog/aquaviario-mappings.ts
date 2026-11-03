@@ -106,15 +106,50 @@ const residence: readonly CoordinatePlacement[] = [
 ];
 
 const auxiliaryRequest: readonly CoordinatePlacement[] = [
-  top('process.requestAuthority', 45, 143, 505, 7.2),
-  top('process.requestSubject', 106, 175, 445, 7.5),
-  top('person.fullName', 65, 213, 485, 7.5),
-  top('person.cpf', 75, 255, 194, 7),
-  top('person.identity', 354, 255, 196, 7),
-  top('person.fullAddress', 105, 288, 445, 7),
-  top('process.requestPurpose', 45, 359, 505, 7.5),
-  top('process.place', 88, 615, 200, 7),
-  top('process.date', 350, 615, 201, 7),
+  // Modelo regional da CPRJ/EPM, uma página A4. Coordenadas medidas no
+  // PDF anexado; as assinaturas continuam reservadas para preenchimento manual.
+  top('process.requestSubject', 132, 150, 411, 7.5),
+  { ...top('process.requestPurpose', 63, 177, 485, 7.4),
+    minFontSize: 6,
+    continuationLines: [{ x: 63, y: PAGE_HEIGHT - 205, maxWidth: 485 }],
+  },
+  top('person.fullName', 64, 256, 485, 8, 0, true),
+  top('person.cpf', 65, 291, 157, 7),
+  top('person.birthDate', 207, 289, 20, 7, 0, false, undefined, 'DATE_DAY'),
+  top('person.birthDate', 241, 289, 19, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('person.birthDate', 272, 289, 36, 7, 0, false, undefined, 'DATE_YEAR'),
+  top('person.birthplace', 323, 290, 135, 7),
+  top('person.nationality', 473, 290, 83, 7),
+  top('aquaviario.cirNumber', 64, 334, 180, 7),
+  top('aquaviario.category', 258, 334, 103, 7),
+  top('aquaviario.height', 374, 334, 87, 7),
+  top('aquaviario.eyeColor', 478, 334, 77, 7),
+  top('person.identity', 64, 374, 174, 7),
+  top('person.issuer', 257, 374, 159, 7),
+  top('person.issueDate', 458, 374, 93, 7),
+  // Sexo é marcado somente na opção informada, sem inferir o sexo de alguém.
+  top('person.sex', 81, 417, 8, 7, 0, false, 'masculino'),
+  top('person.sex', 104, 417, 8, 7, 0, false, 'feminino'),
+  top('person.phone', 165, 418, 83, 6.8),
+  top('person.mobile', 303, 418, 68, 6.8),
+  top('person.email', 428, 418, 124, 6.8),
+  top('person.motherName', 64, 455, 487, 7.2),
+  top('person.address', 64, 497, 486, 7.2),
+  top('person.streetNumber', 65, 518, 165, 7),
+  top('person.apartment', 258, 518, 290, 7),
+  top('person.neighborhood', 65, 539, 243, 7),
+  top('person.city', 326, 539, 222, 7),
+  top('person.state', 65, 561, 344, 7),
+  top('person.postalCode', 431, 561, 116, 7),
+  // "Rio de Janeiro" e o prefixo do ano "20" já são impressos no arquivo.
+  top('process.date', 343, 610, 22, 7, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 410, 610, 90, 7, 0, false, undefined, 'DATE_MONTH_NAME_PT_BR'),
+  top('process.date', 536, 610, 18, 7, 0, false, undefined, 'DATE_YEAR_2'),
+  // Dados do representante são opcionais. Nunca preencher assinaturas.
+  top('representative.fullName', 100, 701, 446, 7.2),
+  top('representative.cpf', 97, 724, 191, 7),
+  top('representative.phone', 326, 724, 222, 7),
+  top('representative.email', 102, 744, 446, 7),
 ];
 
 export const aquaviarioMappings: readonly FormMapping[] = [
@@ -150,12 +185,12 @@ export const aquaviarioMappings: readonly FormMapping[] = [
   },
   {
     id: 'requerimento-interessado-aquaviario-map-v1',
-    formVersionId: 'requerimento-interessado-aquaviario-2026-v1',
-    revision: 'v1',
+    formVersionId: 'requerimento-interessado-aquaviario-2026-v2',
+    revision: 'v2',
     status: 'APPROVED',
     placements: auxiliaryRequest,
     reviewedAt: '2026-10-30',
-    reviewer: 'OpenAI visual QA - modelo auxiliar não oficial',
+    reviewer: 'Mapeamento das células do requerimento regional EPM/CPRJ fornecido pelo usuário',
     reportPath: 'docs/mapping-reports/normam101-aquaviarios-2026-technical-qa.md',
   },
 ];
