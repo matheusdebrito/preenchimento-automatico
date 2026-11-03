@@ -104,6 +104,15 @@ export const additionalFields: readonly FieldDefinition[] = [
   { id: 'person.fax', label: 'Fax', valueKind: 'text' },
   { id: 'person.sex', label: 'Sexo', valueKind: 'text' },
   { id: 'person.fullAddress', label: 'Endereço completo', valueKind: 'text' },
+  // Campos opcionais do requerimento regional EPM/CPRJ. Não inferir filiação
+  // materna a partir da ordem genérica dos nomes extraídos da identidade.
+  { id: 'person.motherName', label: 'Nome da mãe', valueKind: 'text' },
+  { id: 'aquaviario.height', label: 'Altura (metros)', valueKind: 'text' },
+  { id: 'aquaviario.eyeColor', label: 'Cor dos olhos', valueKind: 'text' },
+  { id: 'representative.fullName', label: 'Nome do representante legal', valueKind: 'text' },
+  { id: 'representative.cpf', label: 'CPF do representante legal', valueKind: 'text' },
+  { id: 'representative.phone', label: 'Telefone do representante legal', valueKind: 'text' },
+  { id: 'representative.email', label: 'E-mail do representante legal', valueKind: 'text' },
   { id: 'aquaviario.cirNumber', label: 'Número da CIR', valueKind: 'text' },
   { id: 'aquaviario.category', label: 'Categoria do aquaviário', valueKind: 'text' },
   { id: 'aquaviario.documentNumber', label: 'Número do documento/certificado declarado', valueKind: 'text' },

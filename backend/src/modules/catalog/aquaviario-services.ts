@@ -128,8 +128,8 @@ export const aquaviarioForms: readonly FormDefinition[] = [
   },
   {
     id: 'requerimento-interessado-aquaviario',
-    name: 'Requerimento do interessado (modelo auxiliar não oficial)',
-    description: 'Modelo auxiliar do produto para serviços em que a NORMAM-101 exige requerimento do interessado, mas não fornece formulário padronizado. Não é anexo oficial da Marinha.',
+    name: 'Requerimento para Aquaviários ou Empresas (EPM/CPRJ)',
+    description: 'Modelo regional da Capitania dos Portos do Rio de Janeiro para serviços do Ensino Profissional Marítimo (EPM), conforme PDF fornecido. Não é um anexo nacional da NORMAM-101.',
   },
 ];
 
@@ -174,15 +174,16 @@ export const aquaviarioVersions: readonly FormVersion[] = [
     status: 'VERIFIED',
   },
   {
-    id: 'requerimento-interessado-aquaviario-2026-v1',
+    id: 'requerimento-interessado-aquaviario-2026-v2',
     formId: 'requerimento-interessado-aquaviario',
-    revision: 'v1',
+    revision: 'v2',
     officialRevision: null,
-    regulation: 'Modelo auxiliar não oficial do produto, estruturado a partir dos requisitos procedimentais da NORMAM-101/DPC 2026. Não é anexo da Marinha.',
-    sourceUrl,
-    verifiedAt: '2026-10-30',
-    sha256: 'C0D7EFD0B476519380D16C284C4F5FFC63E7622AF0ACDB268667B4AFE6A6A32B',
-    templatePath: 'backend/templates/requerimento-interessado-aquaviario/v1/original.pdf',
+    regulation: 'Requerimento regional EPM da Capitania dos Portos do Rio de Janeiro (CPRJ), conforme modelo fornecido pelo usuário; não é anexo nacional.',
+    // Fonte de proveniência: cópia imutável do arquivo enviado, não página normativa.
+    sourceUrl: 'https://github.com/matheusdebrito/preenchimento-automatico/blob/8b648edb2467f32dd537efbbeca1ad1da678bfda/backend/templates/requerimento-interessado-aquaviario/v2/original.pdf',
+    verifiedAt: '2026-11-03',
+    sha256: '138CAA3D151504D77220FAE8F181B138311AD520DA438E7524C34A8125047636',
+    templatePath: 'backend/templates/requerimento-interessado-aquaviario/v2/original.pdf',
     pdfKind: 'STATIC',
     status: 'VERIFIED',
   },
@@ -206,10 +207,10 @@ const base = (
 
 export const aquaviarioServices: readonly ServiceDefinition[] = [
   base('inscricao-inicial-cir-aquaviario', 'Inscrição inicial / emissão da CIR',
-    'Permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Para o 4º Grupo (Mergulhadores) e o 5º Grupo (Práticos), também gera um requerimento auxiliar não oficial. A fotografia prevista na norma é capturada no atendimento da CP/DL/AG.',
+    'Permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Para o 4º Grupo (Mergulhadores) e o 5º Grupo (Práticos), também gera um requerimento regional EPM da CPRJ. A fotografia prevista na norma é capturada no atendimento da CP/DL/AG.',
     [initialAquaviarioGroup], docs('applicant-identity', 'residence-proof')),
   base('segunda-via-cir-aquaviario', '2ª via da CIR',
-    'Gera o requerimento auxiliar não oficial e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Para extravio, roubo ou furto, também gera a Declaração do Anexo 1-K. A fotografia é capturada no atendimento.',
+    'Gera o requerimento regional EPM da CPRJ e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Para extravio, roubo ou furto, também gera a Declaração do Anexo 1-K. A fotografia é capturada no atendimento.',
     [cirSecondCopyReason], [
       ...docs('applicant-identity', 'residence-proof'),
       cirDataSource('current-cir-damage', 'CIR atual',
@@ -217,10 +218,10 @@ export const aquaviarioServices: readonly ServiceDefinition[] = [
         [{ questionId: 'cirSecondCopyReason', equals: 'dano' }]),
     ]),
   base('revalidacao-cir-aquaviario', 'Revalidação da CIR',
-    'Gera o requerimento auxiliar não oficial e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. A fotografia só é necessária quando a revalidação ocorrer por término do espaço de anotações.',
+    'Gera o requerimento regional EPM da CPRJ e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. A fotografia só é necessária quando a revalidação ocorrer por término do espaço de anotações.',
     [], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('ascensao-categoria-aquaviario', 'Ascensão de categoria',
-    'Gera o requerimento auxiliar não oficial e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Informe a categoria atual e a categoria pretendida na finalidade do requerimento.',
+    'Gera o requerimento regional EPM da CPRJ e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. Informe a categoria atual e a categoria pretendida na finalidade do requerimento.',
     [ascensionAquaviarioGroup], docs('applicant-identity', 'current-cir', 'residence-proof')),
   base('emissao-certificado-aquaviario', 'Emissão de certificado',
     'Gera o Requerimento de Certificação oficial do Anexo 1-E e permite incluir opcionalmente a Declaração de Residência do Anexo 1-L. A fotografia prevista na norma é capturada no atendimento. A Parte III (documentos anexados) do Anexo 1-E ainda deve ser conferida e preenchida manualmente após o download.',
@@ -255,7 +256,7 @@ const auxiliaryRequest = (
   conditions?: readonly ServiceCondition[],
 ): ServiceForm => ({
   serviceId,
-  formVersionId: 'requerimento-interessado-aquaviario-2026-v1',
+  formVersionId: 'requerimento-interessado-aquaviario-2026-v2',
   order,
   fixedValues: {
     'process.requestSubject': subject,
