@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { PDFDocument } from 'pdf-lib';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { CatalogDefinition } from '../catalog/contracts.js';
@@ -35,5 +36,17 @@ export async function fillApprovedTemplate(
     throw new TemplateGenerationError('template_hash_mismatch');
   }
   validateMappedFieldValues(catalog.fields, approved[0]!.placements, values);
-  return fillPdf(pdfBytes, approved[0]!.placements, values);
+  const filled = await fillPdf(pdfBytes, approved[0]!.placements, values);
+  // The approved BADE mapping writes exclusively to the first two pages.
+  // Preserve the SHA-verified official source; trim only the delivered copy.
+  if (version.formId !== 'bade-er') return filled;
+  const pdf = await PDFDocument.load(filled);
+  if (pdf.getPageCount() < 2 || approved[0]!.placements.some((placement) =>
+    placement.kind === 'COORDINATES' && placement.pageIndex > 1)) {
+    throw new TemplateGenerationError('template_layout_invalid');
+  }
+  for (let pageIndex = pdf.getPageCount() - 1; pageIndex >= 2; pageIndex--) {
+    pdf.removePage(pageIndex);
+  }
+  return pdf.save({ useObjectStreams: false });
 }
