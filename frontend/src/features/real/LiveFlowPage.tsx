@@ -273,7 +273,9 @@ export function LiveFlowPage() {
           if (status.status === 'REVIEW' || status.status === 'GENERATED') {
             const visible = new Set(quoted.service.reviewFields.map((field) => field.id));
             setValues(Object.fromEntries(
-              Object.entries(status.fields ?? {}).filter(([id]) => visible.has(id))));
+              Object.entries(status.fields ?? {})
+                .filter(([id]) => visible.has(id))
+                .map(([id, value]) => [id, formatContactField(id, value)])));
             setSources(Object.fromEntries(
               Object.entries(status.sources ?? {}).filter(([id]) => visible.has(id))));
             setDiagnostics(status.diagnostics ?? []);
@@ -364,7 +366,7 @@ export function LiveFlowPage() {
           key,
           service?.reviewFields.find((field) => field.id === key)?.valueKind === 'date'
             ? formatBrazilianDateInput(value)
-            : value,
+            : formatContactField(key, value),
         ]),
     );
     if (visible.has('process.date') && !visibleValues['process.date']) {

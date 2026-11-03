@@ -21,6 +21,72 @@ const service = {
 afterEach(() => { vi.unstubAllGlobals(); sessionStorage.clear(); });
 
 describe('jornada real isolada da demonstração', () => {
+  it('marca somente perguntas visiveis sem resposta e exibe erro junto ao botao', async () => {
+    const serviceWithQuestion = {
+      ...service,
+      questions: [
+        { id: 'vesselType', label: 'Tipo de embarcação', options: ['embarcacao', 'moto_aquatica'] },
+      ],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input) === '/api/services/ci-only-service' ||
+      String(input).endsWith('/quote')
+        ? json({ service: serviceWithQuestion })
+        : json({ error: 'not_found' }, 404)));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    const select = await screen.findByLabelText('Tipo de embarcação') as HTMLSelectElement;
+    await user.click(screen.getByRole('button', { name: 'Ver formulários e continuar' }));
+    expect(select.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByText('Selecione uma resposta para continuar.')).toBeTruthy();
+    const summary = screen.getByText('Responda às perguntas destacadas para continuar.');
+    const button = screen.getByRole('button', { name: 'Ver formulários e continuar' });
+    expect(Boolean(summary.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    await user.selectOptions(select, 'embarcacao');
+    expect(select.hasAttribute('aria-invalid')).toBe(false);
+    expect(screen.queryByText('Responda às perguntas destacadas para continuar.')).toBeNull();
+    await user.click(button);
+    expect(await screen.findByText('Documentos para preenchimento automático (opcionais)')).toBeTruthy();
+  });
+
+  it('aplica mascaras de CEP e celular somente aos campos correspondentes', async () => {
+    const formFields = [
+      { id: 'person.postalCode', label: 'CEP', valueKind: 'text' },
+      { id: 'person.mobile', label: 'Celular', valueKind: 'text' },
+    ];
+    const serviceWithContactFields = {
+      ...service,
+      reviewFields: formFields,
+      reviewForms: [{
+        formVersionId: 'requerimento-ma-v1', formId: 'requerimento-ma',
+        name: 'Requerimento', fields: formFields,
+      }],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path === '/api/services/ci-only-service' || path.endsWith('/quote')) {
+        return json({ service: serviceWithContactFields });
+      }
+      if (path === '/api/jobs' && init?.method === 'POST') {
+        return json({ id: 'job-contact-test', expiresAt: Date.now() + 1200000 }, 201);
+      }
+      if (path.endsWith('/extract')) return json({ fields: {}, sources: {}, diagnostics: [] });
+      return json({ error: 'not_found' }, 404);
+    }));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Ver formulários e continuar' }));
+    await user.click(screen.getByRole('button', {
+      name: 'Continuar sem anexos — preencher manualmente',
+    }));
+    const cep = await screen.findByLabelText(/^CEP/) as HTMLInputElement;
+    const mobile = screen.getByLabelText(/^Celular/) as HTMLInputElement;
+    await user.type(cep, '22041001');
+    await user.type(mobile, '21987654321');
+    expect(cep.value).toBe('22041-001');
+    expect(mobile.value).toBe('(21) 98765-4321');
+  });
+
   it('exibe a opção de declaração de residência em primeiro lugar, com Não como padrão', async () => {
     const withResidence = {
       ...service,

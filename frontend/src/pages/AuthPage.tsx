@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { PageLayout } from '../components/layout/PageLayout';
 import { Notice } from '../components/ui/Notice';
 import { api, ApiError } from '../lib/api';
+import { formatMobileInput } from '../lib/contact-mask';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useAuth } from '../features/auth/AuthProvider';
 import type { SessionUser } from '../features/auth/AuthProvider';
@@ -159,9 +160,9 @@ function AuthPageForm() {
                   </label>
                   <label className="auth-field">
                     <span>Celular</span>
-                    <input type="tel" name="tel" autoComplete="tel" inputMode="tel" maxLength={20}
+                    <input type="tel" name="tel" autoComplete="tel" inputMode="tel" maxLength={15}
                       placeholder="(21) 99999-9999" required value={cellphone}
-                      onChange={(event) => setCellphone(event.target.value)} />
+                      onChange={(event) => setCellphone(formatMobileInput(event.target.value))} />
                   </label>
                 </>
               ) : null}
