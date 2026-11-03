@@ -44,5 +44,44 @@ for (const service of matrix) {
 }
 console.log('SELECTED PDF VERSIONS: ' + [...auditedVersions].join(','));
 ` + marker);
+// On a rejected overflow, preserve the failure as evidence and reduce only
+// that specific field for the next attempt, allowing us to inspect the PDF
+// output of every other field without hiding the original limitation.
+const oldGeneration = `      await page.getByRole('button',{name:'Confirmar e gerar formulários'}).click();
+      const proceed=page.getByRole('button',{name:'Continuar mesmo assim'});
+      if(await proceed.count())await proceed.click();
+      await page.getByRole('heading',{name:'Formulários gerados'}).waitFor({timeout:26000});`;
+const newGeneration = `      row.adjustments=[];
+      let generated=false;
+      for (let retry=0;retry<14;retry++) {
+        const responsePromise=page.waitForResponse(r =>
+          (r.url().endsWith('/generate') && r.request().method()==='POST') ||
+          (r.url().endsWith('/review') && r.request().method()==='PATCH' && r.status()>=400),
+          {timeout:30000});
+        await page.getByRole('button',{name:'Confirmar e gerar formulários'}).click();
+        const proceed=page.getByRole('button',{name:'Continuar mesmo assim'});
+        if(await proceed.count())await proceed.click();
+        const response=await responsePromise;
+        if(response.ok()) {
+          await page.getByRole('heading',{name:'Formulários gerados'}).waitFor({timeout:26000});
+          generated=true;
+          break;
+        }
+        const issue=await response.json().catch(()=>({}));
+        const fieldId=issue.fieldId;
+        if(!fieldId || !['text_overflow','text_too_long'].includes(issue.fieldReason)) {
+          throw Error('Unexpected generation error '+JSON.stringify(issue));
+        }
+        const input=page.locator('input[id$="-'+fieldId+'"]:visible').first();
+        await input.waitFor();
+        const before=await input.inputValue();
+        const after=before.slice(0,Math.max(1,Math.floor(before.length*0.65))).trim();
+        if(!after || before===after)throw Error('Cannot shorten '+fieldId);
+        row.adjustments.push({fieldId,beforeLength:before.length,afterLength:after.length,reason:issue.fieldReason});
+        await input.fill(after);
+      }
+      if(!generated)throw Error('Could not generate PDF after field-length adjustments');`;
+if (!code.includes(oldGeneration)) throw Error('Browser generation flow changed');
+code=code.replace(oldGeneration,newGeneration);
 await writeFile(join(here, 'e2e-service-matrix-realistic.mjs'), code);
 console.log('Prepared browser matrix with realistic-length synthetic data');
