@@ -35,6 +35,83 @@ afterEach(async () => {
 });
 
 describe('OpenAI document extractor', () => {
+  it('carrega regras de RG/CIN/CNH apenas para categoria identidade e preserva modelo', async () => {
+    const identity = await fixture('identity.jpg', 'jpeg', 'applicant-identity');
+    let prompt = '';
+    const fakeFetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as {
+        model: string;
+        input: Array<{content:Array<{type:string;text?:string}>}>;
+        text: {format:{schema:{required:string[]}}};
+      };
+      expect(body.model).toBe('gpt-5.4-mini-2026-03-17');
+      expect(body.text.format.schema.required).toContain('missingFields');
+      prompt = body.input[0]?.content[0]?.text ?? '';
+      return new Response(JSON.stringify({
+        output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({
+          candidates: [],
+          documents: [{requirementId: 'applicant-identity', status: 'readable', subtype: 'rg'}],
+          missingFields: [
+            {fieldId: 'person.issuer', sourceRequirementId: 'applicant-identity', status: 'not_visible'},
+          ],
+        }) }] }],
+      }), {status:200,headers:{'Content-Type':'application/json'}});
+    });
+    const result = await extractDocumentsWithOneContingency([{
+      document: identity, documentType: 'identity', label: 'Documento de identificação',
+      allowedFieldIds: ['person.issuer'],
+    }], [{ id: 'person.issuer', label: 'Orgão emissor', valueKind: 'text', required: false }], {
+      env: { OPENAI_API_KEY: 'test-key' }, fetchImpl: fakeFetch as unknown as typeof fetch,
+    });
+    expect(prompt).toContain('RG:');
+    expect(prompt).toContain('CIN:');
+    expect(prompt).toContain('CNH:');
+    expect(prompt).not.toContain('TIE/TIEM:');
+    expect(prompt).not.toContain('CHA:');
+    expect(prompt).not.toContain('CIR:');
+    expect(result.missingFields).toEqual([{
+      fieldId: 'person.issuer', sourceRequirementId: 'applicant-identity', status: 'not_visible',
+    }]);
+    expect(result.contingency.used).toBe(false);
+    expect(fakeFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('repete somente o órgão emissor quando leitura for incerta, sem alterar modelo', async () => {
+    const identity = await fixture('identity.jpg', 'jpeg', 'applicant-identity');
+    let calls = 0;
+    const fakeFetch = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      calls++;
+      const body = JSON.parse(String(init?.body)) as {
+        model:string;
+        input:Array<{content:Array<{type:string;text?:string}>}>;
+      };
+      expect(body.model).toBe('gpt-5.4-mini-2026-03-17');
+      const prompt = body.input[0]?.content[0]?.text ?? '';
+      if (calls === 2) expect(prompt).toContain('knownSubtype');
+      return new Response(JSON.stringify({
+        output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({
+          candidates: calls === 2 ? [{
+            fieldId: 'person.issuer', value: 'IFP',
+            sourceRequirementId: 'applicant-identity', confidence:'high',
+          }] : [],
+          documents: [{ requirementId:'applicant-identity', status:'readable', subtype:'rg' }],
+          missingFields: calls === 1 ? [{
+            fieldId:'person.issuer',sourceRequirementId:'applicant-identity',status:'uncertain',
+          }] : [],
+        }) }] }],
+      }), {status:200,headers:{'Content-Type':'application/json'}});
+    });
+    const result = await extractDocumentsWithOneContingency([{
+      document:identity, documentType:'identity', label:'Identidade',
+      allowedFieldIds:['person.issuer'],
+    }],[{
+      id:'person.issuer',label:'Órgão emissor',valueKind:'text',required:false,
+    }], {env:{OPENAI_API_KEY:'test-key'},fetchImpl:fakeFetch as unknown as typeof fetch});
+    expect(fakeFetch).toHaveBeenCalledTimes(2);
+    expect(result.contingency).toMatchObject({used:true,recoveredFieldCount:1});
+    expect(result.evidence.map((item)=>[item.fieldId,item.value])).toEqual([['person.issuer','IFP']]);
+  });
+
   it('envia vários documentos em uma única chamada e valida a saída no backend', async () => {
     const identity = await fixture('identity.jpg', 'jpeg', 'buyer-identity');
     const tie = await fixture('tie.pdf', 'pdf', 'tie');
