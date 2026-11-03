@@ -114,11 +114,9 @@ export function ServiceCategoryPage() {
                 )) : planned.map((service) => {
                   const live = availableById.get(service.id);
                   if (!live) {
-                    const unavailableLabel = availabilityState === 'loading'
-                      ? 'Verificando disponibilidade'
-                      : availabilityState === 'error'
-                        ? 'Disponibilidade indisponível'
-                        : 'Formulário em validação';
+                    const unavailableLabel = availabilityState === 'error'
+                      ? 'Disponibilidade indisponível'
+                      : 'Formulário em validação';
                     return (
                       <article key={service.id} className="category-card category-card--soon">
                         <span className="icon-badge" aria-hidden="true"><Icon /></span>
