@@ -73,13 +73,7 @@ const newGeneration = `      row.adjustments=[];
           throw Error('Unexpected generation error '+JSON.stringify(issue));
         }
         throw Error('Realistic field overflow without modification: '+fieldId+' '+JSON.stringify(issue));
-        const input=page.locator('input[id$="-'+fieldId+'"]:visible').first();
-        await input.waitFor();
-        const before=await input.inputValue();
-        const after=before.slice(0,Math.max(1,Math.floor(before.length*0.65))).trim();
-        if(!after || before===after)throw Error('Cannot shorten '+fieldId);
-        row.adjustments.push({fieldId,beforeLength:before.length,afterLength:after.length,reason:issue.fieldReason??issue.reason});
-        await input.fill(after);
+
       }
       if(!generated)throw Error('Could not generate PDF after field-length adjustments');`;
 if (!code.includes(oldGeneration)) throw Error('Browser generation flow changed');
