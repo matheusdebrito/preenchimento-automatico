@@ -246,7 +246,7 @@ const residencePlacements: readonly CoordinatePlacement[] = [
   // street, number, complement, neighborhood, city/UF and CEP in reading order.
   // The complete value is derived by serviceFormValues; never shorten or
   // interleave independently positioned fields on this continuous underline.
-  { ...top('person.fullAddress', 300, 363, 230, 8.0),
+  { ...top('person.fullAddress', 300, 363, 230, 8.0, 0, true),
     minFontSize: 6,
     continuationLines: [{ x: 105, y: PAGE_HEIGHT - 385, maxWidth: 425 }],
   },
