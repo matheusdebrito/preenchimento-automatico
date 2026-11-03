@@ -179,17 +179,24 @@ describe('serviços de aquaviários - NORMAM-101', () => {
     expect(certificationFields).not.toContain('person.sex');
   });
 
-  it('expõe os campos editáveis do requerimento auxiliar e mantém assunto/finalidade controlados pelo catálogo', () => {
+  it('expõe os campos do requerimento regional CPRJ/EPM e mantém assunto/finalidade controlados pelo catálogo', () => {
     const service = publicService(catalog, 'revalidacao-cir-aquaviario');
     const request = service?.reviewForms.find((form) =>
       form.formVersionId === auxiliaryRequestId);
     const ids = request?.fields.map((field) => field.id) ?? [];
-    expect(ids).toContain('process.requestAuthority');
+    expect(ids).not.toContain('process.requestAuthority'); // destinação já impressa no PDF
     expect(ids).toContain('person.fullName');
     expect(ids).toContain('person.cpf');
     expect(ids).toContain('person.identity');
-    expect(ids).toContain('person.fullAddress');
-    expect(ids).toContain('process.place');
+    expect(ids).toContain('person.address');
+    expect(ids).toContain('person.streetNumber');
+    expect(ids).toContain('person.neighborhood');
+    expect(ids).toContain('person.postalCode');
+    expect(ids).toContain('person.motherName');
+    expect(ids).toContain('aquaviario.height');
+    expect(ids).toContain('aquaviario.eyeColor');
+    expect(ids).toContain('representative.fullName');
+    expect(ids).not.toContain('person.fullAddress');
     expect(ids).toContain('process.date');
     expect(ids).not.toContain('process.requestSubject');
     expect(ids).not.toContain('process.requestPurpose');
