@@ -1047,9 +1047,9 @@ describe('endereço automático na declaração dos amadores', () => {
     await user.click(screen.getByRole('button', { name: 'Continuar sem anexos — preencher manualmente' }));
     await screen.findByRole('heading', { name: 'Preencha e confira os formulários' });
     await user.click(screen.getByRole('button', { name: /Declaração de residência/ }));
-    const fullAddress = screen.getByLabelText('Endereço completo') as HTMLInputElement;
+    const fullAddress = screen.getByLabelText(/Endereço completo/) as HTMLInputElement;
     expect(fullAddress.value).toBe('Rua das Palmeiras, 40, Centro, Niterói/RJ, 24000-000');
-    const street = screen.getByLabelText('Rua') as HTMLInputElement;
+    const street = screen.getByLabelText(/^Rua/) as HTMLInputElement;
     await user.clear(street);
     await user.type(street, 'Avenida Atlântica');
     expect(fullAddress.value).toBe('Avenida Atlântica, 40, Centro, Niterói/RJ, 24000-000');
