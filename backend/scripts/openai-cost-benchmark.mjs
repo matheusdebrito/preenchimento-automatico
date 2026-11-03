@@ -406,7 +406,7 @@ try {
       'amadores_renovacao_cha_3_docs',
       'renovacao-cha-amador',
       { includeResidenceDeclaration: 'sim',
-        amateurCategory: 'arrais', chaSituation: 'regular' },
+        amateurCategory: 'arrais', chaSituation: 'danificada' },
       [
         { fileName: 'rg', requirementId: 'applicant-identity' },
         { fileName: 'cha', requirementId: 'current-cha' },
@@ -415,9 +415,9 @@ try {
       ['person.fullName', 'amateur.chaNumber', 'person.address'],
     ),
     categoryCase(
-      'aquaviarios_revalidacao_cir_3_docs',
-      'revalidacao-cir-aquaviario',
-      { includeResidenceDeclaration: 'sim' },
+      'aquaviarios_revalidacao_certificado_3_docs',
+      'revalidacao-certificado-aquaviario',
+      { includeResidenceDeclaration: 'sim', certificateModel: 'dpc1031', personSex: 'feminino' },
       [
         { fileName: 'rg', requirementId: 'applicant-identity' },
         { fileName: 'cir', requirementId: 'current-cir' },
