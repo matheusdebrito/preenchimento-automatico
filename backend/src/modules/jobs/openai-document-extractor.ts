@@ -20,6 +20,14 @@ const ALLOWED_DETAIL = new Set(['auto', 'low', 'high']);
 type FetchLike = typeof fetch;
 type Confidence = 'high' | 'medium';
 type DocumentStatus = 'readable' | 'partial' | 'unreadable';
+type MissingFieldStatus = 'not_visible' | 'uncertain';
+
+export interface MissingFieldObservation {
+  fieldId: string;
+  sourceRequirementId: string;
+  status: MissingFieldStatus;
+}
+
 
 export interface OpenAiTargetField {
   id: string;
@@ -45,6 +53,8 @@ export interface OpenAiExtractionResult {
   diagnostics: ExtractionDiagnostic[];
   model: string;
   documentSubtypes: Readonly<Record<string, DetectedDocumentSubtype>>;
+  /** Status metadata only: no raw document text or personal identifiers. */
+  missingFields: readonly MissingFieldObservation[];
   usage?: {
     inputTokens?: number;
     outputTokens?: number;
@@ -96,6 +106,11 @@ const structuredResultSchema = z.object({
     status: z.enum(['readable', 'partial', 'unreadable']),
     subtype: documentSubtypeSchema.optional().default('unknown'),
   })).max(24),
+  missingFields: z.array(z.object({
+    fieldId: z.string().min(1).max(100),
+    sourceRequirementId: z.string().min(1).max(100),
+    status: z.enum(['not_visible', 'uncertain']),
+  })).max(100).optional().default([]),
 });
 
 const apiResponseSchema = z.object({
@@ -238,7 +253,7 @@ function outputSchema(fieldIds: readonly string[], requirementIds: readonly stri
   return {
     type: 'object',
     additionalProperties: false,
-    required: ['candidates', 'documents'],
+    required: ['candidates', 'documents', 'missingFields'],
     properties: {
       candidates: {
         type: 'array',
@@ -252,6 +267,19 @@ function outputSchema(fieldIds: readonly string[], requirementIds: readonly stri
             value: { type: 'string' },
             sourceRequirementId: { type: 'string', enum: requirementIds },
             confidence: { type: 'string', enum: ['high', 'medium'] },
+          },
+        },
+      },
+      missingFields: {
+        type: 'array',
+        maxItems: 100,
+        items: {
+          type: 'object', additionalProperties: false,
+          required: ['fieldId', 'sourceRequirementId', 'status'],
+          properties: {
+            fieldId: { type: 'string', enum: fieldIds },
+            sourceRequirementId: { type: 'string', enum: requirementIds },
+            status: { type: 'string', enum: ['not_visible', 'uncertain'] },
           },
         },
       },
@@ -297,43 +325,42 @@ function extractionPrompt(
     allowedFieldIds: item.allowedFieldIds,
   }));
 
+  const types = new Set(documents.map((item) => item.documentType ?? 'unknown'));
+  const typeRules: string[] = [];
+  if (types.has('identity')) {
+    typeRules.push(
+      'IDENTIDADE: classifique rg, cin ou cnh pela imagem, e nao pelo nome do arquivo.',
+      'RG: identity vem do numero ligado a REGISTRO GERAL / RG. Nunca substituir por CPF.',
+      'CIN: CPF e o identificador unico; o backend preenche identity a partir do CPF validado.',
+      'CNH: nao confunda numero de registro da habilitacao com o numero da identidade. Extraia identity so quando o numero do documento de identidade estiver impresso.',
+      'ORGAO EMISSOR: procure rotulos ORGAO EMISSOR, ORGAO EXPEDIDOR, EXPEDIDOR, EMISSOR e identificacoes impressas como SSP/RJ, IFP, DETRAN. Extrair somente a autoridade emissora do documento de identidade, nao a UF, o estado de nascimento, a autoridade de habilitacao ou o numero de registro.',
+      'issuer e issuerState sao independentes: um valor pode existir sem o outro. Nunca deduza SSP, DETRAN ou UF apenas pelo estado, brasao ou titulo do documento.',
+      'Se o RG nao mostrar orgao emissor, marque issuer como not_visible. Se o trecho existir, mas nao estiver legivel, marque uncertain.',
+    );
+  }
+  if (types.has('residence-proof')) {
+    typeRules.push('COMPROVANTE: extraia apenas endereco, numero, complemento, bairro, cidade, UF e CEP impressos; nao preencha identidade nem orgao emissor.');
+  }
+  if (types.has('tie')) {
+    typeRules.push('TIE/TIEM: nao confunda inscricao, casco/HIN e serie de motor; endereco so se estiver impresso. Classifique como tie-digital ou tie-legacy.');
+  }
+  if (types.has('cha')) {
+    typeRules.push('CHA: amateur.chaNumber e o numero de inscricao; amateur.category e a categoria expressa; amateur.chaIssueDate e somente a data de emissao.');
+  }
+  if (types.has('cir')) {
+    typeRules.push('CIR: aquaviario.cirNumber e o numero da CIR, aquaviario.category e a categoria expressa na capa. Nao inferir promocao ou outros dados.');
+  }
   return [
-    'Tarefa: extrair dados visíveis de documentos para preencher um formulário brasileiro.',
-    'Regras críticas:',
-    '1. Use SOMENTE informação claramente visível no documento enviado.',
-    '2. Nunca complete, deduza, adivinhe ou corrija um valor ausente.',
-    '3. Valor mascarado, borrado, cortado, conflitante ou incerto deve ser OMITIDO de candidates.',
-    '3a. Só retorne candidates com confiança alta ou média; evidência de baixa confiança deve ser omitida.',
-    '4. Não confunda titular com pai, mãe, vendedor, comprador, proprietário ou coproprietário.',
-    '5. Não confunda número de inscrição da embarcação com casco/HIN, série do motor, datas ou medidas.',
-    '6. Para datas, só retorne DD/MM/AAAA quando a data completa estiver inequivocamente presente.',
-    '7. Para campos sim/não use exatamente sim ou nao. Para booleanos use true ou false.',
-    '8. Preserve nomes e identificadores como aparecem, exceto normalizações explícitas acima.',
-    '9. Cada candidate deve apontar para o requirementId do documento em que o valor está visível.',
-    '9a. Para cada documento, retorne SOMENTE fieldIds presentes em allowedFieldIds daquele documento.',
-    '10. Se documentos divergirem, retorne candidatos separados por documento; o backend resolverá o conflito.',
-    '11. Classifique cada documento: identidade como rg, cin ou cnh; Carteira de Habilitação de Amador como cha; CIR como cir; TIE/TIEM como tie-digital ou tie-legacy; comprovante de residência como not-applicable. Use unknown somente se realmente não for possível distinguir.',
-    '11a. Se knownSubtype estiver preenchido, preserve exatamente esse subtipo; ele foi classificado na tentativa principal.',
-    '11b. Em RG ou CNH, o número da identidade/documento só pode vir de um número explicitamente associado à identidade; nunca use CPF como identidade nesses subtipos.',
-    '11c. Na CIN, o CPF é o número único da identidade. Retorne o CPF normalmente; o backend deriva o campo de identidade de forma determinística.',
-    '11d. Não retorne identityType a partir de texto livre; o backend deriva RG, CIN ou CNH do subtipo classificado.',
-    '11e. Em documentos de identidade, procure explicitamente e de forma independente: número da identidade, órgão emissor/expedidor e UF do órgão emissor.',
-    '11e.1. Em RG brasileiro, o valor associado a REGISTRO GERAL é o número da identidade. Trate também RG, Nº RG, NÚMERO DO RG e IDENTIDADE como rótulos equivalentes quando estiverem visíveis.',
-    '11e.2. Se REGISTRO GERAL estiver legível, retorne o número imediatamente associado como o campo *.identity; preserve pontuação e dígito verificador visíveis.',
-    '11e.3. Nunca substitua o Registro Geral por CPF, data de nascimento, número de CNH ou outro identificador.',
-    '11f. Se órgão e UF estiverem impressos juntos, por exemplo SSP/RJ ou DETRAN-RJ, retorne issuer=SSP ou DETRAN e issuerState=RJ. Isso é separação de informação visível, não inferência.',
-    '11g. Nunca use CPF como número de identidade em RG/CNH. Em CIN, a regra específica abaixo continua válida.',
-    '11h. Em TIE digital, não invente endereço de proprietário/coproprietário se o bloco não existir. Em TIE/TIEM legado, extraia endereço somente quando estiver explicitamente impresso.',
-    '11i. vessel.motorCount só pode ser retornado quando a quantidade de motores estiver explicitamente indicada; nunca inferir 1 apenas porque um motor aparece no documento.',
-    '11j. Para CHA, amateur.chaNumber é o número de inscrição da Carteira de Habilitação de Amador. Não confunda com CPF, QR Code, protocolo ou outro identificador.',
-    '11k. Para CHA, amateur.category deve representar a categoria de amador visível no documento, por exemplo Arrais-Amador/ARA, Mestre-Amador/MSA, Capitão-Amador/CPA ou Motonauta/MTA. Preserve o texto visível.',
-    '11l. Para CHA, amateur.chaIssueDate é exclusivamente a data de emissão da CHA. Não use data de validade, nascimento ou outra data.',
-    '11m. Em CHA, person.fullName e person.cpf só podem ser retornados quando estiverem explicitamente visíveis no próprio documento.',
-    '11n. Em CIR, aquaviario.cirNumber é exclusivamente o número da Caderneta de Inscrição e Registro; nunca use CPF, categoria, número do certificado ou número do embarque.',
-    '11o. Em CIR, aquaviario.category é a categoria profissional explicitamente impressa na folha de rosto. Não infira promoções/ascensões a partir de cursos ou embarques.',
-    '11p. Em CIR, person.fullName deve ser o nome do titular explicitamente identificado. Não use nomes de comandantes, responsáveis ou outras pessoas.',
-    '11q. As únicas categorias de entrada do produto são RG/CNH/CIN, comprovante de residência, CHA, CIR e TIE/TIEM. Se o conteúdo não corresponder ao tipo indicado para a fonte, não retorne candidates para ela.',
-    '12. Não produza comentários, explicações ou campos além do schema.',
+    'Extraia apenas os campos autorizados e VISIVEIS dos documentos brasileiros.',
+    'Nao invente nem infira valores. Trate cada documento e seu titular separadamente.',
+    'Classifique cada documento no mesmo processamento. Se knownSubtype estiver informado, preserve-o.',
+    'Para cada fonte retorne SOMENTE campos do seu allowedFieldIds e use seu requirementId.',
+    'Nunca confunda CPF, RG, inscricao da embarcacao, registro de CNH ou numero de motor.',
+    'Datas: DD/MM/AAAA somente com dia, mes e ano visiveis. Valores sim/nao: sim ou nao. Booleanos: true ou false.',
+    'Candidates: apenas dados visiveis com confianca high ou medium.',
+    'missingFields: relacione cada campo solicitado sem candidate para aquela fonte, com status not_visible (ausente no documento) ou uncertain (obscurecido, ilegivel ou ambíguo). Nao inclua valor nem dado pessoal em missingFields.',
+    'Nao gere candidates para campos com status missingFields. Em caso de conflito entre fontes, retorne candidates separados.',
+    ...typeRules,
     'Campos permitidos: ' + JSON.stringify(fieldList),
     'Documentos enviados: ' + JSON.stringify(documentList),
   ].join('\n');
@@ -359,7 +386,7 @@ export async function extractDocumentsWithOpenAi(
   } = {},
 ): Promise<OpenAiExtractionResult> {
   if (documents.length === 0 || fields.length === 0) {
-    return { evidence: [], diagnostics: [], model: DEFAULT_MODEL, documentSubtypes: {} };
+    return { evidence: [], diagnostics: [], model: DEFAULT_MODEL, documentSubtypes: {}, missingFields: [] };
   }
 
   const env = options.env ?? process.env;
@@ -492,6 +519,15 @@ export async function extractDocumentsWithOpenAi(
     });
   }
 
+  // Only accept status reports for authorized fields without an accepted candidate.
+  // Inconsistent status vs candidate is treated as uncertain, never used to
+  // suppress a recovery attempt.
+  const missingFields: MissingFieldObservation[] = parsed.missingFields
+    .filter((item) => allowedBySource.get(item.sourceRequirementId)?.has(item.fieldId))
+    .filter((item) => allowedFields.has(item.fieldId))
+    .filter((item) => !evidence.some((candidate) =>
+      candidate.fieldId === item.fieldId && candidate.sourceId === item.sourceRequirementId));
+
   // When the model returns an explicitly combined issuer such as SSP/RJ,
   // split the visible UF into issuerState if both target fields are allowed.
   for (const [requirementId, source] of allowedSources) {
@@ -573,6 +609,7 @@ export async function extractDocumentsWithOpenAi(
     diagnostics,
     model,
     documentSubtypes: Object.fromEntries(documentSubtypes),
+    missingFields,
     usage,
   };
 }
