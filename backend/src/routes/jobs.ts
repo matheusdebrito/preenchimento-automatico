@@ -273,6 +273,10 @@ export function registerJobRoutes(
             contingencyRequestedFieldCount: extracted.contingency.requestedFieldCount,
             contingencyDocumentCount: extracted.contingency.documentCount,
             contingencyRecoveredFieldCount: extracted.contingency.recoveredFieldCount,
+            // Aggregate statuses only: never log names, documents, CPF or field values.
+            notVisibleFieldCount: extracted.missingFields.filter((item) => item.status === 'not_visible').length,
+            uncertainFieldCount: extracted.missingFields.filter((item) => item.status === 'uncertain').length,
+            acceptedSuggestionCount: extracted.evidence.length,
             elapsedMs: Date.now() - startedAt,
           }, 'document_extraction_usage');
           if (pool && extracted.usage) {
