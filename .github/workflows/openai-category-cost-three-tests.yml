@@ -1,12 +1,6 @@
 name: Custos OpenAI - 3 categorias com 3 documentos
 on:
-  # Single push-path trigger: the first merge that adds this workflow runs the
-  # explicitly requested paid benchmark once, on reviewed main code only.
-  # Later executions must be manual unless this workflow file changes.
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/openai-category-cost-three-tests.yml'
+  # Manually approved only: prevent accidental future paid API executions.
   workflow_dispatch:
     inputs:
       model:
