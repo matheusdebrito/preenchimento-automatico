@@ -166,7 +166,12 @@ const bsadePlacements: readonly CoordinatePlacement[] = [
   top('sale.place', 365, 369, 155, 6),
   top('seller.fullName', 110, 387, 200, 6.2),
   top('seller.cpf', 390, 387, 130, 6),
-  top('vessel.name', 150, 429, 86, 6, 0, true),
+  // O campo Nome da Embarcação ocupa duas linhas dentro da própria célula.
+  // Mantém o nome integral sem invadir o rótulo à esquerda da divisória.
+  { ...top('vessel.name', 150, 418, 86, 6, 0, true),
+    minFontSize: 5.5,
+    continuationLines: [{ x: 150, y: PAGE_HEIGHT - 430, maxWidth: 86 }],
+  },
   top('vessel.registration', 309, 429, 58, 5.7),
   top('vessel.grossTonnage', 445, 429, 75, 6),
   top('vessel.type', 108, 448, 115, 6),
