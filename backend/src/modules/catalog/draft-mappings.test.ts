@@ -55,18 +55,21 @@ describe('versioned form map coordinates', () => {
   it('mantém endereço completo na declaração de residência e casco alinhado no requerimento', () => {
     const residence = catalog.mappings.find((mapping) =>
       mapping.formVersionId === 'declaracao-residencia-er-2026-v1')!;
-    const residenceFields = new Set(residence.placements.map((placement) => placement.fieldId));
-    for (const fieldId of [
-      'person.address', 'person.streetNumber', 'person.apartment',
-      'person.neighborhood', 'person.city', 'person.state', 'person.postalCode',
-    ]) {
-      expect(residenceFields.has(fieldId), fieldId).toBe(true);
+    const addressPlacements = residence.placements.filter((placement) =>
+      placement.kind === 'COORDINATES' && placement.fieldId === 'person.fullAddress');
+    expect(addressPlacements).toHaveLength(1);
+    const address = addressPlacements[0]!;
+    expect(address.kind).toBe('COORDINATES');
+    if (address.kind === 'COORDINATES') {
+      expect(address.x).toBeGreaterThanOrEqual(300);
+      expect(address.continuationLines).toHaveLength(1);
+      expect(address.continuationLines![0]!.x).toBeLessThan(150);
+      expect(address.continuationLines![0]!.maxWidth).toBeGreaterThan(400);
     }
-
-    const address = residence.placements.find((placement) =>
-      placement.kind === 'COORDINATES' && placement.fieldId === 'person.address');
-    expect(address?.kind).toBe('COORDINATES');
-    if (address?.kind === 'COORDINATES') expect(address.x).toBeGreaterThanOrEqual(320);
+    // Never print the address fragments out of order in independent cells.
+    expect(residence.placements.some((placement) =>
+      placement.fieldId === 'person.streetNumber' || placement.fieldId === 'person.apartment' ||
+      placement.fieldId === 'person.neighborhood' || placement.fieldId === 'person.city')).toBe(false);
 
     const request = catalog.mappings.find((mapping) =>
       mapping.formVersionId === 'requerimento-embarcacao-er-2026-v1')!;
@@ -90,7 +93,7 @@ describe('versioned form map coordinates', () => {
       'bade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
       'bsade-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
       'requerimento-embarcacao-er-2026-v1': ['person.fullName', 'person.cpf', 'vessel.name'],
-      'declaracao-residencia-er-2026-v1': ['person.fullName', 'person.cpf', 'person.address'],
+      'declaracao-residencia-er-2026-v1': ['person.fullName', 'person.cpf', 'person.fullAddress'],
       'declaracao-perda-tie-er-2026-v1': ['declarant.fullName', 'declarant.cpf', 'vessel.name', 'vessel.registration'],
       'comunicacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
       'autorizacao-transferencia-er-2026-v1': ['seller.fullName', 'seller.cpf', 'person.fullName', 'person.cpf', 'vessel.name', 'vessel.registration'],
