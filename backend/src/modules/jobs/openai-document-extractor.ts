@@ -705,6 +705,22 @@ export async function extractDocumentsWithOneContingency(
 ): Promise<OpenAiExtractionWithContingencyResult> {
   const primary = await extractDocumentsWithOpenAi(documents, fields, options);
   const pending = fieldsNeedingContingency(primary.evidence, fields);
+  // Only skip a costly retry for an issuer field explicitly reported absent
+  // from EVERY eligible source. Uncertain / unreadable fields still retry.
+  // A missing status report is never sufficient to suppress recovery.
+  for (const field of fields) {
+    if (!field.id.endsWith('.issuer') && !field.id.endsWith('.issuerState')) continue;
+    if (!pending.has(field.id)) continue;
+    const eligible = documents.filter((document) =>
+      document.allowedFieldIds.includes(field.id));
+    if (eligible.length === 0) continue;
+    if (eligible.every((document) => primary.missingFields.some((observation) =>
+      observation.fieldId === field.id &&
+      observation.sourceRequirementId === document.document.requirementId &&
+      observation.status === 'not_visible'))) {
+      pending.delete(field.id);
+    }
+  }
 
   if (pending.size === 0) {
     return {
