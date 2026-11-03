@@ -619,7 +619,8 @@ export async function extractDocumentsWithOpenAi(
     diagnostics,
     model,
     documentSubtypes: Object.fromEntries(documentSubtypes),
-    missingFields,
+    missingFields: missingFields.filter((item) => !evidence.some((candidate) =>
+      candidate.fieldId === item.fieldId && candidate.sourceId === item.sourceRequirementId)),
     usage,
   };
 }
