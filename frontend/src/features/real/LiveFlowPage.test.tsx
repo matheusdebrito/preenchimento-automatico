@@ -589,7 +589,8 @@ describe('jornada real isolada da demonstração', () => {
     expect((screen.getByLabelText(/^RG/) as HTMLInputElement).value).toBe('12.345.678-9');
     expect((screen.getByLabelText(/^Órgão emissor/) as HTMLInputElement).value).toBe('SSP');
     expect((screen.getByLabelText(/^UF do órgão emissor/) as HTMLInputElement).value).toBe('RJ');
-    expect(screen.getByText(/5 sugestão\(ões\) encontrada/)).toBeTruthy();
+    expect(screen.getByText(/Alguns campos foram sugeridos automaticamente/)).toBeTruthy();
+    expect(screen.queryByText('Resultado da análise por documento')).toBeNull();
     expect(screen.queryByText('Nenhum campo preenchido automaticamente')).toBeNull();
     expect(fetcher.mock.calls.some(([url]) =>
       String(url).endsWith('/documents/buyer-identity'))).toBe(true);
@@ -797,9 +798,7 @@ describe('jornada real isolada da demonstração', () => {
 
     expect(await screen.findByRole('heading', { name: 'Preencha e confira os formulários' })).toBeTruthy();
     expect(screen.getByText('Nenhum campo preenchido automaticamente')).toBeTruthy();
-    expect(screen.getByText(/texto detectado, mas nenhum dado foi associado aos campos com segurança/i))
-      .toBeTruthy();
-    expect(screen.getByText(/não foi possível ler o documento/)).toBeTruthy();
+    expect(screen.queryByText('Resultado da análise por documento')).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Confirmar e gerar formulários' }));
     expect(await screen.findByText(/Existem campos em branco/i)).toBeTruthy();
     expect(screen.getByText(/Campos em branco: Nome completo, CPF/i)).toBeTruthy();
@@ -993,5 +992,67 @@ describe('carregamento visível durante consulta documental', () => {
     expect(await screen.findByRole('status', { name: 'Carregando dados do serviço' })).toBeTruthy();
     respond!(json({ service }));
     expect(await screen.findByRole('heading', { name: 'Dados do serviço' })).toBeTruthy();
+  });
+});
+
+
+describe('endereço automático na declaração dos amadores', () => {
+  it('preenche endereço completo com dados extraídos e sincroniza alterações de rua', async () => {
+    const reviewFields = [
+      { id: 'person.address', label: 'Rua', valueKind: 'text' },
+      { id: 'person.streetNumber', label: 'Número', valueKind: 'text' },
+      { id: 'person.neighborhood', label: 'Bairro', valueKind: 'text' },
+      { id: 'person.city', label: 'Cidade', valueKind: 'text' },
+      { id: 'person.state', label: 'UF', valueKind: 'text' },
+      { id: 'person.postalCode', label: 'CEP', valueKind: 'text' },
+      { id: 'person.fullAddress', label: 'Endereço completo', valueKind: 'text' },
+    ];
+    const reviewService = {
+      ...service,
+      formVersionIds: [
+        'requerimento-cha-amador-2026-v1', 'declaracao-residencia-er-2026-v1',
+      ],
+      reviewFields,
+      reviewForms: [{
+        formVersionId: 'requerimento-cha-amador-2026-v1',
+        formId: 'requerimento-cha-amador',
+        name: 'Requerimento CHA', fields: reviewFields.slice(0, 6),
+      }, {
+        formVersionId: 'declaracao-residencia-er-2026-v1',
+        formId: 'declaracao-residencia-er',
+        name: 'Declaração de residência', fields: [reviewFields[6]],
+      }],
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/auth/me') return json({ error: 'unauthorized' }, 401);
+      if (url === '/api/services/ci-only-service' || url.endsWith('/quote')) {
+        return json({ service: reviewService });
+      }
+      if (url === '/api/jobs' && init?.method === 'POST') {
+        return json({ id: 'job-amateur', expiresAt: Date.now() + 300000 }, 201);
+      }
+      if (url.endsWith('/extract')) return json({
+        fields: {
+          'person.address': 'Rua das Palmeiras', 'person.streetNumber': '40',
+          'person.neighborhood': 'Centro', 'person.city': 'Niterói',
+          'person.state': 'RJ', 'person.postalCode': '24000-000',
+        }, sources: {}, diagnostics: [],
+      });
+      return json({ error: 'not_found' }, 404);
+    }));
+    const user = userEvent.setup();
+    render(<MemoryRouter initialEntries={['/preencher-real/ci-only-service']}><App /></MemoryRouter>);
+    await user.click(await screen.findByRole('button', { name: 'Ver formulários e continuar' }));
+    await user.click(screen.getByRole('button', { name: 'Continuar sem anexos — preencher manualmente' }));
+    await screen.findByRole('heading', { name: 'Preencha e confira os formulários' });
+    await user.click(screen.getByRole('button', { name: /Declaração de residência/ }));
+    const fullAddress = screen.getByLabelText('Endereço completo') as HTMLInputElement;
+    expect(fullAddress.value).toBe('Rua das Palmeiras, 40, Centro, Niterói/RJ, 24000-000');
+    const street = screen.getByLabelText('Rua') as HTMLInputElement;
+    await user.clear(street);
+    await user.type(street, 'Avenida Atlântica');
+    expect(fullAddress.value).toBe('Avenida Atlântica, 40, Centro, Niterói/RJ, 24000-000');
+    expect(screen.queryByText('Resultado da análise por documento')).toBeNull();
   });
 });
