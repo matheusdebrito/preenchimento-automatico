@@ -1,0 +1,48 @@
+name: Real OpenAI identity comparison (bounded synthetic)
+on:
+  push:
+    branches:
+      - test/real-openai-identity-comparison-20261103
+permissions:
+  contents: read
+concurrency:
+  group: real-identity-20261103
+  cancel-in-progress: false
+jobs:
+  three-synthetic-identity-scenarios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install and build actual current extraction code
+        run: |
+          npm ci --prefix backend
+          npm run build --prefix backend
+      - name: Install renderer for synthetic identity images
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+      - name: Run 3 real OpenAI scenarios on synthetic-only documents
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_PROJECT_ID: ${{ vars.OPENAI_PROJECT_ID || secrets.OPENAI_PROJECT_ID }}
+          OPENAI_MODEL: gpt-5.4-mini-2026-03-17
+          OPENAI_DOCUMENT_DETAIL: high
+          OPENAI_COST_BENCH_IDENTITY_MODE: "1"
+          BENCH_REPORT_DIR: openai-identity-results
+        run: |
+          test -n "$OPENAI_API_KEY" || { echo "::error::OPENAI_API_KEY missing"; exit 1; }
+          node backend/scripts/openai-cost-benchmark.mjs
+      - name: Publish safe metric-only reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openai-identity-real-report
+          path: openai-identity-results/
+          retention-days: 7
+          if-no-files-found: warn
