@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { execFile as execFileCallback } from 'node:child_process';
-import { mkdtemp, mkdir, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -9,6 +9,8 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { extractDocumentsWithOneContingency } from '../dist/modules/jobs/openai-document-extractor.js';
 import { catalog } from '../dist/modules/catalog/catalog.js';
 import { publicService } from '../dist/modules/catalog/public-catalog.js';
+import { serviceFormValues } from '../dist/modules/catalog/service-form-values.js';
+import { fillPdf } from '../dist/modules/pdf/fill-pdf.js';
 
 const execFile = promisify(execFileCallback);
 const model = process.env.OPENAI_MODEL || 'gpt-5.4-mini-2026-03-17';
@@ -21,13 +23,14 @@ if (!rates) throw new Error('Unsupported test model; choose the approved mini or
 const dryRun = process.env.OPENAI_COST_BENCH_DRY_RUN === '1';
 const categoryMode = process.env.OPENAI_COST_BENCH_CATEGORY_MODE === '1';
 const identityMode = process.env.OPENAI_COST_BENCH_IDENTITY_MODE === '1';
+const epmMode = process.env.OPENAI_EPM_VALIDATION_MODE === '1';
 if (!dryRun && !process.env.OPENAI_API_KEY) {
   throw new Error('Missing OPENAI_API_KEY GitHub Actions secret.');
 }
-const maxExternalCalls = identityMode ? 9 : categoryMode ? 9 : 10;
+const maxExternalCalls = epmMode ? 2 : identityMode ? 9 : categoryMode ? 9 : 10;
 const maxEstimatedUsd = 0.15; // Soft guard based on observed token usage, not a billing guarantee.
 const reportsPath = resolve(process.env.BENCH_REPORT_DIR ||
-  (categoryMode ? 'openai-category-cost-results' : 'openai-cost-results'));
+  (epmMode ? 'openai-epm-validation-results' : categoryMode ? 'openai-category-cost-results' : 'openai-cost-results'));
 const working = await mkdtemp(join(tmpdir(), 'pa-ai-cost-'));
 await mkdir(reportsPath, { recursive: true });
 
@@ -398,7 +401,20 @@ try {
   }
 
   const answersIdentity = { vesselType:'embarcacao', vesselBand:'ate_6m', hasCoOwner:'nao', initialResponsibilityTerm:'nao' };
-  const testCases = identityMode ? [
+  const testCases = epmMode ? [
+    categoryCase(
+      'epm_cprj_real_extraction_and_pdf', 'revalidacao-cir-aquaviario',
+      { includeResidenceDeclaration: 'sim' },
+      [
+        { fileName: 'rg', requirementId: 'applicant-identity' },
+        { fileName: 'cir', requirementId: 'current-cir' },
+        { fileName: 'residence', requirementId: 'residence-proof' },
+      ],
+      ['person.fullName', 'person.cpf', 'person.identity', 'aquaviario.cirNumber',
+       'aquaviario.category', 'person.address', 'person.streetNumber',
+       'person.neighborhood', 'person.city', 'person.state', 'person.postalCode'],
+    ),
+  ] : identityMode ? [
     categoryCase('rg_isolado','inscricao-embarcacao',answersIdentity,[{fileName:'rg',requirementId:'applicant-identity'}],['person.identity','person.issuer']),
     categoryCase('rg_mais_comprovante','inscricao-embarcacao',answersIdentity,[{fileName:'rg',requirementId:'applicant-identity'},{fileName:'residence',requirementId:'residence-proof'}],['person.identity','person.issuer','person.address','person.postalCode']),
     categoryCase('rg_sem_orgao_visivel','inscricao-embarcacao',answersIdentity,[{fileName:'rg-no-issuer',requirementId:'applicant-identity'}],['person.identity']),
@@ -478,6 +494,43 @@ try {
       const mismatches = Object.entries(expected)
         .filter(([id, expectedValue]) => normalized(found[id] || '') !== normalized(expectedValue))
         .map(([id]) => id);
+      // Validate the *actual* CPRJ/EPM PDF with the extracted synthetic values.
+      // Never upload generated files or raw OpenAI responses as artifacts.
+      let pdfValidation;
+      if (epmMode) {
+        const formVersionId = 'requerimento-interessado-aquaviario-2026-v2';
+        const version = catalog.versions.find((item) => item.id === formVersionId);
+        const mapping = catalog.mappings.find((item) => item.formVersionId === formVersionId);
+        const relation = catalog.serviceForms.find((item) =>
+          item.serviceId === scenario.serviceId && item.formVersionId === formVersionId);
+        if (!version || !mapping || !relation) throw new Error('EPM mapping or relation missing.');
+        const filledValues = serviceFormValues(relation, { includeResidenceDeclaration: 'sim' }, {
+          ...found, 'process.date': '03/11/2026',
+        });
+        const inputPdf = await readFile(resolve(version.templatePath));
+        const outputPdf = await fillPdf(inputPdf, mapping.placements, filledValues);
+        const outputPath = join(working, 'epm-cprj-validation.pdf');
+        await writeFile(outputPath, outputPdf);
+        const { stdout: pdfText } = await execFile('pdftotext', ['-layout', outputPath, '-'],
+          { timeout: 20_000, maxBuffer: 1_000_000 });
+        const displayed = normalized(pdfText);
+        const printCheckIds = [
+          'person.fullName', 'person.cpf', 'person.identity', 'aquaviario.cirNumber',
+          'aquaviario.category', 'person.address', 'person.streetNumber',
+          'person.neighborhood', 'person.city', 'person.postalCode',
+        ];
+        const missingPrintedFieldIds = printCheckIds.filter((id) =>
+          !filledValues[id] || !displayed.includes(normalized(filledValues[id])));
+        pdfValidation = {
+          templateVersionId: formVersionId,
+          generatedPdfBytes: outputPdf.length,
+          checkedFields: printCheckIds.length,
+          missingPrintedFieldIds,
+          expectedFieldsMismatch: mismatches,
+        };
+        console.log('EPM PDF checked: fields=' + printCheckIds.length +
+          ' missingPrinted=' + missingPrintedFieldIds.length + ' extractionMismatches=' + mismatches.length);
+      }
       const unexpectedFieldIds = scenario.id === 'rg_sem_orgao_visivel' ? ['person.issuer','person.issuerState'].filter((id)=>Boolean(found[id])) : [];
       const scenarioCalls = calls.slice(startCall);
       const costUsd = scenarioCalls.reduce((acc, item) => acc + (item.estimatedUsd || 0), 0);
@@ -499,7 +552,9 @@ try {
         inputTokens: scenarioCalls.reduce((acc, item) => acc + (item.inputTokens || 0), 0),
         outputTokens: scenarioCalls.reduce((acc, item) => acc + (item.outputTokens || 0), 0),
         costEstimatedUsd: Number(costUsd.toFixed(8)),
-        status: 'completed',
+        ...(pdfValidation ? { pdfValidation } : {}),
+        status: pdfValidation && (pdfValidation.missingPrintedFieldIds.length > 0 || mismatches.length > 0)
+          ? 'validation_failed' : 'completed',
       });
       console.log('Completed: ' + scenario.id + ' | calls=' + scenarioCalls.length +
         ' | cost~USD ' + costUsd.toFixed(6));
@@ -520,7 +575,7 @@ try {
   const totalOutputTokens = calls.reduce((sum, call) => sum + (call.outputTokens || 0), 0);
   const summary = {
     time: new Date().toISOString(),
-    suite: identityMode ? 'identity_isolated_vs_combined' : categoryMode ? '3_categories_3_documents_each' : '5_baseline_cases',
+    suite: epmMode ? 'epm_cprj_real_extraction_and_pdf' : identityMode ? 'identity_isolated_vs_combined' : categoryMode ? '3_categories_3_documents_each' : '5_baseline_cases',
     model,
     mode: dryRun ? 'offline_mock_no_api_calls' : 'real_openai_responses_api',
     syntheticOnly: true,
@@ -537,16 +592,17 @@ try {
         ? Number((totalEstimatedUsd / scenarios.filter((s) => s.status === 'completed').length).toFixed(8)) : null,
     },
     guards: {
-      maxScenarios: identityMode ? 3 : categoryMode ? 3 : 5, maxExternalCalls, maxEstimatedUsd,
+      maxScenarios: epmMode ? 1 : identityMode ? 3 : categoryMode ? 3 : 5, maxExternalCalls, maxEstimatedUsd,
       caveat: 'Cost guard is post-response/soft; the OpenAI project budget is authoritative.',
     },
   };
   await writeFile(join(reportsPath,
-    identityMode ? 'resultados-openai-identidade.json' : categoryMode ? 'resultados-openai-3-categorias.json' : 'resultados-openai-5-testes.json'),
+    epmMode ? 'resultado-openai-epm.json' : identityMode ? 'resultados-openai-identidade.json' : categoryMode ? 'resultados-openai-3-categorias.json' : 'resultados-openai-5-testes.json'),
     JSON.stringify(summary, null, 2) + '\n', { mode: 0o600 });
   const lines = [
     dryRun
       ? '# Smoke offline: cenários sintéticos sem API'
+      : epmMode ? '# Requerimento CPRJ/EPM: extração real e verificação do PDF'
       : identityMode ? '# Identidade: RG isolado versus combinado em chamadas reais'
       : categoryMode
         ? '# Três categorias de serviço: custo real com 3 documentos por processo'
@@ -577,8 +633,9 @@ try {
     'Documentos sintéticos simplificados não representam a qualidade ou complexidade dos documentos reais digitalizados.',
   ];
   await writeFile(join(reportsPath,
-    identityMode ? 'relatorio-openai-identidade.md' : categoryMode ? 'relatorio-openai-3-categorias.md' : 'relatorio-openai-5-testes.md'),
+    epmMode ? 'relatorio-openai-epm.md' : identityMode ? 'relatorio-openai-identidade.md' : categoryMode ? 'relatorio-openai-3-categorias.md' : 'relatorio-openai-5-testes.md'),
     lines.join('\n') + '\n', { mode: 0o600 });
   await rm(working, { recursive: true, force: true });
 }
-if (fatal || scenarios.length !== (identityMode ? 3 : categoryMode ? 3 : 5)) process.exitCode = 1;
+if (fatal || scenarios.length !== (epmMode ? 1 : identityMode ? 3 : categoryMode ? 3 : 5) ||
+  scenarios.some((scenario) => scenario.status !== 'completed')) process.exitCode = 1;
