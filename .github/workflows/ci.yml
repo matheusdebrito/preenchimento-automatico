@@ -240,6 +240,11 @@ jobs:
         run: npm run build
       - name: Install Poppler renderer
         run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
+      - name: Smoke-test five synthetic OpenAI cases offline (no API or secrets)
+        env:
+          OPENAI_COST_BENCH_DRY_RUN: "1"
+          OPENAI_API_KEY: ""
+        run: node backend/scripts/openai-cost-benchmark.mjs
       - name: Generate review-only samples with synthetic names and CPFs
         working-directory: backend
         run: node scripts/render-synthetic.mjs
