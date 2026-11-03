@@ -87,6 +87,28 @@ describe('serviceFormValues', () => {
     );
   });
 
+  it('prioriza endereço conferido completo no Anexo 2-G mesmo com sugestão parcial de IA', () => {
+    const relation: ServiceForm = {
+      serviceId: 'inscricao-embarcacao',
+      formVersionId: 'declaracao-residencia-er-2026-v1',
+      order: 2,
+    };
+    const result = serviceFormValues(relation, {}, {
+      'person.fullAddress': 'AVENIDA PROFESSOR JOSE AUGUSTO 1250',
+      'person.address': 'AVENIDA PROFESSOR JOSE AUGUSTO',
+      'person.streetNumber': '1250',
+      'person.apartment': 'BLOCO B APTO 305',
+      'person.neighborhood': 'JARDIM DAS AMERICAS',
+      'person.city': 'RIO DE JANEIRO',
+      'person.state': 'RJ',
+      'person.postalCode': '24020-031',
+    });
+    expect(result['person.fullAddress']).toBe(
+      'AVENIDA PROFESSOR JOSE AUGUSTO, 1250, BLOCO B APTO 305, ' +
+      'JARDIM DAS AMERICAS, RIO DE JANEIRO/RJ, 24020-031',
+    );
+  });
+
   it('ignora binding sem resposta em vez de inventar valor', () => {
     const relation: ServiceForm = {
       serviceId: 's',
