@@ -7,6 +7,7 @@ import { Notice } from '../../components/ui/Notice';
 import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
 import { formatBrazilianDateInput } from '../../lib/date-mask';
+import { formatContactField } from '../../lib/contact-mask';
 import type { LiveReviewField, LiveReviewForm, LiveService } from '../../lib/api';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { readTemporaryJob, rememberTemporaryJob, forgetTemporaryJob } from './temporary-job-session';
@@ -211,6 +212,8 @@ export function LiveFlowPage() {
   const [busy, setBusy] = useState(false);
   const [openReviewFormIds, setOpenReviewFormIds] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [questionErrors, setQuestionErrors] = useState<string[]>([]);
+  const [questionSubmitError, setQuestionSubmitError] = useState('');
   const cancelRequested = useRef(false);
 
   const reviewForms = service ? groupedReviewForms(service) : [];
@@ -307,10 +310,14 @@ export function LiveFlowPage() {
     const relevantAnswers = pruneHiddenAnswers(service, answers);
     const relevantQuestions = service.questions.filter((question) =>
       questionConditionsMatch(question, relevantAnswers));
-    if (relevantQuestions.some((question) => !relevantAnswers[question.id])) {
-      setError('Responda às perguntas sobre o seu caso.');
+    const missingQuestions = relevantQuestions.filter((question) => !relevantAnswers[question.id]);
+    if (missingQuestions.length > 0) {
+      setQuestionErrors(missingQuestions.map((question) => question.id));
+      setQuestionSubmitError('Responda às perguntas destacadas para continuar.');
       return;
     }
+    setQuestionErrors([]);
+    setQuestionSubmitError('');
     setBusy(true); setError('');
     try {
       const result = await api<{service:LiveService}>(
@@ -321,7 +328,7 @@ export function LiveFlowPage() {
       setService(result.service);
       setStep('files');
     } catch (issue) {
-      setError(issue instanceof ApiError ? issue.message
+      setQuestionSubmitError(issue instanceof ApiError ? issue.message
         : 'Não foi possível validar os requisitos do serviço.');
     }
     finally { setBusy(false); }
@@ -649,16 +656,22 @@ export function LiveFlowPage() {
                   {service.questions.filter((question) =>
                     questionConditionsMatch(question, pruneHiddenAnswers(service, answers))).map((question) => (
                     <div key={question.id}>
-                    <label className="field">
+                    <label className="field" htmlFor={'question-' + question.id}>
                       <span className="field__label">{question.label}</span>
-                      <select className="field__input" required value={answers[question.id] ?? ''}
-                        aria-describedby={question.id === 'includeResidenceDeclaration'
-                          ? 'residence-declaration-hint' : undefined}
-                        onChange={(event) => setAnswers((prev) =>
-                          pruneHiddenAnswers(service, {
+                      <select id={'question-' + question.id} className="field__input" required value={answers[question.id] ?? ''}
+                        aria-invalid={questionErrors.includes(question.id) || undefined}
+                        aria-describedby={[
+                          question.id === 'includeResidenceDeclaration' ? 'residence-declaration-hint' : '',
+                          questionErrors.includes(question.id) ? 'question-error-' + question.id : '',
+                        ].filter(Boolean).join(' ') || undefined}
+                        onChange={(event) => {
+                          setAnswers((prev) => pruneHiddenAnswers(service, {
                             ...prev,
                             [question.id]: event.target.value,
-                          }))}>
+                          }));
+                          setQuestionErrors((prev) => prev.filter((id) => id !== question.id));
+                          setQuestionSubmitError('');
+                        }}>
                         <option value="">Selecione</option>
                         {question.options.map((value) => {
                           const unavailable = question.unavailableOptions?.includes(value) ?? false;
@@ -706,6 +719,11 @@ export function LiveFlowPage() {
                         })}
                       </select>
                     </label>
+                    {questionErrors.includes(question.id) ? (
+                      <p className="field__error" id={'question-error-' + question.id}>
+                        Selecione uma resposta para continuar.
+                      </p>
+                    ) : null}
                     {question.id === 'includeResidenceDeclaration' && (
                       <p id="residence-declaration-hint" className="field__hint">
                         A declaração será adicionada apenas se você escolher Sim.
@@ -714,6 +732,7 @@ export function LiveFlowPage() {
                     )}
                     </div>
                   ))}
+                  {questionSubmitError ? <Notice tone="danger" role="alert">{questionSubmitError}</Notice> : null}
                   <Button disabled={busy} onClick={() => void quote()}>Ver formulários e continuar</Button>
                 </>
               ) : null}
@@ -998,15 +1017,15 @@ export function LiveFlowPage() {
                                           className="field__input"
                                           value={values[field.id] ?? ''}
                                           aria-invalid={invalidFieldIds.includes(field.id) || undefined}
-                                          inputMode={field.valueKind === 'date' ? 'numeric' : undefined}
-                                          maxLength={field.valueKind === 'date' ? 10 : undefined}
+                                          inputMode={field.valueKind === 'date' || field.id.endsWith('.postalCode') || field.id.endsWith('.mobile') ? 'numeric' : undefined}
+                                          maxLength={field.valueKind === 'date' ? 10 : field.id.endsWith('.postalCode') ? 9 : field.id.endsWith('.mobile') ? 15 : undefined}
                                           placeholder={field.valueKind === 'date'
                                             ? 'DD/MM/AAAA'
-                                            : undefined}
+                                            : field.id.endsWith('.postalCode') ? '00000-000' : field.id.endsWith('.mobile') ? '(00) 00000-0000' : undefined}
                                           onChange={(event) => {
                                             const typed = field.valueKind === 'date'
                                               ? formatBrazilianDateInput(event.target.value)
-                                              : event.target.value;
+                                              : formatContactField(field.id, event.target.value);
                                             setValues((prev) => ({ ...prev, [field.id]:typed }));
                                             if (invalidFieldIds.includes(field.id) && typed.trim()) {
                                               const remaining = invalidFieldIds.filter((id) => id !== field.id);
