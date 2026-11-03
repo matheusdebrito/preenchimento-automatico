@@ -101,7 +101,17 @@ export function ServiceCategoryPage() {
               </div>
             ) : (
               <div className="category-grid" aria-label={'Serviços de ' + category.title}>
-                {planned.map((service) => {
+                {availabilityState === 'loading' ? planned.slice(0, 6).map((service) => (
+                  <article key={service.id} className="category-card skeleton-stack"
+                    role="status" aria-label={'Carregando ' + service.title}>
+                    <span className="skeleton-block" style={{ width: '3rem', height: '3rem' }} aria-hidden="true" />
+                    <div className="category-card__content skeleton-stack" aria-hidden="true">
+                      <span className="skeleton-line skeleton-line--wide" />
+                      <span className="skeleton-line" />
+                      <span className="skeleton-line skeleton-line--short" />
+                    </div>
+                  </article>
+                )) : planned.map((service) => {
                   const live = availableById.get(service.id);
                   if (!live) {
                     const unavailableLabel = availabilityState === 'loading'
