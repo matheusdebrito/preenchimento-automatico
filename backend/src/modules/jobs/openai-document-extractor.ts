@@ -801,6 +801,9 @@ export async function extractDocumentsWithOneContingency(
     diagnostics: mergedDiagnostics(documents, evidence, primary.diagnostics, retryDiagnostics),
     model: primary.model,
     documentSubtypes: primary.documentSubtypes,
+    missingFields: [...primary.missingFields, ...results.flatMap((item) => item.missingFields)]
+      .filter((item) => !evidence.some((candidate) =>
+        candidate.fieldId === item.fieldId && candidate.sourceId === item.sourceRequirementId)),
     usage: results.reduce((usage, item) => sumUsage(usage, item.usage), primary.usage),
     contingency: {
       used: true,
