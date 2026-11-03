@@ -79,8 +79,8 @@ describe('jornada real isolada da demonstração', () => {
     await user.click(screen.getByRole('button', {
       name: 'Continuar sem anexos — preencher manualmente',
     }));
-    const cep = await screen.findByLabelText('CEP') as HTMLInputElement;
-    const mobile = screen.getByLabelText('Celular') as HTMLInputElement;
+    const cep = await screen.findByLabelText(/^CEP/) as HTMLInputElement;
+    const mobile = screen.getByLabelText(/^Celular/) as HTMLInputElement;
     await user.type(cep, '22041001');
     await user.type(mobile, '21987654321');
     expect(cep.value).toBe('22041-001');
