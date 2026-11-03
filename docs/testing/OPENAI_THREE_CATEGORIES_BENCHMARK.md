@@ -30,12 +30,11 @@ sintéticos são simplificados e **não reproduzem formatos oficiais**.
 - A guarda de US$ 0,15 é flexível e verificada após cada resposta, não
   constitui limite de cobrança garantido; limite efetivo exige orçamento
   configurado no projeto OpenAI.
-- O evento push limitado ao arquivo do próprio workflow foi adicionado
-  para disparar uma execução ao integrar este PR à `main`, conforme
-  pedido de realizar os testes agora. Depois disso, execuções normais
-  são iniciadas em Actions → Custos OpenAI - 3 categorias com 3 documentos
-  → Run workflow. A alteração futura desse workflow também pode disparar
-  um teste: manter atenção à alteração de arquivos de automação faturável.
+- A primeira execução faturável foi realizada com sucesso em
+  https://github.com/matheusdebrito/preenchimento-automatico/actions/runs/41637617460
+  (3 processos, 6 requisições, US$ 0,02499525 estimados).
+  O gatilho automático foi removido após o teste: execuções futuras
+  exigem Actions → Custos OpenAI - 3 categorias com 3 documentos → Run workflow.
 - O relatório contém apenas contagens, IDs de campos divergentes, tempos,
   tokens e custos; **não publica PDFs, PNGs, prompts, extrações brutas ou
   chaves**.
