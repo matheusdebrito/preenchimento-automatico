@@ -245,6 +245,13 @@ jobs:
           OPENAI_COST_BENCH_DRY_RUN: "1"
           OPENAI_API_KEY: ""
         run: node backend/scripts/openai-cost-benchmark.mjs
+      - name: Smoke-test 3 services with 3 documents per service offline
+        env:
+          OPENAI_COST_BENCH_DRY_RUN: "1"
+          OPENAI_COST_BENCH_CATEGORY_MODE: "1"
+          OPENAI_API_KEY: ""
+          BENCH_REPORT_DIR: openai-category-cost-results
+        run: node backend/scripts/openai-cost-benchmark.mjs
       - name: Generate review-only samples with synthetic names and CPFs
         working-directory: backend
         run: node scripts/render-synthetic.mjs
