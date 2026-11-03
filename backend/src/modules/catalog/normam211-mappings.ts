@@ -66,19 +66,19 @@ const badePlacements: readonly CoordinatePlacement[] = [
   // 24 Quantidade de motores propulsores.
   top('vessel.motorCount', 160, 570, 56, 6),
   // 25 Potência total de propulsão.
-  top('vessel.totalPropulsionPowerKw', 246, 558, 55, 6.0),
+  top('vessel.totalPropulsionPowerKw', 246, 558, 55, 7),
   // 26 Número(s) dos motores propulsores.
-  top('vessel.motorSerial', 334, 558, 72, 6.0),
+  top('vessel.motorSerial', 334, 558, 72, 7),
 
   // Página 2 - proprietário: campos 39 a 51. Campo 52 (telefax) não é preenchido.
   // 39 Nome: posicionar todas as linhas ABAIXO do rotulo, dentro da celula
   // que termina em y=255,6 a partir do topo. Nao sobrepor o rotulo "Nome".
   {
-    ...top('person.fullName', 110, 232, 88, 6.2, 1, true),
+    ...top('person.fullName', 110, 235, 88, 7.5, 1, true),
     minFontSize: 5.5,
     continuationLines: [
-      { x: 110, y: PAGE_HEIGHT - 242, maxWidth: 88 },
-      { x: 110, y: PAGE_HEIGHT - 252, maxWidth: 88 },
+      { x: 110, y: PAGE_HEIGHT - 245, maxWidth: 88 },
+      { x: 110, y: PAGE_HEIGHT - 255, maxWidth: 88 },
     ],
   },
   // 40 CPF/CNPJ.
@@ -92,7 +92,7 @@ const badePlacements: readonly CoordinatePlacement[] = [
   // 44 Endereco completo: os tres IDs sao mantidos para revisao independente.
   // Na geracao do BADE, o renderizador especifico imprime a frase concatenada
   // em um unico trecho para nao deixar lacunas artificiais entre os termos.
-  top('person.address', 110, 277, 425, 6.2, 1),
+  top('person.address', 110, 277, 425, 7.5, 1),
   top('person.streetNumber', 450, 277, 35, 6, 1),
   top('person.apartment', 490, 277, 45, 6, 1),
   // 45 CEP.
@@ -193,12 +193,15 @@ const requestPlacements: readonly CoordinatePlacement[] = [
   top('person.fullName', 145, 256, 385, 7, 0, true),
   // Anexo 2-C: enderecos e dados de localidade recebem baselines proprios;
   // as colunas permanecem isoladas para evitar invasao de rotulos impressos.
-  top('person.address', 156, 281, 267, 7),
-  top('person.streetNumber', 438, 281, 42, 6),
-  top('person.apartment', 500, 281, 32, 5.5),
-  top('person.city', 188, 297, 104, 6.3),
-  top('person.state', 326, 297, 29, 6.2),
-  top('person.postalCode', 390, 297, 140, 6.3),
+  // Faixa 2-C: as posicoes sao delimitadas pelos rotulos reais:
+  // ENDERECO 148pt, N. 375-388pt, COMPLEMENTO 418-497pt.
+  // Baselines acima dos sublinhados (y=277 e y=294 no PDF de origem).
+  top('person.address', 156, 274, 215, 8.2),
+  top('person.streetNumber', 391, 274, 23, 7.5),
+  top('person.apartment', 499, 274, 32, 7),
+  top('person.city', 189, 291, 108, 8.0),
+  top('person.state', 320, 291, 38, 8.0),
+  top('person.postalCode', 385, 291, 145, 8.0),
   top('person.identity', 165, 315, 105, 6.5),
   top('person.issuer', 325, 315, 100, 6.5),
   top('person.cpf', 465, 315, 65, 6, 0, true),
@@ -231,24 +234,24 @@ const requestPlacements: readonly CoordinatePlacement[] = [
 ];
 
 const residencePlacements: readonly CoordinatePlacement[] = [
-  top('person.fullName', 110, 234, 420, 8, 0, true),
-  top('person.cpf', 130, 256, 90, 7.2, 0, true),
-  top('person.nationality', 296, 256, 90, 7.2),
+  top('person.fullName', 110, 234, 420, 9, 0, true),
+  top('person.cpf', 130, 256, 90, 8.2, 0, true),
+  top('person.nationality', 296, 256, 90, 8.2),
   // Naturalidade deslocada pontualmente para a direita; sem alterar outros anexos.
-  top('person.birthplace', 457, 256, 73, 7.2),
-  top('person.phone', 211, 278, 105, 7.2),
-  top('person.mobile', 390, 278, 120, 7.2),
-  top('person.email', 132, 300, 140, 7),
+  top('person.birthplace', 457, 256, 73, 8.2),
+  top('person.phone', 211, 278, 105, 8.2),
+  top('person.mobile', 390, 278, 120, 8.2),
+  top('person.email', 132, 300, 140, 8.0),
   // O Anexo 2-G tem duas linhas corridas para o endereço completo.
   // Primeira linha: logradouro, número e complemento.
-  top('person.address', 330, 363, 110, 7, 0, true),
-  top('person.streetNumber', 450, 363, 30, 6.5),
-  top('person.apartment', 490, 363, 40, 6.2),
+  top('person.address', 330, 363, 110, 8.2, 0, true),
+  top('person.streetNumber', 450, 363, 30, 7.5),
+  top('person.apartment', 490, 363, 40, 7.2),
   // Segunda linha: bairro, cidade, UF e CEP.
-  top('person.neighborhood', 110, 385, 100, 6.5),
-  top('person.city', 220, 385, 115, 6.5),
-  top('person.state', 350, 385, 28, 6.5),
-  top('person.postalCode', 395, 385, 105, 6.5),
+  top('person.neighborhood', 110, 385, 100, 8.0),
+  top('person.city', 220, 385, 115, 8.0),
+  top('person.state', 350, 385, 28, 8.0),
+  top('person.postalCode', 395, 385, 105, 8.0),
   top('process.place', 300, 644, 85, 7),
   top('process.date', 400, 644, 25, 7, 0, false, undefined, 'DATE_DAY'),
   top('process.date', 446, 644, 25, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
