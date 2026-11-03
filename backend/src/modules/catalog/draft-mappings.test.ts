@@ -56,11 +56,20 @@ describe('versioned form map coordinates', () => {
     const bsade = catalog.mappings.find((mapping) =>
       mapping.formVersionId === 'bsade-er-2026-v1')!;
     const minimumX: Record<string, number> = {
-      'vessel.name': 144.72, 'vessel.registration': 298.05,
-      'vessel.type': 94, 'vessel.breadth': 105,
+      'vessel.name': 155, 'vessel.registration': 298.05,
+      // x=144.72 is the real divider between label and value cells.
+      'vessel.type': 150, 'vessel.length': 150,
+      'vessel.breadth': 150, 'vessel.depth': 150,
       'vessel.hullId': 440.98, 'vessel.motorBrand': 137.22,
       'vessel.motorPower': 256.14, 'vessel.motorSerial': 404.07,
     };
+    const vesselName = bsade.placements.find((item) =>
+      item.kind === 'COORDINATES' && item.fieldId === 'vessel.name');
+    if (vesselName?.kind === 'COORDINATES') {
+      expect(vesselName.x + vesselName.maxWidth).toBeLessThan(244);
+      expect(vesselName.continuationLines?.[0]?.x).toBe(vesselName.x);
+      expect(vesselName.continuationLines?.[0]?.maxWidth).toBe(vesselName.maxWidth);
+    }
     for (const [fieldId, boundary] of Object.entries(minimumX)) {
       const placement = bsade.placements.find((item) =>
         item.kind === 'COORDINATES' && item.fieldId === fieldId);
