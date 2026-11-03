@@ -246,6 +246,8 @@ const residencePlacements: readonly CoordinatePlacement[] = [
   // Primeira linha: logradouro, número e complemento.
   { ...top('person.address', 330, 363, 110, 8.2, 0, true),
     minFontSize: 6,
+    // Retain the complete street name on the free baseline below the address rows.
+    continuationLines: [{ x: 110, y: PAGE_HEIGHT - 403, maxWidth: 420 }],
   },
   top('person.streetNumber', 450, 363, 30, 7.5),
   top('person.apartment', 490, 363, 40, 7.2),
