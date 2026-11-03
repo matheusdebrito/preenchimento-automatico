@@ -209,6 +209,12 @@ describe('motor determinístico de PDF', () => {
     expect(rendered.getPages()).toHaveLength(2);
   });
 
+  it('entrega somente as duas primeiras paginas do BADE sem alterar o template oficial', async () => {
+    const output = await fillApprovedTemplate(catalog, 'bade-er-2026-v1', {});
+    const doc = await PDFDocument.load(output);
+    expect(doc.getPageCount()).toBe(2);
+  });
+
   it('gera todas as versões homologadas mesmo com todos os campos em branco', async () => {
     for (const version of catalog.versions.filter((item) => item.status === 'VERIFIED')) {
       const output = await fillApprovedTemplate(catalog, version.id, {});
