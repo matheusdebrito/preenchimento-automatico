@@ -179,7 +179,8 @@ export const aquaviarioVersions: readonly FormVersion[] = [
     revision: 'v2',
     officialRevision: null,
     regulation: 'Requerimento regional EPM da Capitania dos Portos do Rio de Janeiro (CPRJ), conforme modelo fornecido pelo usuário; não é anexo nacional.',
-    sourceUrl: null,
+    // Fonte de proveniência: cópia imutável do arquivo enviado, não página normativa.
+    sourceUrl: 'https://github.com/matheusdebrito/preenchimento-automatico/blob/8b648edb2467f32dd537efbbeca1ad1da678bfda/backend/templates/requerimento-interessado-aquaviario/v2/original.pdf',
     verifiedAt: '2026-11-03',
     sha256: '138CAA3D151504D77220FAE8F181B138311AD520DA438E7524C34A8125047636',
     templatePath: 'backend/templates/requerimento-interessado-aquaviario/v2/original.pdf',
