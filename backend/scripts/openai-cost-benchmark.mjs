@@ -522,7 +522,7 @@ try {
         ? Number((totalEstimatedUsd / scenarios.filter((s) => s.status === 'completed').length).toFixed(8)) : null,
     },
     guards: {
-      maxScenarios: testCases.length, maxExternalCalls, maxEstimatedUsd,
+      maxScenarios: categoryMode ? 3 : 5, maxExternalCalls, maxEstimatedUsd,
       caveat: 'Cost guard is post-response/soft; the OpenAI project budget is authoritative.',
     },
   };
