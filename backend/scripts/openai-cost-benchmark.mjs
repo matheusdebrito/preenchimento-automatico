@@ -16,7 +16,10 @@ const pricing = {
 };
 const rates = pricing[model];
 if (!rates) throw new Error('Unsupported test model; choose the approved mini or nano snapshot.');
-if (!process.env.OPENAI_API_KEY) throw new Error('Missing OPENAI_API_KEY GitHub Actions secret.');
+const dryRun = process.env.OPENAI_COST_BENCH_DRY_RUN === '1';
+if (!dryRun && !process.env.OPENAI_API_KEY) {
+  throw new Error('Missing OPENAI_API_KEY GitHub Actions secret.');
+}
 const maxExternalCalls = 10; // Five test cases; one primary + at most one contingency each.
 const maxEstimatedUsd = 0.15; // Soft guard based on observed token usage, not a billing guarantee.
 const reportsPath = resolve(process.env.BENCH_REPORT_DIR || 'openai-cost-results');
@@ -174,6 +177,7 @@ const calls = [];
 const scenarios = [];
 let externalCalls = 0;
 let totalEstimatedUsd = 0;
+let simulatedDescriptors = [];
 
 function costForUsage(usage) {
   if (!usage) return null;
@@ -201,11 +205,40 @@ async function meteredFetch(url, options) {
   externalCalls++;
   const started = performance.now();
   let response;
-  try {
-    response = await fetch(url, options);
-  } catch {
-    calls.push({ sequence: externalCalls, status: 'network_error', elapsedMs: Math.round(performance.now() - started) });
-    throw new Error('OpenAI request failed to reach the service.');
+  if (dryRun) {
+    const candidates = [];
+    const documents = [];
+    for (const descriptor of simulatedDescriptors) {
+      const definition = files.get(descriptor.document.requirementId).definition;
+      const subtype = definition.type === 'identity' ? 'rg'
+        : definition.type === 'tie' ? 'tie-digital' : definition.type;
+      documents.push({
+        requirementId: descriptor.document.requirementId,
+        status: 'readable', subtype,
+      });
+      for (const [fieldId, value] of Object.entries(definition.expected)) {
+        if (descriptor.allowedFieldIds.includes(fieldId)) {
+          candidates.push({
+            fieldId, value,
+            sourceRequirementId: descriptor.document.requirementId,
+            confidence: 'high',
+          });
+        }
+      }
+    }
+    response = new Response(JSON.stringify({
+      output: [{ type: 'message', content: [{
+        type: 'output_text', text: JSON.stringify({ candidates, documents }),
+      }] }],
+      usage: { input_tokens: 0, output_tokens: 0, total_tokens: 0 },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } else {
+    try {
+      response = await fetch(url, options);
+    } catch {
+      calls.push({ sequence: externalCalls, status: 'network_error', elapsedMs: Math.round(performance.now() - started) });
+      throw new Error('OpenAI request failed to reach the service.');
+    }
   }
   const body = await response.clone().json().catch(() => null);
   const usage = costForUsage(body?.usage);
@@ -268,9 +301,13 @@ try {
     const expected = Object.assign({},
       ...scenario.documentNames.map((name) => files.get(name).definition.expected));
     const startCall = calls.length;
+    simulatedDescriptors = documents;
     const started = performance.now();
     try {
       const result = await extractDocumentsWithOneContingency(documents, scenario.fields, {
+        env: dryRun
+          ? { ...process.env, OPENAI_API_KEY: 'offline-smoke-test-only' }
+          : process.env,
         fetchImpl: meteredFetch,
         timeoutMs: 120_000,
       });
@@ -317,8 +354,11 @@ try {
   const summary = {
     time: new Date().toISOString(),
     model,
+    mode: dryRun ? 'offline_mock_no_api_calls' : 'real_openai_responses_api',
     syntheticOnly: true,
-    source: 'real OpenAI Responses API via production document extractor',
+    source: dryRun
+      ? 'Offline mock through the production extractor'
+      : 'real OpenAI Responses API via production document extractor',
     usagePriceUsdPerMillionTokens: rates,
     pricingNote: 'Estimate from metered tokens at published standard prices, not an invoice.',
     scenarios, calls, totals: {
@@ -336,7 +376,8 @@ try {
   await writeFile(join(reportsPath, 'resultados-openai-5-testes.json'),
     JSON.stringify(summary, null, 2) + '\n', { mode: 0o600 });
   const lines = [
-    '# Cinco testes reais: custos de extração de documentos sintéticos',
+    dryRun ? '# Smoke offline: cinco cenários sintéticos sem API'
+      : '# Cinco testes reais: custos de extração de documentos sintéticos',
     '',
     'Modelo: ' + model + '. Arquivos totalmente fictícios; nenhum documento pessoal real.',
     '',
