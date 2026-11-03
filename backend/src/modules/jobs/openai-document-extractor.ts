@@ -328,14 +328,24 @@ function extractionPrompt(
   const types = new Set(documents.map((item) => item.documentType ?? 'unknown'));
   const typeRules: string[] = [];
   if (types.has('identity')) {
+    const identityDocuments = documents.filter((item) => item.documentType === 'identity');
+    const knownSubtypes = identityDocuments.map((item) => item.detectedSubtype);
+    const requireClassification = knownSubtypes.some((item) =>
+      item !== 'rg' && item !== 'cin' && item !== 'cnh');
+    typeRules.push('IDENTIDADE: classifique rg, cin ou cnh pela imagem, e nao pelo nome do arquivo.');
+    if (requireClassification || knownSubtypes.includes('rg')) {
+      typeRules.push('RG: o número da identidade/documento (identity) vem do valor ligado a REGISTRO GERAL / RG. Nunca substituir por CPF.');
+    }
+    if (requireClassification || knownSubtypes.includes('cin')) {
+      typeRules.push('CIN: CPF e o identificador unico; o backend preenche identity a partir do CPF validado.');
+    }
+    if (requireClassification || knownSubtypes.includes('cnh')) {
+      typeRules.push('CNH: nao confunda numero de registro da habilitacao com o numero da identidade. Extraia identity so quando o numero do documento de identidade estiver impresso.');
+    }
     typeRules.push(
-      'IDENTIDADE: classifique rg, cin ou cnh pela imagem, e nao pelo nome do arquivo.',
-      'RG: o número da identidade/documento (identity) vem do valor ligado a REGISTRO GERAL / RG. Nunca substituir por CPF.',
-      'CIN: CPF e o identificador unico; o backend preenche identity a partir do CPF validado.',
-      'CNH: nao confunda numero de registro da habilitacao com o numero da identidade. Extraia identity so quando o numero do documento de identidade estiver impresso.',
       'Procure órgão emissor/expedidor sob ORGAO EMISSOR, ORGAO EXPEDIDOR, EXPEDIDOR, EMISSOR e siglas visíveis como SSP/RJ ou IFP. Extrair a autoridade do documento de identidade, nao a UF nem o departamento responsavel pela habilitacao.',
       'issuer e issuerState sao independentes: um valor pode existir sem o outro. Se o texto impresso for SSP/RJ, separar issuer=SSP e issuerState=RJ. Nunca deduza SSP, DETRAN ou UF apenas pelo estado, brasao ou titulo do documento.',
-      'Se o RG nao mostrar orgao emissor, marque issuer como not_visible. Se o trecho existir, mas nao estiver legivel, marque uncertain.',
+      'Se o órgão emissor nao aparecer no documento de identidade, marque issuer como not_visible. Se o trecho existir, mas nao estiver legivel, marque uncertain.',
     );
   }
   if (types.has('residence-proof')) {
@@ -358,7 +368,7 @@ function extractionPrompt(
     'Nunca confunda CPF, RG, inscricao da embarcacao, registro de CNH ou numero de motor.',
     'Datas: DD/MM/AAAA somente com dia, mes e ano visiveis. Valores sim/nao: sim ou nao. Booleanos: true ou false.',
     'Candidates: apenas dados visiveis com confianca high ou medium.',
-    'missingFields: relacione cada campo solicitado sem candidate para aquela fonte, com status not_visible (ausente no documento) ou uncertain (obscurecido, ilegivel ou ambíguo). Nao inclua valor nem dado pessoal em missingFields.',
+    'missingFields: registre SOMENTE issuer e issuerState solicitados sem candidate para cada fonte de identidade, status not_visible (ausente) ou uncertain (ilegivel/ambiguo). Para os demais campos, nao crie missingFields. Nao inclua valor nem dados pessoais.',
     'Nao gere candidates para campos com status missingFields. Em caso de conflito entre fontes, retorne candidates separados.',
     ...typeRules,
     'Campos permitidos: ' + JSON.stringify(fieldList),
