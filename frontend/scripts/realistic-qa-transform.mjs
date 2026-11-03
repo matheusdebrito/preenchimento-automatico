@@ -12,7 +12,7 @@ const replacements = [
   ["address:'RUA DAS FLORES'", "address:'AVENIDA PROFESSOR JOSE AUGUSTO DE OLIVEIRA'"],
   ["fulladdress:'RUA DAS FLORES 120 NITEROI RJ'", "fulladdress:'AVENIDA PROFESSOR JOSE AUGUSTO DE OLIVEIRA 1250 BLOCO B APARTAMENTO 305 RIO DE JANEIRO RJ'"],
   ["streetnumber:'120'", "streetnumber:'1250'"],
-  ["apartment:'CASA'", "apartment:'BLOCO B APARTAMENTO 305'"],
+  ["apartment:'CASA'", "apartment:'APT 305'"],
   ["neighborhood:'CENTRO'", "neighborhood:'JARDIM DAS AMERICAS'"],
   ["city:'NITEROI'", "city:'RIO DE JANEIRO'"],
   ["birthplace:'NITEROI'", "birthplace:'SAO JOSE DOS CAMPOS'"],
@@ -25,5 +25,24 @@ for (const [from,to] of replacements) {
   if (!code.includes(from)) throw Error('Regression in source test runner: ' + from);
   code = code.replace(from,to);
 }
+// Cover every distinct PDF version across services; retain at least one flow
+// for each service. The full 184-case matrix remains recorded separately.
+const marker = 'const stats={services:matrix.length,';
+if (!code.includes(marker)) throw Error('Unexpected browser matrix structure');
+code = code.replace(marker, `
+const auditedVersions = new Set();
+for (const service of matrix) {
+  const picked = [];
+  for (const scenario of service.selected) {
+    if (picked.length === 0 ||
+        scenario.formVersionIds.some((id) => !auditedVersions.has(id))) {
+      picked.push(scenario);
+      for (const id of scenario.formVersionIds) auditedVersions.add(id);
+    }
+  }
+  service.selected = picked;
+}
+console.log('SELECTED PDF VERSIONS: ' + [...auditedVersions].join(','));
+` + marker);
 await writeFile(join(here, 'e2e-service-matrix-realistic.mjs'), code);
 console.log('Prepared browser matrix with realistic-length synthetic data');
