@@ -109,6 +109,30 @@ describe('versioned form map coordinates', () => {
     }
   });
 
+  it('mantém endereço em linha única e data ligeiramente elevada na residência de aquaviários', () => {
+    const residence = catalog.mappings.find((item) =>
+      item.formVersionId === 'declaracao-residencia-aquaviario-2026-v1')!;
+    const address = residence.placements.filter((item) =>
+      item.fieldId === 'person.fullAddress');
+    expect(address).toHaveLength(1);
+    const placement = address[0]!;
+    expect(placement.kind).toBe('COORDINATES');
+    if (placement.kind === 'COORDINATES') {
+      expect(placement.maxWidth).toBeGreaterThan(450);
+      expect(placement.continuationLines).toBeUndefined();
+    }
+    expect(residence.placements.some((item) =>
+      ['person.address', 'person.streetNumber', 'person.apartment',
+        'person.neighborhood', 'person.city', 'person.postalCode'].includes(item.fieldId))).toBe(false);
+    const dateParts = residence.placements.filter((item) => item.fieldId === 'process.date');
+    expect(dateParts).toHaveLength(3);
+    for (const date of dateParts) {
+      if (date.kind === 'COORDINATES') {
+        expect(date.y).toBe(842 - 615);
+      }
+    }
+  });
+
   it('mantém cada formulário independente com campos essenciais explícitos', () => {
     const required: Record<string, readonly string[]> = {
       'requerimento-ma-v1': ['person.fullName', 'person.cpf', 'vessel.name', 'vessel.hullId'],
