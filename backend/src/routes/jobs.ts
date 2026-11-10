@@ -312,12 +312,12 @@ export function registerJobRoutes(
           if (error instanceof OpenAiDocumentError && error.code === 'not_configured') {
             return reply.status(503).send({
               error: 'openai_not_configured',
-              message: 'Leitura pela OpenAI não configurada neste servidor.',
+              message: 'Análise com Inteligência Artificial indisponível neste servidor.',
             });
           }
           return reply.status(503).send({
             error: 'openai_failed',
-            message: 'Não foi possível analisar os documentos com a OpenAI. Tente novamente.',
+            message: 'Não foi possível analisar os documentos com Inteligência Artificial. Tente novamente.',
           });
         }
       }

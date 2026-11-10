@@ -311,7 +311,7 @@ describe('jornada real isolada da demonstração', () => {
     expect(deleted).toBe(1);
   });
 
-  it('navega pelo ciclo upload, análise OpenAI, revisão e download com API simulada', async () => {
+  it('navega pelo ciclo upload, análise com IA, revisão e download com API simulada', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const path = String(input);
       if (path === '/api/services/ci-only-service' && !init?.method) return json({ service });
@@ -975,7 +975,7 @@ describe('carregamento visível durante consulta documental', () => {
     await user.click(screen.getByRole('button', { name: 'Analisar documentos e revisar campos' }));
     await user.click(screen.getByRole('button', { name: 'Confirmar e consumir 1 crédito' }));
     expect(await screen.findByText('Analisando documentos com inteligência artificial…')).toBeTruthy();
-    expect(screen.getByText(/A consulta à OpenAI está em andamento/)).toBeTruthy();
+    expect(screen.getByText(/A análise com Inteligência Artificial está em andamento/)).toBeTruthy();
     finishExtraction!(json({ fields: { 'person.fullName': 'JOANA TESTE' }, sources: {} }));
     expect(await screen.findByText('Preencha e confira os formulários')).toBeTruthy();
     expect(screen.queryByText('Analisando documentos com inteligência artificial…')).toBeNull();

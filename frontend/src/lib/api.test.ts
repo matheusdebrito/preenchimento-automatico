@@ -40,7 +40,7 @@ describe('api headers', () => {
     const headers = new Headers(init?.headers);
     expect(headers.get('Content-Type')).toBe('application/json');
   });
-  it('expõe erro seguro quando a leitura OpenAI não está configurada', async () => {
+  it('exibe erro neutro quando a análise de IA não está configurada', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ error: 'openai_not_configured' }), {
         status: 503,
@@ -54,7 +54,7 @@ describe('api headers', () => {
     })).rejects.toMatchObject({
       status: 503,
       errorCode: 'openai_not_configured',
-      message: expect.stringContaining('OpenAI'),
+      message: expect.stringContaining('Inteligência Artificial'),
     });
   });
 
