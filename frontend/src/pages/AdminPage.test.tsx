@@ -103,7 +103,7 @@ describe('painel administrativo', () => {
     expect(screen.getByText('Tokens de saída · Últimos 7 dias')).toBeTruthy();
     expect(screen.getByText('300')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Créditos utilizados' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Tokens OpenAI' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Tokens de IA' })).toBeTruthy();
     expect(await screen.findByText('Cliente Teste')).toBeTruthy();
 
     await user.click(screen.getByRole('button', { name: 'Ano' }));
