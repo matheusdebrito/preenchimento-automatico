@@ -148,8 +148,11 @@ export function publicService(
 
     if (formVersionId === 'declaracao-residencia-aquaviario-2026-v1') {
       const fullAddressIndex = orderedIds.indexOf('person.fullAddress');
-      if (fullAddressIndex >= 0) {
-        orderedIds.splice(fullAddressIndex, 1, ...AQUAVIARIO_RESIDENCE_ADDRESS_PARTS);
+      if (fullAddressIndex >= 0) orderedIds.splice(fullAddressIndex, 1);
+      // The form intentionally hides the composed value from manual review,
+      // but its individual sources must always remain editable.
+      for (const fieldId of AQUAVIARIO_RESIDENCE_ADDRESS_PARTS) {
+        if (!orderedIds.includes(fieldId)) orderedIds.push(fieldId);
       }
     }
 
