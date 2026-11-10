@@ -454,7 +454,7 @@ export function LiveFlowPage() {
         present.add(requirementId);
         setUploadedRequirements([...present]);
       }
-      // Show OpenAI progress only when documents were actually submitted.
+      // Show AI processing progress only when documents were actually submitted.
       setAnalysisStage(present.size > 0 ? 'analyzing' : 'preparing');
       const read = await api<{
         fields: Record<string,string>; sources: Record<string,string>;
@@ -867,7 +867,7 @@ export function LiveFlowPage() {
                           analysisStage === 'uploading' ? 'Enviando documentos com segurança…' :
                           'Analisando documentos com inteligência artificial…'}</strong>
                         <p>{analysisStage === 'analyzing'
-                          ? 'A consulta à OpenAI está em andamento. A duração depende dos arquivos enviados. Aguarde a conclusão para conferir os dados.'
+                          ? 'A análise com Inteligência Artificial está em andamento. O tempo de processamento depende dos arquivos enviados. Aguarde a conclusão para conferir os dados.'
                           : 'Seu processo está em andamento. Não é necessário reenviar os documentos.'}</p>
                         <div className="skeleton-stack" aria-hidden="true">
                           <span className="skeleton-line skeleton-line--wide" />
@@ -1163,7 +1163,7 @@ export function LiveFlowPage() {
                   <h2>Formulários gerados</h2>
                   <Notice tone="success">
                     {uploadedRequirements.length > 0
-                      ? 'Pacote preparado. O crédito da análise foi consumido quando os documentos foram enviados à OpenAI; baixar os PDFs não gera novo débito.'
+                      ? 'Pacote preparado. O crédito foi consumido ao iniciar a análise dos documentos com Inteligência Artificial; baixar os PDFs não gera novo débito.'
                       : 'Pacote preparado. Você preencheu sem enviar documentos para análise com IA; nenhum crédito de análise foi consumido. Baixar os PDFs não gera débito.'}
                   </Notice>
                   {downloads.map((version) => (
