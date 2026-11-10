@@ -27,10 +27,10 @@ export function serviceFormValues(
     cityState,
     reviewedValues['person.postalCode'],
   ].filter(Boolean).join(', ');
-  // Anexo 2-G: render the reviewed address fragments in their correct order.
+  // All residence declarations render reviewed address fragments in reading order.
   // A generic extracted fullAddress may omit neighborhood, CEP or complements.
   // Keep that fallback only when there are no structured address parts to join.
-  const preferReviewedParts = relation?.formVersionId === 'declaracao-residencia-er-2026-v1';
+  const preferReviewedParts = relation?.formVersionId.startsWith('declaracao-residencia-') ?? false;
   const derivedValues: Record<string, string> =
     fullAddress && (preferReviewedParts || !reviewedValues['person.fullAddress'])
       ? { 'person.fullAddress': fullAddress }
