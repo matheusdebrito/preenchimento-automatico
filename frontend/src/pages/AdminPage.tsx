@@ -315,7 +315,7 @@ export function AdminPage() {
                   <div>
                     <h2 className="account-panel__title" id="usage-title">Uso da plataforma</h2>
                     <p className="account-panel__text">
-                      Créditos consumidos e tokens OpenAI no período selecionado.
+                      Créditos consumidos e tokens de Inteligência Artificial no período selecionado.
                     </p>
                   </div>
                   <div className="admin-period-tabs" role="group" aria-label="Período dos gráficos">
@@ -394,7 +394,7 @@ export function AdminPage() {
                       <section className="admin-chart-card" aria-labelledby="tokens-chart-title">
                         <div className="admin-chart-card__head">
                           <div>
-                            <h3 id="tokens-chart-title">Tokens OpenAI</h3>
+                            <h3 id="tokens-chart-title">Tokens de IA</h3>
                             <p>Entrada e saída por {usage.period === 'today' ? 'hora' :
                               usage.period === 'year' ? 'mês' : 'dia'}</p>
                           </div>
