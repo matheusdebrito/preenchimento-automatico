@@ -89,10 +89,9 @@ describe('versioned form map coordinates', () => {
     const address = addressPlacements[0]!;
     expect(address.kind).toBe('COORDINATES');
     if (address.kind === 'COORDINATES') {
-      expect(address.x).toBeGreaterThanOrEqual(300);
-      expect(address.continuationLines).toHaveLength(1);
-      expect(address.continuationLines![0]!.x).toBeLessThan(150);
-      expect(address.continuationLines![0]!.maxWidth).toBeGreaterThan(400);
+      expect(address.x).toBeGreaterThanOrEqual(100);
+      expect(address.maxWidth).toBeGreaterThan(400);
+      expect(address.continuationLines).toBeUndefined();
     }
     // Never print the address fragments out of order in independent cells.
     expect(residence.placements.some((placement) =>
@@ -107,6 +106,30 @@ describe('versioned form map coordinates', () => {
     if (hull?.kind === 'COORDINATES') {
       expect(hull.x).toBeLessThanOrEqual(300);
       expect(hull.maxWidth).toBeGreaterThanOrEqual(120);
+    }
+  });
+
+  it('mantém endereço em linha única e data ligeiramente elevada na residência de aquaviários', () => {
+    const residence = catalog.mappings.find((item) =>
+      item.formVersionId === 'declaracao-residencia-aquaviario-2026-v1')!;
+    const address = residence.placements.filter((item) =>
+      item.fieldId === 'person.fullAddress');
+    expect(address).toHaveLength(1);
+    const placement = address[0]!;
+    expect(placement.kind).toBe('COORDINATES');
+    if (placement.kind === 'COORDINATES') {
+      expect(placement.maxWidth).toBeGreaterThan(450);
+      expect(placement.continuationLines).toBeUndefined();
+    }
+    expect(residence.placements.some((item) =>
+      ['person.address', 'person.streetNumber', 'person.apartment',
+        'person.neighborhood', 'person.city', 'person.postalCode'].includes(item.fieldId))).toBe(false);
+    const dateParts = residence.placements.filter((item) => item.fieldId === 'process.date');
+    expect(dateParts).toHaveLength(3);
+    for (const date of dateParts) {
+      if (date.kind === 'COORDINATES') {
+        expect(date.y).toBe(842 - 615);
+      }
     }
   });
 

@@ -36,6 +36,13 @@ export interface PublicService {
 
 const AI_INPUT_DOCUMENT_TYPE_SET = new Set<string>(AI_INPUT_DOCUMENT_TYPES);
 
+// The 1-L prints a single composed address, but users must still review each
+// source component before the server constructs the final value for the PDF.
+const AQUAVIARIO_RESIDENCE_ADDRESS_PARTS = [
+  'person.address', 'person.streetNumber', 'person.apartment',
+  'person.neighborhood', 'person.city', 'person.state', 'person.postalCode',
+] as const;
+
 
 function matches(
   rules: readonly ServiceCondition[] | undefined,
@@ -110,6 +117,9 @@ export function publicService(
         relation ? fieldApplies(relation, placement.fieldId, answers) : false);
     });
   const mappedFields = new Set(placements.map((placement) => placement.fieldId));
+  if (versionIds.includes('declaracao-residencia-aquaviario-2026-v1')) {
+    for (const fieldId of AQUAVIARIO_RESIDENCE_ADDRESS_PARTS) mappedFields.add(fieldId);
+  }
   const fieldById = new Map(catalog.fields.map((field) => [field.id, field]));
   const versionById = new Map(catalog.versions.map((version) => [version.id, version]));
   const formById = new Map(catalog.forms.map((form) => [form.id, form]));
@@ -134,6 +144,16 @@ export function publicService(
         seen.has(placement.fieldId)) continue;
       seen.add(placement.fieldId);
       orderedIds.push(placement.fieldId);
+    }
+
+    if (formVersionId === 'declaracao-residencia-aquaviario-2026-v1') {
+      const fullAddressIndex = orderedIds.indexOf('person.fullAddress');
+      if (fullAddressIndex >= 0) orderedIds.splice(fullAddressIndex, 1);
+      // The form intentionally hides the composed value from manual review,
+      // but its individual sources must always remain editable.
+      for (const fieldId of AQUAVIARIO_RESIDENCE_ADDRESS_PARTS) {
+        if (!orderedIds.includes(fieldId)) orderedIds.push(fieldId);
+      }
     }
 
     const fields = orderedIds.flatMap((fieldId): PublicReviewField[] => {

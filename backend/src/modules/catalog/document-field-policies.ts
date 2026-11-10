@@ -27,7 +27,6 @@ export const APPLICANT_IDENTITY_FIELDS = [
   'person.issueDate',
   'person.birthDate',
   'person.birthplace',
-  'person.nationality',
   'person.parent1Name',
   'person.parent2Name',
   'person.documentOrigin',
@@ -37,7 +36,6 @@ export const APPLICANT_IDENTITY_FIELDS = [
   'declarant.fullName',
   'declarant.identity',
   'declarant.cpf',
-  'declarant.nationality',
   'declarant.birthplace',
   'declarant.issueDate',
 ] as const;
@@ -52,7 +50,6 @@ export const BUYER_IDENTITY_FIELDS = [
   'person.issueDate',
   'person.birthDate',
   'person.birthplace',
-  'person.nationality',
   'person.parent1Name',
   'person.parent2Name',
   'person.documentOrigin',
@@ -66,7 +63,6 @@ export const SELLER_IDENTITY_FIELDS = [
   'seller.issuer',
   'seller.issuerState',
   'seller.issueDate',
-  'seller.nationality',
   'seller.birthplace',
   'seller.parent1Name',
   'seller.parent2Name',
@@ -184,7 +180,6 @@ export const TIE_FIELDS = [
   'coOwner.postalCode',
   'coOwner.neighborhood',
   'coOwner.city',
-  'coOwner.nationality',
 ] as const;
 
 const TIE_DIGITAL_FIELDS = new Set<string>([
@@ -247,6 +242,8 @@ export function fieldsAllowedForDetectedSubtype(
   subtype: DetectedDocumentSubtype,
   configuredAllowedFieldIds: readonly string[],
 ): readonly string[] {
+  // Nationality is always entered by a person, never inferred from documents.
+  configuredAllowedFieldIds = configuredAllowedFieldIds.filter((fieldId) => !fieldId.endsWith('.nationality'));
   if (subtype === 'not-applicable' && documentType !== 'residence-proof') return [];
 
   if (documentType === 'identity') {

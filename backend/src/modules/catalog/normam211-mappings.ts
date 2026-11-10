@@ -247,18 +247,15 @@ const residencePlacements: readonly CoordinatePlacement[] = [
   top('person.phone', 211, 278, 105, 8.2),
   top('person.mobile', 390, 278, 120, 8.2),
   top('person.email', 132, 300, 140, 8.0),
-  // Anexo 2-G: the two official writing lines form one address. Keep the
-  // street, number, complement, neighborhood, city/UF and CEP in reading order.
-  // The complete value is derived by serviceFormValues; never shorten or
-  // interleave independently positioned fields on this continuous underline.
-  { ...top('person.fullAddress', 300, 363, 230, 8.0, 0, true),
-    minFontSize: 6,
-    continuationLines: [{ x: 105, y: PAGE_HEIGHT - 385, maxWidth: 425 }],
+  // Linha longa oficial abaixo do rotulo: endereco completo em uma linha.
+  // Nao dividir, truncar ou sobrepor outras legendas ao ajustar a fonte.
+  { ...top('person.fullAddress', 105, 385, 425, 7.5, 0, true),
+    minFontSize: 5.5,
   },
   top('process.place', 300, 644, 85, 7),
-  top('process.date', 400, 644, 25, 7, 0, false, undefined, 'DATE_DAY'),
-  top('process.date', 446, 644, 25, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('process.date', 486, 644, 45, 7, 0, false, undefined, 'DATE_YEAR'),
+  top('process.date', 400, 642, 25, 7.5, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 446, 642, 25, 7.5, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('process.date', 486, 642, 45, 7.5, 0, false, undefined, 'DATE_YEAR'),
 ];
 
 const lossPlacements: readonly CoordinatePlacement[] = [

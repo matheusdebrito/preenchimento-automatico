@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - test/browser-realistic-pdf-layout-20261103
+  pull_request:
+    branches:
+      - main
 permissions:
   contents: read
 concurrency:
@@ -10,6 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   chromium-pdf-realistic:
+    if: github.event_name == 'push' || github.head_ref == 'fix/residencia-seo-nacionalidade-20261110'
     runs-on: ubuntu-latest
     timeout-minutes: 55
     env:

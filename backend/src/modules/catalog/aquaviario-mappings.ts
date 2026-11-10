@@ -91,18 +91,16 @@ const residence: readonly CoordinatePlacement[] = [
   top('person.phone', 205, 258, 155, 7),
   top('person.mobile', 405, 258, 165, 7),
   top('person.email', 125, 279, 445, 7),
-  top('person.address', 92, 360, 145, 6.0),
-  top('person.streetNumber', 242, 360, 28, 6.0),
-  top('person.apartment', 275, 360, 55, 6.0),
-  top('person.neighborhood', 92, 378, 70, 5.8),
-  top('person.city', 168, 378, 80, 5.8),
-  top('person.state', 253, 378, 20, 5.8),
-  top('person.postalCode', 280, 378, 80, 5.8),
+  // A linha oficial de endereco e continua: imprimir um valor unico em
+  // ordem de leitura, sem espalhar fragmentos em celulas independentes.
+  { ...top('person.fullAddress', 92, 360, 475, 7),
+    minFontSize: 5.5,
+  },
   // A linha sob a data e o local e reservada para assinatura; cidade fica acima do rotulo (Cidade).
   top('process.place', 345, 598, 85, 6.2),
-  top('process.date', 408, 619, 22, 6.2, 0, false, undefined, 'DATE_DAY'),
-  top('process.date', 464, 619, 22, 6.2, 0, false, undefined, 'DATE_MONTH_NUMBER'),
-  top('process.date', 502, 619, 35, 6.2, 0, false, undefined, 'DATE_YEAR'),
+  top('process.date', 408, 615, 22, 7, 0, false, undefined, 'DATE_DAY'),
+  top('process.date', 464, 615, 22, 7, 0, false, undefined, 'DATE_MONTH_NUMBER'),
+  top('process.date', 502, 615, 35, 7, 0, false, undefined, 'DATE_YEAR'),
 ];
 
 const auxiliaryRequest: readonly CoordinatePlacement[] = [

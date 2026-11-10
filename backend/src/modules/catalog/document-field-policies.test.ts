@@ -13,6 +13,15 @@ import {
 } from './document-field-policies.js';
 
 describe('document field source policies', () => {
+  it('mantém todas as nacionalidades como preenchimento manual, independentemente do documento', () => {
+    for (const policy of [APPLICANT_IDENTITY_FIELDS, BUYER_IDENTITY_FIELDS, SELLER_IDENTITY_FIELDS, TIE_FIELDS]) {
+      expect(policy.some((fieldId) => fieldId.endsWith('.nationality'))).toBe(false);
+    }
+    const fields = ['person.fullName', 'person.nationality', 'declarant.nationality'];
+    expect(fieldsAllowedForDetectedSubtype('identity', 'unknown', fields)).toEqual(['person.fullName']);
+    expect(fieldsAllowedForDetectedSubtype('identity', 'rg', fields)).toEqual(['person.fullName']);
+  });
+
   it('não usa comprovante de residência como fonte de identidade', () => {
     expect(RESIDENCE_PROOF_FIELDS).toContain('person.address');
     expect(RESIDENCE_PROOF_FIELDS).toContain('person.postalCode');
