@@ -89,10 +89,9 @@ describe('versioned form map coordinates', () => {
     const address = addressPlacements[0]!;
     expect(address.kind).toBe('COORDINATES');
     if (address.kind === 'COORDINATES') {
-      expect(address.x).toBeGreaterThanOrEqual(300);
-      expect(address.continuationLines).toHaveLength(1);
-      expect(address.continuationLines![0]!.x).toBeLessThan(150);
-      expect(address.continuationLines![0]!.maxWidth).toBeGreaterThan(400);
+      expect(address.x).toBeGreaterThanOrEqual(100);
+      expect(address.maxWidth).toBeGreaterThan(400);
+      expect(address.continuationLines).toBeUndefined();
     }
     // Never print the address fragments out of order in independent cells.
     expect(residence.placements.some((placement) =>
