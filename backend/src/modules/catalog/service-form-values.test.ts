@@ -87,6 +87,22 @@ describe('serviceFormValues', () => {
     );
   });
 
+  it('prioriza endereço estruturado também na residência de aquaviários', () => {
+    const relation: ServiceForm = {
+      serviceId: 'segunda-via-cir-aquaviario',
+      formVersionId: 'declaracao-residencia-aquaviario-2026-v1',
+      order: 2,
+    };
+    expect(serviceFormValues(relation, {}, {
+      'person.fullAddress': 'Rua Incompleta',
+      'person.address': 'Rua das Palmeiras',
+      'person.streetNumber': '55',
+      'person.neighborhood': 'Centro',
+      'person.city': 'Rio de Janeiro',
+      'person.state': 'RJ',
+    })['person.fullAddress']).toBe('Rua das Palmeiras, 55, Centro, Rio de Janeiro/RJ');
+  });
+
   it('prioriza endereço conferido completo no Anexo 2-G mesmo com sugestão parcial de IA', () => {
     const relation: ServiceForm = {
       serviceId: 'inscricao-embarcacao',
