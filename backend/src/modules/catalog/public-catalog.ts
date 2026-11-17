@@ -36,9 +36,9 @@ export interface PublicService {
 
 const AI_INPUT_DOCUMENT_TYPE_SET = new Set<string>(AI_INPUT_DOCUMENT_TYPES);
 
-// The 1-L prints a single composed address, but users must still review each
-// source component before the server constructs the final value for the PDF.
-const AQUAVIARIO_RESIDENCE_ADDRESS_PARTS = [
+// Residence declarations print a composed address; review the extracted
+// components so every vessel and aquaviario declaration can derive it.
+const RESIDENCE_ADDRESS_PARTS = [
   'person.address', 'person.streetNumber', 'person.apartment',
   'person.neighborhood', 'person.city', 'person.state', 'person.postalCode',
 ] as const;
@@ -117,8 +117,8 @@ export function publicService(
         relation ? fieldApplies(relation, placement.fieldId, answers) : false);
     });
   const mappedFields = new Set(placements.map((placement) => placement.fieldId));
-  if (versionIds.includes('declaracao-residencia-aquaviario-2026-v1')) {
-    for (const fieldId of AQUAVIARIO_RESIDENCE_ADDRESS_PARTS) mappedFields.add(fieldId);
+  if (versionIds.some((id) => id.startsWith('declaracao-residencia-'))) {
+    for (const fieldId of RESIDENCE_ADDRESS_PARTS) mappedFields.add(fieldId);
   }
   const fieldById = new Map(catalog.fields.map((field) => [field.id, field]));
   const versionById = new Map(catalog.versions.map((version) => [version.id, version]));
@@ -146,12 +146,12 @@ export function publicService(
       orderedIds.push(placement.fieldId);
     }
 
-    if (formVersionId === 'declaracao-residencia-aquaviario-2026-v1') {
+    if (formVersionId.startsWith('declaracao-residencia-')) {
       const fullAddressIndex = orderedIds.indexOf('person.fullAddress');
       if (fullAddressIndex >= 0) orderedIds.splice(fullAddressIndex, 1);
       // The form intentionally hides the composed value from manual review,
       // but its individual sources must always remain editable.
-      for (const fieldId of AQUAVIARIO_RESIDENCE_ADDRESS_PARTS) {
+      for (const fieldId of RESIDENCE_ADDRESS_PARTS) {
         if (!orderedIds.includes(fieldId)) orderedIds.push(fieldId);
       }
     }
