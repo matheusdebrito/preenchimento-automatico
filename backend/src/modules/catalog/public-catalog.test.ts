@@ -754,3 +754,45 @@ describe('projeção pública do catálogo', () => {
     expect(publicService(data, 's')).toBeNull();
   });
 });
+
+
+describe('regressões de residência e transferência', () => {
+  it('expõe partes do endereço para conferir e compor a declaração 2-G', () => {
+    const service = quoteService(catalog, 'transferencia-propriedade-embarcacao', {
+      vesselType: 'embarcacao', transferTarget: 'propriedade_jurisdicao',
+      includeResidenceDeclaration: 'sim',
+    });
+    const form = service?.reviewForms.find((item) =>
+      item.formVersionId === 'declaracao-residencia-er-2026-v1');
+    const ids = form?.fields.map((field) => field.id) ?? [];
+    expect(ids).toContain('person.address');
+    expect(ids).toContain('person.streetNumber');
+    expect(ids).toContain('person.city');
+    expect(ids).toContain('person.postalCode');
+    expect(ids).not.toContain('person.fullAddress');
+
+    const values = serviceFormValues(
+      catalog.serviceForms.find((item) =>
+        item.serviceId === 'transferencia-propriedade-embarcacao' &&
+        item.formVersionId === 'declaracao-residencia-er-2026-v1'),
+      {}, { 'person.address': 'Rua do Porto', 'person.streetNumber': '42',
+        'person.city': 'Niterói', 'person.state': 'RJ' },
+    );
+    expect(values['person.fullAddress']).toBe('Rua do Porto, 42, Niterói/RJ');
+  });
+
+  it('marca apenas as duas opções de transferência combinada no 2-C', () => {
+    const mapping = catalog.mappings.find((item) =>
+      item.formVersionId === 'requerimento-embarcacao-er-2026-v1');
+    const checkboxes = mapping?.placements.filter((item) =>
+      item.kind === 'COORDINATES' && item.fieldId === 'process.vesselAction') ?? [];
+    const marked = checkboxes.filter((item) =>
+      item.kind === 'COORDINATES' &&
+      (item.markWhen === 'transf_prop_jur' ||
+        item.markAliases?.includes('transf_prop_jur')));
+    expect(marked).toHaveLength(2);
+    expect(marked.map((item) => item.kind === 'COORDINATES' ? item.markWhen : '')).toEqual([
+      'transf_prop', 'transf_jur',
+    ]);
+  });
+});
